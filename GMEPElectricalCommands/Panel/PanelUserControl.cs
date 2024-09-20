@@ -3,6 +3,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.GraphicsSystem;
+using DocumentFormat.OpenXml.Presentation;
 using Emgu.CV.ImgHash;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -1116,25 +1117,63 @@ namespace ElectricalCommands {
       }
     }
 
-    public void configure_distribution_panel(object sender, EventArgs e, bool updateCalcs = true) {
-      if (DISTRIBUTION_SECTION_CHECKBOX.Checked) {
-        for (int i = 0; i < PANEL_GRID.Rows.Count; i++) {
-          int poles = 3;
-          if (!this.is3PH) {
-            poles = 2;
+    private void color3pPanel(object sender, EventArgs e) {
+      Color backColor1 = Color.White;
+      Color backColor2 = Color.AliceBlue;
+      Color foreColor1 = Color.Black;
+      Color foreColor2 = Color.Black;
+      Color blockColor = Color.SlateGray;
+      if (!DISTRIBUTION_SECTION_CHECKBOX.Checked) {
+        backColor2 = Color.White;
+      }
+      for (int i = 0; i < PANEL_GRID.Rows.Count; i++) {
+        if (i % 6 >= 3) {
+          PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = backColor2;
+          PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = backColor2;
+          PANEL_GRID.Rows[i].Cells["breaker_left"].Style.BackColor = backColor2;
+          PANEL_GRID.Rows[i].Cells["breaker_right"].Style.BackColor = backColor2;
+          if (i % 3 == 2) {
+            PANEL_GRID.Rows[i].Cells["phase_a_left"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["phase_a_right"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.BackColor = backColor2;
           }
-          if (i % poles != 0) {
-            PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = Color.Black;
-            PANEL_GRID.Rows[i].Cells["description_left"].Style.ForeColor = Color.Black;
-            PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = Color.Black;
-            PANEL_GRID.Rows[i].Cells["description_right"].Style.ForeColor = Color.Black;
+          else if (i % 3 == 1) {
+            PANEL_GRID.Rows[i].Cells["phase_a_left"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["phase_a_right"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = backColor2;
+          }
+          else {
+            PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = backColor2;
+          }
+        }
+        if (i % 3 != 0) {
+          if (i % 6 >= 3) {
+            PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["description_left"].Style.ForeColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["description_right"].Style.ForeColor = backColor2;
             PANEL_GRID.Rows[i].Cells["description_left"].ReadOnly = true;
             PANEL_GRID.Rows[i].Cells["description_right"].ReadOnly = true;
           }
-          PANEL_GRID.Rows[i].Cells["circuit_left"].Style.BackColor = Color.Black;
-          PANEL_GRID.Rows[i].Cells["circuit_right"].Style.BackColor = Color.Black;
-          PANEL_GRID.Rows[i].Cells["circuit_left"].Style.ForeColor = Color.Black;
-          PANEL_GRID.Rows[i].Cells["circuit_right"].Style.ForeColor = Color.Black;
+          else {
+            PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = backColor1;
+            PANEL_GRID.Rows[i].Cells["description_left"].Style.ForeColor = backColor1;
+            PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = backColor1;
+            PANEL_GRID.Rows[i].Cells["description_right"].Style.ForeColor = backColor1;
+            PANEL_GRID.Rows[i].Cells["description_left"].ReadOnly = true;
+            PANEL_GRID.Rows[i].Cells["description_right"].ReadOnly = true;
+          }
+        }
+        if (DISTRIBUTION_SECTION_CHECKBOX.Checked) {
+          PANEL_GRID.Rows[i].Cells["circuit_left"].Style.BackColor = blockColor;
+          PANEL_GRID.Rows[i].Cells["circuit_right"].Style.BackColor = blockColor;
+          PANEL_GRID.Rows[i].Cells["circuit_left"].Style.ForeColor = blockColor;
+          PANEL_GRID.Rows[i].Cells["circuit_right"].Style.ForeColor = blockColor;
           PANEL_GRID.Rows[i].Cells["circuit_left"].ReadOnly = true;
           PANEL_GRID.Rows[i].Cells["circuit_right"].ReadOnly = true;
           PANEL_NAME_LABEL.Text = "DISTRIBUTION SECTION";
@@ -1151,19 +1190,19 @@ namespace ElectricalCommands {
           }
           SAFETY_FACTOR_CHECKBOX.Enabled = true;
         }
-      }
-      else {
-        for (int i = 0; i < PANEL_GRID.Rows.Count; i++) {
-          PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = Color.White;
-          PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = Color.White;
-          PANEL_GRID.Rows[i].Cells["description_left"].Style.ForeColor = Color.Black;
-          PANEL_GRID.Rows[i].Cells["description_right"].Style.ForeColor = Color.Black;
-          PANEL_GRID.Rows[i].Cells["circuit_left"].Style.BackColor = Color.White;
-          PANEL_GRID.Rows[i].Cells["circuit_right"].Style.BackColor = Color.White;
-          PANEL_GRID.Rows[i].Cells["circuit_left"].Style.ForeColor = Color.Black;
-          PANEL_GRID.Rows[i].Cells["circuit_right"].Style.ForeColor = Color.Black;
+        else {
+          PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = backColor1;
+          PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = backColor1;
+          PANEL_GRID.Rows[i].Cells["description_left"].Style.ForeColor = foreColor1;
+          PANEL_GRID.Rows[i].Cells["description_right"].Style.ForeColor = foreColor1;
+          PANEL_GRID.Rows[i].Cells["circuit_left"].Style.BackColor = backColor1;
+          PANEL_GRID.Rows[i].Cells["circuit_right"].Style.BackColor = backColor1;
+          PANEL_GRID.Rows[i].Cells["circuit_left"].Style.ForeColor = foreColor1;
+          PANEL_GRID.Rows[i].Cells["circuit_right"].Style.ForeColor = foreColor1;
           PANEL_GRID.Rows[i].Cells["circuit_left"].ReadOnly = false;
           PANEL_GRID.Rows[i].Cells["circuit_right"].ReadOnly = false;
+          PANEL_GRID.Rows[i].Cells["description_left"].ReadOnly = false;
+          PANEL_GRID.Rows[i].Cells["description_right"].ReadOnly = false;
           PANEL_NAME_LABEL.Text = "PANEL";
           PANEL_NAME_LABEL.Location = new Point(150, 74);
           this.mainForm.PANEL_NAME_INPUT_TextChanged(sender, e, PANEL_NAME_INPUT.Text, false);
@@ -1172,6 +1211,104 @@ namespace ElectricalCommands {
           ADD_ALL_PANELS_BUTTON.Visible = false;
           SAFETY_FACTOR_CHECKBOX.Enabled = false;
         }
+      }
+    }
+
+    private void color2pPanel(object sender, EventArgs e) {
+      Color backColor1 = Color.White;
+      Color backColor2 = Color.AliceBlue;
+      Color foreColor1 = Color.Black;
+      Color foreColor2 = Color.Black;
+      Color blockColor = Color.SlateGray;
+      if (!DISTRIBUTION_SECTION_CHECKBOX.Checked) {
+        backColor2 = Color.White;
+      }
+      for (int i = 0; i < PANEL_GRID.Rows.Count; i++) {
+        if (i % 4 >= 2) {
+          PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = backColor2;
+          PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = backColor2;
+          PANEL_GRID.Rows[i].Cells["description_left"].Style.ForeColor = foreColor2;
+          PANEL_GRID.Rows[i].Cells["description_right"].Style.ForeColor = foreColor2;
+          PANEL_GRID.Rows[i].Cells["breaker_left"].Style.BackColor = backColor2;
+          PANEL_GRID.Rows[i].Cells["breaker_right"].Style.BackColor = backColor2;
+          if (i % 2 == 1) {
+            PANEL_GRID.Rows[i].Cells["phase_a_left"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["phase_a_right"].Style.BackColor = backColor2;
+          }
+          else {
+            PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.BackColor = backColor2;
+          }
+        }
+        if (i % 2 != 0) {
+          if (i % 4 >= 2) {
+            PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["description_left"].Style.ForeColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["description_right"].Style.ForeColor = backColor2;
+            PANEL_GRID.Rows[i].Cells["description_left"].ReadOnly = true;
+            PANEL_GRID.Rows[i].Cells["description_right"].ReadOnly = true;
+          }
+          else {
+            PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = backColor1;
+            PANEL_GRID.Rows[i].Cells["description_left"].Style.ForeColor = backColor1;
+            PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = backColor1;
+            PANEL_GRID.Rows[i].Cells["description_right"].Style.ForeColor = backColor1;
+            PANEL_GRID.Rows[i].Cells["description_left"].ReadOnly = true;
+            PANEL_GRID.Rows[i].Cells["description_right"].ReadOnly = true;
+          }
+        }
+        if (DISTRIBUTION_SECTION_CHECKBOX.Checked) {
+          PANEL_GRID.Rows[i].Cells["circuit_left"].Style.BackColor = blockColor;
+          PANEL_GRID.Rows[i].Cells["circuit_right"].Style.BackColor = blockColor;
+          PANEL_GRID.Rows[i].Cells["circuit_left"].Style.ForeColor = blockColor;
+          PANEL_GRID.Rows[i].Cells["circuit_right"].Style.ForeColor = blockColor;
+          PANEL_GRID.Rows[i].Cells["circuit_left"].ReadOnly = true;
+          PANEL_GRID.Rows[i].Cells["circuit_right"].ReadOnly = true;
+          PANEL_NAME_LABEL.Text = "DISTRIBUTION SECTION";
+          PANEL_NAME_LABEL.Location = new Point(57, 74);
+          this.mainForm.PANEL_NAME_INPUT_TextChanged(sender, e, PANEL_NAME_INPUT.Text, true);
+          CREATE_PANEL_BUTTON.Visible = false;
+          CREATE_LOAD_SUMMARY_BUTTON.Visible = true;
+          ADD_ALL_PANELS_BUTTON.Visible = true;
+          if (GetPanelLoad() > 0) {
+            ADD_ALL_PANELS_BUTTON.Enabled = false;
+          }
+          else {
+            ADD_ALL_PANELS_BUTTON.Enabled = true;
+          }
+          SAFETY_FACTOR_CHECKBOX.Enabled = true;
+        }
+        else {
+          PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = backColor1;
+          PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = backColor1;
+          PANEL_GRID.Rows[i].Cells["description_left"].Style.ForeColor = foreColor1;
+          PANEL_GRID.Rows[i].Cells["description_right"].Style.ForeColor = foreColor1;
+          PANEL_GRID.Rows[i].Cells["circuit_left"].Style.BackColor = backColor1;
+          PANEL_GRID.Rows[i].Cells["circuit_right"].Style.BackColor = backColor1;
+          PANEL_GRID.Rows[i].Cells["circuit_left"].Style.ForeColor = foreColor1;
+          PANEL_GRID.Rows[i].Cells["circuit_right"].Style.ForeColor = foreColor1;
+          PANEL_GRID.Rows[i].Cells["circuit_left"].ReadOnly = false;
+          PANEL_GRID.Rows[i].Cells["circuit_right"].ReadOnly = false;
+          PANEL_GRID.Rows[i].Cells["description_left"].ReadOnly = false;
+          PANEL_GRID.Rows[i].Cells["description_right"].ReadOnly = false;
+          PANEL_NAME_LABEL.Text = "PANEL";
+          PANEL_NAME_LABEL.Location = new Point(150, 74);
+          this.mainForm.PANEL_NAME_INPUT_TextChanged(sender, e, PANEL_NAME_INPUT.Text, false);
+          CREATE_PANEL_BUTTON.Visible = true;
+          CREATE_LOAD_SUMMARY_BUTTON.Visible = false;
+          ADD_ALL_PANELS_BUTTON.Visible = false;
+          SAFETY_FACTOR_CHECKBOX.Enabled = false;
+        }
+      }
+    }
+
+    public void configure_distribution_panel(object sender, EventArgs e, bool updateCalcs = true) {
+      if (this.is3PH) {
+        color3pPanel(sender, e);
+      }
+      else {
+        color2pPanel(sender, e);
       }
       if (updateCalcs) SAFETY_FACTOR_CheckChanged(sender, e);
     }

@@ -796,7 +796,7 @@ namespace ElectricalCommands {
       );
       CreateAndPositionText(
         tr,
-        panelData["fed_from"] as string,
+        ("'" + (panelData["fed_from"] as string)).Replace("'PANEL ", "PANEL '") + "'",
         "ROMANS",
         0.09375,
         1,
@@ -4226,6 +4226,9 @@ namespace ElectricalCommands {
     }
 
     private double GetDescriptionWidthFactor(string description) {
+      if (description.Length <= 20) {
+        return 0.8;
+      }
       if (description.Length <= 24) {
         return 0.75;
       }
