@@ -224,6 +224,10 @@ namespace ElectricalCommands {
       // Create a new panel
       Dictionary<string, object> panel = new Dictionary<string, object>();
 
+      if (String.IsNullOrEmpty(ID)) {
+        ID = System.Guid.NewGuid().ToString();
+      }
+
       panel.Add("id", ID);
 
       // Get the value from the main input

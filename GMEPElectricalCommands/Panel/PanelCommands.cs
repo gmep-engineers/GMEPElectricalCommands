@@ -545,11 +545,21 @@ namespace ElectricalCommands {
         tr,
         "BUS RATING",
         "Standard",
-        0.1248,
+        0.11232,
         0.75,
         0,
         layerName,
-        new Point3d(startPoint.X + 5.18507633525223, startPoint.Y - 0.271963067880222, 0)
+        new Point3d(startPoint.X + 5.18507633525223, startPoint.Y - 0.155059196495415, 0)
+      );
+      CreateAndPositionText(
+        tr,
+        "FED FROM",
+        "Standard",
+        0.11232,
+        0.75,
+        0,
+        layerName,
+        new Point3d(startPoint.X + 5.18507633525223, startPoint.Y - 0.338479316609039, 0)
       );
       CreateAndPositionText(
         tr,
@@ -778,11 +788,21 @@ namespace ElectricalCommands {
         tr,
         panelData["bus_rating"] as string,
         "ROMANS",
-        0.12375,
+        0.09375,
         1,
         2,
         layerName,
-        new Point3d(startPoint.X + 6.2073642121926, startPoint.Y - 0.274622599308543, 0)
+        new Point3d(startPoint.X + 6.1073642121926, startPoint.Y - 0.137807184107345, 0)
+      );
+      CreateAndPositionText(
+        tr,
+        panelData["fed_from"] as string,
+        "ROMANS",
+        0.09375,
+        1,
+        2,
+        layerName,
+        new Point3d(startPoint.X + 6.0073642121926, startPoint.Y - 0.32590837886957, 0)
       );
       CreateAndPositionText(
         tr,
@@ -3608,6 +3628,8 @@ namespace ElectricalCommands {
         if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
           List<Dictionary<string, object>> panelStorage = myForm.retrieve_saved_panel_data();
           foreach (Dictionary<string, object> panel in panelStorage) {
+            Console.WriteLine(panel["id"] as string);
+            Console.WriteLine(descriptions[j]);
             if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
               descriptions[j] = "PANEL " + panel["panel"] as string;
             }
@@ -4061,13 +4083,6 @@ namespace ElectricalCommands {
         (startPoint.X, startPoint.Y - 0.7488, endPoint.X, startPoint.Y - 0.7488, layerName),
         (
           startPoint.X + 2.2222,
-          startPoint.Y - (0.3744 / 2),
-          startPoint.X + 5.0666,
-          startPoint.Y - (0.3744 / 2),
-          layerName
-        ),
-        (
-          startPoint.X + 6.9368,
           startPoint.Y - (0.3744 / 2),
           endPoint.X,
           startPoint.Y - (0.3744 / 2),
