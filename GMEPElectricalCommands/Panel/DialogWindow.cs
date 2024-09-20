@@ -288,18 +288,16 @@ namespace ElectricalCommands {
     private void remove_panel_from_storage(PanelUserControl userControl1) {
       var panelData = retrieve_saved_panel_data();
       var userControlName = userControl1.Name.Replace("\'", "").Replace("`", "");
-      Console.WriteLine(userControlName);
       foreach (Dictionary<string, object> panel in panelData) {
         var panelName = panel["panel"].ToString().Replace("\'", "").Replace("`", "");
         if (panelName == userControlName) {
           panelData.Remove(panel);
         }
         else {
-          Console.WriteLine(panelName);
           // check if panel is fed from deleted panel
           PanelUserControl p = (PanelUserControl)findUserControl(panelName);
           p.RemoveFedFrom(userControlName);
-          // check if panel is feeding delete panel
+          // check if panel is feeding deleted panel
           p.RemoveSubpanel(userControlName, userControl1.Is3Ph());
         }
       }

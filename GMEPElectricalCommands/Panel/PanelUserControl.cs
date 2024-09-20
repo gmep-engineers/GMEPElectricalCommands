@@ -3112,7 +3112,6 @@ namespace ElectricalCommands {
     }
 
     internal void RemoveFedFrom(string panelName) {
-      Console.WriteLine(panelName);
       if (panelName.Replace("DISTRIB. ", "") == FED_FROM_TEXTBOX.Text) {
         FED_FROM_TEXTBOX.Text = "";
       }
