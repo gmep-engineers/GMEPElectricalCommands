@@ -986,6 +986,7 @@ namespace ElectricalCommands {
           }
         }
         else {
+          totalAmperage = Math.Round(kva * 1000 / phaseVoltage / yFactor, 1);
           tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL AMP @{lineVoltage}/{phaseVoltage}V";
           tb.Cells[totalEntries + 2, 1].TextString = Math.Round(kva * 1000 / phaseVoltage / yFactor, 1).ToString();
           if (totalAmperage < busSize) {
