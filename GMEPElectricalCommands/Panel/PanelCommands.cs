@@ -952,7 +952,7 @@ namespace ElectricalCommands {
             tableRowIndex++;
           }
         }
-        tb.Cells[totalEntries + 1, 0].TextString = "TOTAL (KVA)";
+        tb.Cells[totalEntries + 1, 0].TextString = "TOTAL KVA";
         tb.Cells[totalEntries + 1, 1].TextString = panelData["kva"] as string;
 
         bool usingSafetyFactor = GetSafeBoolean("using_safety_factor");
@@ -972,9 +972,9 @@ namespace ElectricalCommands {
           double safetyFactor = Convert.ToDouble(panelData.TryGetValue("safety_factor", out object value) ? value?.ToString() ?? "1" : "1");
           totalAmperage = Math.Round(kva * 1000 / phaseVoltage / yFactor * safetyFactor, 1);
           if (safetyFactor == 0) safetyFactor = 1;
-          tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL (KVAx{safetyFactor})";
+          tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL KVA x{safetyFactor}";
           tb.Cells[totalEntries + 2, 1].TextString = Math.Round(kva * safetyFactor).ToString();
-          tb.Cells[totalEntries + 3, 0].TextString = $"TOTAL (AMP@{lineVoltage}/{phaseVoltage}V)";
+          tb.Cells[totalEntries + 3, 0].TextString = $"TOTAL AMP @{lineVoltage}/{phaseVoltage}V";
           tb.Cells[totalEntries + 3, 1].TextString = totalAmperage.ToString();
           if (totalAmperage < busSize) {
             tb.Cells[totalEntries + 4, 0].TextString = "CONCLUSION";
@@ -986,7 +986,7 @@ namespace ElectricalCommands {
           }
         }
         else {
-          tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL (AMP@{lineVoltage}/{phaseVoltage}V)";
+          tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL AMP @{lineVoltage}/{phaseVoltage}V";
           tb.Cells[totalEntries + 2, 1].TextString = Math.Round(kva * 1000 / phaseVoltage / yFactor, 1).ToString();
           if (totalAmperage < busSize) {
             tb.Cells[totalEntries + 3, 0].TextString = "CONCLUSION";
@@ -3267,7 +3267,7 @@ namespace ElectricalCommands {
         description,
         "ROMANS",
         0.09375,
-        1.0,
+        GetDescriptionWidthFactor(description),
         2,
         "0",
         new Point3d(descriptionX, height, 0)
@@ -3357,7 +3357,7 @@ namespace ElectricalCommands {
         description,
         "ROMANS",
         0.09375,
-        1.0,
+        GetDescriptionWidthFactor(description),
         2,
         "0",
         new Point3d(descriptionX, height, 0)
@@ -3455,7 +3455,7 @@ namespace ElectricalCommands {
           description,
           "ROMANS",
           0.09375,
-          1.0,
+          GetDescriptionWidthFactor(description),
           2,
           "0",
           new Point3d(descriptionX, height, 0)
@@ -3557,7 +3557,7 @@ namespace ElectricalCommands {
           description,
           "ROMANS",
           0.09375,
-          1.0,
+          GetDescriptionWidthFactor(description),
           2,
           "0",
           new Point3d(descriptionX, height, 0)
@@ -3663,7 +3663,7 @@ namespace ElectricalCommands {
           description,
           "ROMANS",
           0.09375,
-          1.0,
+          GetDescriptionWidthFactor(description),
           2,
           "0",
           new Point3d(descriptionX, height, 0)
@@ -4223,6 +4223,16 @@ namespace ElectricalCommands {
       tr.AddNewlyCreatedDBObject(line, true);
 
       return line.StartPoint.Y;
+    }
+
+    private double GetDescriptionWidthFactor(string description) {
+      if (description.Length <= 24) {
+        return 0.75;
+      }
+      if (description.Length <= 28) {
+        return 0.65;
+      }
+      return 0.6;
     }
   }
 }
