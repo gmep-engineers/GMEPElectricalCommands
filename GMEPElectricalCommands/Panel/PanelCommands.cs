@@ -978,11 +978,11 @@ namespace ElectricalCommands {
           tb.Cells[totalEntries + 3, 1].TextString = totalAmperage.ToString();
           if (totalAmperage < busSize) {
             tb.Cells[totalEntries + 4, 0].TextString = "CONCLUSION";
-            tb.Cells[totalEntries + 4, 1].TextString = $"{busSize}A SERVICE CAN HANDLE {totalAmperage} LOAD.";
+            tb.Cells[totalEntries + 4, 1].TextString = $"{busSize}A SERVICE CAN HANDLE {totalAmperage}A LOAD.";
           }
           else {
             tb.Cells[totalEntries + 4, 0].TextString = "CONCLUSION";
-            tb.Cells[totalEntries + 4, 1].TextString = $"{busSize}A SERVICE CANNOT HANDLE {totalAmperage} LOAD.";
+            tb.Cells[totalEntries + 4, 1].TextString = $"{busSize}A SERVICE CANNOT HANDLE {totalAmperage}A LOAD.";
           }
         }
         else {
@@ -990,18 +990,22 @@ namespace ElectricalCommands {
           tb.Cells[totalEntries + 2, 1].TextString = Math.Round(kva * 1000 / phaseVoltage / yFactor, 1).ToString();
           if (totalAmperage < busSize) {
             tb.Cells[totalEntries + 3, 0].TextString = "CONCLUSION";
-            tb.Cells[totalEntries + 3, 1].TextString = $"{busSize}A SERVICE CAN HANDLE {totalAmperage} LOAD.";
+            tb.Cells[totalEntries + 3, 1].TextString = $"{busSize}A SERVICE CAN HANDLE {totalAmperage}A LOAD.";
           }
           else {
             tb.Cells[totalEntries + 3, 0].TextString = "CONCLUSION";
-            tb.Cells[totalEntries + 3, 1].TextString = $"{busSize}A SERVICE CANNOT HANDLE {totalAmperage} LOAD.";
+            tb.Cells[totalEntries + 3, 1].TextString = $"{busSize}A SERVICE CANNOT HANDLE {totalAmperage}A LOAD.";
           }
         }
+
+        var textStyleId = GetTextStyleId("gmep");
+        tb.Layer = "E-TXT1";
 
         for (int i = 0; i < totalEntries + 5; i++) {
           for (int j = 0; j < 2; j++) {
             tb.Cells[i, j].TextHeight = 0.125;
             tb.Cells[i, j].Alignment = CellAlignment.MiddleCenter;
+            tb.Cells[i, j].TextStyleId = textStyleId;
           }
         }
 
