@@ -754,8 +754,7 @@
       // SAFETY_FACTOR_CHECKBOX
       // 
       this.SAFETY_FACTOR_CHECKBOX.AutoSize = true;
-      this.SAFETY_FACTOR_CHECKBOX.CheckAlign = System.Drawing.ContentAlignment.MiddleRight;
-      this.SAFETY_FACTOR_CHECKBOX.Location = new System.Drawing.Point(85, 627);
+      this.SAFETY_FACTOR_CHECKBOX.Location = new System.Drawing.Point(94, 626);
       this.SAFETY_FACTOR_CHECKBOX.Name = "SAFETY_FACTOR_CHECKBOX";
       this.SAFETY_FACTOR_CHECKBOX.Size = new System.Drawing.Size(150, 17);
       this.SAFETY_FACTOR_CHECKBOX.TabIndex = 216;
@@ -770,7 +769,7 @@
       this.SAFETY_FACTOR_TEXTBOX.Size = new System.Drawing.Size(56, 20);
       this.SAFETY_FACTOR_TEXTBOX.TabIndex = 217;
       this.SAFETY_FACTOR_TEXTBOX.Text = "1.25";
-      this.SAFETY_FACTOR_TEXTBOX.KeyDown += new System.Windows.Forms.KeyEventHandler(this.SAFETY_FACTOR_TEXTBOX_KeyDown);
+      this.SAFETY_FACTOR_TEXTBOX.KeyUp += new System.Windows.Forms.KeyEventHandler(this.SAFETY_FACTOR_TEXTBOX_KeyUp);
       // 
       // ADD_ALL_PANELS_BUTTON
       // 

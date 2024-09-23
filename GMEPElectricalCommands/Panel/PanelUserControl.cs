@@ -278,8 +278,6 @@ namespace ElectricalCommands {
       panel.Add("lcl_override", LCL_OVERRIDE.Checked);
       panel.Add("lml_override", LML_OVERRIDE.Checked);
       panel.Add("distribution_section", DISTRIBUTION_SECTION_CHECKBOX.Checked);
-      panel.Add("safety_factor", SafeConvertToDouble(SAFETY_FACTOR_TEXTBOX.Text));
-      panel.Add("using_safety_factor", SAFETY_FACTOR_CHECKBOX.Checked);
 
       panel.Add(
         "subtotal_a",
@@ -311,11 +309,20 @@ namespace ElectricalCommands {
       double lml125 = Math.Round(lml * 1.25, 0);
       panel.Add("lml", lml);
       panel.Add("lml125", lml125);
+      double safetyFactor = 1.0;
+      if (Regex.IsMatch(SAFETY_FACTOR_TEXTBOX.Text, @"^\d*\.?\d*$")) {
+        safetyFactor = SafeConvertToDouble(SAFETY_FACTOR_TEXTBOX.Text);
+      }
+      else {
+        SAFETY_FACTOR_CHECKBOX.Checked = false;
+      }
+      panel.Add("using_safety_factor", SAFETY_FACTOR_CHECKBOX.Checked);
+      panel.Add("safety_factor", safetyFactor);
       if (SAFETY_FACTOR_CHECKBOX.Enabled && SAFETY_FACTOR_CHECKBOX.Checked) {
-        double feederAmps = Convert.ToDouble(FEEDER_AMP_GRID.Rows[0].Cells[0].Value.ToString()) / Convert.ToDouble(SAFETY_FACTOR_TEXTBOX.Text);
-        double kva = Convert.ToDouble(PANEL_LOAD_GRID.Rows[0].Cells[0].Value.ToString()) / Convert.ToDouble(SAFETY_FACTOR_TEXTBOX.Text);
+        double feederAmps = Convert.ToDouble(FEEDER_AMP_GRID.Rows[0].Cells[0].Value.ToString()) / safetyFactor;
+        double kva = Convert.ToDouble(PANEL_LOAD_GRID.Rows[0].Cells[0].Value.ToString()) / safetyFactor;
         panel.Add("feeder_amps", feederAmps.ToString());
-        panel.Add("kva", kva.ToString());
+        panel.Add("kva", Math.Round(kva, 1).ToString());
       }
       else {
         panel.Add("kva", PANEL_LOAD_GRID.Rows[0].Cells[0].Value.ToString().ToUpper());
@@ -2250,9 +2257,13 @@ namespace ElectricalCommands {
       }
     }
 
-    private void SAFETY_FACTOR_TEXTBOX_KeyDown(object sender, KeyEventArgs e) {
-      if (decimal.TryParse(e.KeyValue.ToString(), out decimal value)) {
-        SAFETY_FACTOR_TEXTBOX.Text = SAFETY_FACTOR_TEXTBOX.Text + e.KeyValue;
+    private void SAFETY_FACTOR_TEXTBOX_KeyUp(object sender, KeyEventArgs e) {
+      if (!Regex.IsMatch(SAFETY_FACTOR_TEXTBOX.Text, @"^\d*\.?\d*$")) {
+        SAFETY_FACTOR_TEXTBOX.BackColor = Color.Crimson;
+      }
+      else {
+        SAFETY_FACTOR_TEXTBOX.BackColor = Color.White;
+        UpdatePerCellValueChange();
       }
     }
 
@@ -2348,11 +2359,11 @@ namespace ElectricalCommands {
       }
 
       double safetyFactor = 1.0;
-      if (SAFETY_FACTOR_CHECKBOX.Enabled && SAFETY_FACTOR_CHECKBOX.Checked) {
+      if (SAFETY_FACTOR_CHECKBOX.Enabled && SAFETY_FACTOR_CHECKBOX.Checked && Regex.IsMatch(SAFETY_FACTOR_TEXTBOX.Text, @"^\d*\.?\d*$")) {
         safetyFactor = Convert.ToDouble(SAFETY_FACTOR_TEXTBOX.Text);
       }
       double totalKva = CalculatePanelLoad(sum) * safetyFactor;
-      PANEL_LOAD_GRID.Rows[0].Cells[0].Value = totalKva;
+      PANEL_LOAD_GRID.Rows[0].Cells[0].Value = Math.Round(totalKva, 1);
 
       object lineVoltageObj = LINE_VOLTAGE_COMBOBOX.SelectedItem;
       object phaseVoltageObj = PHASE_VOLTAGE_COMBOBOX.SelectedItem;
@@ -2441,6 +2452,7 @@ namespace ElectricalCommands {
     }
 
     private void CREATE_LOAD_SUMMARY_BUTTON_Click(object sender, EventArgs e) {
+      this.mainForm.SavePanelDataToLocalJsonFile();
       Dictionary<string, object> panelDataList = retrieve_data_from_modal();
       List<Dictionary<string, object>> panelStorage = this.mainForm.retrieve_saved_panel_data();
       using (
