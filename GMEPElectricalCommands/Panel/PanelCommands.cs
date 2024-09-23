@@ -916,7 +916,7 @@ namespace ElectricalCommands {
         Table tb = new Table();
         tb.TableStyle = db.Tablestyle;
         tb.Position = startPoint;
-        tb.SetSize(totalEntries + 5, 2);
+        tb.SetSize(totalEntries + 5, 3);
         tb.SetRowHeight(0.5);
         tb.Cells[0, 0].TextHeight = (0.125);
         tb.Cells[0, 0].TextString = $"{panelData["panel"] as string } LOAD SUMMARY";
@@ -936,8 +936,9 @@ namespace ElectricalCommands {
             if (increment == 3) {
               phC = GetSafeDouble(phaseCLeft[i + 4]);
             }
-            tb.Cells[tableRowIndex, 0].TextString = GetLoadName(descriptionLeft[i]);
-            tb.Cells[tableRowIndex, 1].TextString = Math.Round((phA + phB + phC)/1000, 1).ToString() + " KVA";
+            tb.Cells[tableRowIndex, 0].TextString = $"{tableRowIndex}.";
+            tb.Cells[tableRowIndex, 1].TextString = GetLoadName(descriptionLeft[i]);
+            tb.Cells[tableRowIndex, 2].TextString = Math.Round((phA + phB + phC)/1000, 1).ToString() + " KVA";
             tableRowIndex++;
           }
           if (!String.IsNullOrEmpty(descriptionRight[i]) && descriptionRight[i] != "SPARE" && descriptionRight[i] != "SPACE") {
@@ -947,13 +948,30 @@ namespace ElectricalCommands {
             if (increment == 3) {
               phC = GetSafeDouble(phaseCRight[i + 4]);
             }
-            tb.Cells[tableRowIndex, 0].TextString = GetLoadName(descriptionRight[i]);
-            tb.Cells[tableRowIndex, 1].TextString = Math.Round((phA + phB + phC) / 1000, 1).ToString() + " KVA";
+            tb.Cells[tableRowIndex, 0].TextString = $"{tableRowIndex}.";
+            tb.Cells[tableRowIndex, 1].TextString = GetLoadName(descriptionRight[i]);
+            tb.Cells[tableRowIndex, 2].TextString = Math.Round((phA + phB + phC) / 1000, 1).ToString() + " KVA";
             tableRowIndex++;
           }
         }
+
+        var textStyleId = GetTextStyleId("gmep");
+        tb.Layer = "E-TXT1";
+        for (int i = 0; i < totalEntries + 5; i++) {
+          for (int j = 0; j < 3; j++) {
+            tb.Cells[i, j].TextHeight = 0.125;
+            tb.Cells[i, j].Alignment = CellAlignment.MiddleCenter;
+            tb.Cells[i, j].TextStyleId = textStyleId;
+          }
+        }
+
+        tb.Columns[0].Width = 0.5;
+        for (int i = totalEntries + 1; i < totalEntries + 5; i++) {
+          CellRange range = CellRange.Create(tb, i, 0, i, 1);
+          tb.MergeCells(range);
+        }
         tb.Cells[totalEntries + 1, 0].TextString = "TOTAL KVA";
-        tb.Cells[totalEntries + 1, 1].TextString = panelData["kva"] as string;
+        tb.Cells[totalEntries + 1, 2].TextString = panelData["kva"] as string;
 
         bool usingSafetyFactor = GetSafeBoolean("using_safety_factor");
         double lineVoltage = GetSafeDouble(panelData["voltage1"]);
@@ -973,41 +991,31 @@ namespace ElectricalCommands {
           totalAmperage = Math.Round(kva * 1000 / phaseVoltage / yFactor * safetyFactor, 1);
           if (safetyFactor == 0) safetyFactor = 1;
           tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL KVA x{safetyFactor}";
-          tb.Cells[totalEntries + 2, 1].TextString = Math.Round(kva * safetyFactor).ToString();
+          tb.Cells[totalEntries + 2, 2].TextString = Math.Round(kva * safetyFactor).ToString();
           tb.Cells[totalEntries + 3, 0].TextString = $"TOTAL AMP @{lineVoltage}/{phaseVoltage}V";
-          tb.Cells[totalEntries + 3, 1].TextString = totalAmperage.ToString();
+          tb.Cells[totalEntries + 3, 2].TextString = totalAmperage.ToString();
           if (totalAmperage < busSize) {
             tb.Cells[totalEntries + 4, 0].TextString = "CONCLUSION";
-            tb.Cells[totalEntries + 4, 1].TextString = $"{busSize}A SERVICE CAN HANDLE {totalAmperage}A LOAD.";
+            tb.Cells[totalEntries + 4, 2].TextString = $"{busSize}A SERVICE CAN HANDLE {totalAmperage}A LOAD.";
           }
           else {
             tb.Cells[totalEntries + 4, 0].TextString = "CONCLUSION";
-            tb.Cells[totalEntries + 4, 1].TextString = $"{busSize}A SERVICE CANNOT HANDLE {totalAmperage}A LOAD.";
+            tb.Cells[totalEntries + 4, 2].TextString = $"{busSize}A SERVICE CANNOT HANDLE {totalAmperage}A LOAD.";
           }
         }
         else {
           totalAmperage = Math.Round(kva * 1000 / phaseVoltage / yFactor, 1);
           tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL AMP @{lineVoltage}/{phaseVoltage}V";
-          tb.Cells[totalEntries + 2, 1].TextString = Math.Round(kva * 1000 / phaseVoltage / yFactor, 1).ToString();
+          tb.Cells[totalEntries + 2, 2].TextString = Math.Round(kva * 1000 / phaseVoltage / yFactor, 1).ToString();
           if (totalAmperage < busSize) {
             tb.Cells[totalEntries + 3, 0].TextString = "CONCLUSION";
-            tb.Cells[totalEntries + 3, 1].TextString = $"{busSize}A SERVICE CAN HANDLE {totalAmperage}A LOAD.";
+            tb.Cells[totalEntries + 3, 2].TextString = $"{busSize}A SERVICE CAN HANDLE {totalAmperage}A LOAD.";
           }
           else {
             tb.Cells[totalEntries + 3, 0].TextString = "CONCLUSION";
-            tb.Cells[totalEntries + 3, 1].TextString = $"{busSize}A SERVICE CANNOT HANDLE {totalAmperage}A LOAD.";
+            tb.Cells[totalEntries + 3, 2].TextString = $"{busSize}A SERVICE CANNOT HANDLE {totalAmperage}A LOAD.";
           }
-        }
-
-        var textStyleId = GetTextStyleId("gmep");
-        tb.Layer = "E-TXT1";
-
-        for (int i = 0; i < totalEntries + 5; i++) {
-          for (int j = 0; j < 2; j++) {
-            tb.Cells[i, j].TextHeight = 0.125;
-            tb.Cells[i, j].Alignment = CellAlignment.MiddleCenter;
-            tb.Cells[i, j].TextStyleId = textStyleId;
-          }
+          tb.DeleteRows(totalEntries + 4, 1);
         }
 
         BlockTable bt = (BlockTable)tr.GetObject(doc.Database.BlockTableId, OpenMode.ForRead);
