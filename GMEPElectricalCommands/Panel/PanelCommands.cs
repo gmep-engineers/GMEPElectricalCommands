@@ -922,7 +922,7 @@ namespace ElectricalCommands {
         tb.Cells[0, 0].TextString = $"{panelData["panel"] as string } LOAD SUMMARY";
         int tableRowIndex = 1;
         int increment = 2;
-        tb.SetColumnWidth(3);
+        tb.SetColumnWidth(2);
         if (panelData.ContainsKey("phase_c_left")) {
           increment = 3;
           phaseCLeft = (List<string>)panelData["phase_c_left"];
