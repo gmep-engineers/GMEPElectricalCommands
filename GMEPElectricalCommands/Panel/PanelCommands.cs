@@ -959,7 +959,7 @@ namespace ElectricalCommands {
         tb.Layer = "E-TXT1";
         for (int i = 0; i < totalEntries + 5; i++) {
           for (int j = 0; j < 3; j++) {
-            tb.Cells[i, j].TextHeight = 0.125;
+            tb.Cells[i, j].TextHeight = 0.1;
             tb.Cells[i, j].Alignment = CellAlignment.MiddleCenter;
             tb.Cells[i, j].TextStyleId = textStyleId;
           }
