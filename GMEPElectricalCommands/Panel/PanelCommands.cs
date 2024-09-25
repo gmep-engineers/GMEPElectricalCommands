@@ -977,8 +977,12 @@ namespace ElectricalCommands {
         double lineVoltage = GetSafeDouble(panelData["voltage1"]);
         double phaseVoltage = GetSafeDouble(panelData["voltage2"]);
         double yFactor = 1;
+        int phase = 1;
+        int wire = 3;
         if (increment == 3 && phaseVoltage != 240) {
           yFactor = 1.732;
+          phase = 3;
+          wire = 4;
         }
         double feederAmps = GetSafeDouble(panelData["feeder_amps"]);
 
@@ -992,7 +996,7 @@ namespace ElectricalCommands {
           if (safetyFactor == 0) safetyFactor = 1;
           tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL KVA x{safetyFactor}";
           tb.Cells[totalEntries + 2, 2].TextString = Math.Round(kva * safetyFactor).ToString();
-          tb.Cells[totalEntries + 3, 0].TextString = $"TOTAL AMP @{lineVoltage}/{phaseVoltage}V";
+          tb.Cells[totalEntries + 3, 0].TextString = $"TOTAL AMP @{lineVoltage}/{phaseVoltage}V-{phase}\u0081-{wire}W";
           tb.Cells[totalEntries + 3, 2].TextString = totalAmperage.ToString();
           if (totalAmperage < busSize) {
             tb.Cells[totalEntries + 4, 0].TextString = "CONCLUSION";
@@ -1005,7 +1009,7 @@ namespace ElectricalCommands {
         }
         else {
           totalAmperage = Math.Round(kva * 1000 / phaseVoltage / yFactor, 1);
-          tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL AMP @{lineVoltage}/{phaseVoltage}V";
+          tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL AMP @{lineVoltage}/{phaseVoltage}V-{phase}\u0081-{wire}W";
           tb.Cells[totalEntries + 2, 2].TextString = Math.Round(kva * 1000 / phaseVoltage / yFactor, 1).ToString();
           if (totalAmperage < busSize) {
             tb.Cells[totalEntries + 3, 0].TextString = "CONCLUSION";
