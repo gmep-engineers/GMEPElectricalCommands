@@ -2375,16 +2375,48 @@ namespace ElectricalCommands {
           yFactor = 1.732;
         }
         if (lineVoltage != 0) {
+          double feederAmps = 0;
+          double busRating = Convert.ToDouble(BUS_RATING_INPUT.Text);
           if (LCL.Text == "0" && LML.Text == "0") {
             if (DISTRIBUTION_SECTION_CHECKBOX.Checked) {
-              FEEDER_AMP_GRID.Rows[0].Cells[0].Value = Math.Round(totalKva * 1000 / phaseVoltage / yFactor, 1);
+              feederAmps = Math.Round(totalKva * 1000 / phaseVoltage / yFactor, 1);
+              FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
             }
             else {
-              FEEDER_AMP_GRID.Rows[0].Cells[0].Value = CalculateFeederAmps(phA, phB, phC, lineVoltage) * safetyFactor;
+              feederAmps = CalculateFeederAmps(phA, phB, phC, lineVoltage) * safetyFactor;
+              FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
             }
           }
           else {
-            FEEDER_AMP_GRID.Rows[0].Cells[0].Value = Math.Round(sum / (lineVoltage * 3), 1);
+            feederAmps = Math.Round(sum / (lineVoltage * 3), 1);
+            FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
+          }
+          if (feederAmps > busRating) {
+            // turn bg red
+            foreach (DataGridViewRow row in FEEDER_AMP_GRID.Rows) {
+              foreach (DataGridViewCell cell in row.Cells) {
+                cell.Style.SelectionBackColor = Color.Crimson;
+                cell.Style.SelectionForeColor = Color.White;
+              }
+            }
+          }
+          else if (feederAmps > 0.8 * busRating) {
+            // turn bg yellow
+            foreach (DataGridViewRow row in FEEDER_AMP_GRID.Rows) {
+              foreach (DataGridViewCell cell in row.Cells) {
+                cell.Style.SelectionBackColor = Color.DarkGoldenrod;
+                cell.Style.SelectionForeColor = Color.White;
+              }
+            }
+          }
+          else {
+            // turn bg green
+            foreach (DataGridViewRow row in FEEDER_AMP_GRID.Rows) {
+              foreach (DataGridViewCell cell in row.Cells) {
+                cell.Style.SelectionBackColor = Color.DarkCyan;
+                cell.Style.SelectionForeColor = Color.White;
+              }
+            }
           }
         }
       }
