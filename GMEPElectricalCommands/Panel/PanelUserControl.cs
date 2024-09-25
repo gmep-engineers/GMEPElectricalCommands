@@ -2340,9 +2340,11 @@ namespace ElectricalCommands {
       double phB = Convert.ToDouble(PHASE_SUM_GRID.Rows[0].Cells[1].Value ?? 0);
       double phC = 0;
       double sum = phA + phB;
+      int poles = 2;
       if (PHASE_SUM_GRID.ColumnCount > 2) {
         phC = Convert.ToDouble(PHASE_SUM_GRID.Rows[0].Cells[2].Value ?? 0);
         sum += phC;
+        poles = 3;
       }
       mainForm.UpdateLCLLML();
       
@@ -2388,7 +2390,7 @@ namespace ElectricalCommands {
             }
           }
           else {
-            feederAmps = Math.Round(sum / (lineVoltage * 3), 1);
+            feederAmps = Math.Round(sum / (lineVoltage * poles), 1);
             FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
           }
           if (feederAmps > busRating) {
