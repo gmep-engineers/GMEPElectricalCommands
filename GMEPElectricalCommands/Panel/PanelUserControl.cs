@@ -2267,6 +2267,16 @@ namespace ElectricalCommands {
       }
     }
 
+    private void BUS_RATING_INPUT_TEXTBOX_KeyUp(object sender, KeyEventArgs e) {
+      if (!Regex.IsMatch(BUS_RATING_INPUT.Text, @"^\d*\.?\d*$")) {
+        BUS_RATING_INPUT.BackColor = Color.Crimson;
+      }
+      else if (!String.IsNullOrEmpty(BUS_RATING_INPUT.Text)) {
+        BUS_RATING_INPUT.BackColor = Color.White;
+        UpdatePerCellValueChange();
+      }
+    }
+
     private async void PANEL_GRID_CellClick(object sender, DataGridViewCellEventArgs e) {
       if (e.RowIndex == -1) {
         return;

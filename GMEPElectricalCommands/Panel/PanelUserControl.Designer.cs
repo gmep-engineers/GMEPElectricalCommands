@@ -422,6 +422,7 @@
       this.BUS_RATING_INPUT.Name = "BUS_RATING_INPUT";
       this.BUS_RATING_INPUT.Size = new System.Drawing.Size(100, 20);
       this.BUS_RATING_INPUT.TabIndex = 148;
+      this.BUS_RATING_INPUT.KeyUp += new System.Windows.Forms.KeyEventHandler(this.BUS_RATING_INPUT_TEXTBOX_KeyUp);
       // 
       // LINE_VOLTAGE_COMBOBOX
       // 
