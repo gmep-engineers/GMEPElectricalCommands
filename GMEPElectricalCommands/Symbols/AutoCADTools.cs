@@ -3,16 +3,24 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+using DocumentFormat.OpenXml.Vml.Spreadsheet;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OfficeOpenXml.Drawing;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace ElectricalCommands {
 
   public class CADObjectCommands {
     public static double Scale { get; set; } = -1.0;
+
+    public static double Voltage { get; set; } = -1.0;
+    public static double MaxVoltageDropPercent { get; set; } = -1.0;
+    public static int Phase { get; set; } = -1;
 
     public static string Address = "";
 
@@ -517,6 +525,354 @@ namespace ElectricalCommands {
       }
     }
 
+    [CommandMethod("SETVOLTAGE")]
+    public void SETVOLTAGE() {
+      var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      var ed = doc.Editor;
+
+      var voltagePrompt = new PromptStringOptions(
+        "\nEnter the voltage: "
+      );
+      var voltageResult = ed.GetString(voltagePrompt);
+
+      if (voltageResult.Status == PromptStatus.OK) {
+        string voltageString = voltageResult.StringResult;
+        
+        if (
+          double.TryParse(voltageString, out double v)
+        ) {
+          Voltage = v;
+          ed.WriteMessage($"\nVoltage set to {Voltage}");
+        }
+        else {
+          ed.WriteMessage(
+            $"\nInvalid voltage."
+          );
+        }
+      }
+    }
+
+    [CommandMethod("SETMAXVOLTAGEDROPPERCENT")]
+    public void SETMAXVOLTAGEDROP() {
+      var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      var ed = doc.Editor;
+
+      var voltageDropPrompt = new PromptStringOptions(
+        "\nEnter the max voltage drop percent: "
+      );
+      var voltageDropResult = ed.GetString(voltageDropPrompt);
+
+      if (voltageDropResult.Status == PromptStatus.OK) {
+        string voltageDropString = voltageDropResult.StringResult;
+
+        if (
+          double.TryParse(voltageDropString, out double vd)
+        ) {
+          MaxVoltageDropPercent = vd;
+          ed.WriteMessage($"\nMax voltage drop set to {MaxVoltageDropPercent}");
+        }
+        else {
+          ed.WriteMessage(
+            $"\nInvalid voltage."
+          );
+        }
+      }
+    }
+
+    [CommandMethod("SETPHASE")]
+    public void SETPHASE() {
+      var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      var ed = doc.Editor;
+
+      var phasePrompt = new PromptStringOptions(
+        "\nEnter the phase: "
+      );
+      var phaseResult = ed.GetString(phasePrompt);
+
+      if (phaseResult.Status == PromptStatus.OK) {
+        string phaseString = phaseResult.StringResult;
+
+        if (
+          int.TryParse(phaseString, out int ph)
+        ) {
+          Phase = ph;
+          ed.WriteMessage($"\nPhase set to {Phase}");
+        }
+        else {
+          ed.WriteMessage(
+            $"\nInvalid phase."
+          );
+        }
+      }
+    }
+
+    public struct WireSpec {
+      public int parallelWires;
+      public string wireSize;
+      public double actualVoltageDrop;
+    }
+
+    public struct ConduitSpec {
+      public WireSpec wireSpec;
+      public string conduitSize;
+    }
+
+    private WireSpec GetWireSize(double amperage, double distance, double multiplier, double maxVoltageDropAllowed, int parallelWires = 1) {
+      int wireSizeIndex = 0;
+      double actualVoltageDrop = 600;
+      Dictionary<string, double> resistancePerFoot = new Dictionary<string, double>();
+      resistancePerFoot.Add("12", 0.0020500);
+      resistancePerFoot.Add("10", 0.0012900);
+      resistancePerFoot.Add("8", 0.0008090);
+      resistancePerFoot.Add("6", 0.0005100);
+      resistancePerFoot.Add("4", 0.0003210);
+      resistancePerFoot.Add("3", 0.0002540);
+      resistancePerFoot.Add("2", 0.0002010);
+      resistancePerFoot.Add("1", 0.0001600);
+      resistancePerFoot.Add("1/0", 0.0001270);
+      resistancePerFoot.Add("2/0", 0.0001010);
+      resistancePerFoot.Add("3/0", 0.0000797);
+      resistancePerFoot.Add("4/0", 0.0000626);
+      resistancePerFoot.Add("250 KCMIL", 0.0000535);
+      resistancePerFoot.Add("300 KCMIL", 0.0000446);
+      resistancePerFoot.Add("350 KCMIL", 0.0000382);
+      resistancePerFoot.Add("400 KCMIL", 0.0000331);
+      resistancePerFoot.Add("500 KCMIL", 0.0000265);
+      while (actualVoltageDrop > maxVoltageDropAllowed) {
+        double resistance = resistancePerFoot.ElementAt(wireSizeIndex).Value;
+        actualVoltageDrop = resistance / parallelWires * amperage * distance * multiplier;
+        if (actualVoltageDrop > maxVoltageDropAllowed) {
+          wireSizeIndex++;
+        }
+        if (wireSizeIndex == resistancePerFoot.Count && actualVoltageDrop > maxVoltageDropAllowed) {
+          wireSizeIndex = 0;
+          parallelWires++;
+        }
+      }
+      WireSpec wireSpec = new WireSpec();
+      wireSpec.parallelWires = parallelWires;
+      wireSpec.wireSize = resistancePerFoot.ElementAt(wireSizeIndex).Key;
+      wireSpec.actualVoltageDrop = actualVoltageDrop;
+      return wireSpec;
+    }
+
+    private ConduitSpec GetConduitAndWireSize(double loadAmperage, double breakerAmperage, double distance, double multiplier, double maxVoltageDropAllowed, int wires) {
+      WireSpec maxWireSpec = GetWireSize(breakerAmperage, distance, multiplier, maxVoltageDropAllowed);
+      WireSpec loadWireSpec = GetWireSize(loadAmperage, distance, multiplier, maxVoltageDropAllowed, maxWireSpec.parallelWires);
+      ConduitSpec spec = new ConduitSpec();
+      if (wires == 4) {
+        Dictionary<string, string> conduitSize4W = new Dictionary<string, string>();
+        conduitSize4W.Add("12", "3/4");
+        conduitSize4W.Add("10", "3/4");
+        conduitSize4W.Add("8", "3/4");
+        conduitSize4W.Add("6", "3/4");
+        conduitSize4W.Add("4", "1");
+        conduitSize4W.Add("3", "1-1/4");
+        conduitSize4W.Add("2", "1-1/4");
+        conduitSize4W.Add("1", "1-1/4");
+        conduitSize4W.Add("1/0", "1-1/2");
+        conduitSize4W.Add("2/0", "2");
+        conduitSize4W.Add("3/0", "2");
+        conduitSize4W.Add("4/0", "2");
+        conduitSize4W.Add("250 KCMIL", "2-1/2");
+        conduitSize4W.Add("300 KCMIL", "2-1/2");
+        conduitSize4W.Add("350 KCMIL", "3");
+        conduitSize4W.Add("400 KCMIL", "3");
+        conduitSize4W.Add("500 KCMIL", "3");
+        if (conduitSize4W.TryGetValue(maxWireSpec.wireSize, out string size)) {
+          spec.wireSpec = loadWireSpec;
+          spec.conduitSize = size;
+        }
+      }
+      else {
+        Dictionary<string, string> conduitSize3W = new Dictionary<string, string>();
+        conduitSize3W.Add("12", "3/4");
+        conduitSize3W.Add("10", "3/4");
+        conduitSize3W.Add("8", "3/4");
+        conduitSize3W.Add("6", "3/4");
+        conduitSize3W.Add("4", "1");
+        conduitSize3W.Add("3", "1");
+        conduitSize3W.Add("2", "1");
+        conduitSize3W.Add("1", "1-1/4");
+        conduitSize3W.Add("1/0", "1-1/4");
+        conduitSize3W.Add("2/0", "1-1/2");
+        conduitSize3W.Add("3/0", "1-1/2");
+        conduitSize3W.Add("4/0", "2");
+        conduitSize3W.Add("250 KCMIL", "2");
+        conduitSize3W.Add("300 KCMIL", "2");
+        conduitSize3W.Add("350 KCMIL", "2-1/2");
+        conduitSize3W.Add("400 KCMIL", "2-1/2");
+        conduitSize3W.Add("500 KCMIL", "3");
+        if (conduitSize3W.TryGetValue(maxWireSpec.wireSize, out string size)) {
+          spec.wireSpec = loadWireSpec;
+          spec.conduitSize = size;
+        }
+      }
+      return spec;
+    }
+
+    private string GetGroundingSize(int loadAmperage) {
+      string gndSize = "";
+      switch (loadAmperage) {
+        case var _ when loadAmperage <= 20:
+          gndSize = "12";
+          break;
+        case var _ when loadAmperage <= 30:
+          gndSize = "10";
+          break;
+        case var _ when loadAmperage <= 100:
+          gndSize = "8";
+          break;
+        case var _ when loadAmperage <= 200:
+          gndSize = "6";
+          break;
+        case var _ when loadAmperage <= 300:
+          gndSize = "4";
+          break;
+        case var _ when loadAmperage <= 400:
+          gndSize = "3";
+          break;
+        case var _ when loadAmperage <= 500:
+          gndSize = "2";
+          break;
+        case var _ when loadAmperage <= 600:
+          gndSize = "1";
+          break;
+        case var _ when loadAmperage <= 800:
+          gndSize = "1/0";
+          break;
+        case var _ when loadAmperage <= 1000:
+          gndSize = "2/0";
+          break;
+        case var _ when loadAmperage <= 1200:
+          gndSize = "3/0";
+          break;
+        case var _ when loadAmperage <= 1600:
+          gndSize = "4/0";
+          break;
+        case var _ when loadAmperage <= 2000:
+          gndSize = "250 KCMIL";
+          break;
+        case var _ when loadAmperage <= 2500:
+          gndSize = "350 KCMIL";
+          break;
+        case var _ when loadAmperage <= 3000:
+          gndSize = "400 KCMIL";
+          break;
+        case var _ when loadAmperage <= 4000:
+          gndSize = "500 KCMIL";
+          break;
+        case var _ when loadAmperage <= 5000:
+          gndSize = "700 KCMIL";
+          break;
+        case var _ when loadAmperage <= 6000:
+          gndSize = "800 KCMIL";
+          break;
+      }
+      return gndSize;
+    }
+
+    [CommandMethod("CND")]
+    public void CND() {
+      var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      var ed = doc.Editor;
+
+      var loadAmperagePrompt = new PromptStringOptions(
+        "\nEnter the load amperage: "
+      );
+      var loadAmperageResult = ed.GetString(loadAmperagePrompt);
+      int loadAmperage = 0;
+      if (loadAmperageResult.Status == PromptStatus.OK) {
+        string loadAmperageString = loadAmperageResult.StringResult;
+        if (
+          int.TryParse(loadAmperageString, out int l)
+        ) {
+          loadAmperage = l;
+          ed.WriteMessage($"\nLoad amperage set to {loadAmperage}");
+        }
+        else {
+          ed.WriteMessage(
+            $"\nInvalid load amperage."
+          );
+        }
+      }
+
+      var breakerSizePrompt = new PromptStringOptions(
+        "\nEnter the smallest breaker size: "
+      );
+      var breakerSizeResult = ed.GetString(breakerSizePrompt);
+      int breakerSize = 0;
+      if (breakerSizeResult.Status == PromptStatus.OK) {
+        string breakerSizeString = breakerSizeResult.StringResult;
+        if (
+          int.TryParse(breakerSizeString, out int s)
+        ) {
+          breakerSize = s;
+          ed.WriteMessage($"\nBreaker size set to {breakerSize}");
+        }
+        else {
+          ed.WriteMessage(
+            $"\nInvalid breakers size."
+          );
+        }
+      }
+
+      if (Voltage < 0) {
+        SETVOLTAGE();
+      }
+
+      if (MaxVoltageDropPercent < 0) {
+        SETMAXVOLTAGEDROP();
+      }
+
+      if (Phase < 0) {
+        SETPHASE();
+      }
+
+      double maxVoltageDropAllowed = Voltage * MaxVoltageDropPercent / 100;
+      double minVoltageDropAllowedAtLoad = Voltage * maxVoltageDropAllowed;
+      double multiplier = 2.0;
+      if (Phase == 3) {
+        multiplier = 1.732;
+      }
+      var feederLengthPrompt = new PromptStringOptions(
+        "\nEnter the feeder length in feet: "
+      );
+      double distance = 0;
+      var feederLengthResult = ed.GetString(feederLengthPrompt);
+      if (feederLengthResult.Status == PromptStatus.OK) {
+        string feederLengthString = feederLengthResult.StringResult;
+        if (
+          int.TryParse(feederLengthString, out int l)
+        ) {
+          distance = l;
+          ed.WriteMessage($"\nDistance set to {distance}");
+        }
+        else {
+          ed.WriteMessage(
+            $"\nInvalid distance."
+          );
+        }
+      }
+
+      int wires = 3;
+      if (Phase == 3) {
+        wires = 4;
+      }
+
+      ConduitSpec spec = GetConduitAndWireSize(loadAmperage, breakerSize, distance, multiplier, maxVoltageDropAllowed, wires);
+      string gndSize = GetGroundingSize(loadAmperage);
+      double voltageDropPercent = spec.wireSpec.actualVoltageDrop / Voltage * 100;
+      if (spec.wireSpec.parallelWires > 1) {
+        Console.WriteLine($"[{spec.wireSpec.parallelWires}]{spec.conduitSize}\" C. {wires}#{spec.wireSpec.wireSize} CU.");
+      }
+      else {
+        Console.WriteLine($"{spec.conduitSize}\" C. {wires}#{spec.wireSpec.wireSize} CU.");
+      }
+      Console.WriteLine($"PLUS 1#{gndSize} CU. GND.");
+      Console.WriteLine($"{distance}'; VD={Math.Round(voltageDropPercent, 1)}%");
+    }
+      
     [CommandMethod("HR")]
     public void HR() {
       Document doc = Autodesk
