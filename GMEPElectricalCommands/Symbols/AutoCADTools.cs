@@ -3,7 +3,11 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Drawing.Wordprocessing;
+using DocumentFormat.OpenXml.Presentation;
 using DocumentFormat.OpenXml.Vml.Spreadsheet;
+using Emgu.CV.Dnn;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OfficeOpenXml.Drawing;
@@ -653,11 +657,26 @@ namespace ElectricalCommands {
       wireSpec.parallelWires = parallelWires;
       wireSpec.wireSize = resistancePerFoot.ElementAt(wireSizeIndex).Key;
       wireSpec.actualVoltageDrop = actualVoltageDrop;
+      int maxWireAmpacity = GetMaxWireAmpacity(wireSpec.wireSize);
+      while (maxWireAmpacity < amperage / parallelWires) {
+        if (wireSizeIndex == resistancePerFoot.Count - 1) {
+          wireSizeIndex = 0;
+          parallelWires++;
+        }
+        else {
+          wireSizeIndex++;
+        }
+        wireSpec.wireSize = resistancePerFoot.ElementAt(wireSizeIndex).Key;
+        wireSpec.parallelWires = parallelWires;
+        double resistance = resistancePerFoot.ElementAt(wireSizeIndex).Value;
+        wireSpec.actualVoltageDrop = resistance / parallelWires * amperage * distance * multiplier;
+        maxWireAmpacity = GetMaxWireAmpacity(wireSpec.wireSize);
+      }
       return wireSpec;
     }
 
     private ConduitSpec GetConduitAndWireSize(double loadAmperage, double breakerAmperage, double distance, double multiplier, double maxVoltageDropAllowed, int wires) {
-      WireSpec maxWireSpec = GetWireSize(breakerAmperage, distance, multiplier, maxVoltageDropAllowed);
+      WireSpec maxWireSpec = GetWireSize(breakerAmperage * 0.8, distance, multiplier, maxVoltageDropAllowed);
       WireSpec loadWireSpec = GetWireSize(loadAmperage, distance, multiplier, maxVoltageDropAllowed, maxWireSpec.parallelWires);
       ConduitSpec spec = new ConduitSpec();
       if (wires == 4) {
@@ -772,10 +791,39 @@ namespace ElectricalCommands {
       return gndSize;
     }
 
+    int GetMaxWireAmpacity(string wireSize) {
+      switch (wireSize) {
+        case "12": return 25;
+        case "10": return 30;
+        case "8": return 40;
+        case "6": return 55;
+        case "4": return 70;
+        case "3": return 100;
+        case "2": return 115;
+        case "1": return 130;
+        case "1/0": return 150;
+        case "2/0": return 175;
+        case "3/0": return 200;
+        case "4/0": return 230;
+        case "250 KCMIL": return 255;
+        case "300 KCMIL": return 285;
+        case "350 KCMIL": return 310;
+        case "400 KCMIL": return 335;
+        default: return 380;
+      }
+    }
+
     [CommandMethod("CND")]
     public void CND() {
       var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       var ed = doc.Editor;
+      Document acDoc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database acCurDb = acDoc.Database;
 
       var loadAmperagePrompt = new PromptStringOptions(
         "\nEnter the load amperage: "
@@ -863,14 +911,79 @@ namespace ElectricalCommands {
       ConduitSpec spec = GetConduitAndWireSize(loadAmperage, breakerSize, distance, multiplier, maxVoltageDropAllowed, wires);
       string gndSize = GetGroundingSize(loadAmperage);
       double voltageDropPercent = spec.wireSpec.actualVoltageDrop / Voltage * 100;
+      string firstLine;
+      string secondLine;
+      string thirdLine;
       if (spec.wireSpec.parallelWires > 1) {
-        Console.WriteLine($"[{spec.wireSpec.parallelWires}]{spec.conduitSize}\" C. {wires}#{spec.wireSpec.wireSize} CU.");
+        firstLine = $"[{spec.wireSpec.parallelWires}]{spec.conduitSize}\" C.; {wires}#{spec.wireSpec.wireSize} CU.";
       }
       else {
-        Console.WriteLine($"{spec.conduitSize}\" C. {wires}#{spec.wireSpec.wireSize} CU.");
+        firstLine = $"{spec.conduitSize}\" C.; {wires}#{spec.wireSpec.wireSize} CU.";
       }
-      Console.WriteLine($"PLUS 1#{gndSize} CU. GND.");
-      Console.WriteLine($"{distance}'; VD={Math.Round(voltageDropPercent, 1)}%");
+      secondLine = $"PLUS 1#{gndSize} CU. GND.";
+      thirdLine = $"{distance}'; VD={Math.Round(voltageDropPercent, 1)}%";
+      // Prompt for a point
+      PromptPointOptions ppo = new PromptPointOptions("\nSelect start point:");
+      PromptPointResult ppr = ed.GetPoint(ppo);
+      if (ppr.Status == PromptStatus.OK) {
+        using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction()) {
+          BlockTable acBlkTbl =
+            acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+          BlockTableRecord acBlkTblRec =
+            acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite)
+            as BlockTableRecord;
+          var textStyleId = GeneralCommands.GetTextStyleId("gmep");
+          var textStyle = (TextStyleTableRecord)acTrans.GetObject(textStyleId, OpenMode.ForRead);
+
+          var firstLineText = new DBText {
+            TextString = firstLine,
+            Position = new Point3d(ppr.Value.X - 0.20, ppr.Value.Y, 0),
+            Height = 0.1,
+            WidthFactor = 0.85,
+            Layer = "E-TEXT",
+            TextStyleId = textStyleId,
+            HorizontalMode = TextHorizontalMode.TextLeft,
+            VerticalMode = TextVerticalMode.TextVerticalMid,
+            Justify = AttachmentPoint.BaseLeft,
+            Rotation = 1.5708
+          };
+          var secondLineText = new DBText {
+            TextString = secondLine,
+            Position = new Point3d(ppr.Value.X - 0.04, ppr.Value.Y, 0),
+            Height = 0.1,
+            WidthFactor = 0.85,
+            Layer = "E-TEXT",
+            TextStyleId = textStyleId,
+            HorizontalMode = TextHorizontalMode.TextLeft,
+            VerticalMode = TextVerticalMode.TextVerticalMid,
+            Justify = AttachmentPoint.BaseLeft,
+            Rotation = 1.5708
+          };
+          var thirdLineText = new DBText {
+            TextString = thirdLine,
+            Position = new Point3d(ppr.Value.X + 0.13,ppr.Value.Y,0),
+            Height = 0.1,
+            WidthFactor = 0.85,
+            Layer = "E-TEXT",
+            TextStyleId = textStyleId,
+            HorizontalMode = TextHorizontalMode.TextLeft,
+            VerticalMode = TextVerticalMode.TextVerticalMid,
+            Justify = AttachmentPoint.BaseLeft,
+            Rotation = 1.5708
+          };
+
+          var currentSpace = (BlockTableRecord)
+              acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite);
+          currentSpace.AppendEntity(firstLineText);
+          currentSpace.AppendEntity(secondLineText);
+          currentSpace.AppendEntity(thirdLineText);
+          acTrans.AddNewlyCreatedDBObject(firstLineText, true);
+          acTrans.AddNewlyCreatedDBObject(secondLineText, true);
+          acTrans.AddNewlyCreatedDBObject(thirdLineText, true);
+
+          acTrans.Commit();
+        }
+      }
     }
       
     [CommandMethod("HR")]
