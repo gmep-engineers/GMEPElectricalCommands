@@ -1927,7 +1927,7 @@ namespace ElectricalCommands {
       text.Position = position;
     }
 
-    private static ObjectId GetTextStyleId(string styleName) {
+    public static ObjectId GetTextStyleId(string styleName) {
       var (doc, db, _) = GeneralCommands.GetGlobals();
       var textStyleTable = (TextStyleTable)db.TextStyleTableId.GetObject(OpenMode.ForRead);
 
