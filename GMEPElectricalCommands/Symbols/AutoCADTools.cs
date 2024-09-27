@@ -16,6 +16,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using TriangleNet.Tools;
 
 namespace ElectricalCommands {
 
@@ -27,6 +28,8 @@ namespace ElectricalCommands {
     public static int Phase { get; set; } = -1;
 
     public static string Address = "";
+
+    public static bool HorizontalConduit = false;
 
     public static Point3d PanelLocation { get; set; } = new Point3d(0, 0, 0);
 
@@ -675,8 +678,8 @@ namespace ElectricalCommands {
       return wireSpec;
     }
 
-    private ConduitSpec GetConduitAndWireSize(double loadAmperage, double breakerAmperage, double distance, double multiplier, double maxVoltageDropAllowed, int wires) {
-      WireSpec maxWireSpec = GetWireSize(breakerAmperage * 0.8, distance, multiplier, maxVoltageDropAllowed);
+    private ConduitSpec GetConduitAndWireSize(double loadAmperage, double busAmperage, double distance, double multiplier, double maxVoltageDropAllowed, int wires) {
+      WireSpec maxWireSpec = GetWireSize(busAmperage * 0.8, distance, multiplier, maxVoltageDropAllowed);
       WireSpec loadWireSpec = GetWireSize(loadAmperage, distance, multiplier, maxVoltageDropAllowed, maxWireSpec.parallelWires);
       ConduitSpec spec = new ConduitSpec();
       if (wires == 4) {
@@ -813,8 +816,21 @@ namespace ElectricalCommands {
       }
     }
 
+    [CommandMethod("HCND")]
+    public void HCND() {
+      HorizontalConduit = true;
+      CND();
+    }
+
+    [CommandMethod("VCND")]
+    public void VCND() {
+      HorizontalConduit = false;
+      CND();
+    }
+
     [CommandMethod("CND")]
     public void CND() {
+      bool horizontal = HorizontalConduit;
       var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       var ed = doc.Editor;
       Document acDoc = Autodesk
@@ -846,21 +862,21 @@ namespace ElectricalCommands {
       }
 
       var breakerSizePrompt = new PromptStringOptions(
-        "\nEnter the smallest breaker size: "
+        "\nEnter the destination's bus size: "
       );
-      var breakerSizeResult = ed.GetString(breakerSizePrompt);
-      int breakerSize = 0;
-      if (breakerSizeResult.Status == PromptStatus.OK) {
-        string breakerSizeString = breakerSizeResult.StringResult;
+      var busSizeResult = ed.GetString(breakerSizePrompt);
+      int busSize = 0;
+      if (busSizeResult.Status == PromptStatus.OK) {
+        string breakerSizeString = busSizeResult.StringResult;
         if (
           int.TryParse(breakerSizeString, out int s)
         ) {
-          breakerSize = s;
-          ed.WriteMessage($"\nBreaker size set to {breakerSize}");
+          busSize = s;
+          ed.WriteMessage($"\nBus size set to {busSize}");
         }
         else {
           ed.WriteMessage(
-            $"\nInvalid breakers size."
+            $"\nInvalid bus size."
           );
         }
       }
@@ -903,25 +919,29 @@ namespace ElectricalCommands {
         }
       }
 
-      int wires = 3;
+      int numWires = 3;
       if (Phase == 3) {
-        wires = 4;
+        numWires = 4;
       }
 
-      ConduitSpec spec = GetConduitAndWireSize(loadAmperage, breakerSize, distance, multiplier, maxVoltageDropAllowed, wires);
+      ConduitSpec spec = GetConduitAndWireSize(loadAmperage, busSize, distance, multiplier, maxVoltageDropAllowed, numWires);
       string gndSize = GetGroundingSize(loadAmperage);
       double voltageDropPercent = spec.wireSpec.actualVoltageDrop / Voltage * 100;
       string firstLine;
       string secondLine;
       string thirdLine;
       if (spec.wireSpec.parallelWires > 1) {
-        firstLine = $"[{spec.wireSpec.parallelWires}]{spec.conduitSize}\" C.; {wires}#{spec.wireSpec.wireSize} CU.";
+        firstLine = $"[{spec.wireSpec.parallelWires}]{spec.conduitSize}\" C.; {numWires}#{spec.wireSpec.wireSize} CU.";
       }
       else {
-        firstLine = $"{spec.conduitSize}\" C.; {wires}#{spec.wireSpec.wireSize} CU.";
+        firstLine = $"{spec.conduitSize}\" C.; {numWires}#{spec.wireSpec.wireSize} CU.";
       }
       secondLine = $"PLUS 1#{gndSize} CU. GND.";
       thirdLine = $"{distance}'; VD={Math.Round(voltageDropPercent, 1)}%";
+
+      string supplemental1 = $"C. SIZED FOR {busSize}A";
+      string supplemental2 = $"W. SIZED FOR {loadAmperage}A";
+      string supplemental3 = $"@{Voltage}V-{Phase}\u0081-{numWires}W";
       // Prompt for a point
       PromptPointOptions ppo = new PromptPointOptions("\nSelect start point:");
       PromptPointResult ppr = ed.GetPoint(ppo);
@@ -934,10 +954,10 @@ namespace ElectricalCommands {
             as BlockTableRecord;
           var textStyleId = GeneralCommands.GetTextStyleId("gmep");
           var textStyle = (TextStyleTableRecord)acTrans.GetObject(textStyleId, OpenMode.ForRead);
-
+          List<DBText> allTexts = new List<DBText>();
           var firstLineText = new DBText {
             TextString = firstLine,
-            Position = new Point3d(ppr.Value.X - 0.20, ppr.Value.Y, 0),
+            Position = horizontal? new Point3d(ppr.Value.X, ppr.Value.Y + 0.20, 0) : new Point3d(ppr.Value.X - 0.20, ppr.Value.Y, 0),
             Height = 0.1,
             WidthFactor = 0.85,
             Layer = "E-TEXT",
@@ -945,11 +965,12 @@ namespace ElectricalCommands {
             HorizontalMode = TextHorizontalMode.TextLeft,
             VerticalMode = TextVerticalMode.TextVerticalMid,
             Justify = AttachmentPoint.BaseLeft,
-            Rotation = 1.5708
+            Rotation = horizontal ? 0 : 1.5708
           };
+          allTexts.Add(firstLineText);
           var secondLineText = new DBText {
             TextString = secondLine,
-            Position = new Point3d(ppr.Value.X - 0.04, ppr.Value.Y, 0),
+            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y + 0.04, 0) : new Point3d(ppr.Value.X - 0.04, ppr.Value.Y, 0),
             Height = 0.1,
             WidthFactor = 0.85,
             Layer = "E-TEXT",
@@ -957,11 +978,12 @@ namespace ElectricalCommands {
             HorizontalMode = TextHorizontalMode.TextLeft,
             VerticalMode = TextVerticalMode.TextVerticalMid,
             Justify = AttachmentPoint.BaseLeft,
-            Rotation = 1.5708
+            Rotation = horizontal ? 0 : 1.5708
           };
+          allTexts.Add(secondLineText);
           var thirdLineText = new DBText {
             TextString = thirdLine,
-            Position = new Point3d(ppr.Value.X + 0.13,ppr.Value.Y,0),
+            Position = horizontal? new Point3d(ppr.Value.X, ppr.Value.Y - 0.13, 0) : new Point3d(ppr.Value.X + 0.13,ppr.Value.Y,0),
             Height = 0.1,
             WidthFactor = 0.85,
             Layer = "E-TEXT",
@@ -969,18 +991,55 @@ namespace ElectricalCommands {
             HorizontalMode = TextHorizontalMode.TextLeft,
             VerticalMode = TextVerticalMode.TextVerticalMid,
             Justify = AttachmentPoint.BaseLeft,
-            Rotation = 1.5708
+            Rotation = horizontal ? 0 : 1.5708
           };
+          allTexts.Add(thirdLineText);
+          var supplementalText1 = new DBText {
+            TextString = supplemental1,
+            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y + 0.68, 0) : new Point3d(ppr.Value.X - 0.68, ppr.Value.Y, 0),
+            Height = 0.1,
+            WidthFactor = 0.85,
+            Layer = "DEFPOINTS",
+            TextStyleId = textStyleId,
+            HorizontalMode = TextHorizontalMode.TextLeft,
+            VerticalMode = TextVerticalMode.TextVerticalMid,
+            Justify = AttachmentPoint.BaseLeft,
+            Rotation = horizontal ? 0 : 1.5708
+          };
+          allTexts.Add(supplementalText1);
+          var supplementalText2 = new DBText {
+            TextString = supplemental2,
+            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y + 0.52, 0) : new Point3d(ppr.Value.X - 0.52, ppr.Value.Y, 0),
+            Height = 0.1,
+            WidthFactor = 0.85,
+            Layer = "DEFPOINTS",
+            TextStyleId = textStyleId,
+            HorizontalMode = TextHorizontalMode.TextLeft,
+            VerticalMode = TextVerticalMode.TextVerticalMid,
+            Justify = AttachmentPoint.BaseLeft,
+            Rotation = horizontal ? 0 : 1.5708
+          };
+          allTexts.Add(supplementalText2);
+          var supplementalText3 = new DBText {
+            TextString = supplemental3,
+            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y + 0.36, 0) : new Point3d(ppr.Value.X - 0.36, ppr.Value.Y, 0),
+            Height = 0.1,
+            WidthFactor = 0.85,
+            Layer = "DEFPOINTS",
+            TextStyleId = textStyleId,
+            HorizontalMode = TextHorizontalMode.TextLeft,
+            VerticalMode = TextVerticalMode.TextVerticalMid,
+            Justify = AttachmentPoint.BaseLeft,
+            Rotation = horizontal? 0 : 1.5708
+          };
+          allTexts.Add(supplementalText3);
 
           var currentSpace = (BlockTableRecord)
               acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite);
-          currentSpace.AppendEntity(firstLineText);
-          currentSpace.AppendEntity(secondLineText);
-          currentSpace.AppendEntity(thirdLineText);
-          acTrans.AddNewlyCreatedDBObject(firstLineText, true);
-          acTrans.AddNewlyCreatedDBObject(secondLineText, true);
-          acTrans.AddNewlyCreatedDBObject(thirdLineText, true);
-
+          foreach (DBText text in allTexts) {
+            currentSpace.AppendEntity(text);
+            acTrans.AddNewlyCreatedDBObject(text, true);
+          }
           acTrans.Commit();
         }
       }
