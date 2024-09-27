@@ -783,8 +783,9 @@ namespace ElectricalCommands {
       return spec;
     }
 
-    private string GetGroundingSize(int loadAmperage) {
+    private string GetGroundingSize(double loadAmperage) {
       string gndSize = "";
+      loadAmperage = Math.Round(loadAmperage, 0);
       switch (loadAmperage) {
         case var _ when loadAmperage <= 20:
           gndSize = "12";
@@ -894,13 +895,13 @@ namespace ElectricalCommands {
       var loadAmperagePrompt = new PromptStringOptions(
         "\nEnter the load amperage: "
       );
-      int loadAmperage = 0;
+      double loadAmperage = 0;
       var loadAmperageResult = ed.GetString(loadAmperagePrompt);
       while (loadAmperage <= 0) {
         if (loadAmperageResult.Status == PromptStatus.OK) {
           string loadAmperageString = loadAmperageResult.StringResult;
           if (
-            int.TryParse(loadAmperageString, out int l)
+            double.TryParse(loadAmperageString, out double l)
           ) {
             loadAmperage = l;
             ed.WriteMessage($"\nLoad amperage set to {loadAmperage}");
@@ -1008,7 +1009,7 @@ namespace ElectricalCommands {
       thirdLine = $"{distance}'; VD={Math.Round(voltageDropPercent, 1)}%";
 
       string supplemental1 = $"C. SIZED FOR {mocp}A";
-      string supplemental2 = $"W. SIZED FOR {loadAmperage}A";
+      string supplemental2 = $"W. SIZED FOR {Math.Round(loadAmperage,0)}A";
       string supplemental3 = $"@{Voltage}V-{Phase}\u0081-{numWires}W";
       // Prompt for a point
       PromptPointOptions ppo = new PromptPointOptions("\nSelect start point:");
