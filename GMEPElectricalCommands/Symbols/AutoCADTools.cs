@@ -3,10 +3,6 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
-using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.Drawing.Wordprocessing;
-using DocumentFormat.OpenXml.Presentation;
-using DocumentFormat.OpenXml.Vml.Spreadsheet;
 using Emgu.CV.Dnn;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -567,7 +563,7 @@ namespace ElectricalCommands {
     }
 
     [CommandMethod("SETVOLTAGE")]
-    public void SETVOLTAGE() {
+    public bool SETVOLTAGE() {
       Voltage = 0;
       var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       var ed = doc.Editor;
@@ -593,11 +589,15 @@ namespace ElectricalCommands {
             voltageResult = ed.GetString(voltagePrompt);
           }
         }
+        else {
+          return false;
+        }
       }
+      return true;
     }
 
     [CommandMethod("SETMAXVOLTAGEDROPPERCENT")]
-    public void SETMAXVOLTAGEDROP() {
+    public bool SETMAXVOLTAGEDROP() {
       MaxVoltageDropPercent = 0;
       var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       var ed = doc.Editor;
@@ -623,11 +623,15 @@ namespace ElectricalCommands {
             voltageDropResult = ed.GetString(voltageDropPrompt);
           }
         }
+        else {
+          return false;
+        }
       }
+      return true;
     }
 
     [CommandMethod("SETPHASE")]
-    public void SETPHASE() {
+    public bool SETPHASE() {
       Phase = 0;
       var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       var ed = doc.Editor;
@@ -652,7 +656,11 @@ namespace ElectricalCommands {
             phaseResult = ed.GetString(phasePrompt);
           }
         }
+        else {
+          return false;
+        }
       }
+      return true;
     }
 
     public struct WireSpec {
@@ -904,6 +912,9 @@ namespace ElectricalCommands {
             loadAmperageResult = ed.GetString(loadAmperagePrompt);
           }
         }
+        else {
+          return;
+        }
       }
       
       var mocpPrompt = new PromptStringOptions(
@@ -927,18 +938,21 @@ namespace ElectricalCommands {
             mocpResult = ed.GetString(mocpPrompt);
           }
         }
+        else {
+          return;
+        }
       }
 
-      if (Voltage < 0) {
-        SETVOLTAGE();
+      if (Voltage < 0 && !SETVOLTAGE()) {
+        return;
       }
 
-      if (MaxVoltageDropPercent < 0) {
-        SETMAXVOLTAGEDROP();
+      if (MaxVoltageDropPercent < 0 && !SETMAXVOLTAGEDROP()) {
+        return;
       }
 
-      if (Phase < 0) {
-        SETPHASE();
+      if (Phase < 0 && !SETPHASE()) {
+        return;
       }
 
       double maxVoltageDropAllowed = Voltage * MaxVoltageDropPercent / 100;
@@ -967,6 +981,9 @@ namespace ElectricalCommands {
             );
             feederLengthResult = ed.GetString(feederLengthPrompt);
           }
+        }
+        else {
+          return;
         }
       }
 
