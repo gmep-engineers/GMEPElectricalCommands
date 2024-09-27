@@ -172,7 +172,7 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="Triangle">
-      <HintPath>..\..\Triangle.NET\src\Triangle\bin\Release\netstandard2.0\Triangle.dll</HintPath>
+      <HintPath>netstandard2.0\Triangle.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
@@ -685,7 +685,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="3rdPartyDeps\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>"C:\Program Files\Autodesk\AutoCAD 2024\acad.exe" /product ACAD /language "en-US"</PostBuildEvent>
