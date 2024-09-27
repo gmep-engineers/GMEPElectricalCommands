@@ -99,7 +99,7 @@
       <HintPath>C:\Program Files\Autodesk\AutoCAD 2024\AcMPolygonMGD.dll</HintPath>
     </Reference>
     <Reference Include="AutoCADCommands">
-      <HintPath>..\..\AutoCADCodePack\bin\Release\r23\AutoCADCommands.dll</HintPath>
+      <HintPath>AutoCADCodePack\AutoCADCommands.dll</HintPath>
     </Reference>
     <Reference Include="DocumentFormat.OpenXml, Version=3.1.0.0, Culture=neutral, PublicKeyToken=8fb06cb64d019a17, processorArchitecture=MSIL">
       <HintPath>..\packages\DocumentFormat.OpenXml.3.1.0\lib\net46\DocumentFormat.OpenXml.dll</HintPath>
@@ -172,7 +172,7 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="Triangle">
-      <HintPath>netstandard2.0\Triangle.dll</HintPath>
+      <HintPath>Triangle.NET\Triangle.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
