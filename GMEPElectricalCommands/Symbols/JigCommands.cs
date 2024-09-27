@@ -13,52 +13,19 @@ using Autodesk.AutoCAD.Runtime;
 namespace ElectricalCommands
 {
   public class SpoonShapeCommands {
-    public static bool IsInModel() {
-      if (Application.DocumentManager.MdiActiveDocument.Database.TileMode)
-        return true;
-      else
-        return false;
-    }
-
-    public static bool IsInLayout() {
-      return !IsInModel();
-    }
-
-    public static bool IsInLayoutPaper() {
-      Document doc = Application.DocumentManager.MdiActiveDocument;
-      Database db = doc.Database;
-      Editor ed = doc.Editor;
-
-      if (db.TileMode)
-        return false;
-      else {
-        if (db.PaperSpaceVportId == ObjectId.Null)
-          return false;
-        else if (ed.CurrentViewportObjectId == ObjectId.Null)
-          return false;
-        else if (ed.CurrentViewportObjectId == db.PaperSpaceVportId)
-          return true;
-        else
-          return false;
-      }
-    }
-
-    public static bool IsInLayoutViewport() {
-      return IsInLayout() && !IsInLayoutPaper();
-    }
-
+    
     [CommandMethod("SP")]
     public void SP() {
       double scale = 12;
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
-      if (CADObjectCommands.Scale <= 0 && (IsInModel() || IsInLayoutViewport()))
+      if (CADObjectCommands.Scale <= 0 && (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport()))
       {
         CADObjectCommands.SetScale();
         if (CADObjectCommands.Scale <= 0)
           return;
       }
-      if (IsInModel() || IsInLayoutViewport()) {
+      if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport()) {
         scale = CADObjectCommands.Scale;
       }
 

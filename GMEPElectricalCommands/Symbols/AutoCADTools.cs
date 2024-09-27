@@ -33,6 +33,40 @@ namespace ElectricalCommands {
 
     public static Point3d PanelLocation { get; set; } = new Point3d(0, 0, 0);
 
+    public static bool IsInModel() {
+      if (Application.DocumentManager.MdiActiveDocument.Database.TileMode)
+        return true;
+      else
+        return false;
+    }
+
+    public static bool IsInLayout() {
+      return !IsInModel();
+    }
+
+    public static bool IsInLayoutPaper() {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+
+      if (db.TileMode)
+        return false;
+      else {
+        if (db.PaperSpaceVportId == ObjectId.Null)
+          return false;
+        else if (ed.CurrentViewportObjectId == ObjectId.Null)
+          return false;
+        else if (ed.CurrentViewportObjectId == db.PaperSpaceVportId)
+          return true;
+        else
+          return false;
+      }
+    }
+
+    public static bool IsInLayoutViewport() {
+      return IsInLayout() && !IsInLayoutPaper();
+    }
+
     [CommandMethod("StoreBlockData")]
     public void StoreBlockData() {
       if (Scale == -1.0) {
@@ -534,6 +568,7 @@ namespace ElectricalCommands {
 
     [CommandMethod("SETVOLTAGE")]
     public void SETVOLTAGE() {
+      Voltage = 0;
       var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       var ed = doc.Editor;
 
@@ -541,26 +576,29 @@ namespace ElectricalCommands {
         "\nEnter the voltage: "
       );
       var voltageResult = ed.GetString(voltagePrompt);
-
-      if (voltageResult.Status == PromptStatus.OK) {
-        string voltageString = voltageResult.StringResult;
-        
-        if (
-          double.TryParse(voltageString, out double v)
-        ) {
-          Voltage = v;
-          ed.WriteMessage($"\nVoltage set to {Voltage}");
-        }
-        else {
-          ed.WriteMessage(
-            $"\nInvalid voltage."
-          );
+      string validVoltages = "115;120;208;230;240;277;460;480";
+      while (Voltage <= 0) {
+        if (voltageResult.Status == PromptStatus.OK) {
+          string voltageString = voltageResult.StringResult;
+          if (
+            validVoltages.Contains(voltageString) && double.TryParse(voltageString, out double v)
+          ) {
+            Voltage = v;
+            ed.WriteMessage($"\nVoltage set to {Voltage}");
+          }
+          else {
+            ed.WriteMessage(
+              $"\nInvalid voltage."
+            );
+            voltageResult = ed.GetString(voltagePrompt);
+          }
         }
       }
     }
 
     [CommandMethod("SETMAXVOLTAGEDROPPERCENT")]
     public void SETMAXVOLTAGEDROP() {
+      MaxVoltageDropPercent = 0;
       var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       var ed = doc.Editor;
 
@@ -568,26 +606,29 @@ namespace ElectricalCommands {
         "\nEnter the max voltage drop percent: "
       );
       var voltageDropResult = ed.GetString(voltageDropPrompt);
+      while (MaxVoltageDropPercent <= 0) {
+        if (voltageDropResult.Status == PromptStatus.OK) {
+          string voltageDropString = voltageDropResult.StringResult;
 
-      if (voltageDropResult.Status == PromptStatus.OK) {
-        string voltageDropString = voltageDropResult.StringResult;
-
-        if (
-          double.TryParse(voltageDropString, out double vd)
-        ) {
-          MaxVoltageDropPercent = vd;
-          ed.WriteMessage($"\nMax voltage drop set to {MaxVoltageDropPercent}");
-        }
-        else {
-          ed.WriteMessage(
-            $"\nInvalid voltage."
-          );
+          if (
+            double.TryParse(voltageDropString, out double vd)
+          ) {
+            MaxVoltageDropPercent = vd;
+            ed.WriteMessage($"\nMax voltage drop set to {MaxVoltageDropPercent}");
+          }
+          else {
+            ed.WriteMessage(
+              $"\nInvalid percent."
+            );
+            voltageDropResult = ed.GetString(voltageDropPrompt);
+          }
         }
       }
     }
 
     [CommandMethod("SETPHASE")]
     public void SETPHASE() {
+      Phase = 0;
       var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       var ed = doc.Editor;
 
@@ -595,20 +636,21 @@ namespace ElectricalCommands {
         "\nEnter the phase: "
       );
       var phaseResult = ed.GetString(phasePrompt);
-
-      if (phaseResult.Status == PromptStatus.OK) {
-        string phaseString = phaseResult.StringResult;
-
-        if (
-          int.TryParse(phaseString, out int ph)
-        ) {
-          Phase = ph;
-          ed.WriteMessage($"\nPhase set to {Phase}");
-        }
-        else {
-          ed.WriteMessage(
-            $"\nInvalid phase."
-          );
+      while (Phase <= 0) {
+        if (phaseResult.Status == PromptStatus.OK) {
+          string phaseString = phaseResult.StringResult;
+          if (
+            (phaseString == "1" || phaseString == "3") && int.TryParse(phaseString, out int ph)
+          ) {
+            Phase = ph;
+            ed.WriteMessage($"\nPhase set to {Phase}");
+          }
+          else {
+            ed.WriteMessage(
+              $"\nInvalid phase."
+            );
+            phaseResult = ed.GetString(phasePrompt);
+          }
         }
       }
     }
@@ -660,8 +702,8 @@ namespace ElectricalCommands {
       wireSpec.parallelWires = parallelWires;
       wireSpec.wireSize = resistancePerFoot.ElementAt(wireSizeIndex).Key;
       wireSpec.actualVoltageDrop = actualVoltageDrop;
-      int maxWireAmpacity = GetMaxWireAmpacity(wireSpec.wireSize);
-      while (maxWireAmpacity < amperage / parallelWires) {
+      double maxWireAmpacity = GetMaxWireAmpacity(wireSpec.wireSize);
+      while (maxWireAmpacity < Math.Round(amperage / parallelWires, 0)) {
         if (wireSizeIndex == resistancePerFoot.Count - 1) {
           wireSizeIndex = 0;
           parallelWires++;
@@ -679,7 +721,7 @@ namespace ElectricalCommands {
     }
 
     private ConduitSpec GetConduitAndWireSize(double loadAmperage, double busAmperage, double distance, double multiplier, double maxVoltageDropAllowed, int wires) {
-      WireSpec maxWireSpec = GetWireSize(busAmperage * 0.8, distance, multiplier, maxVoltageDropAllowed);
+      WireSpec maxWireSpec = GetWireSize(busAmperage, distance, multiplier, maxVoltageDropAllowed);
       WireSpec loadWireSpec = GetWireSize(loadAmperage, distance, multiplier, maxVoltageDropAllowed, maxWireSpec.parallelWires);
       ConduitSpec spec = new ConduitSpec();
       if (wires == 4) {
@@ -794,7 +836,7 @@ namespace ElectricalCommands {
       return gndSize;
     }
 
-    int GetMaxWireAmpacity(string wireSize) {
+    double GetMaxWireAmpacity(string wireSize) {
       switch (wireSize) {
         case "12": return 25;
         case "10": return 30;
@@ -844,40 +886,46 @@ namespace ElectricalCommands {
       var loadAmperagePrompt = new PromptStringOptions(
         "\nEnter the load amperage: "
       );
-      var loadAmperageResult = ed.GetString(loadAmperagePrompt);
       int loadAmperage = 0;
-      if (loadAmperageResult.Status == PromptStatus.OK) {
-        string loadAmperageString = loadAmperageResult.StringResult;
-        if (
-          int.TryParse(loadAmperageString, out int l)
-        ) {
-          loadAmperage = l;
-          ed.WriteMessage($"\nLoad amperage set to {loadAmperage}");
-        }
-        else {
-          ed.WriteMessage(
-            $"\nInvalid load amperage."
-          );
+      var loadAmperageResult = ed.GetString(loadAmperagePrompt);
+      while (loadAmperage <= 0) {
+        if (loadAmperageResult.Status == PromptStatus.OK) {
+          string loadAmperageString = loadAmperageResult.StringResult;
+          if (
+            int.TryParse(loadAmperageString, out int l)
+          ) {
+            loadAmperage = l;
+            ed.WriteMessage($"\nLoad amperage set to {loadAmperage}");
+          }
+          else {
+            ed.WriteMessage(
+              $"\nInvalid load amperage."
+            );
+            loadAmperageResult = ed.GetString(loadAmperagePrompt);
+          }
         }
       }
-
-      var breakerSizePrompt = new PromptStringOptions(
-        "\nEnter the destination's bus size: "
+      
+      var mocpPrompt = new PromptStringOptions(
+        "\nEnter the MOCP: "
       );
-      var busSizeResult = ed.GetString(breakerSizePrompt);
-      int busSize = 0;
-      if (busSizeResult.Status == PromptStatus.OK) {
-        string breakerSizeString = busSizeResult.StringResult;
-        if (
-          int.TryParse(breakerSizeString, out int s)
-        ) {
-          busSize = s;
-          ed.WriteMessage($"\nBus size set to {busSize}");
-        }
-        else {
-          ed.WriteMessage(
-            $"\nInvalid bus size."
-          );
+      var mocpResult = ed.GetString(mocpPrompt);
+      int mocp = 0;
+      while (mocp <= 0) {
+        if (mocpResult.Status == PromptStatus.OK) {
+          string breakerSizeString = mocpResult.StringResult;
+          if (
+            int.TryParse(breakerSizeString, out int s)
+          ) {
+            mocp = s;
+            ed.WriteMessage($"\nMOCP to {mocp}");
+          }
+          else {
+            ed.WriteMessage(
+              $"\nInvalid MOCP."
+            );
+            mocpResult = ed.GetString(mocpPrompt);
+          }
         }
       }
 
@@ -904,18 +952,21 @@ namespace ElectricalCommands {
       );
       double distance = 0;
       var feederLengthResult = ed.GetString(feederLengthPrompt);
-      if (feederLengthResult.Status == PromptStatus.OK) {
-        string feederLengthString = feederLengthResult.StringResult;
-        if (
-          int.TryParse(feederLengthString, out int l)
-        ) {
-          distance = l;
-          ed.WriteMessage($"\nDistance set to {distance}");
-        }
-        else {
-          ed.WriteMessage(
-            $"\nInvalid distance."
-          );
+      while (distance <= 0) {
+        if (feederLengthResult.Status == PromptStatus.OK) {
+          string feederLengthString = feederLengthResult.StringResult;
+          if (
+            int.TryParse(feederLengthString, out int l)
+          ) {
+            distance = l;
+            ed.WriteMessage($"\nDistance set to {distance}");
+          }
+          else {
+            ed.WriteMessage(
+              $"\nInvalid distance."
+            );
+            feederLengthResult = ed.GetString(feederLengthPrompt);
+          }
         }
       }
 
@@ -924,7 +975,7 @@ namespace ElectricalCommands {
         numWires = 4;
       }
 
-      ConduitSpec spec = GetConduitAndWireSize(loadAmperage, busSize, distance, multiplier, maxVoltageDropAllowed, numWires);
+      ConduitSpec spec = GetConduitAndWireSize(loadAmperage, mocp, distance, multiplier, maxVoltageDropAllowed, numWires);
       string gndSize = GetGroundingSize(loadAmperage);
       double voltageDropPercent = spec.wireSpec.actualVoltageDrop / Voltage * 100;
       string firstLine;
@@ -939,7 +990,7 @@ namespace ElectricalCommands {
       secondLine = $"PLUS 1#{gndSize} CU. GND.";
       thirdLine = $"{distance}'; VD={Math.Round(voltageDropPercent, 1)}%";
 
-      string supplemental1 = $"C. SIZED FOR {busSize}A";
+      string supplemental1 = $"C. SIZED FOR {mocp}A";
       string supplemental2 = $"W. SIZED FOR {loadAmperage}A";
       string supplemental3 = $"@{Voltage}V-{Phase}\u0081-{numWires}W";
       // Prompt for a point
@@ -955,10 +1006,17 @@ namespace ElectricalCommands {
           var textStyleId = GeneralCommands.GetTextStyleId("gmep");
           var textStyle = (TextStyleTableRecord)acTrans.GetObject(textStyleId, OpenMode.ForRead);
           List<DBText> allTexts = new List<DBText>();
+          double scaleFactor = 1;
+          if (IsInModel() || IsInLayoutViewport()) {
+            if (Scale <= 0) {
+              SetScale();
+            }
+            scaleFactor = 12 / Scale;
+          }
           var firstLineText = new DBText {
             TextString = firstLine,
-            Position = horizontal? new Point3d(ppr.Value.X, ppr.Value.Y + 0.20, 0) : new Point3d(ppr.Value.X - 0.20, ppr.Value.Y, 0),
-            Height = 0.1,
+            Position = horizontal? new Point3d(ppr.Value.X, ppr.Value.Y + 0.20 * scaleFactor, 0) : new Point3d(ppr.Value.X - 0.20 * scaleFactor, ppr.Value.Y, 0),
+            Height = 0.1 * scaleFactor,
             WidthFactor = 0.85,
             Layer = "E-TEXT",
             TextStyleId = textStyleId,
@@ -970,8 +1028,8 @@ namespace ElectricalCommands {
           allTexts.Add(firstLineText);
           var secondLineText = new DBText {
             TextString = secondLine,
-            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y + 0.04, 0) : new Point3d(ppr.Value.X - 0.04, ppr.Value.Y, 0),
-            Height = 0.1,
+            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y + 0.04 * scaleFactor, 0) : new Point3d(ppr.Value.X - 0.04 * scaleFactor, ppr.Value.Y, 0),
+            Height = 0.1 * scaleFactor,
             WidthFactor = 0.85,
             Layer = "E-TEXT",
             TextStyleId = textStyleId,
@@ -983,8 +1041,8 @@ namespace ElectricalCommands {
           allTexts.Add(secondLineText);
           var thirdLineText = new DBText {
             TextString = thirdLine,
-            Position = horizontal? new Point3d(ppr.Value.X, ppr.Value.Y - 0.13, 0) : new Point3d(ppr.Value.X + 0.13,ppr.Value.Y,0),
-            Height = 0.1,
+            Position = horizontal? new Point3d(ppr.Value.X, ppr.Value.Y - 0.13 * scaleFactor, 0) : new Point3d(ppr.Value.X + 0.13 * scaleFactor, ppr.Value.Y,0),
+            Height = 0.1 * scaleFactor,
             WidthFactor = 0.85,
             Layer = "E-TEXT",
             TextStyleId = textStyleId,
@@ -996,8 +1054,8 @@ namespace ElectricalCommands {
           allTexts.Add(thirdLineText);
           var supplementalText1 = new DBText {
             TextString = supplemental1,
-            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y + 0.68, 0) : new Point3d(ppr.Value.X - 0.68, ppr.Value.Y, 0),
-            Height = 0.1,
+            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y - 0.29 * scaleFactor, 0) : new Point3d(ppr.Value.X + 0.29 * scaleFactor, ppr.Value.Y, 0),
+            Height = 0.1 * scaleFactor,
             WidthFactor = 0.85,
             Layer = "DEFPOINTS",
             TextStyleId = textStyleId,
@@ -1009,8 +1067,8 @@ namespace ElectricalCommands {
           allTexts.Add(supplementalText1);
           var supplementalText2 = new DBText {
             TextString = supplemental2,
-            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y + 0.52, 0) : new Point3d(ppr.Value.X - 0.52, ppr.Value.Y, 0),
-            Height = 0.1,
+            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y - 0.45 * scaleFactor, 0) : new Point3d(ppr.Value.X + 0.45 * scaleFactor, ppr.Value.Y, 0),
+            Height = 0.1 * scaleFactor,
             WidthFactor = 0.85,
             Layer = "DEFPOINTS",
             TextStyleId = textStyleId,
@@ -1022,8 +1080,8 @@ namespace ElectricalCommands {
           allTexts.Add(supplementalText2);
           var supplementalText3 = new DBText {
             TextString = supplemental3,
-            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y + 0.36, 0) : new Point3d(ppr.Value.X - 0.36, ppr.Value.Y, 0),
-            Height = 0.1,
+            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y - 0.61 * scaleFactor, 0) : new Point3d(ppr.Value.X + 0.61 * scaleFactor, ppr.Value.Y, 0),
+            Height = 0.1 * scaleFactor,
             WidthFactor = 0.85,
             Layer = "DEFPOINTS",
             TextStyleId = textStyleId,
