@@ -1986,6 +1986,96 @@ namespace ElectricalCommands {
       return cellValue;
     }
 
+    private void auto_set_breaker_size(string cellValue, DataGridViewRow row, DataGridViewColumn col) {
+      string side = "left";
+      for (int i = 0; i < 2; i++) {
+        if (col.Name.Contains("phase_") && col.Name.Contains(side)) {
+          if (double.TryParse(cellValue, out double val)) {
+            if (double.TryParse(LINE_VOLTAGE_COMBOBOX.Text, out double lv)) {
+              if (val / lv * 1.25 > 20) {
+                double mocp = val / lv * 1.25;
+                switch (mocp) {
+                  case var _ when mocp <= 25:
+                    row.Cells[$"breaker_{side}"].Value = "25";
+                    break;
+                  case var _ when mocp <= 30:
+                    row.Cells[$"breaker_{side}"].Value = "30";
+                    break;
+                  case var _ when mocp <= 35:
+                    row.Cells[$"breaker_{side}"].Value = "35";
+                    break;
+                  case var _ when mocp <= 40:
+                    row.Cells[$"breaker_{side}"].Value = "40";
+                    break;
+                  case var _ when mocp <= 45:
+                    row.Cells[$"breaker_{side}"].Value = "45";
+                    break;
+                  case var _ when mocp <= 50:
+                    row.Cells[$"breaker_{side}"].Value = "50";
+                    break;
+                  case var _ when mocp <= 60:
+                    row.Cells[$"breaker_{side}"].Value = "60";
+                    break;
+                  case var _ when mocp <= 70:
+                    row.Cells[$"breaker_{side}"].Value = "70";
+                    break;
+                  case var _ when mocp <= 80:
+                    row.Cells[$"breaker_{side}"].Value = "80";
+                    break;
+                  case var _ when mocp <= 90:
+                    row.Cells[$"breaker_{side}"].Value = "90";
+                    break;
+                  case var _ when mocp <= 100:
+                    row.Cells[$"breaker_{side}"].Value = "100";
+                    break;
+                  case var _ when mocp <= 110:
+                    row.Cells[$"breaker_{side}"].Value = "110";
+                    break;
+                  case var _ when mocp <= 125:
+                    row.Cells[$"breaker_{side}"].Value = "125";
+                    break;
+                  case var _ when mocp <= 150:
+                    row.Cells[$"breaker_{side}"].Value = "150";
+                    break;
+                  case var _ when mocp <= 175:
+                    row.Cells[$"breaker_{side}"].Value = "175";
+                    break;
+                  case var _ when mocp <= 200:
+                    row.Cells[$"breaker_{side}"].Value = "200";
+                    break;
+                  case var _ when mocp <= 225:
+                    row.Cells[$"breaker_{side}"].Value = "225";
+                    break;
+                  case var _ when mocp <= 250:
+                    row.Cells[$"breaker_{side}"].Value = "250";
+                    break;
+                  case var _ when mocp <= 300:
+                    row.Cells[$"breaker_{side}"].Value = "300";
+                    break;
+                  case var _ when mocp <= 350:
+                    row.Cells[$"breaker_{side}"].Value = "350";
+                    break;
+                  case var _ when mocp <= 400:
+                    row.Cells[$"breaker_{side}"].Value = "400";
+                    break;
+                  case var _ when mocp <= 450:
+                    row.Cells[$"breaker_{side}"].Value = "450";
+                    break;
+                  case var _ when mocp <= 500:
+                    row.Cells[$"breaker_{side}"].Value = "500";
+                    break;
+                  case var _ when mocp <= 600:
+                    row.Cells[$"breaker_{side}"].Value = "600";
+                    break;
+                }
+              }
+            }
+          }
+        }
+        side = "right";
+      }
+    }
+
     private void auto_link_subpanels(string cellValue, DataGridViewRow row, DataGridViewColumn col) {
       if (col.Name.Contains("description")) {
         if (cellValue.ToLower().Contains("panel")) {
@@ -2134,6 +2224,7 @@ namespace ElectricalCommands {
 
       if (row != null && col != null) {
         auto_link_subpanels(cellValue, row, col);
+        auto_set_breaker_size(cellValue, row, col);
         cellValue = calculate_cell_or_link_panel(e, cellValue, row, col);
       }
     }
