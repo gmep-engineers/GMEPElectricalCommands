@@ -2521,10 +2521,12 @@ namespace ElectricalCommands {
               }
             }
           }
+          Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+          doc.SetLispSymbol($"panel_{Name}_kva", Math.Round(totalKva, 1) + " KVA");
+          doc.SetLispSymbol($"panel_{Name}_a", feederAmps.ToString() + " A");
         }
       }
     }
-
     public double CalculateFeederAmps(double phA, double phB, double phC, double lineVoltage) {
       if (lineVoltage == 0) {
         return 0;
