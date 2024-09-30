@@ -2437,6 +2437,8 @@ namespace ElectricalCommands {
     }
 
     public void UpdatePerCellValueChange() {
+      Console.WriteLine(Name);
+      Console.WriteLine("1");
       double phA = Convert.ToDouble(PHASE_SUM_GRID.Rows[0].Cells[0].Value ?? 0);
       double phB = Convert.ToDouble(PHASE_SUM_GRID.Rows[0].Cells[1].Value ?? 0);
       double phC = 0;
@@ -2467,7 +2469,6 @@ namespace ElectricalCommands {
       }
       double totalKva = CalculatePanelLoad(sum) * safetyFactor;
       PANEL_LOAD_GRID.Rows[0].Cells[0].Value = Math.Round(totalKva, 1);
-
       object lineVoltageObj = LINE_VOLTAGE_COMBOBOX.SelectedItem;
       object phaseVoltageObj = PHASE_VOLTAGE_COMBOBOX.SelectedItem;
       if (lineVoltageObj != null) {
@@ -2479,7 +2480,10 @@ namespace ElectricalCommands {
         }
         if (lineVoltage != 0) {
           double feederAmps = 0;
-          double busRating = Convert.ToDouble(BUS_RATING_INPUT.Text);
+          double busRating = 0;
+          if (!String.IsNullOrEmpty(BUS_RATING_INPUT.Text)) {
+            busRating = Convert.ToDouble(BUS_RATING_INPUT.Text);
+          }
           if (LCL.Text == "0" && LML.Text == "0") {
             if (DISTRIBUTION_SECTION_CHECKBOX.Checked) {
               feederAmps = Math.Round(totalKva * 1000 / phaseVoltage / yFactor, 1);
