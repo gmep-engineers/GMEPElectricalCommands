@@ -602,7 +602,7 @@ namespace ElectricalCommands {
                 scaleFactor = 12 / Scale;
               }
               var kvaText = new DBText {
-                Position = ppr.Value,
+                Position = new Point3d(ppr.Value.X, ppr.Value.Y - 0.16 * scaleFactor, 0),
                 Height = 0.1 * scaleFactor,
                 WidthFactor = 0.85,
                 Layer = "E-TXT1",
@@ -612,7 +612,7 @@ namespace ElectricalCommands {
                 Justify = AttachmentPoint.BaseLeft
               };
               var aText = new DBText {
-                Position = new Point3d(ppr.Value.X, ppr.Value.Y - 0.16 * scaleFactor, 0),
+                Position = new Point3d(ppr.Value.X, ppr.Value.Y - 0.32 * scaleFactor, 0),
                 Height = 0.1 * scaleFactor,
                 WidthFactor = 0.85,
                 Layer = "E-TXT1",
