@@ -3,6 +3,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+//using DocumentFormat.OpenXml.Wordprocessing;
 using Emgu.CV.Dnn;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -559,6 +560,91 @@ namespace ElectricalCommands {
       }
       else {
         ed.WriteMessage($"\nBlock 'ar' not found in BlockData directory.");
+      }
+    }
+
+    [CommandMethod("PANELLOAD")]
+    public void LINKPANELKVA() {
+      var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+      var linkPanelNamePrompt = new PromptStringOptions(
+         "\nEnter the panel name: "
+       );
+      linkPanelNamePrompt.AllowSpaces = true;
+      var linkPanelNameResult = ed.GetString(linkPanelNamePrompt);
+      string panelName = "";
+      while (panelName.Length == 0) {
+        if (linkPanelNameResult.Status == PromptStatus.OK) {
+          panelName = linkPanelNameResult.StringResult.ToLower().Replace("panel", "").Replace(" ", "");
+          string panelKvaString = (string)doc.GetLispSymbol($"panel_{panelName}_kva");
+          string panelAString = (string)doc.GetLispSymbol($"panel_{panelName}_a");
+          if (panelKvaString != null) {
+            PromptPointOptions ppo = new
+            PromptPointOptions("\nSpecify insertion point: ");
+            PromptPointResult ppr = ed.GetPoint(ppo);
+            if (ppr.Status != PromptStatus.OK)
+              return;
+            using (Transaction t = db.TransactionManager.StartTransaction()) {
+              BlockTable acBlkTbl =
+                t.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+              BlockTableRecord acBlkTblRec =
+                t.GetObject(acBlkTbl[BlockTableRecord.PaperSpace], OpenMode.ForWrite)
+                as BlockTableRecord;
+              var textStyleId = GeneralCommands.GetTextStyleId("gmep");
+              var textStyle = (TextStyleTableRecord)t.GetObject(textStyleId, OpenMode.ForRead);
+              List<DBText> allTexts = new List<DBText>();
+              double scaleFactor = 1;
+              if (IsInModel() || IsInLayoutViewport()) {
+                if (Scale <= 0) {
+                  SetScale();
+                }
+                scaleFactor = 12 / Scale;
+              }
+              var kvaText = new DBText {
+                Position = ppr.Value,
+                Height = 0.1 * scaleFactor,
+                WidthFactor = 0.85,
+                Layer = "E-TXT1",
+                TextStyleId = textStyleId,
+                HorizontalMode = TextHorizontalMode.TextLeft,
+                VerticalMode = TextVerticalMode.TextVerticalMid,
+                Justify = AttachmentPoint.BaseLeft
+              };
+              var aText = new DBText {
+                Position = new Point3d(ppr.Value.X, ppr.Value.Y - 0.16 * scaleFactor, 0),
+                Height = 0.1 * scaleFactor,
+                WidthFactor = 0.85,
+                Layer = "E-TXT1",
+                TextStyleId = textStyleId,
+                HorizontalMode = TextHorizontalMode.TextLeft,
+                VerticalMode = TextVerticalMode.TextVerticalMid,
+                Justify = AttachmentPoint.BaseLeft
+              };
+              acBlkTblRec.AppendEntity(kvaText);
+              acBlkTblRec.AppendEntity(aText);
+              t.AddNewlyCreatedDBObject(kvaText, true);
+              t.AddNewlyCreatedDBObject(aText, true);
+              string kvaFieldFormat = $"%<\\AcVar.17.0 Lisp.panel_{panelName}_kva>%";
+              string aFieldFormat = $"%<\\AcVar.17.0 Lisp.panel_{panelName}_a>%";
+              Field kvaField = new Field(kvaFieldFormat);
+              Field aField = new Field(aFieldFormat);
+              kvaField.Evaluate();
+              aField.Evaluate();
+              kvaText.SetField(kvaField);
+              aText.SetField(aField);
+              t.AddNewlyCreatedDBObject(kvaField, true);
+              t.AddNewlyCreatedDBObject(aField, true);
+              t.Commit();
+            }
+          }
+          else {
+            return;
+          }
+        }
+        else {
+          return;
+        }
       }
     }
 
