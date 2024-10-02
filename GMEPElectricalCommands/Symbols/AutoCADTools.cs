@@ -933,14 +933,14 @@ namespace ElectricalCommands {
 
     double GetMaxWireAmpacity(string wireSize) {
       switch (wireSize) {
-        case "12": return 25;
+        case "12": return 20;
         case "10": return 30;
         case "8": return 40;
         case "6": return 55;
         case "4": return 70;
-        case "3": return 100;
-        case "2": return 115;
-        case "1": return 130;
+        case "3": return 85;
+        case "2": return 95;
+        case "1": return 110;
         case "1/0": return 150;
         case "2/0": return 175;
         case "3/0": return 200;
