@@ -401,13 +401,11 @@ namespace ElectricalCommands {
               .Replace("\r", "");
         }
         if (descriptionLeftValue.StartsWith("PANEL")) {
-          foreach (UserControl userControl in this.mainForm.retrieve_userControls()) {
+          foreach (PanelUserControl userControl in this.mainForm.retrieve_userControls()) {
             TextBox panelName =
               userControl.Controls.Find("PANEL_NAME_INPUT", true).FirstOrDefault() as TextBox;
             if ("PANEL " + panelName.Text == descriptionLeftValue) {
-              Label panelId =
-              userControl.Controls.Find("PANEL_ID_LABEL", true).FirstOrDefault() as Label;
-              descriptionLeftValue = panelId.Text;
+              descriptionLeftValue = !String.IsNullOrEmpty(userControl.GetId()) ? userControl.GetId() : panelName.Text;
             }
           }
         }
@@ -436,13 +434,11 @@ namespace ElectricalCommands {
               .Replace("\r", "");
         }
         if (descriptionRightValue.StartsWith("PANEL")) {
-          foreach (UserControl userControl in this.mainForm.retrieve_userControls()) {
+          foreach (PanelUserControl userControl in this.mainForm.retrieve_userControls()) {
             TextBox panelName =
-            userControl.Controls.Find("PANEL_NAME_INPUT", true).FirstOrDefault() as TextBox;
+              userControl.Controls.Find("PANEL_NAME_INPUT", true).FirstOrDefault() as TextBox;
             if ("PANEL " + panelName.Text == descriptionRightValue) {
-              Label panelId =
-              userControl.Controls.Find("PANEL_ID_LABEL", true).FirstOrDefault() as Label;
-              descriptionRightValue = panelId.Text;
+              descriptionRightValue = !String.IsNullOrEmpty(userControl.GetId()) ? userControl.GetId() : panelName.Text;
             }
           }
         }
@@ -1359,8 +1355,6 @@ namespace ElectricalCommands {
         return false;
       }
 
-      PANEL_ID_LABEL.Text = GetSafeString("id");
-      ID = PANEL_ID_LABEL.Text;
       // Set TextBoxes
       MAIN_INPUT.Text = GetSafeString("main").Replace("AMP", "").Replace("A", "").Replace(" ", "");
       PANEL_NAME_INPUT.Text = GetSafeString("panel").Replace("'", "");
@@ -1404,7 +1398,7 @@ namespace ElectricalCommands {
         CUSTOM_TITLE_TEXT.Text = customTitle?.ToString() ?? "";
       }
 
-      // Set Custom Title if it exists
+      // Set ID
       if (selectedPanelData.TryGetValue("id", out object id)) {
         ID = id?.ToString() ?? System.Guid.NewGuid().ToString();
       }
@@ -1812,7 +1806,7 @@ namespace ElectricalCommands {
       int phaseSumGridColumnCount,
       int panelPhaseSumGridColumnCount,
       int rowIndex,
-      DataGridViewColumn col,
+      string side,
       string panelName
     ) {
       if (phaseSumGridColumnCount == panelPhaseSumGridColumnCount) {
@@ -1822,7 +1816,6 @@ namespace ElectricalCommands {
           var cellValueB = "=" + panelName.ToUpper() + "-B";
           var cellValueC = phaseSumGridColumnCount == 3 ? "=" + panelName.ToUpper() + "-C" : null;
 
-          string side = col.Name.Contains("left") ? "left" : "right";
           List<DataGridViewRow> rows = new List<DataGridViewRow>();
           for (int i = 0; i < rowCount; i++) {
             rows.Add(PANEL_GRID.Rows[rowIndex + i]);
@@ -1860,7 +1853,7 @@ namespace ElectricalCommands {
       else if (phaseSumGridColumnCount == 2 && panelPhaseSumGridColumnCount == 3) {
         if (PANEL_GRID.Rows.Count > rowIndex + 1) {
           var phases = new List<string> { "A", "B" };
-          if (col.Name.Contains("left")) {
+          if (side == "left") {
             for (int i = rowIndex; i < rowIndex + 2; i++) // Loop for the first two rows
             {
               foreach (string colName in new[] { "phase_a_left", "phase_b_left", "phase_c_left" }) // Loop for the specified columns
@@ -2089,43 +2082,58 @@ namespace ElectricalCommands {
       }
     }
 
+    public void link_subpanels() {
+      string side = "left";
+      for (int i = 0; i < PANEL_GRID.Rows.Count; i++) {
+        if (PANEL_GRID.Rows[i].Cells[$"description_{side}"].Value.ToString().ToUpper().Contains("PANEL")) {
+          link_subpanel(PANEL_GRID.Rows[i].Cells[$"description_{side}"].Value.ToString(), i, side);
+        }
+      }
+    }
+
+    private void link_subpanel(string cellValue, int rowIndex, string side) {
+      var panelName = cellValue.ToLower().Split(' ').Last();
+
+      if (panelName.Contains("'") || panelName.Contains("`")) {
+        panelName = panelName.Replace("'", "").Replace("`", "");
+      }
+
+      if (panelName.ToUpper() == PANEL_NAME_INPUT.Text.ToUpper()) return;
+
+      var isPanelReal = this.mainForm.panel_name_exists(panelName);
+
+      if (isPanelReal) {
+        UserControl panelControl = mainForm.findUserControl(panelName);
+        DataGridView panelControl_phaseSumGrid =
+          panelControl.Controls.Find("PHASE_SUM_GRID", true).FirstOrDefault() as DataGridView;
+        TextBox panelControl_fedFromTextbox =
+          panelControl.Controls.Find("FED_FROM_TEXTBOX", true).FirstOrDefault() as TextBox;
+        if (DISTRIBUTION_SECTION_CHECKBOX.Checked) {
+          panelControl_fedFromTextbox.Text = PANEL_NAME_INPUT.Text;
+        }
+        else {
+          panelControl_fedFromTextbox.Text = "PANEL " + PANEL_NAME_INPUT.Text;
+        }
+        var phaseSumGridColumnCount = panelControl_phaseSumGrid.ColumnCount;
+        var panelPhaseSumGridColumnCount = PHASE_SUM_GRID.ColumnCount;
+        
+        update_panel_grid(
+          phaseSumGridColumnCount,
+          panelPhaseSumGridColumnCount,
+          rowIndex,
+          side,
+          panelName
+        );
+        UpdatePerCellValueChange();
+      }
+    }
+
     private void auto_link_subpanels(string cellValue, DataGridViewRow row, DataGridViewColumn col) {
       if (col.Name.Contains("description")) {
         if (cellValue.ToLower().Contains("panel")) {
-          var panelName = cellValue.ToLower().Split(' ').Last();
-
-          if (panelName.Contains("'") || panelName.Contains("`")) {
-            panelName = panelName.Replace("'", "").Replace("`", "");
-          }
-
-          if (panelName.ToUpper() == PANEL_NAME_INPUT.Text.ToUpper()) return;
-
-          var isPanelReal = this.mainForm.panel_name_exists(panelName);
-
-          if (isPanelReal) {
-            UserControl panelControl = mainForm.findUserControl(panelName);
-            DataGridView panelControl_phaseSumGrid =
-              panelControl.Controls.Find("PHASE_SUM_GRID", true).FirstOrDefault() as DataGridView;
-            TextBox panelControl_fedFromTextbox =
-              panelControl.Controls.Find("FED_FROM_TEXTBOX", true).FirstOrDefault() as TextBox;
-            if (DISTRIBUTION_SECTION_CHECKBOX.Checked) {
-              panelControl_fedFromTextbox.Text = PANEL_NAME_INPUT.Text;
-            }
-            else {
-              panelControl_fedFromTextbox.Text = "PANEL " + PANEL_NAME_INPUT.Text;
-            }
-            var phaseSumGridColumnCount = panelControl_phaseSumGrid.ColumnCount;
-            var panelPhaseSumGridColumnCount = PHASE_SUM_GRID.ColumnCount;
-
-            update_panel_grid(
-              phaseSumGridColumnCount,
-              panelPhaseSumGridColumnCount,
-              row.Index,
-              col,
-              panelName
-            );
-            UpdatePerCellValueChange();
-          }
+          string side = col.Name.Contains("left") ? "left" : "right";
+          int rowIndex = row.Index;
+          link_subpanel(cellValue, rowIndex, side);
         }
       }
     }
@@ -2486,7 +2494,7 @@ namespace ElectricalCommands {
         double lineVoltage = Convert.ToDouble(lineVoltageObj);
         double phaseVoltage = Convert.ToDouble(phaseVoltageObj);
         double yFactor = 1;
-        if (phaseVoltage == 208.0 && this.is3PH) {
+        if ((phaseVoltage == 208.0 || phaseVoltage == 480.0) && this.is3PH) {
           yFactor = 1.732;
         }
         if (lineVoltage != 0) {
@@ -3450,6 +3458,10 @@ namespace ElectricalCommands {
 
     public bool Is3Ph() {
       return is3PH;
+    }
+
+    public string GetId() {
+      return ID;
     }
   }
 

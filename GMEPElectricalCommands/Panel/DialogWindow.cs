@@ -182,6 +182,7 @@ namespace ElectricalCommands {
         }
         userControl.AddListeners();
         userControl.configure_distribution_panel(null, null);
+        userControl.link_subpanels();
         userControl.UpdatePerCellValueChange();
       }
     }

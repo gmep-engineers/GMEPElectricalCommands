@@ -73,7 +73,6 @@
       this.MOUNTING_COMBOBOX = new System.Windows.Forms.ComboBox();
       this.WIRE_COMBOBOX = new System.Windows.Forms.ComboBox();
       this.DELETE_PANEL_BUTTON = new System.Windows.Forms.Button();
-      this.INFO_LABEL = new System.Windows.Forms.Label();
       this.APPLY_BUTTON = new System.Windows.Forms.Button();
       this.APPLY_COMBOBOX = new System.Windows.Forms.ComboBox();
       this.MODIFY_NOTES_BUTTON = new System.Windows.Forms.Button();
@@ -102,7 +101,7 @@
       this.ADD_ALL_PANELS_BUTTON = new System.Windows.Forms.Button();
       this.CREATE_LOAD_SUMMARY_BUTTON = new System.Windows.Forms.Button();
       this.FED_FROM_TEXTBOX = new System.Windows.Forms.TextBox();
-      this.PANEL_ID_LABEL = new System.Windows.Forms.Label();
+      this.INFO_LABEL = new System.Windows.Forms.Label();
       ((System.ComponentModel.ISupportInitialize)(this.PANEL_GRID)).BeginInit();
       ((System.ComponentModel.ISupportInitialize)(this.FEEDER_AMP_GRID)).BeginInit();
       ((System.ComponentModel.ISupportInitialize)(this.PANEL_LOAD_GRID)).BeginInit();
@@ -519,18 +518,6 @@
       this.DELETE_PANEL_BUTTON.UseVisualStyleBackColor = false;
       this.DELETE_PANEL_BUTTON.Click += new System.EventHandler(this.DELETE_PANEL_BUTTON_Click);
       // 
-      // INFO_LABEL
-      // 
-      this.INFO_LABEL.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
-      this.INFO_LABEL.AutoSize = true;
-      this.INFO_LABEL.Location = new System.Drawing.Point(313, 19);
-      this.INFO_LABEL.Name = "INFO_LABEL";
-      this.INFO_LABEL.Size = new System.Drawing.Size(29, 13);
-      this.INFO_LABEL.TabIndex = 180;
-      this.INFO_LABEL.Text = "label";
-      this.INFO_LABEL.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
-      this.INFO_LABEL.Click += new System.EventHandler(this.INFO_LABEL_CLICK);
-      // 
       // APPLY_BUTTON
       // 
       this.APPLY_BUTTON.Location = new System.Drawing.Point(886, 623);
@@ -801,22 +788,23 @@
       this.FED_FROM_TEXTBOX.Size = new System.Drawing.Size(100, 20);
       this.FED_FROM_TEXTBOX.TabIndex = 220;
       // 
-      // PANEL_ID_LABEL
+      // INFO_LABEL
       // 
-      this.PANEL_ID_LABEL.AutoSize = true;
-      this.PANEL_ID_LABEL.Location = new System.Drawing.Point(822, 4);
-      this.PANEL_ID_LABEL.Name = "PANEL_ID_LABEL";
-      this.PANEL_ID_LABEL.Size = new System.Drawing.Size(35, 13);
-      this.PANEL_ID_LABEL.TabIndex = 221;
-      this.PANEL_ID_LABEL.Text = "label2";
-      this.PANEL_ID_LABEL.Visible = false;
+      this.INFO_LABEL.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)));
+      this.INFO_LABEL.AutoSize = true;
+      this.INFO_LABEL.Location = new System.Drawing.Point(313, 19);
+      this.INFO_LABEL.Name = "INFO_LABEL";
+      this.INFO_LABEL.Size = new System.Drawing.Size(29, 13);
+      this.INFO_LABEL.TabIndex = 180;
+      this.INFO_LABEL.Text = "label";
+      this.INFO_LABEL.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+      this.INFO_LABEL.Click += new System.EventHandler(this.INFO_LABEL_CLICK);
       // 
       // PanelUserControl
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.BackColor = System.Drawing.Color.WhiteSmoke;
-      this.Controls.Add(this.PANEL_ID_LABEL);
       this.Controls.Add(this.FED_FROM_TEXTBOX);
       this.Controls.Add(this.CREATE_LOAD_SUMMARY_BUTTON);
       this.Controls.Add(this.ADD_ALL_PANELS_BUTTON);
@@ -935,7 +923,6 @@
     private System.Windows.Forms.ComboBox MOUNTING_COMBOBOX;
     private System.Windows.Forms.ComboBox WIRE_COMBOBOX;
     private System.Windows.Forms.Button DELETE_PANEL_BUTTON;
-    private System.Windows.Forms.Label INFO_LABEL;
     private System.Windows.Forms.Button APPLY_BUTTON;
     private System.Windows.Forms.ComboBox APPLY_COMBOBOX;
     private System.Windows.Forms.Button MODIFY_NOTES_BUTTON;
@@ -966,6 +953,6 @@
     private System.Windows.Forms.Button ADD_ALL_PANELS_BUTTON;
     private System.Windows.Forms.Button CREATE_LOAD_SUMMARY_BUTTON;
     private System.Windows.Forms.TextBox FED_FROM_TEXTBOX;
-    private System.Windows.Forms.Label PANEL_ID_LABEL;
+    private System.Windows.Forms.Label INFO_LABEL;
   }
 }
