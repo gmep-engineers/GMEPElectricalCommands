@@ -2923,7 +2923,7 @@ namespace ElectricalCommands {
     }
 
     private string ConvertAtoVA(string aValue, int numPoles, string voltage) {
-      string sanitized = Regex.Replace(aValue, @" +A *", "");
+      string sanitized = Regex.Replace(aValue, @" *A *", "");
       if (numPoles == 3) {
         return (Math.Round(Convert.ToDouble(sanitized) * Convert.ToDouble(voltage) / 1.732, 0)).ToString();
       }
