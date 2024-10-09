@@ -20,6 +20,7 @@ namespace ElectricalCommands {
     private Document acDoc;
     private string acDocPath;
     private string acDocFileName;
+    private string acDocName;
     public bool initialized = false;
 
     public MainForm(PanelCommands myCommands) {
@@ -37,12 +38,13 @@ namespace ElectricalCommands {
       this.acDoc.BeginDocumentClose += new DocumentBeginCloseEventHandler(docBeginDocClose);
       this.acDocPath = Path.GetDirectoryName(this.acDoc.Name);
       this.acDocFileName = Path.GetFileNameWithoutExtension(acDoc.Name);
+      this.acDocName = this.acDoc.Name;
     }
 
     private void docBeginDocClose(object sender, DocumentBeginCloseEventArgs e) {
       SavePanelDataToLocalJsonFile();
       this.acDoc.Database.SaveAs(
-          acDocPath,
+          acDocName,
           true,
           DwgVersion.Current,
           this.acDoc.Database.SecurityParameters
