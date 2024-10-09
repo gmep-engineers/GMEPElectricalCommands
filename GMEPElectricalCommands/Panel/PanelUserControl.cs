@@ -3664,6 +3664,7 @@ namespace ElectricalCommands {
     }
 
     private void A_TO_VA_BUTTON_Click(object sender, EventArgs e) {
+      mainForm.SavePanelDataToLocalJsonFile();
       if (is3PH) {
         ConvertAToVaBySide3Ph("left");
         ConvertAToVaBySide3Ph("right");

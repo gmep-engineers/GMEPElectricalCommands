@@ -1101,7 +1101,7 @@ namespace ElectricalCommands {
       thirdLine = $"{distance}'; VD={Math.Round(voltageDropPercent, 1)}%";
 
       string supplemental1 = $"C. SIZED FOR {mocp}A";
-      string supplemental2 = $"W. SIZED FOR {Math.Round(loadAmperage,0)}A";
+      string supplemental2 = $"W. SIZED FOR {Math.Round(loadAmperage,1)}A";
       string supplemental3 = $"@{Voltage}V-{Phase}\u0081-{numWires}W";
       // Prompt for a point
       PromptPointOptions ppo = new PromptPointOptions("\nSelect start point:");

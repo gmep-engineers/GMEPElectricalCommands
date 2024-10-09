@@ -18,6 +18,8 @@ namespace ElectricalCommands {
     private NewPanelForm newPanelForm;
     private List<PanelUserControl> userControls;
     private Document acDoc;
+    private string acDocPath;
+    private string acDocFileName;
     public bool initialized = false;
 
     public MainForm(PanelCommands myCommands) {
@@ -33,13 +35,14 @@ namespace ElectricalCommands {
       this.acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       this.acDoc.BeginDocumentClose -= new DocumentBeginCloseEventHandler(docBeginDocClose);
       this.acDoc.BeginDocumentClose += new DocumentBeginCloseEventHandler(docBeginDocClose);
+      this.acDocPath = Path.GetDirectoryName(this.acDoc.Name);
+      this.acDocFileName = Path.GetFileNameWithoutExtension(acDoc.Name);
     }
 
     private void docBeginDocClose(object sender, DocumentBeginCloseEventArgs e) {
       SavePanelDataToLocalJsonFile();
-      string fileName = this.acDoc.Name;
       this.acDoc.Database.SaveAs(
-          fileName,
+          acDocPath,
           true,
           DwgVersion.Current,
           this.acDoc.Database.SecurityParameters
@@ -386,7 +389,6 @@ namespace ElectricalCommands {
     public List<Dictionary<string, object>> retrieve_saved_panel_data() {
       List<Dictionary<string, object>> allPanelData = new List<Dictionary<string, object>>();
 
-      string acDocPath = Path.GetDirectoryName(this.acDoc.Name);
       string savesDirectory = Path.Combine(acDocPath, "Saves");
       string panelSavesDirectory = Path.Combine(savesDirectory, "Panel");
 
@@ -416,18 +418,15 @@ namespace ElectricalCommands {
       List<Dictionary<string, object>> panelStorage = new List<Dictionary<string, object>>();
 
       if (this.acDoc != null) {
-        using (DocumentLock docLock = this.acDoc.LockDocument()) {
-          foreach (PanelUserControl userControl in this.userControls) {
-            panelStorage.Add(userControl.retrieve_data_from_modal());
-          }
-
-          StoreDataInJsonFile(panelStorage);
+        foreach (PanelUserControl userControl in this.userControls) {
+          panelStorage.Add(userControl.retrieve_data_from_modal());
         }
+
+        StoreDataInJsonFile(panelStorage);
       }
     }
 
     public void StoreDataInJsonFile(List<Dictionary<string, object>> saveData) {
-      string acDocPath = Path.GetDirectoryName(this.acDoc.Name);
       string savesDirectory = Path.Combine(acDocPath, "Saves");
       string panelSavesDirectory = Path.Combine(savesDirectory, "Panel");
 
@@ -442,7 +441,7 @@ namespace ElectricalCommands {
       }
 
       // Create a JSON file name based on the AutoCAD file name and the current timestamp
-      string acDocFileName = Path.GetFileNameWithoutExtension(acDoc.Name);
+      
       string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
       string jsonFileName = acDocFileName + "_" + timestamp + ".json";
       string jsonFilePath = Path.Combine(panelSavesDirectory, jsonFileName);
