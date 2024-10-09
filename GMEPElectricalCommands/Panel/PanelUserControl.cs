@@ -2921,12 +2921,26 @@ namespace ElectricalCommands {
         return 0;
       }
     }
+
+    private string ConvertAtoVA(string aValue, int numPoles, string voltage) {
+      string sanitized = Regex.Replace(aValue, @" +A *", "");
+      if (numPoles == 3) {
+        return (Math.Round(Convert.ToDouble(sanitized) * Convert.ToDouble(voltage) / 1.732, 0)).ToString();
+      }
+      else if (numPoles == 2) {
+        return (Math.Round(Convert.ToDouble(sanitized) * Convert.ToDouble(voltage) / 2, 0)).ToString();
+      }
+      else{
+        return (Math.Round(Convert.ToDouble(sanitized) * Convert.ToDouble(voltage), 0)).ToString();
+      }
+    }
     private string ConvertHPtoVA(string hpValue, int numPhases, string voltage) {
       string sanitized = Regex.Replace(hpValue, @" +HP", "HP");
       sanitized = Regex.Replace(sanitized, @"\p{Zs}+", "+");
       sanitized = Regex.Replace(sanitized, @"-+", "+");
       sanitized = sanitized.Replace("HP", "");
-      if (!Regex.IsMatch(sanitized, @"^\d+(\+\d\/\d)?$")) {
+      Console.WriteLine(sanitized);
+      if (!Regex.IsMatch(sanitized, @"^\d+((\+\d)?\/\d)?$")) {
         return "-1";
       }
       System.Data.DataTable dt = new System.Data.DataTable();
@@ -3196,6 +3210,7 @@ namespace ElectricalCommands {
         string phaseC = PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString().ToUpper().Replace("\r", "");
 
         if (!String.IsNullOrEmpty(phaseA) && phaseA.EndsWith("HP")) {
+          Console.WriteLine("one");
           if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
             phaseA = ConvertHPtoVA(phaseA, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseB = phaseA;
@@ -3221,10 +3236,14 @@ namespace ElectricalCommands {
             i += 3;
           }
           else {
+            Console.WriteLine("two");
             phaseA = ConvertHPtoVA(phaseA, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             if (phaseA == "-1") {
+              Console.WriteLine("three");
               return;
             }
+
+            Console.WriteLine("four");
             // set values of PANEL_GRID phase_a_{side}
             PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value = phaseA;
             i++;
@@ -3307,7 +3326,7 @@ namespace ElectricalCommands {
 
     }
 
-    private void ConvertHpToVaBySide2Ph(string side) {
+    private void ConvertHpToVaBySide1Ph(string side) {
       int i = 0;
       while (i < PANEL_GRID.Rows.Count) {
         string phaseA = PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString().ToUpper().Replace("\r", "");
@@ -3370,10 +3389,9 @@ namespace ElectricalCommands {
         ConvertHpToVaBySide3Ph("right");
       }
       else {
-        ConvertHpToVaBySide2Ph("left");
-        ConvertHpToVaBySide2Ph("right");
+        ConvertHpToVaBySide1Ph("left");
+        ConvertHpToVaBySide1Ph("right");
       }
-
     }
 
     public bool IsUuid(string str) {
@@ -3462,6 +3480,198 @@ namespace ElectricalCommands {
 
     public string GetId() {
       return ID;
+    }
+
+    private void ConvertAToVaBySide3Ph(string side) {
+      int i = 0;
+      while (i < PANEL_GRID.Rows.Count) {
+        string phaseA = PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString().ToUpper().Replace("\r", "");
+        string phaseB = PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString().ToUpper().Replace("\r", "");
+        string phaseC = PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString().ToUpper().Replace("\r", "");
+
+        if (!String.IsNullOrEmpty(phaseA) && phaseA.EndsWith("A")) {
+          Console.WriteLine("one");
+          if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
+            phaseA = ConvertAtoVA(phaseA, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseB = phaseA;
+            if (phaseA == "-1" || phaseB == "-1") {
+              return;
+            }
+            // set values of PANEL_GRID phase_a_{side} and phase_b_{side}
+            PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value = phaseA;
+            PANEL_GRID.Rows[i + 1].Cells[$"phase_b_{side}"].Value = phaseB;
+            i += 2;
+          }
+          else if (i + 2 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 2].Cells[$"breaker_{side}"].Value as string == "3") {
+            phaseA = ConvertAtoVA(phaseA, 3, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseB = phaseA;
+            phaseC = phaseA;
+            if (phaseA == "-1" || phaseB == "-1" || phaseC == "-1") {
+              return;
+            }
+            // set values of PANEL_GRID phase_a_{side}, phase_b_{side}, phase_c_{side}
+            PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value = phaseA;
+            PANEL_GRID.Rows[i + 1].Cells[$"phase_b_{side}"].Value = phaseB;
+            PANEL_GRID.Rows[i + 2].Cells[$"phase_c_{side}"].Value = phaseC;
+            i += 3;
+          }
+          else {
+            Console.WriteLine("two");
+            phaseA = ConvertAtoVA(phaseA, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            if (phaseA == "-1") {
+              Console.WriteLine("three");
+              return;
+            }
+
+            Console.WriteLine("four");
+            // set values of PANEL_GRID phase_a_{side}
+            PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value = phaseA;
+            i++;
+          }
+        }
+        if (!String.IsNullOrEmpty(phaseB) && phaseB.EndsWith("A")) {
+          if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
+            phaseB = ConvertAtoVA(phaseB, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseC = phaseB;
+            if (phaseB == "-1" || phaseC == "-1") {
+              return;
+            }
+            // set values of PANEL_GRID phase_a_{side} and phase_b_{side}
+            PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value = phaseB;
+            PANEL_GRID.Rows[i + 1].Cells[$"phase_c_{side}"].Value = phaseC;
+            i += 2;
+          }
+          else if (i + 2 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 2].Cells[$"breaker_{side}"].Value as string == "3") {
+            phaseB = ConvertAtoVA(phaseB, 3, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseC = phaseB;
+            phaseA = phaseB;
+            if (phaseB == "-1" || phaseC == "-1" || phaseA == "-1") {
+              return;
+            }
+            // set values of PANEL_GRID phase_a_{side}, phase_b_{side}, phase_c_{side}
+            PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value = phaseB;
+            PANEL_GRID.Rows[i + 1].Cells[$"phase_c_{side}"].Value = phaseC;
+            PANEL_GRID.Rows[i + 2].Cells[$"phase_a_{side}"].Value = phaseA;
+            i += 3;
+          }
+          else {
+            phaseB = ConvertAtoVA(phaseB, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            if (phaseB == "-1") {
+              return;
+            }
+            // set values of PANEL_GRID phase_a_{side}
+            PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value = phaseB;
+            i++;
+          }
+        }
+        if (!String.IsNullOrEmpty(phaseC) && phaseC.EndsWith("A")) {
+          if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
+            phaseC = ConvertAtoVA(phaseC, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseA = phaseC;
+            if (phaseC == "-1" || phaseA == "-1") {
+              return;
+            }
+            // set values of PANEL_GRID phase_a_{side} and phase_b_{side}
+            PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value = phaseC;
+            PANEL_GRID.Rows[i + 1].Cells[$"phase_a_{side}"].Value = phaseA;
+            i += 2;
+          }
+          else if (i + 2 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 2].Cells[$"breaker_{side}"].Value as string == "3") {
+            phaseC = ConvertAtoVA(phaseC, 3, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseA = phaseC;
+            phaseB = phaseC;
+            if (phaseC == "-1" || phaseA == "-1" || phaseB == "-1") {
+              return;
+            }
+            // set values of PANEL_GRID phase_a_{side}, phase_b_{side}, phase_c_{side}
+            PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value = phaseC;
+            PANEL_GRID.Rows[i + 1].Cells[$"phase_a_{side}"].Value = phaseA;
+            PANEL_GRID.Rows[i + 2].Cells[$"phase_b_{side}"].Value = phaseB;
+            i += 3;
+          }
+          else {
+            phaseC = ConvertAtoVA(phaseC, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            if (phaseC == "-1") {
+              return;
+            }
+            // set values of PANEL_GRID phase_a_{side}
+            PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value = phaseC;
+            i++;
+          }
+        }
+        else {
+          i += 1;
+        }
+      }
+
+    }
+
+    private void ConvertAToVaBySide1Ph(string side) {
+      int i = 0;
+      while (i < PANEL_GRID.Rows.Count) {
+        string phaseA = PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString().ToUpper().Replace("\r", "");
+        string phaseB = PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString().ToUpper().Replace("\r", "");
+
+        if (!String.IsNullOrEmpty(phaseA) && phaseA.EndsWith("A")) {
+          if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
+            phaseA = ConvertAtoVA(phaseA, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseB = phaseA;
+            if (phaseA == "-1" || phaseB == "-1") {
+              return;
+            }
+            // set values of PANEL_GRID phase_a_{side} and phase_b_{side}
+            PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value = phaseA;
+            PANEL_GRID.Rows[i + 1].Cells[$"phase_b_{side}"].Value = phaseB;
+            i += 2;
+          }
+          else {
+            phaseA = ConvertAtoVA(phaseA, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            if (phaseA == "-1") {
+              return;
+            }
+            // set values of PANEL_GRID phase_a_{side}
+            PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value = phaseA;
+            i++;
+          }
+        }
+        if (!String.IsNullOrEmpty(phaseB) && phaseB.EndsWith("A")) {
+          if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
+            phaseB = ConvertAtoVA(phaseB, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseA = phaseB;
+            if (phaseA == "-1" || phaseB == "-1") {
+              return;
+            }
+            // set values of PANEL_GRID phase_a_{side} and phase_b_{side}
+            PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value = phaseB;
+            PANEL_GRID.Rows[i + 1].Cells[$"phase_a_{side}"].Value = phaseA;
+            i += 2;
+          }
+          else {
+            phaseB = ConvertAtoVA(phaseB, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            if (phaseB == "-1") {
+              return;
+            }
+            // set values of PANEL_GRID phase_a_{side}
+            PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value = phaseB;
+            i++;
+          }
+        }
+        else {
+          i += 1;
+        }
+      }
+
+    }
+
+    private void A_TO_VA_BUTTON_Click(object sender, EventArgs e) {
+      if (is3PH) {
+        ConvertAToVaBySide3Ph("left");
+        ConvertAToVaBySide3Ph("right");
+      }
+      else {
+        ConvertAToVaBySide1Ph("left");
+        ConvertAToVaBySide1Ph("right");
+      }
     }
   }
 

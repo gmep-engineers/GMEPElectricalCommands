@@ -102,6 +102,7 @@
       this.CREATE_LOAD_SUMMARY_BUTTON = new System.Windows.Forms.Button();
       this.FED_FROM_TEXTBOX = new System.Windows.Forms.TextBox();
       this.INFO_LABEL = new System.Windows.Forms.Label();
+      this.A_TO_VA_BUTTON = new System.Windows.Forms.Button();
       ((System.ComponentModel.ISupportInitialize)(this.PANEL_GRID)).BeginInit();
       ((System.ComponentModel.ISupportInitialize)(this.FEEDER_AMP_GRID)).BeginInit();
       ((System.ComponentModel.ISupportInitialize)(this.PANEL_LOAD_GRID)).BeginInit();
@@ -229,7 +230,7 @@
       // 
       // CREATE_PANEL_BUTTON
       // 
-      this.CREATE_PANEL_BUTTON.Location = new System.Drawing.Point(583, 538);
+      this.CREATE_PANEL_BUTTON.Location = new System.Drawing.Point(664, 538);
       this.CREATE_PANEL_BUTTON.Name = "CREATE_PANEL_BUTTON";
       this.CREATE_PANEL_BUTTON.Size = new System.Drawing.Size(103, 23);
       this.CREATE_PANEL_BUTTON.TabIndex = 157;
@@ -771,7 +772,7 @@
       // 
       // CREATE_LOAD_SUMMARY_BUTTON
       // 
-      this.CREATE_LOAD_SUMMARY_BUTTON.Location = new System.Drawing.Point(583, 538);
+      this.CREATE_LOAD_SUMMARY_BUTTON.Location = new System.Drawing.Point(664, 538);
       this.CREATE_LOAD_SUMMARY_BUTTON.Name = "CREATE_LOAD_SUMMARY_BUTTON";
       this.CREATE_LOAD_SUMMARY_BUTTON.Size = new System.Drawing.Size(170, 23);
       this.CREATE_LOAD_SUMMARY_BUTTON.TabIndex = 219;
@@ -800,11 +801,22 @@
       this.INFO_LABEL.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
       this.INFO_LABEL.Click += new System.EventHandler(this.INFO_LABEL_CLICK);
       // 
+      // A_TO_VA_BUTTON
+      // 
+      this.A_TO_VA_BUTTON.Location = new System.Drawing.Point(583, 538);
+      this.A_TO_VA_BUTTON.Name = "A_TO_VA_BUTTON";
+      this.A_TO_VA_BUTTON.Size = new System.Drawing.Size(75, 23);
+      this.A_TO_VA_BUTTON.TabIndex = 221;
+      this.A_TO_VA_BUTTON.Text = "A TO VA";
+      this.A_TO_VA_BUTTON.UseVisualStyleBackColor = true;
+      this.A_TO_VA_BUTTON.Click += new System.EventHandler(this.A_TO_VA_BUTTON_Click);
+      // 
       // PanelUserControl
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.BackColor = System.Drawing.Color.WhiteSmoke;
+      this.Controls.Add(this.A_TO_VA_BUTTON);
       this.Controls.Add(this.FED_FROM_TEXTBOX);
       this.Controls.Add(this.CREATE_LOAD_SUMMARY_BUTTON);
       this.Controls.Add(this.ADD_ALL_PANELS_BUTTON);
@@ -954,5 +966,6 @@
     private System.Windows.Forms.Button CREATE_LOAD_SUMMARY_BUTTON;
     private System.Windows.Forms.TextBox FED_FROM_TEXTBOX;
     private System.Windows.Forms.Label INFO_LABEL;
+    private System.Windows.Forms.Button A_TO_VA_BUTTON;
   }
 }

@@ -648,8 +648,8 @@ namespace ElectricalCommands {
       }
     }
 
-    [CommandMethod("SETVOLTAGE")]
-    public bool SETVOLTAGE() {
+    [CommandMethod("SetVoltage")]
+    public static void SetVoltage() {
       Voltage = 0;
       var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       var ed = doc.Editor;
@@ -676,14 +676,13 @@ namespace ElectricalCommands {
           }
         }
         else {
-          return false;
+          return;
         }
       }
-      return true;
     }
 
-    [CommandMethod("SETMAXVOLTAGEDROPPERCENT")]
-    public bool SETMAXVOLTAGEDROP() {
+    [CommandMethod("SetMaxVoltageDropPercent")]
+    public static void SetMaxVoltageDropPercent() {
       MaxVoltageDropPercent = 0;
       var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       var ed = doc.Editor;
@@ -710,14 +709,13 @@ namespace ElectricalCommands {
           }
         }
         else {
-          return false;
+          return;
         }
       }
-      return true;
     }
 
-    [CommandMethod("SETPHASE")]
-    public bool SETPHASE() {
+    [CommandMethod("SetPhase")]
+    public static void SetPhase() {
       Phase = 0;
       var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       var ed = doc.Editor;
@@ -743,10 +741,9 @@ namespace ElectricalCommands {
           }
         }
         else {
-          return false;
+          return;
         }
       }
-      return true;
     }
 
     public struct WireSpec {
@@ -1030,16 +1027,25 @@ namespace ElectricalCommands {
         }
       }
 
-      if (Voltage < 0 && !SETVOLTAGE()) {
-        return;
+      if (Voltage <= 0) {
+        SetVoltage();
+        if (Voltage <= 0) {
+          return;
+        }
       }
 
-      if (MaxVoltageDropPercent < 0 && !SETMAXVOLTAGEDROP()) {
-        return;
+      if (MaxVoltageDropPercent <= 0) {
+        SetMaxVoltageDropPercent();
+        if (Voltage <= 0) {
+          return;
+        }
       }
 
-      if (Phase < 0 && !SETPHASE()) {
-        return;
+      if (Phase <= 0) {
+        SetPhase();
+        if (Phase <= 0) {
+          return;
+        }
       }
 
       double maxVoltageDropAllowed = Voltage * MaxVoltageDropPercent / 100;
