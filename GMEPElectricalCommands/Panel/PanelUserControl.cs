@@ -2591,7 +2591,7 @@ namespace ElectricalCommands {
           Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
       ) {
         this.mainForm.Close();
-        myCommandsInstance.Create_Panel(panelDataList);
+        myCommandsInstance.CreatePanel(panelDataList);
 
         Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
           .AutoCAD

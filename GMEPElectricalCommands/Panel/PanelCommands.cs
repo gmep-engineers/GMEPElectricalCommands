@@ -1219,7 +1219,7 @@ namespace ElectricalCommands {
       return (doc, db, ed);
     }
 
-    public void Create_Panel(Dictionary<string, object> panelData) {
+    public void CreatePanel(Dictionary<string, object> panelData) {
       List<Dictionary<string, object>> panels = new List<Dictionary<string, object>>();
       panels.Add(panelData);
       CreatePanels(panels);
