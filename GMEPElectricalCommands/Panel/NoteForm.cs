@@ -53,7 +53,7 @@ namespace ElectricalCommands
       }
 
       // Call the update_notes_storage method on the userInterface
-      this.userInterface.update_notes_storage(notesStorageCopy);
+      this.userInterface.UpdateNotesStorage(notesStorageCopy);
     }
 
     private void ADD_NOTE_BUTTON_Click(object sender, EventArgs e)

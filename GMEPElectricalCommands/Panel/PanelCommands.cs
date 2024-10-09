@@ -35,7 +35,7 @@ namespace ElectricalCommands {
         else {
           // Create a new MainForm if it's not already open
           this.myForm = new MainForm(this);
-          this.myForm.initialize_modal();
+          this.myForm.InitializeModal();
           this.myForm.Show();
         }
       }
@@ -202,7 +202,7 @@ namespace ElectricalCommands {
 
     [CommandMethod("IMPORTPANELS")]
     public void IMPORTPANELS() {
-      Create_Panels(null);
+      CreatePanels(null);
     }
 
     private void CreateTextsWithoutPanelData(
@@ -846,7 +846,7 @@ namespace ElectricalCommands {
       );
     }
 
-    public void Create_Load_Summary(Dictionary<string, object> panelData, List<Dictionary<string, object>> panelStorage) {
+    public void CreateLoadSummary(Dictionary<string, object> panelData, List<Dictionary<string, object>> panelStorage) {
       var (doc, db, ed) = PanelCommands.GetGlobals();
       var promptOptions = new PromptPointOptions("\nSelect top left corner point: ");
       var promptResult = ed.GetPoint(promptOptions);
@@ -1029,7 +1029,7 @@ namespace ElectricalCommands {
       }
     }
 
-    public void Create_Panels(List<Dictionary<string, object>> panelDataList) {
+    public void CreatePanels(List<Dictionary<string, object>> panelDataList) {
       var (doc, db, ed) = PanelCommands.GetGlobals();
 
       if (panelDataList == null) {
@@ -1222,7 +1222,7 @@ namespace ElectricalCommands {
     public void Create_Panel(Dictionary<string, object> panelData) {
       List<Dictionary<string, object>> panels = new List<Dictionary<string, object>>();
       panels.Add(panelData);
-      Create_Panels(panels);
+      CreatePanels(panels);
     }
 
     private static FileInfo GetFileInfo(string filePath) {
@@ -3082,7 +3082,7 @@ namespace ElectricalCommands {
 
       for (var j = i; j <= i + 1; j++) {
         if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
-          List<Dictionary<string, object>> panelStorage = myForm.retrieve_saved_panel_data();
+          List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
           foreach (Dictionary<string, object> panel in panelStorage) {
             if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
               descriptions[j] = "PANEL " + panel["panel"] as string;
@@ -3177,7 +3177,7 @@ namespace ElectricalCommands {
 
       for (var j = i; j <= i + 1; j++) {
         if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
-          List<Dictionary<string, object>> panelStorage = myForm.retrieve_saved_panel_data();
+          List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
           foreach (Dictionary<string, object> panel in panelStorage) {
             if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
               descriptions[j] = "PANEL " + panel["panel"] as string;
@@ -3254,7 +3254,7 @@ namespace ElectricalCommands {
 
       List<string> phaseList = GetPhaseList(i, phaseA, phaseB, phaseC);
       if (Regex.IsMatch(descriptions[i], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
-        List<Dictionary<string, object>> panelStorage = myForm.retrieve_saved_panel_data();
+        List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
         foreach (Dictionary<string, object> panel in panelStorage) {
           if ((panel["id"] as string).ToLower() == descriptions[i].ToLower()) {
             descriptions[i] = "PANEL " + panel["panel"] as string;
@@ -3344,7 +3344,7 @@ namespace ElectricalCommands {
 
       List<string> phaseList = GetPhaseList2P(i, phaseA, phaseB);
       if (Regex.IsMatch(descriptions[i], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
-        List<Dictionary<string, object>> panelStorage = myForm.retrieve_saved_panel_data();
+        List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
         foreach (Dictionary<string, object> panel in panelStorage) {
           if ((panel["id"] as string).ToLower() == descriptions[i].ToLower()) {
             descriptions[i] = "PANEL " + panel["panel"] as string;
@@ -3440,7 +3440,7 @@ namespace ElectricalCommands {
       for (var j = i; j <= i + 2; j += 2) {
         List<string> phaseList = GetPhaseList(j, phaseA, phaseB, phaseC);
         if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
-          List<Dictionary<string, object>> panelStorage = myForm.retrieve_saved_panel_data();
+          List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
           foreach (Dictionary<string, object> panel in panelStorage) {
             if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
               descriptions[j] = "PANEL " + panel["panel"] as string;
@@ -3542,7 +3542,7 @@ namespace ElectricalCommands {
       for (var j = i; j <= i + 2; j += 2) {
         List<string> phaseList = GetPhaseList2P(j, phaseA, phaseB);
         if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
-          List<Dictionary<string, object>> panelStorage = myForm.retrieve_saved_panel_data();
+          List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
           foreach (Dictionary<string, object> panel in panelStorage) {
             if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
               descriptions[j] = "PANEL " + panel["panel"] as string;
@@ -3643,7 +3643,7 @@ namespace ElectricalCommands {
       for (var j = i; j <= i + 4; j += 2) {
         List<string> phaseList = GetPhaseList(j, phaseA, phaseB, phaseC);
         if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
-          List<Dictionary<string, object>> panelStorage = myForm.retrieve_saved_panel_data();
+          List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
           foreach (Dictionary<string, object> panel in panelStorage) {
             Console.WriteLine(panel["id"] as string);
             Console.WriteLine(descriptions[j]);
