@@ -40,8 +40,7 @@ namespace ElectricalCommands {
       MainForm mainForm,
       NewPanelForm newPanelForm,
       string tabName,
-      bool is3PH = false,
-      bool isLoadingData = false
+      bool is3PH = false
     ) {
       InitializeComponent();
       myCommandsInstance = myCommands;
@@ -130,7 +129,7 @@ namespace ElectricalCommands {
       TogglePrefixInSelectedCells("(R)");
     }
 
-    public List<string> getNotesStorage() {
+    public List<string> GetNotesStorage() {
       return this.notesStorage;
     }
 
@@ -2885,7 +2884,7 @@ namespace ElectricalCommands {
       }
     }
 
-    public double GetLCLOverride() {
+    public double GetLclOverride() {
       if (LCL_OVERRIDE.Checked) {
         double result;
         if (double.TryParse(LCL.Text, out result)) {
@@ -2900,7 +2899,7 @@ namespace ElectricalCommands {
       }
     }
 
-    public double GetLMLOverride() {
+    public double GetLmlOverride() {
       if (LML_OVERRIDE.Checked) {
         double result;
         if (double.TryParse(LML.Text, out result)) {

@@ -198,7 +198,7 @@ namespace ElectricalCommands {
       foreach (Dictionary<string, object> panel in sortedPanels) {
         string panelName = panel["panel"].ToString();
         bool is3PH = panel.ContainsKey("phase_c_left");
-        PanelUserControl userControl1 = CreateNewPanelTab(panelName, is3PH, true);
+        PanelUserControl userControl1 = CreateNewPanelTab(panelName, is3PH);
         userControl1.ClearModalAndRemoveRows(panel);
         userControl1.PopulateModalWithPanelData(panel);
         var notes = JsonConvert.DeserializeObject<List<string>>(panel["notes"].ToString());
@@ -332,7 +332,7 @@ namespace ElectricalCommands {
       tabPage.Controls.Add(control);
     }
 
-    public PanelUserControl CreateNewPanelTab(string tabName, bool is3PH, bool isLoadingData = false) {
+    public PanelUserControl CreateNewPanelTab(string tabName, bool is3PH) {
       // if tabname has "PANEL" in it replace it with "Panel"
       if (tabName.Contains("PANEL") || tabName.Contains("Panel")) {
         tabName = tabName.Replace("PANEL", "");
@@ -349,7 +349,7 @@ namespace ElectricalCommands {
       PANEL_TABS.SelectedTab = newTabPage;
 
       // Create a new UserControl
-      PanelUserControl userControl1 = new PanelUserControl(this.myCommandsInstance, this, this.newPanelForm, tabName, is3PH, isLoadingData);
+      PanelUserControl userControl1 = new PanelUserControl(this.myCommandsInstance, this, this.newPanelForm, tabName, is3PH);
 
       // Add the UserControl to the list of UserControls
       this.userControls.Add(userControl1);
@@ -674,8 +674,8 @@ namespace ElectricalCommands {
       // First pass: Collect initial data
       foreach (PanelUserControl userControl in this.userControls) {
         LclLmlObject obj = new LclLmlObject(userControl.Name.Replace("'", ""));
-        var LclOverride = (int)userControl.GetLCLOverride();
-        var LmlOverride = (int)userControl.GetLMLOverride();
+        var LclOverride = (int)userControl.GetLclOverride();
+        var LmlOverride = (int)userControl.GetLmlOverride();
         obj.LclOverride = LclOverride != 0;
         obj.LmlOverride = LmlOverride != 0;
         obj.Lcl = (LclOverride != 0) ? LclOverride : (int)Math.Round(userControl.CalculateWattageSum("LCL"));
@@ -715,9 +715,9 @@ namespace ElectricalCommands {
     private void CalculateLml(LclLmlObject panel, List<LclLmlObject> allPanels) {
       if (panel.LmlOverride) return;
 
-      int maxLML = panel.Lml;
-      maxLML = RecursiveCalculateLml(panel, allPanels, maxLML);
-      panel.Lml = maxLML;
+      int maxLml = panel.Lml;
+      maxLml = RecursiveCalculateLml(panel, allPanels, maxLml);
+      panel.Lml = maxLml;
     }
 
     private int RecursiveCalculateLml(LclLmlObject panel, List<LclLmlObject> allPanels, int currentMax) {
