@@ -694,7 +694,7 @@ namespace ElectricalCommands {
       foreach (PanelUserControl userControl in this.userControls) {
         var panelObj = manager.List.Find(p => p.PanelName == userControl.Name.Replace("'", ""));
         if (panelObj != null) {
-          userControl.UpdateLclLmlLabels(panelObj.Lml, panelObj.Lml);
+          userControl.UpdateLclLmlLabels(panelObj.Lcl, panelObj.Lml);
         }
       }
     }
