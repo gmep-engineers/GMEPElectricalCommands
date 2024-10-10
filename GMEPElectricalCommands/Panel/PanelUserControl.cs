@@ -799,42 +799,42 @@ namespace ElectricalCommands {
       List<PanelItem> items = new List<PanelItem>();
 
       // Process left side
-      ProcessSide(columnNames, true, items, note);
+      ProcessSide(columnNames, "left", items, note);
 
       // Process right side
-      ProcessSide(columnNames, false, items, note);
+      ProcessSide(columnNames, "right", items, note);
 
       return items.Count > 0
             ? items.Max(item => item.Wattage)
             : 0;
     }
 
-    private void ProcessSide(string[] columnNames, bool isLeftSide, List<PanelItem> items, string note) {
-      int startIndex = isLeftSide ? 0 : 1;
+    private void ProcessSide(string[] columnNames, string side, List<PanelItem> items, string note) {
+      int startIndex = side == "left" ? 0 : 1;
       for (int rowIndex = 0; rowIndex < PANEL_GRID.Rows.Count; rowIndex++) {
         DataGridViewRow row = PANEL_GRID.Rows[rowIndex];
         for (int i = startIndex; i < columnNames.Length; i += 2) {
           string colName = columnNames[i];
-          bool descriptionHasNote = DescriptionHasNote(row, isLeftSide, note);
-          int breakerValue = BreakerToInt(row, isLeftSide);
+          bool descriptionHasNote = DescriptionHasNote(row, side, note);
+          int breakerValue = BreakerToInt(row, side);
 
           if (row.Cells[colName].Value != null && descriptionHasNote && breakerValue > 3) {
             double phaseValue;
             if (!TryParseDouble(row.Cells[colName].Value, out phaseValue)) {
               continue;
             }
-            string description = GetDescription(row, isLeftSide);
+            string description = GetDescription(row, side);
             PanelItem item = new PanelItem { Description = description };
 
             // Check for condition 1
             if (rowIndex + 2 < PANEL_GRID.Rows.Count) {
               DataGridViewRow secondRow = PANEL_GRID.Rows[rowIndex + 1];
               DataGridViewRow thirdRow = PANEL_GRID.Rows[rowIndex + 2];
-              int secondBreakerValue = BreakerToInt(secondRow, isLeftSide);
-              string thirdBreakerValue = thirdRow.Cells[isLeftSide ? "breaker_left" : "breaker_right"].Value?.ToString();
+              int secondBreakerValue = BreakerToInt(secondRow, side);
+              string thirdBreakerValue = thirdRow.Cells[$"breaker_{side}"].Value?.ToString();
 
               if (secondBreakerValue == 0 && thirdBreakerValue == "3") {
-                item.Wattage = phaseValue * 3;
+                item.Wattage = phaseValue * 3 / 1.732;
                 item.Poles = 3;
                 rowIndex += 2;
                 items.Add(item);
@@ -845,7 +845,7 @@ namespace ElectricalCommands {
             // Check for condition 2
             if (rowIndex + 1 < PANEL_GRID.Rows.Count) {
               DataGridViewRow secondRow = PANEL_GRID.Rows[rowIndex + 1];
-              string secondBreakerValue = secondRow.Cells[isLeftSide ? "breaker_left" : "breaker_right"].Value?.ToString();
+              string secondBreakerValue = secondRow.Cells[$"breaker_{side}"].Value?.ToString();
 
               if (secondBreakerValue == "2") {
                 item.Wattage = phaseValue * 2;
@@ -880,8 +880,8 @@ namespace ElectricalCommands {
       return double.TryParse(stringValue, NumberStyles.Any, CultureInfo.CurrentCulture, out result);
     }
 
-    private bool DescriptionHasNote(DataGridViewRow row, bool isLeftSide, string note) {
-      string columnName = isLeftSide ? "description_left" : "description_right";
+    private bool DescriptionHasNote(DataGridViewRow row, string side, string note) {
+      string columnName = $"description_{side}";
       DataGridViewCell cell = row.Cells[columnName];
 
       if (cell.Tag == null) {
@@ -892,8 +892,8 @@ namespace ElectricalCommands {
       return tagValue.Contains(note);
     }
 
-    private int BreakerToInt(DataGridViewRow row, bool isLeftSide) {
-      string columnName = isLeftSide ? "breaker_left" : "breaker_right";
+    private int BreakerToInt(DataGridViewRow row, string side) {
+      string columnName = $"breaker_{side}";
       var cellValue = row.Cells[columnName].Value;
 
       if (cellValue == null || string.IsNullOrEmpty(cellValue.ToString())) {
@@ -913,9 +913,8 @@ namespace ElectricalCommands {
       return 0;
     }
 
-    private string GetDescription(DataGridViewRow row, bool isLeftSide) {
-      string columnPrefix = isLeftSide ? "left" : "right";
-      return row.Cells[$"description_{columnPrefix}"].Value?.ToString() ?? string.Empty;
+    private string GetDescription(DataGridViewRow row, string side) {
+      return row.Cells[$"description_{side}"].Value?.ToString() ?? string.Empty;
     }
 
     public double CalculateWattageSum(string note) {
