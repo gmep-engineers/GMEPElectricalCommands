@@ -182,8 +182,8 @@ namespace ElectricalCommands {
         WIRE_COMBOBOX.SelectedIndex = 0;
         PHASE_COMBOBOX.SelectedIndex = 0;
       }
-      PHASE_VOLTAGE_COMBOBOX.SelectedIndex = 0;
       LINE_VOLTAGE_COMBOBOX.SelectedIndex = 0;
+      PHASE_VOLTAGE_COMBOBOX.SelectedIndex = 0;
 
       // Datagrids
       PHASE_SUM_GRID.Rows[0].Cells[0].Value = "0";
@@ -261,8 +261,8 @@ namespace ElectricalCommands {
 
       panel.Add("panel", "'" + PANEL_NAME_INPUT.Text.ToUpper() + "'");
       panel.Add("location", PANEL_LOCATION_INPUT.Text.ToUpper());
-      panel.Add("voltage1", GetComboBoxValue(LINE_VOLTAGE_COMBOBOX));
-      panel.Add("voltage2", GetComboBoxValue(PHASE_VOLTAGE_COMBOBOX));
+      panel.Add("voltage1", GetComboBoxValue(PHASE_VOLTAGE_COMBOBOX));
+      panel.Add("voltage2", GetComboBoxValue(LINE_VOLTAGE_COMBOBOX));
       panel.Add("phase", GetComboBoxValue(PHASE_COMBOBOX));
       panel.Add("wire", GetComboBoxValue(WIRE_COMBOBOX));
       panel.Add("mounting", GetComboBoxValue(MOUNTING_COMBOBOX));
@@ -1367,8 +1367,8 @@ namespace ElectricalCommands {
       MOUNTING_COMBOBOX.SelectedItem = GetSafeString("mounting");
       WIRE_COMBOBOX.SelectedItem = GetSafeString("wire");
       PHASE_COMBOBOX.SelectedItem = GetSafeString("phase");
-      PHASE_VOLTAGE_COMBOBOX.SelectedItem = GetSafeString("voltage2");
-      LINE_VOLTAGE_COMBOBOX.SelectedItem = GetSafeString("voltage1");
+      LINE_VOLTAGE_COMBOBOX.SelectedItem = GetSafeString("voltage2");
+      PHASE_VOLTAGE_COMBOBOX.SelectedItem = GetSafeString("voltage1");
 
       // Set DataGridViews
       PHASE_SUM_GRID.Rows[0].Cells[0].Value = GetSafeString("subtotal_a");
@@ -1519,8 +1519,8 @@ namespace ElectricalCommands {
       MOUNTING_COMBOBOX.SelectedIndex = -1;
       WIRE_COMBOBOX.SelectedIndex = -1;
       PHASE_COMBOBOX.SelectedIndex = -1;
-      PHASE_VOLTAGE_COMBOBOX.SelectedIndex = -1;
       LINE_VOLTAGE_COMBOBOX.SelectedIndex = -1;
+      PHASE_VOLTAGE_COMBOBOX.SelectedIndex = -1;
 
       // Clear DataGridViews
       PHASE_SUM_GRID.Rows[0].Cells[0].Value = "0";
@@ -1987,7 +1987,7 @@ namespace ElectricalCommands {
            ) {
           if (col.Name.Contains("phase_") && col.Name.Contains(side)) {
             if (double.TryParse(cellValue, out double val)) {
-              if (double.TryParse(LINE_VOLTAGE_COMBOBOX.Text, out double lv)) {
+              if (double.TryParse(PHASE_VOLTAGE_COMBOBOX.Text, out double lv)) {
                 if (val / lv * 1.25 > 20) {
                   double mocp = val / lv * 1.25;
                   switch (mocp) {
@@ -2479,16 +2479,16 @@ namespace ElectricalCommands {
       }
       double totalKva = CalculatePanelLoad(sum) * safetyFactor;
       PANEL_LOAD_GRID.Rows[0].Cells[0].Value = Math.Round(totalKva, 1);
-      object lineVoltageObj = LINE_VOLTAGE_COMBOBOX.SelectedItem;
       object phaseVoltageObj = PHASE_VOLTAGE_COMBOBOX.SelectedItem;
-      if (lineVoltageObj != null) {
-        double lineVoltage = Convert.ToDouble(lineVoltageObj);
+      object lineVoltageObj = LINE_VOLTAGE_COMBOBOX.SelectedItem;
+      if (phaseVoltageObj != null) {
         double phaseVoltage = Convert.ToDouble(phaseVoltageObj);
+        double lineVoltage = Convert.ToDouble(lineVoltageObj);
         double yFactor = 1;
-        if ((phaseVoltage == 208.0 || phaseVoltage == 480.0) && this.is3PH) {
+        if ((lineVoltage == 208.0 || lineVoltage == 480.0) && this.is3PH) {
           yFactor = 1.732;
         }
-        if (lineVoltage != 0) {
+        if (phaseVoltage != 0) {
           double feederAmps = 0;
           double busRating = 0;
           if (!String.IsNullOrEmpty(BUS_RATING_INPUT.Text)) {
@@ -2496,16 +2496,16 @@ namespace ElectricalCommands {
           }
           if (LCL.Text == "0" && LML.Text == "0") {
             if (DISTRIBUTION_SECTION_CHECKBOX.Checked) {
-              feederAmps = Math.Round(totalKva * 1000 / phaseVoltage / yFactor, 1);
+              feederAmps = Math.Round(totalKva * 1000 / lineVoltage / yFactor, 1);
               FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
             }
             else {
-              feederAmps = CalculateFeederAmps(phA, phB, phC, lineVoltage) * safetyFactor;
+              feederAmps = CalculateFeederAmps(phA, phB, phC, phaseVoltage) * safetyFactor;
               FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
             }
           }
           else {
-            feederAmps = Math.Round(sum / (lineVoltage * poles), 1);
+            feederAmps = Math.Round(sum / (phaseVoltage * poles), 1);
             FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
           }
           if (feederAmps > busRating) {
@@ -3203,7 +3203,7 @@ namespace ElectricalCommands {
         if (!String.IsNullOrEmpty(phaseA) && phaseA.EndsWith("HP")) {
           Console.WriteLine("one");
           if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
-            phaseA = ConvertHpToVa(phaseA, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseA = ConvertHpToVa(phaseA, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseB = phaseA;
             if (phaseA == "-1" || phaseB == "-1") {
               return;
@@ -3214,7 +3214,7 @@ namespace ElectricalCommands {
             i += 2;
           }
           else if (i + 2 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 2].Cells[$"breaker_{side}"].Value as string == "3") {
-            phaseA = ConvertHpToVa(phaseA, 3, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseA = ConvertHpToVa(phaseA, 3, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseB = phaseA;
             phaseC = phaseA;
             if (phaseA == "-1" || phaseB == "-1" || phaseC == "-1") {
@@ -3228,7 +3228,7 @@ namespace ElectricalCommands {
           }
           else {
             Console.WriteLine("two");
-            phaseA = ConvertHpToVa(phaseA, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseA = ConvertHpToVa(phaseA, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
             if (phaseA == "-1") {
               Console.WriteLine("three");
               return;
@@ -3242,7 +3242,7 @@ namespace ElectricalCommands {
         }
         if (!String.IsNullOrEmpty(phaseB) && phaseB.EndsWith("HP")) {
           if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
-            phaseB = ConvertHpToVa(phaseB, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseB = ConvertHpToVa(phaseB, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseC = phaseB;
             if (phaseB == "-1" || phaseC == "-1") {
               return;
@@ -3253,7 +3253,7 @@ namespace ElectricalCommands {
             i += 2;
           }
           else if (i + 2 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 2].Cells[$"breaker_{side}"].Value as string == "3") {
-            phaseB = ConvertHpToVa(phaseB, 3, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseB = ConvertHpToVa(phaseB, 3, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseC = phaseB;
             phaseA = phaseB;
             if (phaseB == "-1" || phaseC == "-1" || phaseA == "-1") {
@@ -3266,7 +3266,7 @@ namespace ElectricalCommands {
             i += 3;
           }
           else {
-            phaseB = ConvertHpToVa(phaseB, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseB = ConvertHpToVa(phaseB, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
             if (phaseB == "-1") {
               return;
             }
@@ -3277,7 +3277,7 @@ namespace ElectricalCommands {
         }
         if (!String.IsNullOrEmpty(phaseC) && phaseC.EndsWith("HP")) {
           if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
-            phaseC = ConvertHpToVa(phaseC, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseC = ConvertHpToVa(phaseC, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseA = phaseC;
             if (phaseC == "-1" || phaseA == "-1") {
               return;
@@ -3288,7 +3288,7 @@ namespace ElectricalCommands {
             i += 2;
           }
           else if (i + 2 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 2].Cells[$"breaker_{side}"].Value as string == "3") {
-            phaseC = ConvertHpToVa(phaseC, 3, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseC = ConvertHpToVa(phaseC, 3, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseA = phaseC;
             phaseB = phaseC;
             if (phaseC == "-1" || phaseA == "-1" || phaseB == "-1") {
@@ -3301,7 +3301,7 @@ namespace ElectricalCommands {
             i += 3;
           }
           else {
-            phaseC = ConvertHpToVa(phaseC, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseC = ConvertHpToVa(phaseC, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
             if (phaseC == "-1") {
               return;
             }
@@ -3325,7 +3325,7 @@ namespace ElectricalCommands {
 
         if (!String.IsNullOrEmpty(phaseA) && phaseA.EndsWith("HP")) {
           if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
-            phaseA = ConvertHpToVa(phaseA, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseA = ConvertHpToVa(phaseA, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseB = phaseA;
             if (phaseA == "-1" || phaseB == "-1") {
               return;
@@ -3336,7 +3336,7 @@ namespace ElectricalCommands {
             i += 2;
           }
           else {
-            phaseA = ConvertHpToVa(phaseA, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseA = ConvertHpToVa(phaseA, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
             if (phaseA == "-1") {
               return;
             }
@@ -3347,7 +3347,7 @@ namespace ElectricalCommands {
         }
         if (!String.IsNullOrEmpty(phaseB) && phaseB.EndsWith("HP")) {
           if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
-            phaseB = ConvertHpToVa(phaseB, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseB = ConvertHpToVa(phaseB, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseA = phaseB;
             if (phaseA == "-1" || phaseB == "-1") {
               return;
@@ -3358,7 +3358,7 @@ namespace ElectricalCommands {
             i += 2;
           }
           else {
-            phaseB = ConvertHpToVa(phaseB, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseB = ConvertHpToVa(phaseB, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
             if (phaseB == "-1") {
               return;
             }
@@ -3481,9 +3481,8 @@ namespace ElectricalCommands {
         string phaseC = PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString().ToUpper().Replace("\r", "");
 
         if (!String.IsNullOrEmpty(phaseA) && phaseA.EndsWith("A")) {
-          Console.WriteLine("one");
           if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
-            phaseA = ConvertAtoVA(phaseA, 2, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseA = ConvertAtoVA(phaseA, 2, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseB = phaseA;
             if (phaseA == "-1" || phaseB == "-1") {
               return;
@@ -3494,7 +3493,7 @@ namespace ElectricalCommands {
             i += 2;
           }
           else if (i + 2 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 2].Cells[$"breaker_{side}"].Value as string == "3") {
-            phaseA = ConvertAtoVA(phaseA, 3, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseA = ConvertAtoVA(phaseA, 3, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseB = phaseA;
             phaseC = phaseA;
             if (phaseA == "-1" || phaseB == "-1" || phaseC == "-1") {
@@ -3507,14 +3506,10 @@ namespace ElectricalCommands {
             i += 3;
           }
           else {
-            Console.WriteLine("two");
-            phaseA = ConvertAtoVA(phaseA, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseA = ConvertAtoVA(phaseA, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
             if (phaseA == "-1") {
-              Console.WriteLine("three");
               return;
             }
-
-            Console.WriteLine("four");
             // set values of PANEL_GRID phase_a_{side}
             PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value = phaseA;
             i++;
@@ -3522,7 +3517,7 @@ namespace ElectricalCommands {
         }
         if (!String.IsNullOrEmpty(phaseB) && phaseB.EndsWith("A")) {
           if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
-            phaseB = ConvertAtoVA(phaseB, 2, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseB = ConvertAtoVA(phaseB, 2, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseC = phaseB;
             if (phaseB == "-1" || phaseC == "-1") {
               return;
@@ -3533,7 +3528,7 @@ namespace ElectricalCommands {
             i += 2;
           }
           else if (i + 2 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 2].Cells[$"breaker_{side}"].Value as string == "3") {
-            phaseB = ConvertAtoVA(phaseB, 3, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseB = ConvertAtoVA(phaseB, 3, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseC = phaseB;
             phaseA = phaseB;
             if (phaseB == "-1" || phaseC == "-1" || phaseA == "-1") {
@@ -3546,7 +3541,7 @@ namespace ElectricalCommands {
             i += 3;
           }
           else {
-            phaseB = ConvertAtoVA(phaseB, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseB = ConvertAtoVA(phaseB, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
             if (phaseB == "-1") {
               return;
             }
@@ -3557,7 +3552,7 @@ namespace ElectricalCommands {
         }
         if (!String.IsNullOrEmpty(phaseC) && phaseC.EndsWith("A")) {
           if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
-            phaseC = ConvertAtoVA(phaseC, 2, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseC = ConvertAtoVA(phaseC, 2, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseA = phaseC;
             if (phaseC == "-1" || phaseA == "-1") {
               return;
@@ -3568,7 +3563,7 @@ namespace ElectricalCommands {
             i += 2;
           }
           else if (i + 2 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 2].Cells[$"breaker_{side}"].Value as string == "3") {
-            phaseC = ConvertAtoVA(phaseC, 3, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseC = ConvertAtoVA(phaseC, 3, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseA = phaseC;
             phaseB = phaseC;
             if (phaseC == "-1" || phaseA == "-1" || phaseB == "-1") {
@@ -3581,7 +3576,7 @@ namespace ElectricalCommands {
             i += 3;
           }
           else {
-            phaseC = ConvertAtoVA(phaseC, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseC = ConvertAtoVA(phaseC, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
             if (phaseC == "-1") {
               return;
             }
@@ -3605,7 +3600,7 @@ namespace ElectricalCommands {
 
         if (!String.IsNullOrEmpty(phaseA) && phaseA.EndsWith("A")) {
           if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
-            phaseA = ConvertAtoVA(phaseA, 2, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseA = ConvertAtoVA(phaseA, 2, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseB = phaseA;
             if (phaseA == "-1" || phaseB == "-1") {
               return;
@@ -3616,7 +3611,7 @@ namespace ElectricalCommands {
             i += 2;
           }
           else {
-            phaseA = ConvertAtoVA(phaseA, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseA = ConvertAtoVA(phaseA, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
             if (phaseA == "-1") {
               return;
             }
@@ -3627,7 +3622,7 @@ namespace ElectricalCommands {
         }
         if (!String.IsNullOrEmpty(phaseB) && phaseB.EndsWith("A")) {
           if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
-            phaseB = ConvertAtoVA(phaseB, 2, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseB = ConvertAtoVA(phaseB, 2, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseA = phaseB;
             if (phaseA == "-1" || phaseB == "-1") {
               return;
@@ -3638,7 +3633,7 @@ namespace ElectricalCommands {
             i += 2;
           }
           else {
-            phaseB = ConvertAtoVA(phaseB, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
+            phaseB = ConvertAtoVA(phaseB, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
             if (phaseB == "-1") {
               return;
             }

@@ -65,9 +65,9 @@
       this.MAIN_INPUT = new System.Windows.Forms.TextBox();
       this.ADD_ROW_BUTTON = new System.Windows.Forms.Button();
       this.BUS_RATING_INPUT = new System.Windows.Forms.TextBox();
-      this.LINE_VOLTAGE_COMBOBOX = new System.Windows.Forms.ComboBox();
-      this.label1 = new System.Windows.Forms.Label();
       this.PHASE_VOLTAGE_COMBOBOX = new System.Windows.Forms.ComboBox();
+      this.label1 = new System.Windows.Forms.Label();
+      this.LINE_VOLTAGE_COMBOBOX = new System.Windows.Forms.ComboBox();
       this.STATUS_COMBOBOX = new System.Windows.Forms.ComboBox();
       this.PHASE_COMBOBOX = new System.Windows.Forms.ComboBox();
       this.MOUNTING_COMBOBOX = new System.Windows.Forms.ComboBox();
@@ -241,11 +241,11 @@
       // label14
       // 
       this.label14.AutoSize = true;
-      this.label14.Location = new System.Drawing.Point(70, 203);
+      this.label14.Location = new System.Drawing.Point(57, 203);
       this.label14.Name = "label14";
-      this.label14.Size = new System.Drawing.Size(100, 13);
+      this.label14.Size = new System.Drawing.Size(112, 13);
       this.label14.TabIndex = 167;
-      this.label14.Text = "LINE VOLTAGE (V)";
+      this.label14.Text = "PHASE VOLTAGE (V)";
       // 
       // FEEDER_AMP_GRID
       // 
@@ -270,11 +270,11 @@
       // label13
       // 
       this.label13.AutoSize = true;
-      this.label13.Location = new System.Drawing.Point(58, 229);
+      this.label13.Location = new System.Drawing.Point(69, 229);
       this.label13.Name = "label13";
-      this.label13.Size = new System.Drawing.Size(112, 13);
+      this.label13.Size = new System.Drawing.Size(100, 13);
       this.label13.TabIndex = 168;
-      this.label13.Text = "PHASE VOLTAGE (V)";
+      this.label13.Text = "LINE VOLTAGE (V)";
       // 
       // PANEL_LOAD_GRID
       // 
@@ -424,17 +424,17 @@
       this.BUS_RATING_INPUT.TabIndex = 148;
       this.BUS_RATING_INPUT.KeyUp += new System.Windows.Forms.KeyEventHandler(this.BUS_RATING_INPUT_TEXTBOX_KeyUp);
       // 
-      // LINE_VOLTAGE_COMBOBOX
+      // PHASE_VOLTAGE_COMBOBOX
       // 
-      this.LINE_VOLTAGE_COMBOBOX.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-      this.LINE_VOLTAGE_COMBOBOX.FormattingEnabled = true;
-      this.LINE_VOLTAGE_COMBOBOX.Items.AddRange(new object[] {
+      this.PHASE_VOLTAGE_COMBOBOX.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+      this.PHASE_VOLTAGE_COMBOBOX.FormattingEnabled = true;
+      this.PHASE_VOLTAGE_COMBOBOX.Items.AddRange(new object[] {
             "120",
             "277"});
-      this.LINE_VOLTAGE_COMBOBOX.Location = new System.Drawing.Point(176, 200);
-      this.LINE_VOLTAGE_COMBOBOX.Name = "LINE_VOLTAGE_COMBOBOX";
-      this.LINE_VOLTAGE_COMBOBOX.Size = new System.Drawing.Size(121, 21);
-      this.LINE_VOLTAGE_COMBOBOX.TabIndex = 149;
+      this.PHASE_VOLTAGE_COMBOBOX.Location = new System.Drawing.Point(176, 200);
+      this.PHASE_VOLTAGE_COMBOBOX.Name = "PHASE_VOLTAGE_COMBOBOX";
+      this.PHASE_VOLTAGE_COMBOBOX.Size = new System.Drawing.Size(121, 21);
+      this.PHASE_VOLTAGE_COMBOBOX.TabIndex = 149;
       // 
       // label1
       // 
@@ -445,18 +445,18 @@
       this.label1.TabIndex = 172;
       this.label1.Text = "STATUS (N, EX, RE)";
       // 
-      // PHASE_VOLTAGE_COMBOBOX
+      // LINE_VOLTAGE_COMBOBOX
       // 
-      this.PHASE_VOLTAGE_COMBOBOX.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
-      this.PHASE_VOLTAGE_COMBOBOX.FormattingEnabled = true;
-      this.PHASE_VOLTAGE_COMBOBOX.Items.AddRange(new object[] {
+      this.LINE_VOLTAGE_COMBOBOX.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+      this.LINE_VOLTAGE_COMBOBOX.FormattingEnabled = true;
+      this.LINE_VOLTAGE_COMBOBOX.Items.AddRange(new object[] {
             "208",
             "240",
             "480"});
-      this.PHASE_VOLTAGE_COMBOBOX.Location = new System.Drawing.Point(176, 226);
-      this.PHASE_VOLTAGE_COMBOBOX.Name = "PHASE_VOLTAGE_COMBOBOX";
-      this.PHASE_VOLTAGE_COMBOBOX.Size = new System.Drawing.Size(121, 21);
-      this.PHASE_VOLTAGE_COMBOBOX.TabIndex = 150;
+      this.LINE_VOLTAGE_COMBOBOX.Location = new System.Drawing.Point(176, 226);
+      this.LINE_VOLTAGE_COMBOBOX.Name = "LINE_VOLTAGE_COMBOBOX";
+      this.LINE_VOLTAGE_COMBOBOX.Size = new System.Drawing.Size(121, 21);
+      this.LINE_VOLTAGE_COMBOBOX.TabIndex = 150;
       // 
       // STATUS_COMBOBOX
       // 
@@ -869,9 +869,9 @@
       this.Controls.Add(this.MAIN_INPUT);
       this.Controls.Add(this.ADD_ROW_BUTTON);
       this.Controls.Add(this.BUS_RATING_INPUT);
-      this.Controls.Add(this.LINE_VOLTAGE_COMBOBOX);
-      this.Controls.Add(this.label1);
       this.Controls.Add(this.PHASE_VOLTAGE_COMBOBOX);
+      this.Controls.Add(this.label1);
+      this.Controls.Add(this.LINE_VOLTAGE_COMBOBOX);
       this.Controls.Add(this.STATUS_COMBOBOX);
       this.Controls.Add(this.PHASE_COMBOBOX);
       this.Controls.Add(this.MOUNTING_COMBOBOX);
@@ -927,9 +927,9 @@
     private System.Windows.Forms.TextBox MAIN_INPUT;
     private System.Windows.Forms.Button ADD_ROW_BUTTON;
     private System.Windows.Forms.TextBox BUS_RATING_INPUT;
-    private System.Windows.Forms.ComboBox LINE_VOLTAGE_COMBOBOX;
-    private System.Windows.Forms.Label label1;
     private System.Windows.Forms.ComboBox PHASE_VOLTAGE_COMBOBOX;
+    private System.Windows.Forms.Label label1;
+    private System.Windows.Forms.ComboBox LINE_VOLTAGE_COMBOBOX;
     private System.Windows.Forms.ComboBox STATUS_COMBOBOX;
     private System.Windows.Forms.ComboBox PHASE_COMBOBOX;
     private System.Windows.Forms.ComboBox MOUNTING_COMBOBOX;
