@@ -1987,9 +1987,9 @@ namespace ElectricalCommands {
            ) {
           if (col.Name.Contains("phase_") && col.Name.Contains(side)) {
             if (double.TryParse(cellValue, out double val)) {
-              if (double.TryParse(PHASE_VOLTAGE_COMBOBOX.Text, out double lv)) {
-                if (val / lv * 1.25 > 20) {
-                  double mocp = val / lv * 1.25;
+              if (double.TryParse(PHASE_VOLTAGE_COMBOBOX.Text, out double pv)) {
+                if (val / pv * 1.25 > 20) {
+                  double mocp = Math.Round(val / pv * 1.25, 0);
                   switch (mocp) {
                     case var _ when mocp <= 25:
                       row.Cells[$"breaker_{side}"].Value = "25";
