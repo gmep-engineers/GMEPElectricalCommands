@@ -891,6 +891,17 @@ namespace ElectricalCommands {
         return key;
       }
 
+      double GetPanelKva(string key) {
+        if (Regex.IsMatch(key, @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+          foreach (Dictionary<string, object> panel in panelStorage) {
+            if ((panel["id"] as string).ToLower() == key.ToLower()) {
+              return GetSafeDouble(panel["kva"] as string);
+            }
+          }
+        }
+        return 0;
+      }
+
       using (var tr = db.TransactionManager.StartTransaction()) {
         var btr = (BlockTableRecord)tr.GetObject(spaceId, OpenMode.ForWrite);
 
@@ -914,6 +925,7 @@ namespace ElectricalCommands {
           }
         }
         Table tb = new Table();
+        List<double> kvaList = new List<double>();
         tb.TableStyle = db.Tablestyle;
         tb.Position = startPoint;
         tb.SetSize(totalEntries + 5, 3);
@@ -930,27 +942,39 @@ namespace ElectricalCommands {
         }
         for (int i = 0; i < descriptionLeft.Count; i += increment * 2) {
           if (!String.IsNullOrEmpty(descriptionLeft[i]) && descriptionLeft[i] != "SPARE" && descriptionLeft[i] != "SPACE") {
-            double phA = GetSafeDouble(phaseALeft[i]);
-            double phB = GetSafeDouble(phaseBLeft[i + 2]);
-            double phC = 0;
-            if (increment == 3) {
-              phC = GetSafeDouble(phaseCLeft[i + 4]);
+            double panelKva = GetPanelKva(descriptionLeft[i]);
+            tb.Cells[tableRowIndex, 2].TextString = panelKva.ToString()+ " KVA";
+            kvaList.Add(panelKva);
+            if (panelKva == 0) {
+              double phA = GetSafeDouble(phaseALeft[i]);
+              double phB = GetSafeDouble(phaseBLeft[i + 2]);
+              double phC = 0;
+              if (increment == 3) {
+                phC = GetSafeDouble(phaseCLeft[i + 4]);
+              }
+              tb.Cells[tableRowIndex, 2].TextString = Math.Round((phA + phB + phC) / 1000, 1).ToString() + " KVA";
+              kvaList.Add(Math.Round((phA + phB + phC) / 1000, 1));
             }
             tb.Cells[tableRowIndex, 0].TextString = $"{tableRowIndex}.";
             tb.Cells[tableRowIndex, 1].TextString = GetLoadName(descriptionLeft[i]);
-            tb.Cells[tableRowIndex, 2].TextString = Math.Round((phA + phB + phC)/1000, 1).ToString() + " KVA";
             tableRowIndex++;
           }
           if (!String.IsNullOrEmpty(descriptionRight[i]) && descriptionRight[i] != "SPARE" && descriptionRight[i] != "SPACE") {
-            double phA = GetSafeDouble(phaseARight[i]);
-            double phB = GetSafeDouble(phaseBRight[i + 2]);
-            double phC = 0;
-            if (increment == 3) {
-              phC = GetSafeDouble(phaseCRight[i + 4]);
+            double panelKva = GetPanelKva(descriptionRight[i]);
+            tb.Cells[tableRowIndex, 2].TextString = panelKva.ToString() + " KVA";
+            kvaList.Add(panelKva);
+            if (panelKva == 0) {
+              double phA = GetSafeDouble(phaseARight[i]);
+              double phB = GetSafeDouble(phaseBRight[i + 2]);
+              double phC = 0;
+              if (increment == 3) {
+                phC = GetSafeDouble(phaseCRight[i + 4]);
+              }
+              tb.Cells[tableRowIndex, 2].TextString = Math.Round((phA + phB + phC) / 1000, 1).ToString() + " KVA";
+              kvaList.Add(Math.Round((phA + phB + phC) / 1000, 1));
             }
             tb.Cells[tableRowIndex, 0].TextString = $"{tableRowIndex}.";
             tb.Cells[tableRowIndex, 1].TextString = GetLoadName(descriptionRight[i]);
-            tb.Cells[tableRowIndex, 2].TextString = Math.Round((phA + phB + phC) / 1000, 1).ToString() + " KVA";
             tableRowIndex++;
           }
         }
@@ -971,7 +995,9 @@ namespace ElectricalCommands {
           tb.MergeCells(range);
         }
         tb.Cells[totalEntries + 1, 0].TextString = "TOTAL KVA";
-        tb.Cells[totalEntries + 1, 2].TextString = panelData["kva"] as string;
+
+        double kva = kvaList.Sum();
+        tb.Cells[totalEntries + 1, 2].TextString = kva.ToString();
 
         bool usingSafetyFactor = GetSafeBoolean("using_safety_factor");
         double phaseVoltage = GetSafeDouble(panelData["voltage1"]);
@@ -986,7 +1012,6 @@ namespace ElectricalCommands {
         }
         double feederAmps = GetSafeDouble(panelData["feeder_amps"]);
 
-        double kva = GetSafeDouble(panelData["kva"]);
         double busSize = Convert.ToDouble(panelData.TryGetValue("bus_rating", out object bus) ? bus?.ToString().Replace("A", "") ?? "1" : "1");
 
         double totalAmperage = 0;
@@ -995,7 +1020,7 @@ namespace ElectricalCommands {
           totalAmperage = Math.Round(kva * 1000 / lineVoltage / yFactor * safetyFactor, 1);
           if (safetyFactor == 0) safetyFactor = 1;
           tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL KVA x{safetyFactor}";
-          tb.Cells[totalEntries + 2, 2].TextString = Math.Round(kva * safetyFactor).ToString();
+          tb.Cells[totalEntries + 2, 2].TextString = Math.Round(kva * safetyFactor, 1).ToString();
           tb.Cells[totalEntries + 3, 0].TextString = $"TOTAL AMP @{phaseVoltage}/{lineVoltage}V-{phase}\u0081-{wire}W";
           tb.Cells[totalEntries + 3, 2].TextString = totalAmperage.ToString();
           if (totalAmperage < busSize) {
