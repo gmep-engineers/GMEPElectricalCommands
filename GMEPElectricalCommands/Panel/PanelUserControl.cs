@@ -2479,16 +2479,16 @@ namespace ElectricalCommands {
       }
       double totalKva = CalculatePanelLoad(sum) * safetyFactor;
       PANEL_LOAD_GRID.Rows[0].Cells[0].Value = Math.Round(totalKva, 1);
-      object lineVoltageObj = PHASE_VOLTAGE_COMBOBOX.SelectedItem;
-      object phaseVoltageObj = LINE_VOLTAGE_COMBOBOX.SelectedItem;
-      if (lineVoltageObj != null) {
-        double lineVoltage = Convert.ToDouble(lineVoltageObj);
+      object phaseVoltageObj = PHASE_VOLTAGE_COMBOBOX.SelectedItem;
+      object lineVoltageObj = LINE_VOLTAGE_COMBOBOX.SelectedItem;
+      if (phaseVoltageObj != null) {
         double phaseVoltage = Convert.ToDouble(phaseVoltageObj);
+        double lineVoltage = Convert.ToDouble(lineVoltageObj);
         double yFactor = 1;
-        if ((phaseVoltage == 208.0 || phaseVoltage == 480.0) && this.is3PH) {
+        if ((lineVoltage == 208.0 || lineVoltage == 480.0) && this.is3PH) {
           yFactor = 1.732;
         }
-        if (lineVoltage != 0) {
+        if (phaseVoltage != 0) {
           double feederAmps = 0;
           double busRating = 0;
           if (!String.IsNullOrEmpty(BUS_RATING_INPUT.Text)) {
@@ -2496,16 +2496,16 @@ namespace ElectricalCommands {
           }
           if (LCL.Text == "0" && LML.Text == "0") {
             if (DISTRIBUTION_SECTION_CHECKBOX.Checked) {
-              feederAmps = Math.Round(totalKva * 1000 / phaseVoltage / yFactor, 1);
+              feederAmps = Math.Round(totalKva * 1000 / lineVoltage / yFactor, 1);
               FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
             }
             else {
-              feederAmps = CalculateFeederAmps(phA, phB, phC, lineVoltage) * safetyFactor;
+              feederAmps = CalculateFeederAmps(phA, phB, phC, phaseVoltage) * safetyFactor;
               FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
             }
           }
           else {
-            feederAmps = Math.Round(sum / (lineVoltage * poles), 1);
+            feederAmps = Math.Round(sum / (phaseVoltage * poles), 1);
             FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
           }
           if (feederAmps > busRating) {
