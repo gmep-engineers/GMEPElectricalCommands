@@ -3066,7 +3066,7 @@ namespace ElectricalCommands {
       while (i < descriptions.Count) {
         BreakerType breakerType = GetBreakerType(breakers, circuits, i);
         if (breakerType == BreakerType.SplitMini) {
-          // CreateSplit2PoleHalfBreaker2P()
+          CreateHalfSplit2PoleBreakers2Ph(tr, btr, startPoint, panelData, data, left, is2Pole, i);
           i += 4;
         }
         else if (breakerType == BreakerType.Mini) {
@@ -3656,15 +3656,132 @@ namespace ElectricalCommands {
             new Point3d(breakerX, height, 0),
             length
           );
-          /*
-           * 
-          0.09375,
+        }
+        CreateAndPositionText(
+          tr,
+          circuit,
+          "ROMANS",
+          textHeight,
           1.0,
+          7,
+          "0",
+          new Point3d(circuitX, height, 0)
+        );
+        CreateHorizontalLine(startPoint.X, startPoint.Y, circuit, left, tr, btr);
+      }
+      CreateBreakerLine(new Point3d(startPoint.X, startPoint.Y - 0.0936, 0), i, left, tr, btr, 2);
+    }
+
+    private void CreateHalfSplit2PoleBreakers2Ph(
+      Transaction tr,
+      BlockTableRecord btr,
+      Point3d startPoint,
+      Dictionary<string, object> panelData,
+      Dictionary<string, double> data,
+      bool left,
+      bool is2Pole,
+      int i
+    ) {
+      var (
+        descriptions,
+        breakers,
+        circuits,
+        phaseA,
+        phaseB,
+        phaseC,
+        descriptionHighlights,
+        descriptionTags
+      ) = GetCorrectBreakerData(panelData, left, is2Pole);
+
+      double descriptionX = GetDescriptionX(startPoint, left);
+      double breakerX = GetBreakerX(startPoint, left);
+      double circuitX = GetCircuitX(startPoint, left);
+      double textHeight = 0.0725;
+      double length = 0.14;
+
+      for (var j = i; j <= i + 3; j++) {
+        List<string> phaseList = GetPhaseList2P(j, phaseA, phaseB);
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+          List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
+          foreach (Dictionary<string, object> panel in panelStorage) {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+              descriptions[j] = "PANEL " + panel["panel"] as string;
+            }
+          }
+        }
+        string description =
+          (descriptionHighlights[j] && descriptions[j] != "EXISTING LOAD")
+            ? "(E)" + descriptions[j]
+            : descriptions[j];
+        string breaker = breakers[j];
+        string phase = phaseList[j];
+        string circuit = circuits[j];
+        double height = startPoint.Y + (-0.890211813771344 - ((j / 2) * 0.1872));
+        double phaseX = GetPhaseX2P(j, startPoint, left);
+
+        if (j == i + 2) {
+          description = "---";
+          breakerX += 0.16;
+        }
+        if (j == i + 3) {
+          breakerX -= 0.16 + 0.045;
+        }
+
+        double yShift = 0;
+        if ((j - i) % 2 == 0) {
+          yShift = 0.0575;
+        }
+        else {
+          yShift = -0.0378;
+        }
+        height = height + yShift;
+
+        if ((j - i) == 0 || (j - i) == 3) {
+          breaker = breaker + "-1";
+          length = 0.23;
+        }
+        else if ((j - i) == 1) {
+          length = 0.105;
+        }
+        else {
+          length = 0.045;
+          breakerX += 0.045;
+        }
+
+        CreateAndPositionText(
+          tr,
+          description,
+          "ROMANS",
+          textHeight,
+          1,
           2,
           "0",
-          new Point3d(breakerX, height, 0),
-          length
-           */
+          new Point3d(descriptionX, height, 0)
+        );
+        if (phase != "0") {
+          CreateAndPositionCenteredText(
+            tr,
+            phase,
+            "ROMANS",
+            textHeight,
+            1.0,
+            2,
+            "0",
+            new Point3d(phaseX, height, 0)
+          );
+        }
+        if (breaker != "") {
+          CreateAndPositionFittedText(
+            tr,
+            breaker,
+            "ROMANS",
+            textHeight,
+            1.0,
+            2,
+            "0",
+            new Point3d(breakerX, height, 0),
+            length
+          );
         }
         CreateAndPositionText(
           tr,
@@ -3958,10 +4075,10 @@ namespace ElectricalCommands {
 
     public double GetPhaseX(int i, Point3d startPoint, bool left) {
       if (left) {
-        if (i % 6 == 0) {
+        if (i % 6 == 0 || i % 6 == 1) {
           return startPoint.X + 1.64526228334811;
         }
-        else if (i % 6 == 2) {
+        else if (i % 6 == 2 || i % 6 == 3) {
           return startPoint.X + 2.0792421731542;
         }
         else {
@@ -3969,10 +4086,10 @@ namespace ElectricalCommands {
         }
       }
       else {
-        if (i % 6 == 0) {
+        if (i % 6 == 0 || i % 6 == 1) {
           return startPoint.X + 6.11211889838299;
         }
-        else if (i % 6 == 2) {
+        else if (i % 6 == 2 || i % 6 == 3) {
           return startPoint.X + 6.53328984899773;
         }
         else {
@@ -3983,7 +4100,7 @@ namespace ElectricalCommands {
 
     public double GetPhaseX2P(int i, Point3d startPoint, bool left) {
       if (left) {
-        if (i % 4 == 0) {
+        if (i % 4 == 0 || i % 4 == 1) {
           return startPoint.X + 1.8390082793234;
         }
         else {
@@ -3991,7 +4108,7 @@ namespace ElectricalCommands {
         }
       }
       else {
-        if (i % 4 == 0) {
+        if (i % 4 == 0 || i % 4 == 1) {
           return startPoint.X + 6.21960728338948;
         }
         else {
@@ -4006,10 +4123,10 @@ namespace ElectricalCommands {
       List<string> phaseB,
       List<string> phaseC
     ) {
-      if (i % 6 == 0) {
+      if (i % 6 == 0 || i % 6 == 1) {
         return phaseA;
       }
-      else if (i % 6 == 2) {
+      else if (i % 6 == 2 || i % 3 == 3) {
         return phaseB;
       }
       else {
@@ -4018,7 +4135,7 @@ namespace ElectricalCommands {
     }
 
     public List<string> GetPhaseList2P(int i, List<string> phaseA, List<string> phaseB) {
-      if (i % 4 == 0) {
+      if (i % 4 == 0 || i % 4 == 1) {
         return phaseA;
       }
       else {
