@@ -366,7 +366,6 @@ namespace ElectricalCommands {
 
       List<string> description_left_tags = new List<string>();
       List<string> description_right_tags = new List<string>();
-
       for (int i = 0; i < PANEL_GRID.Rows.Count; i++) {
         string descriptionLeftValue = "";
         if (
@@ -2930,7 +2929,6 @@ namespace ElectricalCommands {
       sanitized = Regex.Replace(sanitized, @"\p{Zs}+", "+");
       sanitized = Regex.Replace(sanitized, @"-+", "+");
       sanitized = sanitized.Replace("HP", "");
-      Console.WriteLine(sanitized);
       if (!Regex.IsMatch(sanitized, @"^\d+((\+\d)?\/\d)?$")) {
         return "-1";
       }
@@ -3201,7 +3199,6 @@ namespace ElectricalCommands {
         string phaseC = PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString().ToUpper().Replace("\r", "");
 
         if (!String.IsNullOrEmpty(phaseA) && phaseA.EndsWith("HP")) {
-          Console.WriteLine("one");
           if (i + 1 < PANEL_GRID.Rows.Count && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
             phaseA = ConvertHpToVa(phaseA, 1, LINE_VOLTAGE_COMBOBOX.SelectedItem as string);
             phaseB = phaseA;
@@ -3227,14 +3224,10 @@ namespace ElectricalCommands {
             i += 3;
           }
           else {
-            Console.WriteLine("two");
             phaseA = ConvertHpToVa(phaseA, 1, PHASE_VOLTAGE_COMBOBOX.SelectedItem as string);
             if (phaseA == "-1") {
-              Console.WriteLine("three");
               return;
             }
-
-            Console.WriteLine("four");
             // set values of PANEL_GRID phase_a_{side}
             PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value = phaseA;
             i++;
