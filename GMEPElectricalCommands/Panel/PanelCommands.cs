@@ -3693,7 +3693,7 @@ namespace ElectricalCommands {
         descriptionTags
       ) = GetCorrectBreakerData(panelData, left, is2Pole);
 
-      double descriptionX = GetDescriptionX(startPoint, left);
+      double descriptionX = GetDescriptionX2P(startPoint, left);
       double breakerX = GetBreakerX(startPoint, left);
       double circuitX = GetCircuitX(startPoint, left);
       double textHeight = 0.0725;
