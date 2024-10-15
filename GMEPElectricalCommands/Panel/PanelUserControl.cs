@@ -1985,7 +1985,7 @@ namespace ElectricalCommands {
       for (int i = 0; i < 2; i++) {
         if (!String.IsNullOrEmpty(row.Cells[$"description_{side}"].Value as string) &&
              (
-               String.IsNullOrEmpty(row.Cells[$"breaker_{side}"].Value as string) ||
+               !String.IsNullOrEmpty(row.Cells[$"breaker_{side}"].Value as string) &&
                row.Cells[$"breaker_{side}"].Value as string == "20"
              )
            ) {
@@ -2568,12 +2568,9 @@ namespace ElectricalCommands {
         // perform high leg calculation
         double singlePhaseLoads = AggregateSinglePhaseLoads();
         double threePhaseLoads = AggregateThreePhaseLoads();
-        Console.WriteLine(threePhaseLoads);
         sum = singlePhaseLoads + threePhaseLoads;
         double singlePhaseAmperage = singlePhaseLoads / 240;
         double threePhaseAmperage = threePhaseLoads / 240 / 1.732;
-        Console.WriteLine(threePhaseAmperage);
-        Console.WriteLine(singlePhaseAmperage);
         feederAmps = singlePhaseAmperage + threePhaseAmperage;
         FEEDER_AMP_GRID.Rows[0].Cells[0].Value = Math.Round(feederAmps, 1);
         totalKva = CalculatePanelLoad(sum) * safetyFactor;
