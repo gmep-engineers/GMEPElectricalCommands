@@ -486,6 +486,7 @@
       this.PHASE_COMBOBOX.Name = "PHASE_COMBOBOX";
       this.PHASE_COMBOBOX.Size = new System.Drawing.Size(121, 21);
       this.PHASE_COMBOBOX.TabIndex = 151;
+      this.PHASE_COMBOBOX.SelectedIndexChanged += new System.EventHandler(this.PHASE_COMBOBOX_SelectedIndexChanged);
       // 
       // MOUNTING_COMBOBOX
       // 
