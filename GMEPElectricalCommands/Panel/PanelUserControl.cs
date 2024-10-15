@@ -3188,6 +3188,9 @@ namespace ElectricalCommands {
               if (voltage == "208") {
                 phaseVA = Math.Round(59.4 * 208.0).ToString();
               }
+              if (voltage == "240") {
+                phaseVA = Math.Round(54 * 230.0).ToString();
+              }
               if (voltage == "480") {
                 phaseVA = Math.Round(27 * 460.0).ToString();
               }
@@ -3196,6 +3199,9 @@ namespace ElectricalCommands {
           case var _ when sumObject > 10: { // 15
               if (voltage == "208") {
                 phaseVA = Math.Round(46.2 * 208.0).ToString();
+              }
+              if (voltage == "240") {
+                phaseVA = Math.Round(42 * 230.0).ToString();
               }
               if (voltage == "480") {
                 phaseVA = Math.Round(21.0 * 460.0).ToString();
@@ -3206,6 +3212,9 @@ namespace ElectricalCommands {
               if (voltage == "208") {
                 phaseVA = Math.Round(30.8 * 208.0).ToString();
               }
+              if (voltage == "240") {
+                phaseVA = Math.Round(28 * 230.0).ToString();
+              }
               if (voltage == "480") {
                 phaseVA = Math.Round(14.0 * 460.0).ToString();
               }
@@ -3214,6 +3223,9 @@ namespace ElectricalCommands {
           case var _ when sumObject > 5: { // 7 1/2
               if (voltage == "208") {
                 phaseVA = Math.Round(24.2 * 208.0).ToString();
+              }
+              if (voltage == "240") {
+                phaseVA = Math.Round(22 * 230.0).ToString();
               }
               if (voltage == "480") {
                 phaseVA = Math.Round(11.0 * 460.0).ToString();
@@ -3224,6 +3236,9 @@ namespace ElectricalCommands {
               if (voltage == "208") {
                 phaseVA = Math.Round(16.7 * 208.0).ToString();
               }
+              if (voltage == "240") {
+                phaseVA = Math.Round(15.2 * 230.0).ToString();
+              }
               if (voltage == "480") {
                 phaseVA = Math.Round(7.6 * 460.0).ToString();
               }
@@ -3232,6 +3247,9 @@ namespace ElectricalCommands {
           case var _ when sumObject > 2: { // 3
               if (voltage == "208") {
                 phaseVA = Math.Round(10.6 * 208.0).ToString();
+              }
+              if (voltage == "240") {
+                phaseVA = Math.Round(9.6 * 230.0).ToString();
               }
               if (voltage == "480") {
                 phaseVA = Math.Round(4.8 * 460.0).ToString();
@@ -3242,6 +3260,9 @@ namespace ElectricalCommands {
               if (voltage == "208") {
                 phaseVA = Math.Round(7.5 * 208.0).ToString();
               }
+              if (voltage == "240") {
+                phaseVA = Math.Round(6.8 * 230.0).ToString();
+              }
               if (voltage == "480") {
                 phaseVA = Math.Round(3.4 * 460.0).ToString();
               }
@@ -3250,6 +3271,9 @@ namespace ElectricalCommands {
           case var _ when sumObject > 1: { // 1 1/2
               if (voltage == "208") {
                 phaseVA = Math.Round(6.6 * 208.0).ToString();
+              }
+              if (voltage == "240") {
+                phaseVA = Math.Round(6 * 230.0).ToString();
               }
               if (voltage == "480") {
                 phaseVA = Math.Round(3.0 * 460.0).ToString();
@@ -3260,6 +3284,9 @@ namespace ElectricalCommands {
               if (voltage == "208") {
                 phaseVA = Math.Round(4.6 * 208.0).ToString();
               }
+              if (voltage == "240") {
+                phaseVA = Math.Round(4.2 * 230.0).ToString();
+              }
               if (voltage == "480") {
                 phaseVA = Math.Round(2.1 * 460.0).ToString();
               }
@@ -3269,6 +3296,9 @@ namespace ElectricalCommands {
               if (voltage == "208") {
                 phaseVA = Math.Round(3.5 * 208.0).ToString();
               }
+              if (voltage == "240") {
+                phaseVA = Math.Round(3.2 * 230.0).ToString();
+              }
               if (voltage == "480") {
                 phaseVA = Math.Round(1.6 * 460.0).ToString();
               }
@@ -3277,6 +3307,9 @@ namespace ElectricalCommands {
           case var _ when sumObject <= 0.5: { // 1/2
               if (voltage == "208") {
                 phaseVA = Math.Round(2.4 * 208.0).ToString();
+              }
+              if (voltage == "240") {
+                phaseVA = Math.Round(2.2 * 230.0).ToString();
               }
               if (voltage == "480") {
                 phaseVA = Math.Round(1.1 * 460.0).ToString();
