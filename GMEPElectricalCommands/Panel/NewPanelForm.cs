@@ -22,7 +22,7 @@ namespace ElectricalCommands {
 
     private void CREATEPANEL_Click(object sender, EventArgs e) {
       // get the state of the checkbox
-      bool is3PH = CHECKBOX3PH.Checked;
+      bool is3Ph = CHECKBOX3PH.Checked;
 
       // get the value of the textbox
       string panelName = CREATEPANELNAME.Text;
@@ -41,7 +41,7 @@ namespace ElectricalCommands {
 
       // call a method on the main form
       if (_mainForm != null) {
-        var userControl = _mainForm.CreateNewPanelTab(panelName, is3PH);
+        var userControl = _mainForm.CreateNewPanelTab(panelName, is3Ph);
         userControl.AddListeners();
       }
     }

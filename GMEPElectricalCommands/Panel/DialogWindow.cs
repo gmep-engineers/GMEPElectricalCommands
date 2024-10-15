@@ -197,8 +197,8 @@ namespace ElectricalCommands {
 
       foreach (Dictionary<string, object> panel in sortedPanels) {
         string panelName = panel["panel"].ToString();
-        bool is3PH = panel.ContainsKey("phase_c_left");
-        PanelUserControl userControl1 = CreateNewPanelTab(panelName, is3PH);
+        bool is3Ph = panel.ContainsKey("phase_c_left");
+        PanelUserControl userControl1 = CreateNewPanelTab(panelName, is3Ph);
         userControl1.ClearModalAndRemoveRows(panel);
         userControl1.PopulateModalWithPanelData(panel);
         var notes = JsonConvert.DeserializeObject<List<string>>(panel["notes"].ToString());
@@ -332,7 +332,7 @@ namespace ElectricalCommands {
       tabPage.Controls.Add(control);
     }
 
-    public PanelUserControl CreateNewPanelTab(string tabName, bool is3PH) {
+    public PanelUserControl CreateNewPanelTab(string tabName, bool is3Ph) {
       // if tabname has "PANEL" in it replace it with "Panel"
       if (tabName.Contains("PANEL") || tabName.Contains("Panel")) {
         tabName = tabName.Replace("PANEL", "");
@@ -349,7 +349,7 @@ namespace ElectricalCommands {
       PANEL_TABS.SelectedTab = newTabPage;
 
       // Create a new UserControl
-      PanelUserControl userControl1 = new PanelUserControl(this.myCommandsInstance, this, this.newPanelForm, tabName, is3PH);
+      PanelUserControl userControl1 = new PanelUserControl(this.myCommandsInstance, this, this.newPanelForm, tabName, is3Ph);
 
       // Add the UserControl to the list of UserControls
       this.userControls.Add(userControl1);
@@ -731,9 +731,11 @@ namespace ElectricalCommands {
       return currentMax;
     }
 
-    public void UnlinkSubpanel(string feederPanelName, string panelName, bool panelIs3Ph) {
-      PanelUserControl feederPanel = (PanelUserControl)FindUserControl(feederPanelName);
-      feederPanel.UnlinkSubpanel(panelName, panelIs3Ph);
+    public void RemoveFedFrom(string panelName) {
+      PanelUserControl panel = (PanelUserControl)FindUserControl(panelName);
+      if (panel != null) {
+        panel.RemoveFedFrom(panelName, false);
+      }
     }
   }
 

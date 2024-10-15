@@ -961,8 +961,8 @@
     private System.Windows.Forms.CheckBox LCL_OVERRIDE;
     private System.Windows.Forms.CheckBox LML_OVERRIDE;
     private System.Windows.Forms.Button HP_TO_VA;
-    private string ID;
-    private bool is3PH;
+    private string id;
+    private bool is3Ph;
     private System.Windows.Forms.Label FED_FROM_LABEL;
     private System.Windows.Forms.CheckBox DISTRIBUTION_SECTION_CHECKBOX;
     private System.Windows.Forms.CheckBox SAFETY_FACTOR_CHECKBOX;
