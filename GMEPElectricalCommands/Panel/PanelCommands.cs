@@ -1790,7 +1790,7 @@ namespace ElectricalCommands {
       CreateAndPositionRightText(tr, GetSafeString("lcl"), "ROMANS", 0.09375, 1, 2, "PNLTXT", new Point3d(endPoint.X - 7.59414061117746, endPoint.Y - 0.413648726513742, 0));
       CreateAndPositionText(tr, "=", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 7.03028501835593, endPoint.Y - 0.437756414851634, 0));
       CreateAndPositionRightText(tr, GetSafeString("lcl125"), "ROMANS", 0.09375, 1, 2, "PNLTXT", new Point3d(endPoint.X - 6.69695957617801, endPoint.Y - 0.413648726513742, 0));
-      CreateAndPositionText(tr, "LML @ 125 %", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 8.9456956126196, endPoint.Y - 0.616854044919108, 0));
+      CreateAndPositionText(tr, "LML @ 125 %", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 8.91077927366155, endPoint.Y - 0.616854044919108, 0));
       CreateAndPositionRightText(tr, GetSafeString("lml"), "ROMANS", 0.09375, 1, 2, "PNLTXT", new Point3d(endPoint.X - 7.59414061117746, endPoint.Y - 0.618180694030713, 0));
       CreateAndPositionText(tr, "=", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 7.03028501835593, endPoint.Y - 0.618180694030713, 0));
       CreateAndPositionRightText(tr, GetSafeString("lml125"), "ROMANS", 0.09375, 1, 2, "PNLTXT", new Point3d(endPoint.X - 6.69695957617801, endPoint.Y - 0.618180694030713, 0));
