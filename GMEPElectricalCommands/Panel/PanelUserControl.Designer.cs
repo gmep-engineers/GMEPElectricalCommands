@@ -132,6 +132,7 @@
       this.PANEL_GRID.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
       this.PANEL_GRID.Size = new System.Drawing.Size(1047, 489);
       this.PANEL_GRID.TabIndex = 154;
+      this.PANEL_GRID.CellValueChanged += new System.Windows.Forms.DataGridViewCellEventHandler(this.PANEL_GRID_CellValueChanged);
       // 
       // description_left
       // 
@@ -457,6 +458,7 @@
       this.LINE_VOLTAGE_COMBOBOX.Name = "LINE_VOLTAGE_COMBOBOX";
       this.LINE_VOLTAGE_COMBOBOX.Size = new System.Drawing.Size(121, 21);
       this.LINE_VOLTAGE_COMBOBOX.TabIndex = 150;
+      this.LINE_VOLTAGE_COMBOBOX.SelectedIndexChanged += new System.EventHandler(this.VoltageCombobox_SelectedValueChanged);
       // 
       // STATUS_COMBOBOX
       // 
@@ -475,6 +477,7 @@
       // PHASE_COMBOBOX
       // 
       this.PHASE_COMBOBOX.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+      this.PHASE_COMBOBOX.Enabled = false;
       this.PHASE_COMBOBOX.FormattingEnabled = true;
       this.PHASE_COMBOBOX.Items.AddRange(new object[] {
             "1",
@@ -498,6 +501,7 @@
       // WIRE_COMBOBOX
       // 
       this.WIRE_COMBOBOX.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+      this.WIRE_COMBOBOX.Enabled = false;
       this.WIRE_COMBOBOX.FormattingEnabled = true;
       this.WIRE_COMBOBOX.Items.AddRange(new object[] {
             "3",
