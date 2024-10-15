@@ -730,6 +730,11 @@ namespace ElectricalCommands {
       }
       return currentMax;
     }
+
+    public void UnlinkSubpanel(string feederPanelName, string panelName, bool panelIs3Ph) {
+      PanelUserControl feederPanel = (PanelUserControl)FindUserControl(feederPanelName);
+      feederPanel.UnlinkSubpanel(panelName, panelIs3Ph);
+    }
   }
 
   public class LclLmlObject {
