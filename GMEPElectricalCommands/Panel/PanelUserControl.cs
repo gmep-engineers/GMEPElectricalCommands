@@ -2169,10 +2169,13 @@ namespace ElectricalCommands {
 
     public void LinkSubpanels() {
       string side = "left";
-      for (int i = 0; i < PANEL_GRID.Rows.Count; i++) {
-        if (PANEL_GRID.Rows[i].Cells[$"description_{side}"].Value.ToString().ToUpper().Contains("PANEL")) {
-          LinkSubpanel(PANEL_GRID.Rows[i].Cells[$"description_{side}"].Value.ToString(), i, side);
+      for (int j = 0; j < 2; j++) {
+        for (int i = 0; i < PANEL_GRID.Rows.Count; i++) {
+          if (PANEL_GRID.Rows[i].Cells[$"description_{side}"].Value.ToString().ToUpper().Contains("PANEL")) {
+            LinkSubpanel(PANEL_GRID.Rows[i].Cells[$"description_{side}"].Value.ToString(), i, side);
+          }
         }
+        side = "right";
       }
     }
 
@@ -2188,17 +2191,10 @@ namespace ElectricalCommands {
       var isPanelReal = this.mainForm.PanelNameExists(panelName);
 
       if (isPanelReal) {
-        UserControl panelControl = mainForm.FindUserControl(panelName);
+        PanelUserControl panelControl = (PanelUserControl)mainForm.FindUserControl(panelName);
         DataGridView panelControl_phaseSumGrid =
           panelControl.Controls.Find("PHASE_SUM_GRID", true).FirstOrDefault() as DataGridView;
-        TextBox panelControl_fedFromTextbox =
-          panelControl.Controls.Find("FED_FROM_TEXTBOX", true).FirstOrDefault() as TextBox;
-        if (DISTRIBUTION_SECTION_CHECKBOX.Checked) {
-          panelControl_fedFromTextbox.Text = PANEL_NAME_INPUT.Text;
-        }
-        else {
-          panelControl_fedFromTextbox.Text = "PANEL " + PANEL_NAME_INPUT.Text;
-        }
+        UpdateSubpanelFedFrom();
         var phaseSumGridColumnCount = panelControl_phaseSumGrid.ColumnCount;
         var panelPhaseSumGridColumnCount = PHASE_SUM_GRID.ColumnCount;
         
@@ -2215,7 +2211,7 @@ namespace ElectricalCommands {
 
     private void AutoLinkSubpanels(string cellValue, DataGridViewRow row, DataGridViewColumn col) {
       if (col.Name.Contains("description")) {
-        if (cellValue.ToLower().Contains("panel")) {
+        if (cellValue.ToUpper().Contains("PANEL")) {
           string side = col.Name.Contains("left") ? "left" : "right";
           int rowIndex = row.Index;
           LinkSubpanel(cellValue, rowIndex, side);
@@ -2329,6 +2325,9 @@ namespace ElectricalCommands {
       }
 
       string cellValue = cell.Value?.ToString() ?? string.Empty;
+      if (!String.IsNullOrEmpty(cellValue)) {
+        cell.Value = cell.Value.ToString().ToUpper();
+      }
       var row = PANEL_GRID.Rows[e.RowIndex];
       var col = PANEL_GRID.Columns[e.ColumnIndex];
 
@@ -3613,49 +3612,60 @@ namespace ElectricalCommands {
     }
 
     internal void UpdateSubpanelFedFrom() {
-      for (int i = 0; i < PANEL_GRID.Rows.Count; i++) {
-        if ((PANEL_GRID.Rows[i].Cells["description_left"].Value as string).ToUpper().StartsWith("PANEL")) {
-          PanelUserControl panelControl = (PanelUserControl)this.mainForm.FindUserControl((PANEL_GRID.Rows[i].Cells["description_left"].Value as string).ToUpper());
-          if (panelControl != null) {
-            string name = this.Name;
-            TextBox panelControl_fedFromTextbox =
-                panelControl.Controls.Find("FED_FROM_TEXTBOX", true).FirstOrDefault() as TextBox;
-            if (DISTRIBUTION_SECTION_CHECKBOX.Checked) {
-              panelControl_fedFromTextbox.Text = name;
-            }
-            else {
-              panelControl_fedFromTextbox.Text = "PANEL " + name;
-            }
-          }
-        }
-        if ((PANEL_GRID.Rows[i].Cells["description_right"].Value as string).ToUpper().StartsWith("PANEL")) {
-          PanelUserControl panelControl = (PanelUserControl)this.mainForm.FindUserControl((PANEL_GRID.Rows[i].Cells["description_right"].Value as string).ToUpper());
-          if (panelControl != null) {
-            string name = this.Name;
-            TextBox panelControl_fedFromTextbox =
-                panelControl.Controls.Find("FED_FROM_TEXTBOX", true).FirstOrDefault() as TextBox;
-            if (DISTRIBUTION_SECTION_CHECKBOX.Checked) {
-              panelControl_fedFromTextbox.Text = name;
-            }
-            else {
-              panelControl_fedFromTextbox.Text = "PANEL " + name;
+      string side = "left";
+      for (int j = 0; j < 2; j++) {
+        for (int i = 0; i < PANEL_GRID.Rows.Count; i++) {
+          if ((PANEL_GRID.Rows[i].Cells[$"description_{side}"].Value as string).ToUpper().StartsWith("PANEL")) {
+            PanelUserControl panelControl = (PanelUserControl)this.mainForm.FindUserControl((PANEL_GRID.Rows[i].Cells[$"description_{side}"].Value as string).ToUpper());
+            if (panelControl != null) {
+              string name = this.Name;
+              TextBox fedFromTextbox =
+                  panelControl.Controls.Find("FED_FROM_TEXTBOX", true).FirstOrDefault() as TextBox;
+              Label phaseWarningLabel = panelControl.Controls.Find("PHASE_WARNING_LABEL", true).FirstOrDefault() as Label;
+              ComboBox phaseComboBox = panelControl.Controls.Find("PHASE_COMBOBOX", true).FirstOrDefault() as ComboBox;
+              ComboBox wireComboBox = panelControl.Controls.Find("WIRE_COMBOBOX", true).FirstOrDefault() as ComboBox;
+              if (DISTRIBUTION_SECTION_CHECKBOX.Checked) {
+                fedFromTextbox.Text = name;
+              }
+              else {
+                fedFromTextbox.Text = "PANEL " + name;
+              }
+              phaseWarningLabel.Visible = true;
+              phaseComboBox.Enabled = false;
+              wireComboBox.Enabled = false;
             }
           }
         }
+        side = "right";
       }
     }
 
     internal void RemoveFedFrom(string panelName, bool check = true) {
       if (check) {
-        if (panelName.Replace("DISTRIB. ", "") == FED_FROM_TEXTBOX.Text) {
+        if (panelName.ToUpper().Replace("DISTRIB. ", "") == FED_FROM_TEXTBOX.Text) {
           FED_FROM_TEXTBOX.Text = "";
+          if (!contains3PhEquip) {
+            PHASE_COMBOBOX.Enabled = true;
+            WIRE_COMBOBOX.Enabled = true;
+            PHASE_WARNING_LABEL.Visible = false;
+          }
         }
-        if (panelName == FED_FROM_TEXTBOX.Text) {
+        if (panelName.ToUpper() == FED_FROM_TEXTBOX.Text) {
           FED_FROM_TEXTBOX.Text = "";
+          if (!contains3PhEquip) {
+            PHASE_COMBOBOX.Enabled = true;
+            WIRE_COMBOBOX.Enabled = true;
+            PHASE_WARNING_LABEL.Visible = false;
+          }
         }
       }
       else {
         FED_FROM_TEXTBOX.Text = "";
+        if (!contains3PhEquip) {
+          PHASE_COMBOBOX.Enabled = true;
+          WIRE_COMBOBOX.Enabled = true;
+          PHASE_WARNING_LABEL.Visible = false;
+        }
       }
     }
 
