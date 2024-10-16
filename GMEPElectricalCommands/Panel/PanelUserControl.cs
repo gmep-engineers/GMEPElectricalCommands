@@ -35,6 +35,7 @@ namespace ElectricalCommands {
     private List<string> defaultNotes;
     private object oldValue;
     private bool isLoading;
+    private bool contains3PhEquip;
 
     public PanelUserControl(
       PanelCommands myCommands,
@@ -51,6 +52,7 @@ namespace ElectricalCommands {
       this.Name = tabName;
       this.notesStorage = new List<string>();
       this.is3Ph = is3Ph;
+      this.contains3PhEquip = false;
 
       INFO_LABEL.Text = "";
 
@@ -963,6 +965,8 @@ namespace ElectricalCommands {
       double[] sums = new double[phaseCount];
       PHASE_COMBOBOX.Enabled = true;
       WIRE_COMBOBOX.Enabled = true;
+      this.contains3PhEquip = false;
+      PHASE_WARNING_LABEL.Visible = false;
       foreach (DataGridViewRow row in PANEL_GRID.Rows) {
         for (int i = 0; i < columnNames.Length; i += 2) {
           for (int j = 0; j < 2; j++) {
@@ -979,14 +983,19 @@ namespace ElectricalCommands {
         if (!String.IsNullOrEmpty(row.Cells["breaker_left"].Value as string) && row.Cells["breaker_left"].Value as string == "3" && is3Ph) {
           PHASE_COMBOBOX.Enabled = false;
           WIRE_COMBOBOX.Enabled = false;
+          this.contains3PhEquip = true;
+          PHASE_WARNING_LABEL.Visible = true;
         }
         else if (!String.IsNullOrEmpty(row.Cells["breaker_right"].Value as string) && row.Cells["breaker_right"].Value as string == "3" && is3Ph) {
           PHASE_COMBOBOX.Enabled = false;
           WIRE_COMBOBOX.Enabled = false;
+          this.contains3PhEquip = true; 
+          PHASE_WARNING_LABEL.Visible = true;
         }
         else if (!String.IsNullOrEmpty(FED_FROM_TEXTBOX.Text)) {
           PHASE_COMBOBOX.Enabled = false;
           WIRE_COMBOBOX.Enabled = false;
+          PHASE_WARNING_LABEL.Visible = true;
         }
       }
 
@@ -3940,6 +3949,21 @@ namespace ElectricalCommands {
       // This needs to happen to refresh the colors correctly as part of a separate event.
       DISTRIBUTION_SECTION_CHECKBOX.Checked = !DISTRIBUTION_SECTION_CHECKBOX.Checked;
       DISTRIBUTION_SECTION_CHECKBOX.Checked = !DISTRIBUTION_SECTION_CHECKBOX.Checked;
+    }
+
+    private void PHASE_WARNING_LABEL_MouseHover(object sender, EventArgs e) {
+      string message = "";
+      Console.WriteLine("hi");
+      if (!String.IsNullOrEmpty(FED_FROM_TEXTBOX.Text)) {
+        message += "Phase and wire cannot be altered when panel is fed from another panel.\n";
+      }
+      if (this.contains3PhEquip) {
+        message += "Phase and wire cannot be altered when panel contains 3-phase equipment.";
+      }
+      if (!String.IsNullOrEmpty(message)) {
+        System.Windows.Forms.ToolTip toolTip = new System.Windows.Forms.ToolTip();
+        toolTip.SetToolTip(PHASE_WARNING_LABEL, message);
+      }
     }
   }
 
