@@ -20,8 +20,6 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Media.Media3D;
-using static OfficeOpenXml.ExcelErrorValue;
 
 namespace ElectricalCommands {
 
@@ -958,16 +956,118 @@ namespace ElectricalCommands {
       CalculateBreakerLoadForPhases(phaseCount);
     }
 
+    private bool RowIsSinglePhase(int i, string side) {
+      if (i == PANEL_GRID.Rows.Count - 1) {
+        if (String.IsNullOrEmpty((PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string))) {
+          return false;
+        }
+        if (PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string == "3") {
+          return false;
+        }
+        if (PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string == "2") {
+          return false;
+        }
+        return true;
+      }
+      else if (i == PANEL_GRID.Rows.Count - 2) {
+        if (String.IsNullOrEmpty((PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string))) {
+          return false;
+        }
+        if (PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string == "3") {
+          return false;
+        }
+        if (PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string == "2") {
+          return false;
+        }
+        if (PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "3") {
+          return false;
+        }
+        if (PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
+          return false;
+        }
+        return true;
+      }
+      else {
+        if (String.IsNullOrEmpty((PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string))) {
+          return false;
+        }
+        if (PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string == "3") {
+          return false;
+        }
+        if (PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string == "2") {
+          return false;
+        }
+        if (PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "3") {
+          return false;
+        }
+        if (PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2") {
+          return false;
+        }
+        if (PANEL_GRID.Rows[i + 2].Cells[$"breaker_{side}"].Value as string == "3") {
+          return false;
+        }
+        return true;
+      }
+    }
+
+    public void SetWarnings() {
+      PHASE_COMBOBOX.Enabled = true;
+      WIRE_COMBOBOX.Enabled = true;
+      this.contains3PhEquip = false;
+      PHASE_WARNING_LABEL.Visible = false;
+      HIGH_LEG_WARNING_LEFT_LABEL.Visible = false;
+      HIGH_LEG_WARNING_RIGHT_LABEL.Visible = false;
+      for (int i = 0; i < PANEL_GRID.Rows.Count; i++) {
+        DataGridViewRow row = PANEL_GRID.Rows[i];
+        if (!String.IsNullOrEmpty(row.Cells["breaker_left"].Value as string) && row.Cells["breaker_left"].Value as string == "3" && is3Ph) {
+          PHASE_COMBOBOX.Enabled = false;
+          WIRE_COMBOBOX.Enabled = false;
+          this.contains3PhEquip = true;
+          PHASE_WARNING_LABEL.Visible = true;
+        }
+        else if (!String.IsNullOrEmpty(row.Cells["breaker_right"].Value as string) && row.Cells["breaker_right"].Value as string == "3" && is3Ph) {
+          PHASE_COMBOBOX.Enabled = false;
+          WIRE_COMBOBOX.Enabled = false;
+          this.contains3PhEquip = true;
+          PHASE_WARNING_LABEL.Visible = true;
+        }
+        else if (!String.IsNullOrEmpty(FED_FROM_TEXTBOX.Text)) {
+          PHASE_COMBOBOX.Enabled = false;
+          WIRE_COMBOBOX.Enabled = false;
+          PHASE_WARNING_LABEL.Visible = true;
+        }
+        if (is3Ph && i % 3 == 2
+          && LINE_VOLTAGE_COMBOBOX.Text == "240"
+          && RowIsSinglePhase(i, "left")) {
+          HIGH_LEG_WARNING_LEFT_LABEL.Visible = true;
+          row.Cells["breaker_left"].Style.BackColor = Color.Crimson;
+          row.Cells["breaker_left"].Style.ForeColor = Color.White;
+        }
+        else {
+          row.Cells["breaker_left"].Style.BackColor = Color.White;
+          row.Cells["breaker_left"].Style.ForeColor = Color.Black;
+        }
+        if (is3Ph && i % 3 == 2
+          && LINE_VOLTAGE_COMBOBOX.Text == "240"
+          && RowIsSinglePhase(i, "right")) {
+          HIGH_LEG_WARNING_RIGHT_LABEL.Visible = true;
+          row.Cells["breaker_right"].Style.BackColor = Color.Crimson;
+          row.Cells["breaker_right"].Style.ForeColor = Color.White;
+        }
+        else {
+          row.Cells["breaker_right"].Style.BackColor = Color.White;
+          row.Cells["breaker_right"].Style.ForeColor = Color.Black;
+        }
+      }
+      
+    }
+
     private void CalculateBreakerLoadForPhases(int phaseCount) {
       string[] columnNames = GetColumnNames(phaseCount);
       int breakersWithKitchenDemand = BreakersWithNote("KITCHEN DEMAND");
       double demandFactor = KitchenDemandFactor(breakersWithKitchenDemand);
       double[] sums = new double[phaseCount];
-      PHASE_COMBOBOX.Enabled = true;
-      WIRE_COMBOBOX.Enabled = true;
-      this.contains3PhEquip = false;
-      PHASE_WARNING_LABEL.Visible = false;
-      foreach (DataGridViewRow row in PANEL_GRID.Rows) {
+      foreach (DataGridViewRow row in PANEL_GRID.Rows)  {
         for (int i = 0; i < columnNames.Length; i += 2) {
           for (int j = 0; j < 2; j++) {
             string colName = columnNames[i + j];
@@ -980,25 +1080,8 @@ namespace ElectricalCommands {
             }
           }
         }
-        if (!String.IsNullOrEmpty(row.Cells["breaker_left"].Value as string) && row.Cells["breaker_left"].Value as string == "3" && is3Ph) {
-          PHASE_COMBOBOX.Enabled = false;
-          WIRE_COMBOBOX.Enabled = false;
-          this.contains3PhEquip = true;
-          PHASE_WARNING_LABEL.Visible = true;
-        }
-        else if (!String.IsNullOrEmpty(row.Cells["breaker_right"].Value as string) && row.Cells["breaker_right"].Value as string == "3" && is3Ph) {
-          PHASE_COMBOBOX.Enabled = false;
-          WIRE_COMBOBOX.Enabled = false;
-          this.contains3PhEquip = true; 
-          PHASE_WARNING_LABEL.Visible = true;
-        }
-        else if (!String.IsNullOrEmpty(FED_FROM_TEXTBOX.Text)) {
-          PHASE_COMBOBOX.Enabled = false;
-          WIRE_COMBOBOX.Enabled = false;
-          PHASE_WARNING_LABEL.Visible = true;
-        }
       }
-
+      SetWarnings();
       for (int i = 0; i < phaseCount; i++) {
         if (PHASE_SUM_GRID.Rows.Count > 0) {
           PHASE_SUM_GRID.Rows[0].Cells[i].Value = sums[i];
@@ -1143,6 +1226,8 @@ namespace ElectricalCommands {
       Color foreColor2 = Color.Black;
       Color blockColor = Color.SlateGray;
       Color phaseColor = Color.LightGray;
+      Color hiLegColor = Color.LightBlue;
+      double lineVoltage = SafeConvertToDouble(LINE_VOLTAGE_COMBOBOX.Text);
       if (!DISTRIBUTION_SECTION_CHECKBOX.Checked) {
         backColor2 = Color.White;
       }
@@ -1216,7 +1301,7 @@ namespace ElectricalCommands {
           SAFETY_FACTOR_CHECKBOX.Enabled = true;
         }
         else {
-          if (i % 3 == 0) {
+          if (i % 3 == 0) { // phase a shaded
             PANEL_GRID.Rows[i].Cells["phase_a_left"].Style.BackColor = phaseColor;
             PANEL_GRID.Rows[i].Cells["phase_a_right"].Style.BackColor = phaseColor;
             PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = backColor1;
@@ -1224,7 +1309,7 @@ namespace ElectricalCommands {
             PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = backColor1;
           }
-          else if (i % 3 == 1) {
+          else if (i % 3 == 1) { // phase b shaded
             PANEL_GRID.Rows[i].Cells["phase_a_left"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_a_right"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = phaseColor;
@@ -1232,13 +1317,23 @@ namespace ElectricalCommands {
             PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = backColor1;
           }
-          else {
+          else { // phase c shaded
             PANEL_GRID.Rows[i].Cells["phase_a_left"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_a_right"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.BackColor = backColor1;
-            PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = phaseColor;
-            PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = phaseColor;
+            if (lineVoltage != 240) {
+              PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = phaseColor;
+              PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = phaseColor;
+              PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.ForeColor = foreColor1;
+              PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.ForeColor = foreColor1;
+            }
+            else {
+              PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = hiLegColor;
+              PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = hiLegColor;
+              PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.ForeColor = foreColor2;
+              PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.ForeColor = foreColor2;
+            }
           }
           PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = backColor1;
           PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = backColor1;
@@ -3009,6 +3104,10 @@ namespace ElectricalCommands {
 
     private void VoltageCombobox_SelectedValueChanged(object sender, EventArgs e) {
       UpdatePerCellValueChange();
+      if (is3Ph) {
+        Color3pPanel(sender, e);
+      }
+      SetWarnings();
     }
 
     private void ADD_ALL_PANELS_BUTTON_Click(object sender, EventArgs e) {
@@ -3952,28 +4051,39 @@ namespace ElectricalCommands {
         AddOrRemovePanelGridColumns(is3Ph);
         ChangeSizeOfPhaseColumns(is3Ph);
         AddPhaseSumColumn(is3Ph);
-
-
       }
       // Toggles the distribution section checkbox.
       // This needs to happen to refresh the colors correctly as part of a separate event.
       DISTRIBUTION_SECTION_CHECKBOX.Checked = !DISTRIBUTION_SECTION_CHECKBOX.Checked;
       DISTRIBUTION_SECTION_CHECKBOX.Checked = !DISTRIBUTION_SECTION_CHECKBOX.Checked;
+
+      SetWarnings();
     }
 
     private void PHASE_WARNING_LABEL_MouseHover(object sender, EventArgs e) {
       string message = "";
-      Console.WriteLine("hi");
       if (!String.IsNullOrEmpty(FED_FROM_TEXTBOX.Text)) {
         message += "Phase and wire cannot be altered when panel is fed from another panel.\n";
       }
       if (this.contains3PhEquip) {
-        message += "Phase and wire cannot be altered when panel contains 3-phase equipment.";
+        message += "Phase and wire cannot be altered when panel has 3-pole breakers.";
       }
       if (!String.IsNullOrEmpty(message)) {
         System.Windows.Forms.ToolTip toolTip = new System.Windows.Forms.ToolTip();
         toolTip.SetToolTip(PHASE_WARNING_LABEL, message);
       }
+    }
+
+    private void HIGH_LEG_WARNING_LEFT_LABEL_MouseHover(object sender, EventArgs e) {
+      string message = "High-leg phase cannot have single-phase, single-pole breaker.";
+      System.Windows.Forms.ToolTip toolTip = new System.Windows.Forms.ToolTip();
+      toolTip.SetToolTip(HIGH_LEG_WARNING_LEFT_LABEL, message);
+    }
+    
+    private void HIGH_LEG_WARNING_RIGHT_LABEL_MouseHover(object sender, EventArgs e) {
+      string message = "High-leg phase cannot have single-phase, single-pole breaker.";
+      System.Windows.Forms.ToolTip toolTip = new System.Windows.Forms.ToolTip();
+      toolTip.SetToolTip(HIGH_LEG_WARNING_RIGHT_LABEL, message);
     }
   }
 

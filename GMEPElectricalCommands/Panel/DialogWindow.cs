@@ -189,6 +189,7 @@ namespace ElectricalCommands {
         userControl.ConfigureDistributionPanel(null, null);
         userControl.LinkSubpanels();
         userControl.UpdatePerCellValueChange();
+        userControl.SetWarnings();
       }
     }
 
