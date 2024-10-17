@@ -217,6 +217,7 @@ namespace ElectricalCommands {
 
     public Dictionary<string, object> RetrieveDataFromModal() {
       // Create a new panel
+      CorrectSpareSpace();
       Dictionary<string, object> panel = new Dictionary<string, object>();
 
       if (String.IsNullOrEmpty(id)) {
@@ -2163,6 +2164,42 @@ namespace ElectricalCommands {
       }
 
       return cellValue;
+    }
+
+    public void CorrectSpareSpace() {
+      string side = "left";
+      for (int j = 0; j < 2; j++) {
+        for (int i = 0; i < PANEL_GRID.Rows.Count; i++) {
+          DataGridViewRow row = PANEL_GRID.Rows[i];
+          if (String.IsNullOrEmpty(row.Cells[$"description_{side}"].Value as string) || row.Cells[$"description_{side}"].Value as string == "SPACE") {
+            if (String.IsNullOrEmpty(row.Cells[$"breaker_{side}"].Value as string)) {
+              if (i < PANEL_GRID.Rows.Count - 1) {
+                if (PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string != "3") {
+                  row.Cells[$"description_{side}"].Value = "";
+                }
+              }
+            }
+            else if (row.Cells[$"description_{side}"].Value as string == "2" || row.Cells[$"description_{side}"].Value as string == "3") {
+              row.Cells[$"description_{side}"].Value = "";
+            }
+            else if (row.Cells[$"breaker_{side}"].Value as string != "3" && row.Cells[$"breaker_{side}"].Value as string != "2") {
+              row.Cells[$"description_{side}"].Value = "SPARE";
+            }
+          }
+          else if (row.Cells[$"description_{side}"].Value as string == "SPARE") {
+            if (String.IsNullOrEmpty(row.Cells[$"breaker_{side}"].Value as string)) {
+              row.Cells[$"description_{side}"].Value = "";
+              row.Cells[$"phase_a_{side}"].Value = "";
+              row.Cells[$"phase_b_{side}"].Value = "";
+              if (is3Ph) row.Cells[$"phase_c_{side}"].Value = "";
+            }
+            else if (row.Cells[$"breaker_{side}"].Value as string == "2" || row.Cells[$"breaker_{side}"].Value as string == "3") {
+              row.Cells[$"description_{side}"].Value = "";
+            }
+          }
+        }
+        side = "right";
+      }
     }
 
     private void AutoSetBreakerSize(string cellValue, DataGridViewRow row, DataGridViewColumn col) {
