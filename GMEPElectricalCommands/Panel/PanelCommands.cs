@@ -16,6 +16,8 @@ namespace ElectricalCommands {
 
   public class PanelCommands {
     private MainForm myForm;
+    private int circuitNumLeft = 1;
+    private int circuitNumRight = 2;
 
     [CommandMethod("PANEL")]
     public void PANEL() {
@@ -1085,6 +1087,8 @@ namespace ElectricalCommands {
       int counter = 0;
       CREATEBLOCK();
       foreach (var panelData in panelDataList) {
+        circuitNumLeft = 1;
+        circuitNumRight = 2;
         if (panelData.TryGetValue("distribution_section", out object value)) {
           if (value is bool boolValue && boolValue == false) {
 
@@ -4473,8 +4477,18 @@ namespace ElectricalCommands {
 
       if (circuitNumber.Contains('A') || circuitNumber.Contains('B')) {
         // Remove 'A' or 'B' from the string
-        circuitNumber = circuitNumber.Replace("A", "").Replace("B", "");
-        circuitNumInt = int.Parse(circuitNumber);
+        if (left) {
+          circuitNumInt = circuitNumLeft;
+          if (circuitNumber.Contains('B')) {
+            circuitNumLeft += 2;
+          }
+        }
+        else {
+          circuitNumInt = circuitNumRight;
+          if (circuitNumber.Contains('B')) {
+            circuitNumRight += 2;
+          }
+        }
         CreateCircuitLine(
           circuitNumInt,
           circuitNumReducer,
@@ -4488,10 +4502,14 @@ namespace ElectricalCommands {
         );
       }
       else {
-        if (String.IsNullOrEmpty(circuitNumber)) {
-          circuitNumber = "0";
+        if (left) {
+          circuitNumInt = circuitNumLeft;
+          circuitNumLeft += 2;
         }
-        circuitNumInt = int.Parse(circuitNumber);
+        else {
+          circuitNumInt = circuitNumRight;
+          circuitNumRight += 2;
+        }
       }
 
       return CreateCircuitLine(
