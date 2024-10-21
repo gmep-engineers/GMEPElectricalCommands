@@ -230,6 +230,7 @@ namespace ElectricalCommands {
                   case 0: pdf.Position = new Point3d(pdf.Width * 0 + leftMargin, pdf.Height * 0 + transformFactor, 0); break;
                 }
                 Point3d pos = pdf.Position;
+                pdf.Layer = "E-TXT1";
                 endPoint = pos;
               }
               acTrans.Commit();
@@ -245,6 +246,16 @@ namespace ElectricalCommands {
         using (Transaction tr = acCurDb.TransactionManager.StartTransaction()) {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
           BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+          double addressShift = 0;
+          if (strFileName.Contains("NRCCELC")) {
+            addressShift = -0.1393;
+          }
+          if (strFileName.Contains("NRCCSAB")) {
+            addressShift = -0.434;
+          }
+          if (strFileName.Contains("NRCCMCH") || strFileName.Contains("NRCCPRC")) {
+            addressShift = 0.1287;
+          }
 
           string date = DateTime.UtcNow.Date.ToString("MM/dd/yyyy");
           CreateAndPositionText(tr, "26439 RANCHO PARKWAY S., STE 120", "section title", 0.0876943284922549, 0.85, 2, "E-TXT1", new Point3d(endPoint.X + 0.616030703269718, endPoint.Y + 4.50630858013255, 0));
@@ -259,7 +270,7 @@ namespace ElectricalCommands {
           CreateAndPositionText(tr, "018959", "section title", 0.0876943284922549, 0.85, 2, "E-TXT1", new Point3d(endPoint.X + 4.73138762315727, endPoint.Y + 2.73999545901736, 0));
           CreateAndPositionText(tr, "949-267-9095", "section title", 0.0876943284922549, 0.85, 2, "E-TXT1", new Point3d(endPoint.X + 4.72812369339329, endPoint.Y + 2.60470667575825, 0));
           CreateAndPositionText(tr, CADObjectCommands.Address, "section title", 0.0876943284922549, 0.85, 2, "E-TXT1", new Point3d(endPoint.X + 1.12034937319065, endPoint.Y + 5.90348576586952, 0));
-          CreateAndPositionText(tr, CADObjectCommands.Address, "section title", 0.0876943284922549, 0.85, 2, "E-TXT1", new Point3d(19.6189747396865, 20.0676917313362, 0));
+          CreateAndPositionText(tr, CADObjectCommands.Address, "section title", 0.0876943284922549, 0.85, 2, "E-TXT1", new Point3d(19.6189747396865, 20.0676917313362 + addressShift, 0));
 
           // create the signature from the block
           try {
