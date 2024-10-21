@@ -385,7 +385,7 @@ namespace ElectricalCommands {
         else {
           descriptionLeftValue = string.IsNullOrWhiteSpace(
             PANEL_GRID.Rows[i].Cells["description_left"].Value as string
-          )
+          ) && !string.IsNullOrWhiteSpace(PANEL_GRID.Rows[i].Cells["circuit_left"].Value as string)
             ? "SPACE"
             : PANEL_GRID
               .Rows[i]
@@ -418,7 +418,7 @@ namespace ElectricalCommands {
         else {
           descriptionRightValue = string.IsNullOrWhiteSpace(
             PANEL_GRID.Rows[i].Cells["description_right"].Value as string
-          )
+          ) && !string.IsNullOrWhiteSpace(PANEL_GRID.Rows[i].Cells["circuit_right"].Value as string)
             ? "SPACE"
             : PANEL_GRID
               .Rows[i]
