@@ -174,7 +174,12 @@ namespace ElectricalCommands {
           string[] files = Directory.GetFiles(projFilePath, "SCOPE AND NOTES.docx", SearchOption.AllDirectories);
           if (files != null && files.Length == 1) {
             string address;
-            using (WordprocessingDocument wordDocument = WordprocessingDocument.Open(files[0], false)) {
+            // copy file to temp directory
+            string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            string tempDir = Path.Combine(homeDir, "AppData\\Local\\Temp");
+            string fileDir = Path.Combine(tempDir, "SCOPE AND NOTES.docx");
+            File.Copy(files[0], fileDir, true);
+            using (WordprocessingDocument wordDocument = WordprocessingDocument.Open(fileDir, false)) {
               DocumentFormat.OpenXml.Wordprocessing.Body body = wordDocument.MainDocumentPart.Document.Body;
               address = Regex.Replace(body.InnerText, ".+Project Address:", "");
               address = Regex.Replace(address, "Client.+", "");
