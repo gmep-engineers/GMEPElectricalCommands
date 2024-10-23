@@ -1,4 +1,5 @@
-﻿using Autodesk.AutoCAD.ApplicationServices;
+﻿using Accord.Math;
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
@@ -563,6 +564,35 @@ namespace ElectricalCommands {
       }
     }
 
+    public List<Dictionary<string, object>> GetPanelJsonData() {
+      List<Dictionary<string, object>> allPanelData = new List<Dictionary<string, object>>();
+      Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      string acDocPath = Path.GetDirectoryName(acDoc.Name);
+      string savesDirectory = Path.Combine(acDocPath, "Saves");
+      string panelSavesDirectory = Path.Combine(savesDirectory, "Panel");
+
+      // Check if the "Saves/Panel" directory exists
+      if (Directory.Exists(panelSavesDirectory)) {
+        // Get all JSON files in the directory
+        string[] jsonFiles = Directory.GetFiles(panelSavesDirectory, "*.json");
+
+        // If there are any JSON files, find the most recent one
+        if (jsonFiles.Length > 0) {
+          string mostRecentJsonFile = jsonFiles
+              .OrderByDescending(f => File.GetLastWriteTime(f))
+              .First();
+
+          // Read the JSON data from the file
+          string jsonData = File.ReadAllText(mostRecentJsonFile);
+
+          // Deserialize the JSON data to a list of dictionaries
+          allPanelData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonData);
+        }
+      }
+
+      return allPanelData;
+    }
+
     [CommandMethod("PANELLOAD")]
     public void LINKPANELKVA() {
       var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
@@ -576,9 +606,24 @@ namespace ElectricalCommands {
       string panelName = "";
       while (panelName.Length == 0) {
         if (linkPanelNameResult.Status == PromptStatus.OK) {
-          panelName = linkPanelNameResult.StringResult.ToLower().Replace("panel", "").Replace(" ", "");
-          string panelKvaString = (string)doc.GetLispSymbol($"panel_{panelName}_kva");
-          string panelAString = (string)doc.GetLispSymbol($"panel_{panelName}_a");
+          panelName = linkPanelNameResult.StringResult.ToUpper().Replace("panel", "").Replace(" ", "");
+          Console.WriteLine(panelName);
+          List <Dictionary<string, object>> panelData = GetPanelJsonData();
+          string panelId = "";
+          foreach (Dictionary<string, object> data in panelData) {
+            string n = data["panel"] as string;
+            Console.WriteLine(n);
+            if (n.Replace(" ", "").Replace("'", "") == panelName) {
+              panelId = data["id"] as string;
+              panelId = panelId.Replace("-", "");
+              Console.WriteLine(panelId);
+            }
+          }
+          if (String.IsNullOrEmpty(panelId)) {
+            return;
+          }
+          string panelKvaString = (string)doc.GetLispSymbol($"panel_{panelId}_kva");
+          string panelAString = (string)doc.GetLispSymbol($"panel_{panelId}_a");
           if (panelKvaString != null) {
             PromptPointOptions ppo = new
             PromptPointOptions("\nSpecify insertion point: ");
@@ -625,8 +670,8 @@ namespace ElectricalCommands {
               acBlkTblRec.AppendEntity(aText);
               t.AddNewlyCreatedDBObject(kvaText, true);
               t.AddNewlyCreatedDBObject(aText, true);
-              string kvaFieldFormat = $"%<\\AcVar.17.0 Lisp.panel_{panelName}_kva>%";
-              string aFieldFormat = $"%<\\AcVar.17.0 Lisp.panel_{panelName}_a>%";
+              string kvaFieldFormat = $"%<\\AcVar.17.0 Lisp.panel_{panelId}_kva>%";
+              string aFieldFormat = $"%<\\AcVar.17.0 Lisp.panel_{panelId}_a>%";
               Field kvaField = new Field(kvaFieldFormat);
               Field aField = new Field(aFieldFormat);
               kvaField.Evaluate();

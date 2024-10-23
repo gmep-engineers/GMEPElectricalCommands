@@ -2757,8 +2757,8 @@ namespace ElectricalCommands {
 
     private void SetPanelLoadLispVars(double totalKva, double feederAmps) {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-      doc.SetLispSymbol($"panel_{Name}_kva", Math.Round(totalKva, 1) + " KVA");
-      doc.SetLispSymbol($"panel_{Name}_a", feederAmps.ToString() + " A");
+      doc.SetLispSymbol($"panel_{id.Replace("-","")}_kva", Math.Round(totalKva, 1) + " KVA");
+      doc.SetLispSymbol($"panel_{id.Replace("-", "")}_a", feederAmps.ToString() + " A");
     }
 
     public void UpdatePerCellValueChange() {
