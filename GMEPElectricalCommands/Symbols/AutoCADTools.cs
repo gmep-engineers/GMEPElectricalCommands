@@ -795,6 +795,7 @@ namespace ElectricalCommands {
       public int parallelWires;
       public string wireSize;
       public double actualVoltageDrop;
+      public int wireSizeIndex;
     }
 
     public struct ConduitSpec {
@@ -803,7 +804,7 @@ namespace ElectricalCommands {
     }
 
     private double GetVoltageDrop(string wireSize, double distance, int parallelWires, double loadAmperage, double multiplier) {
-      double factor = 1 / parallelWires * distance * loadAmperage * multiplier;
+      double factor = 1.0 / parallelWires * distance * loadAmperage * multiplier;
       switch (wireSize) {
         case "12":
           return 0.0020500 * factor;
@@ -879,6 +880,7 @@ namespace ElectricalCommands {
       wireSpec.parallelWires = parallelWires;
       wireSpec.wireSize = resistancePerFoot.ElementAt(wireSizeIndex).Key;
       wireSpec.actualVoltageDrop = actualVoltageDrop;
+      wireSpec.wireSizeIndex = wireSizeIndex;
       double maxWireAmpacity = GetMaxWireAmpacity(wireSpec.wireSize);
       while (maxWireAmpacity < Math.Round(amperage / parallelWires, 0)) {
         if (wireSizeIndex == resistancePerFoot.Count - 1) {
@@ -892,6 +894,7 @@ namespace ElectricalCommands {
         wireSpec.parallelWires = parallelWires;
         double resistance = resistancePerFoot.ElementAt(wireSizeIndex).Value;
         wireSpec.actualVoltageDrop = resistance / parallelWires * amperage * distance * multiplier;
+        wireSpec.wireSizeIndex = wireSizeIndex;
         maxWireAmpacity = GetMaxWireAmpacity(wireSpec.wireSize);
       }
       return wireSpec;
@@ -899,9 +902,10 @@ namespace ElectricalCommands {
 
     private ConduitSpec GetConduitAndWireSize(double loadAmperage, double mocp, double distance, double multiplier, double maxVoltageDropAllowed, int wires) {
       WireSpec maxWireSpec = GetWireSize(mocp, distance, multiplier, maxVoltageDropAllowed);
-      WireSpec loadWireSpec = maxWireSpec;
-      if (distance > 100 && loadAmperage * 1.25 < mocp) {
-        loadWireSpec = GetWireSize(mocp, 100, multiplier, maxVoltageDropAllowed, maxWireSpec.parallelWires);
+      WireSpec loadWireSpec =  GetWireSize(loadAmperage, distance, multiplier, maxVoltageDropAllowed, maxWireSpec.parallelWires);
+      WireSpec minWireSpecPerMocp = GetWireSize(mocp, 1, multiplier, maxVoltageDropAllowed, maxWireSpec.parallelWires);
+      if (loadWireSpec.wireSizeIndex < minWireSpecPerMocp.wireSizeIndex) {
+        loadWireSpec = minWireSpecPerMocp;
       }
       ConduitSpec spec = new ConduitSpec();
       if (wires == 4) {
