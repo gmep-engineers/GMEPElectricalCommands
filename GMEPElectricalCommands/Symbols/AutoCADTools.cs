@@ -802,6 +802,47 @@ namespace ElectricalCommands {
       public string conduitSize;
     }
 
+    private double GetVoltageDrop(string wireSize, double distance, int parallelWires, double loadAmperage, double multiplier) {
+      double divisor = parallelWires * distance * loadAmperage * multiplier;
+      switch (wireSize) {
+        case "12":
+          return 0.0020500 / divisor;
+        case "10":
+          return 0.0012900 / divisor;
+        case "8":
+          return 0.0008090 / divisor;
+        case "6":
+          return 0.0005100 / divisor;
+        case "4":
+          return 0.0002540 / divisor;
+        case "3":
+          return 0.0020500 / divisor;
+        case "2":
+          return 0.0002010 / divisor;
+        case "1":
+          return 0.0001600 / divisor;
+        case "1/0":
+          return 0.0001270 / divisor;
+        case "2/0":
+          return 0.0001010 / divisor;
+        case "3/0":
+          return 0.0000797 / divisor;
+        case "4/0":
+          return 0.0000626 / divisor;
+        case "250 KCMIL":
+          return 0.0000535 / divisor;
+        case "300 KCMIL":
+          return 0.0000446 / divisor;
+        case "350 KCMIL":
+          return 0.0000382 / divisor;
+        case "400 KCMIL":
+          return 0.0000331 / divisor;
+        case "500 KCMIL":
+          return 0.0000265 / divisor;
+      }
+      return -1;
+    }
+
     private WireSpec GetWireSize(double amperage, double distance, double multiplier, double maxVoltageDropAllowed, int parallelWires = 1) {
       int wireSizeIndex = 0;
       double actualVoltageDrop = 600;
@@ -856,9 +897,12 @@ namespace ElectricalCommands {
       return wireSpec;
     }
 
-    private ConduitSpec GetConduitAndWireSize(double loadAmperage, double busAmperage, double distance, double multiplier, double maxVoltageDropAllowed, int wires) {
-      WireSpec maxWireSpec = GetWireSize(busAmperage, distance, multiplier, maxVoltageDropAllowed);
-      WireSpec loadWireSpec = GetWireSize(loadAmperage, distance, multiplier, maxVoltageDropAllowed, maxWireSpec.parallelWires);
+    private ConduitSpec GetConduitAndWireSize(double loadAmperage, double mocp, double distance, double multiplier, double maxVoltageDropAllowed, int wires) {
+      WireSpec maxWireSpec = GetWireSize(mocp, distance, multiplier, maxVoltageDropAllowed);
+      WireSpec loadWireSpec = maxWireSpec;
+      if (distance > 100 && loadAmperage * 1.25 < mocp) {
+        loadWireSpec = GetWireSize(mocp, 100, multiplier, maxVoltageDropAllowed, maxWireSpec.parallelWires);
+      }
       ConduitSpec spec = new ConduitSpec();
       if (wires == 4) {
         Dictionary<string, string> conduitSize4W = new Dictionary<string, string>();
@@ -1131,8 +1175,16 @@ namespace ElectricalCommands {
       }
 
       ConduitSpec spec = GetConduitAndWireSize(loadAmperage, mocp, distance, multiplier, maxVoltageDropAllowed, numWires);
-      string gndSize = GetGroundingSize(loadAmperage);
-      double voltageDropPercent = spec.wireSpec.actualVoltageDrop / Voltage * 100;
+      string gndSize = "";
+      double voltageDropPercent = 0;
+      if (distance > 100) {
+        gndSize = GetGroundingSize(loadAmperage);
+        voltageDropPercent = spec.wireSpec.actualVoltageDrop / Voltage * 100;
+      }
+      else {
+        gndSize = GetGroundingSize(mocp);
+        voltageDropPercent = GetVoltageDrop(spec.wireSpec.wireSize, distance, spec.wireSpec.parallelWires, loadAmperage, multiplier) / Voltage * 100;
+      }
       string firstLine;
       string secondLine;
       string thirdLine;
@@ -1143,10 +1195,11 @@ namespace ElectricalCommands {
         firstLine = $"{spec.conduitSize}\" C.; {numWires}#{spec.wireSpec.wireSize} CU.";
       }
       secondLine = $"PLUS 1#{gndSize} CU. GND.";
-      thirdLine = $"{distance}'; VD={Math.Round(voltageDropPercent, 1)}%";
-
+      string voltageDropPercentString = voltageDropPercent < 0.1 ? "NEGL." : Math.Round(voltageDropPercent, 1).ToString() + "%";
+      thirdLine = $"{distance}'; VD={voltageDropPercentString}";
+      double loadWireSize = distance > 100 ? Math.Round(loadAmperage, 1) : mocp;
       string supplemental1 = $"C. SIZED FOR {mocp}A";
-      string supplemental2 = $"W. SIZED FOR {Math.Round(loadAmperage,1)}A";
+      string supplemental2 = $"W. SIZED FOR {loadWireSize}A";
       string supplemental3 = $"@{Voltage}V-{Phase}\u0081-{numWires}W";
       // Prompt for a point
       PromptPointOptions ppo = new PromptPointOptions("\nSelect start point:");
