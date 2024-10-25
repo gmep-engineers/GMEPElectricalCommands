@@ -803,42 +803,42 @@ namespace ElectricalCommands {
     }
 
     private double GetVoltageDrop(string wireSize, double distance, int parallelWires, double loadAmperage, double multiplier) {
-      double divisor = parallelWires * distance * loadAmperage * multiplier;
+      double factor = 1 / parallelWires * distance * loadAmperage * multiplier;
       switch (wireSize) {
         case "12":
-          return 0.0020500 / divisor;
+          return 0.0020500 * factor;
         case "10":
-          return 0.0012900 / divisor;
+          return 0.0012900 * factor;
         case "8":
-          return 0.0008090 / divisor;
+          return 0.0008090 * factor;
         case "6":
-          return 0.0005100 / divisor;
+          return 0.0005100 * factor;
         case "4":
-          return 0.0002540 / divisor;
+          return 0.0003210 * factor;
         case "3":
-          return 0.0020500 / divisor;
+          return 0.0002540 * factor;
         case "2":
-          return 0.0002010 / divisor;
+          return 0.0002010 * factor;
         case "1":
-          return 0.0001600 / divisor;
+          return 0.0001600 * factor;
         case "1/0":
-          return 0.0001270 / divisor;
+          return 0.0001270 * factor;
         case "2/0":
-          return 0.0001010 / divisor;
+          return 0.0001010 * factor;
         case "3/0":
-          return 0.0000797 / divisor;
+          return 0.0000797 * factor;
         case "4/0":
-          return 0.0000626 / divisor;
+          return 0.0000626 * factor;
         case "250 KCMIL":
-          return 0.0000535 / divisor;
+          return 0.0000535 * factor;
         case "300 KCMIL":
-          return 0.0000446 / divisor;
+          return 0.0000446 * factor;
         case "350 KCMIL":
-          return 0.0000382 / divisor;
+          return 0.0000382 * factor;
         case "400 KCMIL":
-          return 0.0000331 / divisor;
+          return 0.0000331 * factor;
         case "500 KCMIL":
-          return 0.0000265 / divisor;
+          return 0.0000265 * factor;
       }
       return -1;
     }
@@ -955,62 +955,62 @@ namespace ElectricalCommands {
       return spec;
     }
 
-    private string GetGroundingSize(double loadAmperage) {
+    private string GetGroundingSize(double mocp) {
       string gndSize = "";
-      loadAmperage = Math.Round(loadAmperage, 0);
-      switch (loadAmperage) {
-        case var _ when loadAmperage <= 20:
+      mocp = Math.Round(mocp, 0);
+      switch (mocp) {
+        case var _ when mocp <= 20:
           gndSize = "12";
           break;
-        case var _ when loadAmperage <= 30:
+        case var _ when mocp <= 30:
           gndSize = "10";
           break;
-        case var _ when loadAmperage <= 100:
+        case var _ when mocp <= 100:
           gndSize = "8";
           break;
-        case var _ when loadAmperage <= 200:
+        case var _ when mocp <= 200:
           gndSize = "6";
           break;
-        case var _ when loadAmperage <= 300:
+        case var _ when mocp <= 300:
           gndSize = "4";
           break;
-        case var _ when loadAmperage <= 400:
+        case var _ when mocp <= 400:
           gndSize = "3";
           break;
-        case var _ when loadAmperage <= 500:
+        case var _ when mocp <= 500:
           gndSize = "2";
           break;
-        case var _ when loadAmperage <= 600:
+        case var _ when mocp <= 600:
           gndSize = "1";
           break;
-        case var _ when loadAmperage <= 800:
+        case var _ when mocp <= 800:
           gndSize = "1/0";
           break;
-        case var _ when loadAmperage <= 1000:
+        case var _ when mocp <= 1000:
           gndSize = "2/0";
           break;
-        case var _ when loadAmperage <= 1200:
+        case var _ when mocp <= 1200:
           gndSize = "3/0";
           break;
-        case var _ when loadAmperage <= 1600:
+        case var _ when mocp <= 1600:
           gndSize = "4/0";
           break;
-        case var _ when loadAmperage <= 2000:
+        case var _ when mocp <= 2000:
           gndSize = "250 KCMIL";
           break;
-        case var _ when loadAmperage <= 2500:
+        case var _ when mocp <= 2500:
           gndSize = "350 KCMIL";
           break;
-        case var _ when loadAmperage <= 3000:
+        case var _ when mocp <= 3000:
           gndSize = "400 KCMIL";
           break;
-        case var _ when loadAmperage <= 4000:
+        case var _ when mocp <= 4000:
           gndSize = "500 KCMIL";
           break;
-        case var _ when loadAmperage <= 5000:
+        case var _ when mocp <= 5000:
           gndSize = "700 KCMIL";
           break;
-        case var _ when loadAmperage <= 6000:
+        case var _ when mocp <= 6000:
           gndSize = "800 KCMIL";
           break;
       }
@@ -1176,15 +1176,9 @@ namespace ElectricalCommands {
 
       ConduitSpec spec = GetConduitAndWireSize(loadAmperage, mocp, distance, multiplier, maxVoltageDropAllowed, numWires);
       string gndSize = "";
-      double voltageDropPercent = 0;
-      if (distance > 100) {
-        gndSize = GetGroundingSize(loadAmperage);
-        voltageDropPercent = spec.wireSpec.actualVoltageDrop / Voltage * 100;
-      }
-      else {
-        gndSize = GetGroundingSize(mocp);
-        voltageDropPercent = GetVoltageDrop(spec.wireSpec.wireSize, distance, spec.wireSpec.parallelWires, loadAmperage, multiplier) / Voltage * 100;
-      }
+      double voltageDropPercent = 0;      
+      gndSize = GetGroundingSize(mocp);
+      voltageDropPercent = GetVoltageDrop(spec.wireSpec.wireSize, distance, spec.wireSpec.parallelWires, loadAmperage, multiplier) / Voltage * 100;
       string firstLine;
       string secondLine;
       string thirdLine;
