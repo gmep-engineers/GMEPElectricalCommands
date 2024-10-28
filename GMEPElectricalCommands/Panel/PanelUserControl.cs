@@ -168,7 +168,7 @@ namespace ElectricalCommands {
 
     private void SetDefaultFormValues(string tabName) {
       // Textboxes
-      PANEL_NAME_INPUT.Text = tabName;
+      PANEL_NAME_INPUT.Text = tabName.ToUpper().Trim();
       PANEL_LOCATION_INPUT.Text = "ELECTRIC ROOM";
       MAIN_INPUT.Text = "M.L.O.";
       BUS_RATING_INPUT.Text = "100";
@@ -262,7 +262,7 @@ namespace ElectricalCommands {
         }
       }
 
-      panel.Add("panel", "'" + PANEL_NAME_INPUT.Text.ToUpper() + "'");
+      panel.Add("panel", "'" + PANEL_NAME_INPUT.Text.ToUpper().Trim() + "'");
       panel.Add("location", PANEL_LOCATION_INPUT.Text.ToUpper());
       panel.Add("voltage1", GetComboBoxValue(PHASE_VOLTAGE_COMBOBOX));
       panel.Add("voltage2", GetComboBoxValue(LINE_VOLTAGE_COMBOBOX));
@@ -2409,7 +2409,7 @@ namespace ElectricalCommands {
 
     private void PANEL_NAME_INPUT_TextChanged(object sender, EventArgs e) {
       this.mainForm.PANEL_NAME_INPUT_TextChanged(sender, e, PANEL_NAME_INPUT.Text.ToUpper(), DISTRIBUTION_SECTION_CHECKBOX.Checked);
-      this.Name = PANEL_NAME_INPUT.Text.ToUpper();
+      this.Name = PANEL_NAME_INPUT.Text.ToUpper().Trim();
     }
 
     private void PANEL_NAME_INPUT_Leave(object sender, EventArgs e) {

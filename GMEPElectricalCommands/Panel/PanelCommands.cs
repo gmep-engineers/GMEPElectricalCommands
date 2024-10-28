@@ -758,7 +758,7 @@ namespace ElectricalCommands {
     ) {
       CreateAndPositionText(
         tr,
-        panelData["panel"] as string,
+        (panelData["panel"] as string).Trim(),
         "ROMANC",
         0.1872,
         0.75,
