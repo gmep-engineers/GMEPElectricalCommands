@@ -267,7 +267,7 @@ namespace ElectricalCommands {
           CreateAndPositionText(tr, "LAKE FOREST / CA / 92630", "section title", 0.0876943284922549, 0.85, 2, "E-TXT1", new Point3d(endPoint.X + 0.830140069102175, endPoint.Y + 4.36949614021856, 0));
           CreateAndPositionText(tr, date, "section title", 0.0876943284922549, 0.85, 2, "E-TXT1", new Point3d(endPoint.X + 4.42666777063172, endPoint.Y + 4.66189987763855, 0));
           CreateAndPositionText(tr, "949-267-9095", "section title", 0.0876943284922549, 0.85, 2, "E-TXT1", new Point3d(endPoint.X + 4.71352182336645, endPoint.Y + 4.35886418478551, 0));
-          CreateAndPositionText(tr, "GANGI ZHOU", "section title", 0.0876943284922549, 0.85, 2, "E-TXT1", new Point3d(endPoint.X + 1.33142902358651, endPoint.Y + 3.01601014439938, 0));
+          CreateAndPositionText(tr, "GANGYI ZHOU", "section title", 0.0876943284922549, 0.85, 2, "E-TXT1", new Point3d(endPoint.X + 1.33142902358651, endPoint.Y + 3.01601014439938, 0));
           CreateAndPositionText(tr, "GMEP ENGINEERS", "section title", 0.0876943284922549, 0.85, 2, "E-TXT1", new Point3d(endPoint.X + 0.668423993870732, endPoint.Y + 2.88028724160062, 0));
           CreateAndPositionText(tr, "26439 RANCHO PARKWAY S., STE 120", "section title", 0.0876943284922549, 0.85, 2, "E-TXT1", new Point3d(endPoint.X + 0.62227730526692, endPoint.Y + 2.74045851853929, 0));
           CreateAndPositionText(tr, "LAKE FOREST / CA / 92630", "section title", 0.0876943284922549, 0.85, 2, "E-TXT1", new Point3d(endPoint.X + 0.836386671099376, endPoint.Y + 2.6036460786253, 0));
