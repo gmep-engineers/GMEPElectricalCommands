@@ -357,6 +357,7 @@ namespace ElectricalCommands {
 
       // Call the method to add the UserControl to the new tab
       AddUserControlToNewTab(userControl1, newTabPage);
+      userControl1.SetLoading(false);
 
       return userControl1;
     }

@@ -2757,10 +2757,11 @@ namespace ElectricalCommands {
 
     private void SetPanelLoadLispVars(double totalKva, double feederAmps) {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-      if (!String.IsNullOrEmpty(id)) {
-        doc.SetLispSymbol($"panel_{id.Replace("-", "")}_kva", Math.Round(totalKva, 1) + " KVA");
-        doc.SetLispSymbol($"panel_{id.Replace("-", "")}_a", feederAmps.ToString() + " A");
+      if (String.IsNullOrEmpty(id)) {
+        id = System.Guid.NewGuid().ToString();
       }
+      doc.SetLispSymbol($"panel_{id.Replace("-", "")}_kva", Math.Round(totalKva, 1) + " KVA");
+      doc.SetLispSymbol($"panel_{id.Replace("-", "")}_a", feederAmps.ToString() + " A");
     }
 
     public void UpdatePerCellValueChange() {
@@ -4123,6 +4124,10 @@ namespace ElectricalCommands {
       string message = "High-leg phase cannot have single-phase, single-pole breaker.";
       System.Windows.Forms.ToolTip toolTip = new System.Windows.Forms.ToolTip();
       toolTip.SetToolTip(HIGH_LEG_WARNING_RIGHT_LABEL, message);
+    }
+
+    public void SetLoading(bool l) {
+      isLoading = l;
     }
   }
 
