@@ -171,6 +171,7 @@ namespace ElectricalCommands {
         if (dirIndex > -1) {
           projFilePath = projFilePath.Substring(0, dirIndex);
           projFilePath += "\\ARCH\\";
+          bool fileFound = false;
           string[] files = Directory.GetFiles(projFilePath, "SCOPE AND NOTES.docx", SearchOption.AllDirectories);
           if (files != null && files.Length == 1) {
             string address;
@@ -184,6 +185,43 @@ namespace ElectricalCommands {
               address = Regex.Replace(body.InnerText, ".+Project Address:", "");
               address = Regex.Replace(address, "Client.+", "");
               CADObjectCommands.Address = address.ToUpper().Trim();
+            }
+            fileFound = true;
+          }
+          if (!fileFound) {
+            files = Directory.GetFiles(projFilePath, "SCOPE & NOTES.docx", SearchOption.AllDirectories);
+            if (files != null && files.Length == 1) {
+              string address;
+              // copy file to temp directory
+              string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+              string tempDir = Path.Combine(homeDir, "AppData\\Local\\Temp");
+              string fileDir = Path.Combine(tempDir, "SCOPE & NOTES.docx");
+              File.Copy(files[0], fileDir, true);
+              using (WordprocessingDocument wordDocument = WordprocessingDocument.Open(fileDir, false)) {
+                DocumentFormat.OpenXml.Wordprocessing.Body body = wordDocument.MainDocumentPart.Document.Body;
+                address = Regex.Replace(body.InnerText, ".+Project Address:", "");
+                address = Regex.Replace(address, "Client.+", "");
+                CADObjectCommands.Address = address.ToUpper().Trim();
+              }
+              fileFound = true;
+            }
+          }
+          if (!fileFound) {
+            files = Directory.GetFiles(projFilePath, "SCOPE.docx", SearchOption.AllDirectories);
+            if (files != null && files.Length == 1) {
+              string address;
+              // copy file to temp directory
+              string homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+              string tempDir = Path.Combine(homeDir, "AppData\\Local\\Temp");
+              string fileDir = Path.Combine(tempDir, "SCOPE.docx");
+              File.Copy(files[0], fileDir, true);
+              using (WordprocessingDocument wordDocument = WordprocessingDocument.Open(fileDir, false)) {
+                DocumentFormat.OpenXml.Wordprocessing.Body body = wordDocument.MainDocumentPart.Document.Body;
+                address = Regex.Replace(body.InnerText, ".+Project Address:", "");
+                address = Regex.Replace(address, "Client.+", "");
+                CADObjectCommands.Address = address.ToUpper().Trim();
+              }
+              fileFound = true;
             }
           }
         }
