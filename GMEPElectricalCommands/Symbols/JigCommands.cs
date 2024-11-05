@@ -12,20 +12,22 @@ using Autodesk.AutoCAD.Runtime;
 
 namespace ElectricalCommands
 {
-  public class SpoonShapeCommands
-  {
+  public class SpoonShapeCommands {
+    
     [CommandMethod("SP")]
-    public void SP()
-    {
-      if (CADObjectCommands.Scale <= 0)
+    public void SP() {
+      double scale = 12;
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Editor ed = doc.Editor;
+      if (CADObjectCommands.Scale <= 0 && (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport()))
       {
         CADObjectCommands.SetScale();
         if (CADObjectCommands.Scale <= 0)
           return;
       }
-
-      Document doc = Application.DocumentManager.MdiActiveDocument;
-      Editor ed = doc.Editor;
+      if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport()) {
+        scale = CADObjectCommands.Scale;
+      }
 
       PromptPointOptions ppo = new PromptPointOptions("\nSelect start point:");
       PromptPointResult ppr = ed.GetPoint(ppo);
@@ -34,7 +36,7 @@ namespace ElectricalCommands
 
       Point3d firstClickPoint = ppr.Value;
 
-      SpoonJig jig = new SpoonJig(firstClickPoint, CADObjectCommands.Scale);
+      SpoonJig jig = new SpoonJig(firstClickPoint, scale);
       PromptResult res = ed.Drag(jig);
       if (res.Status != PromptStatus.OK)
         return;
@@ -61,7 +63,7 @@ namespace ElectricalCommands
 
       if (angle != 0 && angle != Math.PI)
       {
-        DynamicLineJig lineJig = new DynamicLineJig(jig.endPoint, CADObjectCommands.Scale);
+        DynamicLineJig lineJig = new DynamicLineJig(jig.endPoint, scale);
         res = ed.Drag(lineJig);
         if (res.Status == PromptStatus.OK)
         {
@@ -89,7 +91,7 @@ namespace ElectricalCommands
           tr.GetObject(doc.Database.CurrentSpaceId, OpenMode.ForWrite);
 
         // Create MText object with dynamic text height based on scale
-        double textHeight = 1.125 / CADObjectCommands.Scale;
+        double textHeight = 1.125 / scale;
         MText mText = new MText();
         mText.SetDatabaseDefaults();
         mText.TextHeight = textHeight;
@@ -119,7 +121,7 @@ namespace ElectricalCommands
         {
           mText.Attachment = AttachmentPoint.TopLeft;
           mText.Location = new Point3d(
-            textAlignmentReferencePoint.X + 0.25 / CADObjectCommands.Scale,
+            textAlignmentReferencePoint.X + 0.25 / scale,
             textAlignmentReferencePoint.Y + textHeight / 2,
             textAlignmentReferencePoint.Z
           );
@@ -128,7 +130,7 @@ namespace ElectricalCommands
         {
           mText.Attachment = AttachmentPoint.TopRight;
           mText.Location = new Point3d(
-            textAlignmentReferencePoint.X - 0.25 / CADObjectCommands.Scale,
+            textAlignmentReferencePoint.X - 0.25 / scale,
             textAlignmentReferencePoint.Y + textHeight / 2,
             textAlignmentReferencePoint.Z
           );

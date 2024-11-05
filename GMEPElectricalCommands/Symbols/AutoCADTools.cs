@@ -1,22 +1,69 @@
-﻿using Autodesk.AutoCAD.ApplicationServices;
+﻿using Accord.Math;
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+//using DocumentFormat.OpenXml.Wordprocessing;
+using Emgu.CV.Dnn;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using OfficeOpenXml.Drawing;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using TriangleNet.Tools;
 
 namespace ElectricalCommands {
 
   public class CADObjectCommands {
     public static double Scale { get; set; } = -1.0;
 
+    public static double Voltage { get; set; } = -1.0;
+    public static double MaxVoltageDropPercent { get; set; } = -1.0;
+    public static int Phase { get; set; } = -1;
+
     public static string Address = "";
 
+    public static bool HorizontalConduit = false;
+
     public static Point3d PanelLocation { get; set; } = new Point3d(0, 0, 0);
+
+    public static bool IsInModel() {
+      if (Application.DocumentManager.MdiActiveDocument.Database.TileMode)
+        return true;
+      else
+        return false;
+    }
+
+    public static bool IsInLayout() {
+      return !IsInModel();
+    }
+
+    public static bool IsInLayoutPaper() {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+
+      if (db.TileMode)
+        return false;
+      else {
+        if (db.PaperSpaceVportId == ObjectId.Null)
+          return false;
+        else if (ed.CurrentViewportObjectId == ObjectId.Null)
+          return false;
+        else if (ed.CurrentViewportObjectId == db.PaperSpaceVportId)
+          return true;
+        else
+          return false;
+      }
+    }
+
+    public static bool IsInLayoutViewport() {
+      return IsInLayout() && !IsInLayoutPaper();
+    }
 
     [CommandMethod("StoreBlockData")]
     public void StoreBlockData() {
@@ -517,6 +564,751 @@ namespace ElectricalCommands {
       }
     }
 
+    public List<Dictionary<string, object>> GetPanelJsonData() {
+      List<Dictionary<string, object>> allPanelData = new List<Dictionary<string, object>>();
+      Document acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      string acDocPath = Path.GetDirectoryName(acDoc.Name);
+      string savesDirectory = Path.Combine(acDocPath, "Saves");
+      string panelSavesDirectory = Path.Combine(savesDirectory, "Panel");
+
+      // Check if the "Saves/Panel" directory exists
+      if (Directory.Exists(panelSavesDirectory)) {
+        // Get all JSON files in the directory
+        string[] jsonFiles = Directory.GetFiles(panelSavesDirectory, "*.json");
+
+        // If there are any JSON files, find the most recent one
+        if (jsonFiles.Length > 0) {
+          string mostRecentJsonFile = jsonFiles
+              .OrderByDescending(f => File.GetLastWriteTime(f))
+              .First();
+
+          // Read the JSON data from the file
+          string jsonData = File.ReadAllText(mostRecentJsonFile);
+
+          // Deserialize the JSON data to a list of dictionaries
+          allPanelData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(jsonData);
+        }
+      }
+
+      return allPanelData;
+    }
+
+    [CommandMethod("PANELLOAD")]
+    public void LINKPANELKVA() {
+      var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      var db = doc.Database;
+      var ed = doc.Editor;
+      var linkPanelNamePrompt = new PromptStringOptions(
+         "\nEnter the panel name: "
+       );
+      linkPanelNamePrompt.AllowSpaces = true;
+      var linkPanelNameResult = ed.GetString(linkPanelNamePrompt);
+      string panelName = "";
+      while (panelName.Length == 0) {
+        if (linkPanelNameResult.Status == PromptStatus.OK) {
+          panelName = linkPanelNameResult.StringResult.ToUpper().Replace("panel", "").Replace(" ", "");
+          Console.WriteLine(panelName);
+          List <Dictionary<string, object>> panelData = GetPanelJsonData();
+          string panelId = "";
+          foreach (Dictionary<string, object> data in panelData) {
+            string n = data["panel"] as string;
+            Console.WriteLine(n);
+            if (n.Replace(" ", "").Replace("'", "") == panelName) {
+              panelId = data["id"] as string;
+              panelId = panelId.Replace("-", "");
+              Console.WriteLine(panelId);
+            }
+          }
+          if (String.IsNullOrEmpty(panelId)) {
+            return;
+          }
+          string panelKvaString = (string)doc.GetLispSymbol($"panel_{panelId}_kva");
+          string panelAString = (string)doc.GetLispSymbol($"panel_{panelId}_a");
+          if (panelKvaString != null) {
+            PromptPointOptions ppo = new
+            PromptPointOptions("\nSpecify insertion point: ");
+            PromptPointResult ppr = ed.GetPoint(ppo);
+            if (ppr.Status != PromptStatus.OK)
+              return;
+            using (Transaction t = db.TransactionManager.StartTransaction()) {
+              BlockTable acBlkTbl =
+                t.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+              BlockTableRecord acBlkTblRec =
+                t.GetObject(acBlkTbl[BlockTableRecord.PaperSpace], OpenMode.ForWrite)
+                as BlockTableRecord;
+              var textStyleId = GeneralCommands.GetTextStyleId("gmep");
+              var textStyle = (TextStyleTableRecord)t.GetObject(textStyleId, OpenMode.ForRead);
+              List<DBText> allTexts = new List<DBText>();
+              double scaleFactor = 1;
+              if (IsInModel() || IsInLayoutViewport()) {
+                if (Scale <= 0) {
+                  SetScale();
+                }
+                scaleFactor = 12 / Scale;
+              }
+              var kvaText = new DBText {
+                Position = new Point3d(ppr.Value.X, ppr.Value.Y - 0.16 * scaleFactor, 0),
+                Height = 0.1 * scaleFactor,
+                WidthFactor = 0.85,
+                Layer = "E-TXT1",
+                TextStyleId = textStyleId,
+                HorizontalMode = TextHorizontalMode.TextLeft,
+                VerticalMode = TextVerticalMode.TextVerticalMid,
+                Justify = AttachmentPoint.BaseLeft
+              };
+              var aText = new DBText {
+                Position = new Point3d(ppr.Value.X, ppr.Value.Y - 0.32 * scaleFactor, 0),
+                Height = 0.1 * scaleFactor,
+                WidthFactor = 0.85,
+                Layer = "E-TXT1",
+                TextStyleId = textStyleId,
+                HorizontalMode = TextHorizontalMode.TextLeft,
+                VerticalMode = TextVerticalMode.TextVerticalMid,
+                Justify = AttachmentPoint.BaseLeft
+              };
+              acBlkTblRec.AppendEntity(kvaText);
+              acBlkTblRec.AppendEntity(aText);
+              t.AddNewlyCreatedDBObject(kvaText, true);
+              t.AddNewlyCreatedDBObject(aText, true);
+              string kvaFieldFormat = $"%<\\AcVar.17.0 Lisp.panel_{panelId}_kva>%";
+              string aFieldFormat = $"%<\\AcVar.17.0 Lisp.panel_{panelId}_a>%";
+              Field kvaField = new Field(kvaFieldFormat);
+              Field aField = new Field(aFieldFormat);
+              kvaField.Evaluate();
+              aField.Evaluate();
+              kvaText.SetField(kvaField);
+              aText.SetField(aField);
+              t.AddNewlyCreatedDBObject(kvaField, true);
+              t.AddNewlyCreatedDBObject(aField, true);
+              t.Commit();
+            }
+          }
+          else {
+            return;
+          }
+        }
+        else {
+          return;
+        }
+      }
+    }
+
+    [CommandMethod("SetVoltage")]
+    public static void SetVoltage() {
+      Voltage = 0;
+      var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      var ed = doc.Editor;
+
+      var voltagePrompt = new PromptStringOptions(
+        "\nEnter the voltage: "
+      );
+      var voltageResult = ed.GetString(voltagePrompt);
+      string validVoltages = "115;120;208;230;240;277;460;480";
+      while (Voltage <= 0) {
+        if (voltageResult.Status == PromptStatus.OK) {
+          string voltageString = voltageResult.StringResult;
+          if (
+            validVoltages.Contains(voltageString) && double.TryParse(voltageString, out double v)
+          ) {
+            Voltage = v;
+            ed.WriteMessage($"\nVoltage set to {Voltage}");
+          }
+          else {
+            ed.WriteMessage(
+              $"\nInvalid voltage."
+            );
+            voltageResult = ed.GetString(voltagePrompt);
+          }
+        }
+        else {
+          return;
+        }
+      }
+    }
+
+    [CommandMethod("SetMaxVoltageDropPercent")]
+    public static void SetMaxVoltageDropPercent() {
+      MaxVoltageDropPercent = 0;
+      var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      var ed = doc.Editor;
+
+      var voltageDropPrompt = new PromptStringOptions(
+        "\nEnter the max voltage drop percent: "
+      );
+      var voltageDropResult = ed.GetString(voltageDropPrompt);
+      while (MaxVoltageDropPercent <= 0) {
+        if (voltageDropResult.Status == PromptStatus.OK) {
+          string voltageDropString = voltageDropResult.StringResult;
+
+          if (
+            double.TryParse(voltageDropString, out double vd)
+          ) {
+            MaxVoltageDropPercent = vd;
+            ed.WriteMessage($"\nMax voltage drop set to {MaxVoltageDropPercent}");
+          }
+          else {
+            ed.WriteMessage(
+              $"\nInvalid percent."
+            );
+            voltageDropResult = ed.GetString(voltageDropPrompt);
+          }
+        }
+        else {
+          return;
+        }
+      }
+    }
+
+    [CommandMethod("SetPhase")]
+    public static void SetPhase() {
+      Phase = 0;
+      var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      var ed = doc.Editor;
+
+      var phasePrompt = new PromptStringOptions(
+        "\nEnter the phase: "
+      );
+      var phaseResult = ed.GetString(phasePrompt);
+      while (Phase <= 0) {
+        if (phaseResult.Status == PromptStatus.OK) {
+          string phaseString = phaseResult.StringResult;
+          if (
+            (phaseString == "1" || phaseString == "3") && int.TryParse(phaseString, out int ph)
+          ) {
+            Phase = ph;
+            ed.WriteMessage($"\nPhase set to {Phase}");
+          }
+          else {
+            ed.WriteMessage(
+              $"\nInvalid phase."
+            );
+            phaseResult = ed.GetString(phasePrompt);
+          }
+        }
+        else {
+          return;
+        }
+      }
+    }
+
+    public struct WireSpec {
+      public int parallelWires;
+      public string wireSize;
+      public double actualVoltageDrop;
+      public int wireSizeIndex;
+    }
+
+    public struct ConduitSpec {
+      public WireSpec wireSpec;
+      public string conduitSize;
+    }
+
+    private double GetVoltageDrop(string wireSize, double distance, int parallelWires, double loadAmperage, double multiplier) {
+      double factor = 1.0 / parallelWires * distance * loadAmperage * multiplier;
+      switch (wireSize) {
+        case "12":
+          return 0.0020500 * factor;
+        case "10":
+          return 0.0012900 * factor;
+        case "8":
+          return 0.0008090 * factor;
+        case "6":
+          return 0.0005100 * factor;
+        case "4":
+          return 0.0003210 * factor;
+        case "3":
+          return 0.0002540 * factor;
+        case "2":
+          return 0.0002010 * factor;
+        case "1":
+          return 0.0001600 * factor;
+        case "1/0":
+          return 0.0001270 * factor;
+        case "2/0":
+          return 0.0001010 * factor;
+        case "3/0":
+          return 0.0000797 * factor;
+        case "4/0":
+          return 0.0000626 * factor;
+        case "250 KCMIL":
+          return 0.0000535 * factor;
+        case "300 KCMIL":
+          return 0.0000446 * factor;
+        case "350 KCMIL":
+          return 0.0000382 * factor;
+        case "400 KCMIL":
+          return 0.0000331 * factor;
+        case "500 KCMIL":
+          return 0.0000265 * factor;
+      }
+      return -1;
+    }
+
+    private WireSpec GetWireSize(double amperage, double distance, double multiplier, double maxVoltageDropAllowed, int parallelWires = 1) {
+      int wireSizeIndex = 0;
+      double actualVoltageDrop = 600;
+      Dictionary<string, double> resistancePerFoot = new Dictionary<string, double>();
+      resistancePerFoot.Add("12", 0.0020500);
+      resistancePerFoot.Add("10", 0.0012900);
+      resistancePerFoot.Add("8", 0.0008090);
+      resistancePerFoot.Add("6", 0.0005100);
+      resistancePerFoot.Add("4", 0.0003210);
+      resistancePerFoot.Add("3", 0.0002540);
+      resistancePerFoot.Add("2", 0.0002010);
+      resistancePerFoot.Add("1", 0.0001600);
+      resistancePerFoot.Add("1/0", 0.0001270);
+      resistancePerFoot.Add("2/0", 0.0001010);
+      resistancePerFoot.Add("3/0", 0.0000797);
+      resistancePerFoot.Add("4/0", 0.0000626);
+      resistancePerFoot.Add("250 KCMIL", 0.0000535);
+      resistancePerFoot.Add("300 KCMIL", 0.0000446);
+      resistancePerFoot.Add("350 KCMIL", 0.0000382);
+      resistancePerFoot.Add("400 KCMIL", 0.0000331);
+      resistancePerFoot.Add("500 KCMIL", 0.0000265);
+      while (actualVoltageDrop > maxVoltageDropAllowed) {
+        double resistance = resistancePerFoot.ElementAt(wireSizeIndex).Value;
+        actualVoltageDrop = resistance / parallelWires * amperage * distance * multiplier;
+        if (actualVoltageDrop > maxVoltageDropAllowed) {
+          wireSizeIndex++;
+        }
+        if (wireSizeIndex == resistancePerFoot.Count && actualVoltageDrop > maxVoltageDropAllowed) {
+          wireSizeIndex = 0;
+          parallelWires++;
+        }
+      }
+      WireSpec wireSpec = new WireSpec();
+      wireSpec.parallelWires = parallelWires;
+      wireSpec.wireSize = resistancePerFoot.ElementAt(wireSizeIndex).Key;
+      wireSpec.actualVoltageDrop = actualVoltageDrop;
+      wireSpec.wireSizeIndex = wireSizeIndex;
+      double maxWireAmpacity = GetMaxWireAmpacity(wireSpec.wireSize);
+      while (maxWireAmpacity < Math.Round(amperage / parallelWires, 0)) {
+        if (wireSizeIndex == resistancePerFoot.Count - 1) {
+          wireSizeIndex = 0;
+          parallelWires++;
+        }
+        else {
+          wireSizeIndex++;
+        }
+        wireSpec.wireSize = resistancePerFoot.ElementAt(wireSizeIndex).Key;
+        wireSpec.parallelWires = parallelWires;
+        double resistance = resistancePerFoot.ElementAt(wireSizeIndex).Value;
+        wireSpec.actualVoltageDrop = resistance / parallelWires * amperage * distance * multiplier;
+        wireSpec.wireSizeIndex = wireSizeIndex;
+        maxWireAmpacity = GetMaxWireAmpacity(wireSpec.wireSize);
+      }
+      return wireSpec;
+    }
+
+    private ConduitSpec GetConduitAndWireSize(double loadAmperage, double mocp, double distance, double multiplier, double maxVoltageDropAllowed, int wires) {
+      WireSpec maxWireSpec = GetWireSize(mocp, distance, multiplier, maxVoltageDropAllowed);
+      WireSpec loadWireSpec =  GetWireSize(loadAmperage, distance, multiplier, maxVoltageDropAllowed, maxWireSpec.parallelWires);
+      WireSpec minWireSpecPerMocp = GetWireSize(mocp, 1, multiplier, maxVoltageDropAllowed, maxWireSpec.parallelWires);
+      if (loadWireSpec.wireSizeIndex < minWireSpecPerMocp.wireSizeIndex) {
+        loadWireSpec = minWireSpecPerMocp;
+      }
+      ConduitSpec spec = new ConduitSpec();
+      if (wires == 4) {
+        Dictionary<string, string> conduitSize4W = new Dictionary<string, string>();
+        conduitSize4W.Add("12", "3/4");
+        conduitSize4W.Add("10", "3/4");
+        conduitSize4W.Add("8", "3/4");
+        conduitSize4W.Add("6", "3/4");
+        conduitSize4W.Add("4", "1");
+        conduitSize4W.Add("3", "1-1/4");
+        conduitSize4W.Add("2", "1-1/4");
+        conduitSize4W.Add("1", "1-1/4");
+        conduitSize4W.Add("1/0", "1-1/2");
+        conduitSize4W.Add("2/0", "2");
+        conduitSize4W.Add("3/0", "2");
+        conduitSize4W.Add("4/0", "2");
+        conduitSize4W.Add("250 KCMIL", "2-1/2");
+        conduitSize4W.Add("300 KCMIL", "2-1/2");
+        conduitSize4W.Add("350 KCMIL", "3");
+        conduitSize4W.Add("400 KCMIL", "3");
+        conduitSize4W.Add("500 KCMIL", "3");
+        if (conduitSize4W.TryGetValue(maxWireSpec.wireSize, out string size)) {
+          spec.wireSpec = loadWireSpec;
+          spec.conduitSize = size;
+        }
+      }
+      else {
+        Dictionary<string, string> conduitSize3W = new Dictionary<string, string>();
+        conduitSize3W.Add("12", "3/4");
+        conduitSize3W.Add("10", "3/4");
+        conduitSize3W.Add("8", "3/4");
+        conduitSize3W.Add("6", "3/4");
+        conduitSize3W.Add("4", "1");
+        conduitSize3W.Add("3", "1");
+        conduitSize3W.Add("2", "1");
+        conduitSize3W.Add("1", "1-1/4");
+        conduitSize3W.Add("1/0", "1-1/4");
+        conduitSize3W.Add("2/0", "1-1/2");
+        conduitSize3W.Add("3/0", "1-1/2");
+        conduitSize3W.Add("4/0", "2");
+        conduitSize3W.Add("250 KCMIL", "2");
+        conduitSize3W.Add("300 KCMIL", "2");
+        conduitSize3W.Add("350 KCMIL", "2-1/2");
+        conduitSize3W.Add("400 KCMIL", "2-1/2");
+        conduitSize3W.Add("500 KCMIL", "3");
+        if (conduitSize3W.TryGetValue(maxWireSpec.wireSize, out string size)) {
+          spec.wireSpec = loadWireSpec;
+          spec.conduitSize = size;
+        }
+      }
+      return spec;
+    }
+
+    private string GetGroundingSize(double mocp) {
+      string gndSize = "";
+      mocp = Math.Round(mocp, 0);
+      switch (mocp) {
+        case var _ when mocp <= 20:
+          gndSize = "12";
+          break;
+        case var _ when mocp <= 30:
+          gndSize = "10";
+          break;
+        case var _ when mocp <= 100:
+          gndSize = "8";
+          break;
+        case var _ when mocp <= 200:
+          gndSize = "6";
+          break;
+        case var _ when mocp <= 300:
+          gndSize = "4";
+          break;
+        case var _ when mocp <= 400:
+          gndSize = "3";
+          break;
+        case var _ when mocp <= 500:
+          gndSize = "2";
+          break;
+        case var _ when mocp <= 600:
+          gndSize = "1";
+          break;
+        case var _ when mocp <= 800:
+          gndSize = "1/0";
+          break;
+        case var _ when mocp <= 1000:
+          gndSize = "2/0";
+          break;
+        case var _ when mocp <= 1200:
+          gndSize = "3/0";
+          break;
+        case var _ when mocp <= 1600:
+          gndSize = "4/0";
+          break;
+        case var _ when mocp <= 2000:
+          gndSize = "250 KCMIL";
+          break;
+        case var _ when mocp <= 2500:
+          gndSize = "350 KCMIL";
+          break;
+        case var _ when mocp <= 3000:
+          gndSize = "400 KCMIL";
+          break;
+        case var _ when mocp <= 4000:
+          gndSize = "500 KCMIL";
+          break;
+        case var _ when mocp <= 5000:
+          gndSize = "700 KCMIL";
+          break;
+        case var _ when mocp <= 6000:
+          gndSize = "800 KCMIL";
+          break;
+      }
+      return gndSize;
+    }
+
+    double GetMaxWireAmpacity(string wireSize) {
+      switch (wireSize) {
+        case "12": return 20;
+        case "10": return 30;
+        case "8": return 40;
+        case "6": return 55;
+        case "4": return 70;
+        case "3": return 85;
+        case "2": return 95;
+        case "1": return 110;
+        case "1/0": return 150;
+        case "2/0": return 175;
+        case "3/0": return 200;
+        case "4/0": return 230;
+        case "250 KCMIL": return 255;
+        case "300 KCMIL": return 285;
+        case "350 KCMIL": return 310;
+        case "400 KCMIL": return 335;
+        default: return 380;
+      }
+    }
+
+    [CommandMethod("HCND")]
+    public void HCND() {
+      HorizontalConduit = true;
+      CND();
+    }
+
+    [CommandMethod("VCND")]
+    public void VCND() {
+      HorizontalConduit = false;
+      CND();
+    }
+
+    [CommandMethod("CND")]
+    public void CND() {
+      bool horizontal = HorizontalConduit;
+      var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      var ed = doc.Editor;
+      Document acDoc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database acCurDb = acDoc.Database;
+
+      var loadAmperagePrompt = new PromptStringOptions(
+        "\nEnter the load amperage: "
+      );
+      double loadAmperage = 0;
+      var loadAmperageResult = ed.GetString(loadAmperagePrompt);
+      while (loadAmperage <= 0) {
+        if (loadAmperageResult.Status == PromptStatus.OK) {
+          string loadAmperageString = loadAmperageResult.StringResult;
+          if (
+            double.TryParse(loadAmperageString, out double l)
+          ) {
+            loadAmperage = l;
+            ed.WriteMessage($"\nLoad amperage set to {loadAmperage}");
+          }
+          else {
+            ed.WriteMessage(
+              $"\nInvalid load amperage."
+            );
+            loadAmperageResult = ed.GetString(loadAmperagePrompt);
+          }
+        }
+        else {
+          return;
+        }
+      }
+      
+      var mocpPrompt = new PromptStringOptions(
+        "\nEnter the MOCP: "
+      );
+      var mocpResult = ed.GetString(mocpPrompt);
+      int mocp = 0;
+      while (mocp <= 0) {
+        if (mocpResult.Status == PromptStatus.OK) {
+          string breakerSizeString = mocpResult.StringResult;
+          if (
+            int.TryParse(breakerSizeString, out int s)
+          ) {
+            mocp = s;
+            ed.WriteMessage($"\nMOCP to {mocp}");
+          }
+          else {
+            ed.WriteMessage(
+              $"\nInvalid MOCP."
+            );
+            mocpResult = ed.GetString(mocpPrompt);
+          }
+        }
+        else {
+          return;
+        }
+      }
+
+      if (Voltage <= 0) {
+        SetVoltage();
+        if (Voltage <= 0) {
+          return;
+        }
+      }
+
+      if (MaxVoltageDropPercent <= 0) {
+        SetMaxVoltageDropPercent();
+        if (Voltage <= 0) {
+          return;
+        }
+      }
+
+      if (Phase <= 0) {
+        SetPhase();
+        if (Phase <= 0) {
+          return;
+        }
+      }
+
+      double maxVoltageDropAllowed = Voltage * MaxVoltageDropPercent / 100;
+      double minVoltageDropAllowedAtLoad = Voltage * maxVoltageDropAllowed;
+      double multiplier = 2.0;
+      if (Phase == 3) {
+        multiplier = 1.732;
+      }
+      var feederLengthPrompt = new PromptStringOptions(
+        "\nEnter the feeder length in feet: "
+      );
+      double distance = 0;
+      var feederLengthResult = ed.GetString(feederLengthPrompt);
+      while (distance <= 0) {
+        if (feederLengthResult.Status == PromptStatus.OK) {
+          string feederLengthString = feederLengthResult.StringResult;
+          if (
+            int.TryParse(feederLengthString, out int l)
+          ) {
+            distance = l;
+            ed.WriteMessage($"\nDistance set to {distance}");
+          }
+          else {
+            ed.WriteMessage(
+              $"\nInvalid distance."
+            );
+            feederLengthResult = ed.GetString(feederLengthPrompt);
+          }
+        }
+        else {
+          return;
+        }
+      }
+
+      int numWires = 3;
+      if (Phase == 3) {
+        numWires = 4;
+      }
+
+      ConduitSpec spec = GetConduitAndWireSize(loadAmperage, mocp, distance, multiplier, maxVoltageDropAllowed, numWires);
+      string gndSize = "";
+      double voltageDropPercent = 0;      
+      gndSize = GetGroundingSize(mocp);
+      voltageDropPercent = GetVoltageDrop(spec.wireSpec.wireSize, distance, spec.wireSpec.parallelWires, loadAmperage, multiplier) / Voltage * 100;
+      string firstLine;
+      string secondLine;
+      string thirdLine;
+      if (spec.wireSpec.parallelWires > 1) {
+        firstLine = $"[{spec.wireSpec.parallelWires}]{spec.conduitSize}\" C.; {numWires}#{spec.wireSpec.wireSize} CU.";
+      }
+      else {
+        firstLine = $"{spec.conduitSize}\" C.; {numWires}#{spec.wireSpec.wireSize} CU.";
+      }
+      secondLine = $"PLUS 1#{gndSize} CU. GND.";
+      string voltageDropPercentString = voltageDropPercent < 0.1 ? "NEGL." : Math.Round(voltageDropPercent, 1).ToString() + "%";
+      thirdLine = $"{distance}'; VD={voltageDropPercentString}";
+      double loadWireSize = distance > 100 ? Math.Round(loadAmperage, 1) : mocp;
+      string supplemental1 = $"C. SIZED FOR {mocp}A";
+      string supplemental2 = $"W. SIZED FOR {loadWireSize}A";
+      string supplemental3 = $"@{Voltage}V-{Phase}\u0081-{numWires}W";
+      // Prompt for a point
+      PromptPointOptions ppo = new PromptPointOptions("\nSelect start point:");
+      PromptPointResult ppr = ed.GetPoint(ppo);
+      if (ppr.Status == PromptStatus.OK) {
+        using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction()) {
+          BlockTable acBlkTbl =
+            acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+          BlockTableRecord acBlkTblRec =
+            acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite)
+            as BlockTableRecord;
+          var textStyleId = GeneralCommands.GetTextStyleId("gmep");
+          var textStyle = (TextStyleTableRecord)acTrans.GetObject(textStyleId, OpenMode.ForRead);
+          List<DBText> allTexts = new List<DBText>();
+          double scaleFactor = 1;
+          if (IsInModel() || IsInLayoutViewport()) {
+            if (Scale <= 0) {
+              SetScale();
+            }
+            scaleFactor = 12 / Scale;
+          }
+          var firstLineText = new DBText {
+            TextString = firstLine,
+            Position = horizontal? new Point3d(ppr.Value.X, ppr.Value.Y + 0.20 * scaleFactor, 0) : new Point3d(ppr.Value.X - 0.20 * scaleFactor, ppr.Value.Y, 0),
+            Height = 0.1 * scaleFactor,
+            WidthFactor = 0.85,
+            Layer = "E-TEXT",
+            TextStyleId = textStyleId,
+            HorizontalMode = TextHorizontalMode.TextLeft,
+            VerticalMode = TextVerticalMode.TextVerticalMid,
+            Justify = AttachmentPoint.BaseLeft,
+            Rotation = horizontal ? 0 : 1.5708
+          };
+          allTexts.Add(firstLineText);
+          var secondLineText = new DBText {
+            TextString = secondLine,
+            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y + 0.04 * scaleFactor, 0) : new Point3d(ppr.Value.X - 0.04 * scaleFactor, ppr.Value.Y, 0),
+            Height = 0.1 * scaleFactor,
+            WidthFactor = 0.85,
+            Layer = "E-TEXT",
+            TextStyleId = textStyleId,
+            HorizontalMode = TextHorizontalMode.TextLeft,
+            VerticalMode = TextVerticalMode.TextVerticalMid,
+            Justify = AttachmentPoint.BaseLeft,
+            Rotation = horizontal ? 0 : 1.5708
+          };
+          allTexts.Add(secondLineText);
+          var thirdLineText = new DBText {
+            TextString = thirdLine,
+            Position = horizontal? new Point3d(ppr.Value.X, ppr.Value.Y - 0.13 * scaleFactor, 0) : new Point3d(ppr.Value.X + 0.13 * scaleFactor, ppr.Value.Y,0),
+            Height = 0.1 * scaleFactor,
+            WidthFactor = 0.85,
+            Layer = "E-TEXT",
+            TextStyleId = textStyleId,
+            HorizontalMode = TextHorizontalMode.TextLeft,
+            VerticalMode = TextVerticalMode.TextVerticalMid,
+            Justify = AttachmentPoint.BaseLeft,
+            Rotation = horizontal ? 0 : 1.5708
+          };
+          allTexts.Add(thirdLineText);
+          var supplementalText1 = new DBText {
+            TextString = supplemental1,
+            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y - 0.29 * scaleFactor, 0) : new Point3d(ppr.Value.X + 0.29 * scaleFactor, ppr.Value.Y, 0),
+            Height = 0.1 * scaleFactor,
+            WidthFactor = 0.85,
+            Layer = "DEFPOINTS",
+            TextStyleId = textStyleId,
+            HorizontalMode = TextHorizontalMode.TextLeft,
+            VerticalMode = TextVerticalMode.TextVerticalMid,
+            Justify = AttachmentPoint.BaseLeft,
+            Rotation = horizontal ? 0 : 1.5708
+          };
+          allTexts.Add(supplementalText1);
+          var supplementalText2 = new DBText {
+            TextString = supplemental2,
+            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y - 0.45 * scaleFactor, 0) : new Point3d(ppr.Value.X + 0.45 * scaleFactor, ppr.Value.Y, 0),
+            Height = 0.1 * scaleFactor,
+            WidthFactor = 0.85,
+            Layer = "DEFPOINTS",
+            TextStyleId = textStyleId,
+            HorizontalMode = TextHorizontalMode.TextLeft,
+            VerticalMode = TextVerticalMode.TextVerticalMid,
+            Justify = AttachmentPoint.BaseLeft,
+            Rotation = horizontal ? 0 : 1.5708
+          };
+          allTexts.Add(supplementalText2);
+          var supplementalText3 = new DBText {
+            TextString = supplemental3,
+            Position = horizontal ? new Point3d(ppr.Value.X, ppr.Value.Y - 0.61 * scaleFactor, 0) : new Point3d(ppr.Value.X + 0.61 * scaleFactor, ppr.Value.Y, 0),
+            Height = 0.1 * scaleFactor,
+            WidthFactor = 0.85,
+            Layer = "DEFPOINTS",
+            TextStyleId = textStyleId,
+            HorizontalMode = TextHorizontalMode.TextLeft,
+            VerticalMode = TextVerticalMode.TextVerticalMid,
+            Justify = AttachmentPoint.BaseLeft,
+            Rotation = horizontal? 0 : 1.5708
+          };
+          allTexts.Add(supplementalText3);
+
+          var currentSpace = (BlockTableRecord)
+              acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite);
+          foreach (DBText text in allTexts) {
+            currentSpace.AppendEntity(text);
+            acTrans.AddNewlyCreatedDBObject(text, true);
+          }
+          acTrans.Commit();
+        }
+      }
+    }
+      
     [CommandMethod("HR")]
     public void HR() {
       Document doc = Autodesk

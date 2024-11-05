@@ -9,12 +9,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace ElectricalCommands {
 
   public class PanelCommands {
     private MainForm myForm;
+    private int circuitNumLeft = 1;
+    private int circuitNumRight = 2;
 
     [CommandMethod("PANEL")]
     public void PANEL() {
@@ -34,7 +37,7 @@ namespace ElectricalCommands {
         else {
           // Create a new MainForm if it's not already open
           this.myForm = new MainForm(this);
-          this.myForm.initialize_modal();
+          this.myForm.InitializeModal();
           this.myForm.Show();
         }
       }
@@ -201,7 +204,7 @@ namespace ElectricalCommands {
 
     [CommandMethod("IMPORTPANELS")]
     public void IMPORTPANELS() {
-      Create_Panels(null);
+      CreatePanels(null);
     }
 
     private void CreateTextsWithoutPanelData(
@@ -544,11 +547,21 @@ namespace ElectricalCommands {
         tr,
         "BUS RATING",
         "Standard",
-        0.1248,
+        0.11232,
         0.75,
         0,
         layerName,
-        new Point3d(startPoint.X + 5.18507633525223, startPoint.Y - 0.271963067880222, 0)
+        new Point3d(startPoint.X + 5.18507633525223, startPoint.Y - 0.155059196495415, 0)
+      );
+      CreateAndPositionText(
+        tr,
+        "FED FROM",
+        "Standard",
+        0.11232,
+        0.75,
+        0,
+        layerName,
+        new Point3d(startPoint.X + 5.18507633525223, startPoint.Y - 0.338479316609039, 0)
       );
       CreateAndPositionText(
         tr,
@@ -745,7 +758,7 @@ namespace ElectricalCommands {
     ) {
       CreateAndPositionText(
         tr,
-        panelData["panel"] as string,
+        (panelData["panel"] as string).Trim(),
         "ROMANC",
         0.1872,
         0.75,
@@ -777,11 +790,21 @@ namespace ElectricalCommands {
         tr,
         panelData["bus_rating"] as string,
         "ROMANS",
-        0.12375,
+        0.09375,
         1,
         2,
         layerName,
-        new Point3d(startPoint.X + 6.2073642121926, startPoint.Y - 0.274622599308543, 0)
+        new Point3d(startPoint.X + 6.1073642121926, startPoint.Y - 0.137807184107345, 0)
+      );
+      CreateAndPositionText(
+        tr,
+        ("'" + (panelData["fed_from"] as string)).Replace("'PANEL ", "PANEL '") + "'",
+        "ROMANS",
+        0.09375,
+        1,
+        2,
+        layerName,
+        new Point3d(startPoint.X + 6.0073642121926, startPoint.Y - 0.32590837886957, 0)
       );
       CreateAndPositionText(
         tr,
@@ -825,7 +848,215 @@ namespace ElectricalCommands {
       );
     }
 
-    public void Create_Panels(List<Dictionary<string, object>> panelDataList) {
+    public void CreateLoadSummary(Dictionary<string, object> panelData, List<Dictionary<string, object>> panelStorage) {
+      var (doc, db, ed) = PanelCommands.GetGlobals();
+      var promptOptions = new PromptPointOptions("\nSelect top left corner point: ");
+      var promptResult = ed.GetPoint(promptOptions);
+      if (promptResult.Status != PromptStatus.OK)
+        return;
+
+      var spaceId =
+        (db.TileMode == true)
+          ? SymbolUtilityServices.GetBlockModelSpaceId(db)
+          : SymbolUtilityServices.GetBlockPaperSpaceId(db);
+
+      // Initial point
+      var topRightCorner = promptResult.Value;
+
+      double GetSafeDouble(object val) {
+        if (!String.IsNullOrEmpty(val as string)) {
+          return Convert.ToDouble(val as string);
+        }
+        return 0;
+      }
+
+      bool GetSafeBoolean(string key) {
+        if (panelData.TryGetValue(key, out object value)) {
+          if (value is bool boolValue) {
+            return boolValue;
+          }
+          if (value is string stringValue) {
+            return bool.TryParse(stringValue, out bool result) && result;
+          }
+        }
+        return false;
+      }
+
+      string GetLoadName(string key) {
+        if (Regex.IsMatch(key, @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+          foreach (Dictionary<string, object> panel in panelStorage) {
+            if ((panel["id"] as string).ToLower() == key.ToLower()) {
+              return "PANEL " + panel["panel"] as string;
+            }
+          }
+        }
+        return key;
+      }
+
+      double GetPanelKva(string key) {
+        if (Regex.IsMatch(key, @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+          foreach (Dictionary<string, object> panel in panelStorage) {
+            if ((panel["id"] as string).ToLower() == key.ToLower()) {
+              return GetSafeDouble(panel["kva"] as string);
+            }
+          }
+        }
+        return 0;
+      }
+
+      using (var tr = db.TransactionManager.StartTransaction()) {
+        var btr = (BlockTableRecord)tr.GetObject(spaceId, OpenMode.ForWrite);
+
+        var startPoint = new Point3d(topRightCorner.X, topRightCorner.Y, 0);
+        
+        List<string> descriptionLeft = (List<string>)panelData["description_left"];
+        List<string> descriptionRight = (List<string>)panelData["description_right"];
+        List<string> phaseALeft = (List<string>)panelData["phase_a_left"];
+        List<string> phaseARight = (List<string>)panelData["phase_a_right"];
+        List<string> phaseBLeft = (List<string>)panelData["phase_b_left"];
+        List<string> phaseBRight = (List<string>)panelData["phase_b_right"];
+        List<string> phaseCLeft = [];
+        List<string> phaseCRight = [];
+        int totalEntries = 0;
+        for (int i = 0; i < descriptionLeft.Count; i++) {
+          if (!String.IsNullOrEmpty(descriptionLeft[i]) && descriptionLeft[i] != "SPARE" && descriptionLeft[i] != "SPACE") {
+            totalEntries++;
+          }
+          if (!String.IsNullOrEmpty(descriptionRight[i]) && descriptionRight[i] != "SPARE" && descriptionRight[i] != "SPACE") {
+            totalEntries++;
+          }
+        }
+        Table tb = new Table();
+        List<double> kvaList = new List<double>();
+        tb.TableStyle = db.Tablestyle;
+        tb.Position = startPoint;
+        tb.SetSize(totalEntries + 5, 3);
+        tb.SetRowHeight(0.5);
+        tb.Cells[0, 0].TextHeight = (0.125);
+        tb.Cells[0, 0].TextString = $"{panelData["panel"] as string } LOAD SUMMARY";
+        int tableRowIndex = 1;
+        int increment = 2;
+        tb.SetColumnWidth(2);
+        if (panelData.ContainsKey("phase_c_left")) {
+          increment = 3;
+          phaseCLeft = (List<string>)panelData["phase_c_left"];
+          phaseCRight = (List<string>)panelData["phase_c_right"];
+        }
+        for (int i = 0; i < descriptionLeft.Count; i += increment * 2) {
+          if (!String.IsNullOrEmpty(descriptionLeft[i]) && descriptionLeft[i] != "SPARE" && descriptionLeft[i] != "SPACE") {
+            double panelKva = GetPanelKva(descriptionLeft[i]);
+            tb.Cells[tableRowIndex, 2].TextString = panelKva.ToString()+ " KVA";
+            kvaList.Add(panelKva);
+            if (panelKva == 0) {
+              double phA = GetSafeDouble(phaseALeft[i]);
+              double phB = GetSafeDouble(phaseBLeft[i + 2]);
+              double phC = 0;
+              if (increment == 3) {
+                phC = GetSafeDouble(phaseCLeft[i + 4]);
+              }
+              tb.Cells[tableRowIndex, 2].TextString = Math.Round((phA + phB + phC) / 1000, 1).ToString() + " KVA";
+              kvaList.Add(Math.Round((phA + phB + phC) / 1000, 1));
+            }
+            tb.Cells[tableRowIndex, 0].TextString = $"{tableRowIndex}.";
+            tb.Cells[tableRowIndex, 1].TextString = GetLoadName(descriptionLeft[i]);
+            tableRowIndex++;
+          }
+          if (!String.IsNullOrEmpty(descriptionRight[i]) && descriptionRight[i] != "SPARE" && descriptionRight[i] != "SPACE") {
+            double panelKva = GetPanelKva(descriptionRight[i]);
+            tb.Cells[tableRowIndex, 2].TextString = panelKva.ToString() + " KVA";
+            kvaList.Add(panelKva);
+            if (panelKva == 0) {
+              double phA = GetSafeDouble(phaseARight[i]);
+              double phB = GetSafeDouble(phaseBRight[i + 2]);
+              double phC = 0;
+              if (increment == 3) {
+                phC = GetSafeDouble(phaseCRight[i + 4]);
+              }
+              tb.Cells[tableRowIndex, 2].TextString = Math.Round((phA + phB + phC) / 1000, 1).ToString() + " KVA";
+              kvaList.Add(Math.Round((phA + phB + phC) / 1000, 1));
+            }
+            tb.Cells[tableRowIndex, 0].TextString = $"{tableRowIndex}.";
+            tb.Cells[tableRowIndex, 1].TextString = GetLoadName(descriptionRight[i]);
+            tableRowIndex++;
+          }
+        }
+
+        var textStyleId = GetTextStyleId("gmep");
+        tb.Layer = "E-TXT1";
+        for (int i = 0; i < totalEntries + 5; i++) {
+          for (int j = 0; j < 3; j++) {
+            tb.Cells[i, j].TextHeight = 0.1;
+            tb.Cells[i, j].Alignment = CellAlignment.MiddleCenter;
+            tb.Cells[i, j].TextStyleId = textStyleId;
+          }
+        }
+
+        tb.Columns[0].Width = 0.5;
+        for (int i = totalEntries + 1; i < totalEntries + 5; i++) {
+          CellRange range = CellRange.Create(tb, i, 0, i, 1);
+          tb.MergeCells(range);
+        }
+        tb.Cells[totalEntries + 1, 0].TextString = "TOTAL KVA";
+
+        double kva = kvaList.Sum();
+        tb.Cells[totalEntries + 1, 2].TextString = kva.ToString();
+
+        bool usingSafetyFactor = GetSafeBoolean("using_safety_factor");
+        double phaseVoltage = GetSafeDouble(panelData["voltage1"]);
+        double lineVoltage = GetSafeDouble(panelData["voltage2"]);
+        double yFactor = 1;
+        int phase = 1;
+        int wire = 3;
+        if (increment == 3 && lineVoltage != 240) {
+          yFactor = 1.732;
+          phase = 3;
+          wire = 4;
+        }
+        double feederAmps = GetSafeDouble(panelData["feeder_amps"]);
+
+        double busSize = Convert.ToDouble(panelData.TryGetValue("bus_rating", out object bus) ? bus?.ToString().Replace("A", "") ?? "1" : "1");
+
+        double totalAmperage = 0;
+        if (usingSafetyFactor) {
+          double safetyFactor = Convert.ToDouble(panelData.TryGetValue("safety_factor", out object value) ? value?.ToString() ?? "1" : "1");
+          totalAmperage = Math.Round(kva * 1000 / lineVoltage / yFactor * safetyFactor, 1);
+          if (safetyFactor == 0) safetyFactor = 1;
+          tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL KVA x{safetyFactor}";
+          tb.Cells[totalEntries + 2, 2].TextString = Math.Round(kva * safetyFactor, 1).ToString();
+          tb.Cells[totalEntries + 3, 0].TextString = $"TOTAL AMP @{phaseVoltage}/{lineVoltage}V-{phase}\u0081-{wire}W";
+          tb.Cells[totalEntries + 3, 2].TextString = totalAmperage.ToString();
+          if (totalAmperage < busSize) {
+            tb.Cells[totalEntries + 4, 0].TextString = "CONCLUSION";
+            tb.Cells[totalEntries + 4, 2].TextString = $"{busSize}A SERVICE CAN HANDLE {totalAmperage}A LOAD.";
+          }
+          else {
+            tb.Cells[totalEntries + 4, 0].TextString = "CONCLUSION";
+            tb.Cells[totalEntries + 4, 2].TextString = $"{busSize}A SERVICE CANNOT HANDLE {totalAmperage}A LOAD.";
+          }
+        }
+        else {
+          totalAmperage = Math.Round(kva * 1000 / lineVoltage / yFactor, 1);
+          tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL AMP @{phaseVoltage}/{lineVoltage}V-{phase}\u0081-{wire}W";
+          tb.Cells[totalEntries + 2, 2].TextString = Math.Round(kva * 1000 / lineVoltage / yFactor, 1).ToString();
+          if (totalAmperage < busSize) {
+            tb.Cells[totalEntries + 3, 0].TextString = "CONCLUSION";
+            tb.Cells[totalEntries + 3, 2].TextString = $"{busSize}A SERVICE CAN HANDLE {totalAmperage}A LOAD.";
+          }
+          else {
+            tb.Cells[totalEntries + 3, 0].TextString = "CONCLUSION";
+            tb.Cells[totalEntries + 3, 2].TextString = $"{busSize}A SERVICE CANNOT HANDLE {totalAmperage}A LOAD.";
+          }
+          tb.DeleteRows(totalEntries + 4, 1);
+        }
+
+        BlockTable bt = (BlockTable)tr.GetObject(doc.Database.BlockTableId, OpenMode.ForRead);
+        btr.AppendEntity(tb);
+        tr.AddNewlyCreatedDBObject(tb, true);
+        tr.Commit();
+      }
+    }
+
+    public void CreatePanels(List<Dictionary<string, object>> panelDataList) {
       var (doc, db, ed) = PanelCommands.GetGlobals();
 
       if (panelDataList == null) {
@@ -855,99 +1086,105 @@ namespace ElectricalCommands {
 
       int counter = 0;
       CREATEBLOCK();
-
       foreach (var panelData in panelDataList) {
-        bool is2Pole = !panelData.ContainsKey("phase_c_left");
-        var endPoint = new Point3d(0, 0, 0);
+        circuitNumLeft = 1;
+        circuitNumRight = 2;
+        if (panelData.TryGetValue("distribution_section", out object value)) {
+          if (value is bool boolValue && boolValue == false) {
 
-        using (var tr = db.TransactionManager.StartTransaction()) {
-          var btr = (BlockTableRecord)tr.GetObject(spaceId, OpenMode.ForWrite);
+            bool is2Pole = !panelData.ContainsKey("phase_c_left");
+            var endPoint = new Point3d(0, 0, 0);
 
-          // Create initial values
-          var startPoint = new Point3d(topRightCorner.X - 8.9856, topRightCorner.Y, 0);
-          var layerName = "0";
+            using (var tr = db.TransactionManager.StartTransaction()) {
+              var btr = (BlockTableRecord)tr.GetObject(spaceId, OpenMode.ForWrite);
 
-          // Create the independent header text objects
-          CreateTextsWithoutPanelData(tr, layerName, startPoint, is2Pole);
+              // Create initial values
+              var startPoint = new Point3d(topRightCorner.X - 8.9856, topRightCorner.Y, 0);
+              var layerName = "0";
 
-          // Create the dependent header text objects
-          CreateTextsWithPanelData(tr, layerName, startPoint, panelData);
+              // Create the independent header text objects
+              CreateTextsWithoutPanelData(tr, layerName, startPoint, is2Pole);
 
-          // Create breaker text objects
-          totalLevel = ProcessTextData(tr, btr, startPoint, panelData, is2Pole);
+              // Create the dependent header text objects
+              CreateTextsWithPanelData(tr, layerName, startPoint, panelData);
 
-          // Get end of data
-          var endOfDataY = GetEndOfDataY((List<string>)panelData["description_left"], startPoint);
-          endPoint = new Point3d(topRightCorner.X, endOfDataY - 0.2533, 0);
+              // Create breaker text objects
+              totalLevel = ProcessTextData(tr, btr, startPoint, panelData, is2Pole);
 
-          // Create all the data lines
-          ProcessLineData(tr, btr, startPoint, endPoint, endOfDataY, is2Pole);
+              // Get end of data
+              var endOfDataY = GetEndOfDataY((List<string>)panelData["description_left"], startPoint);
+              endPoint = new Point3d(topRightCorner.X, endOfDataY - 0.2533, 0);
 
-          // Create footer text objects
-          CreateFooterText(tr, endPoint, panelData, is2Pole);
+              // Create all the data lines
+              ProcessLineData(tr, btr, startPoint, endPoint, endOfDataY, is2Pole);
 
-          // Create the middle lines
-          CreateCenterLines(btr, tr, startPoint, endPoint, is2Pole);
+              // Create footer text objects
+              CreateFooterText(tr, endPoint, panelData, is2Pole);
 
-          // Create the notes section
-          if (panelData.ContainsKey("notes")) {
-            var decrease = CreateNotes(
-              btr,
-              tr,
-              startPoint,
-              endPoint,
-              panelData["existing"] as string,
-              panelData["custom_title"] as string,
-              panelData["notes"] as List<string>
-            );
-            if (decrease > decreaseY) {
-              decreaseY = decrease;
+              // Create the middle lines
+              CreateCenterLines(btr, tr, startPoint, endPoint, is2Pole);
+
+              // Create the notes section
+              if (panelData.ContainsKey("notes")) {
+                var decrease = CreateNotes(
+                  btr,
+                  tr,
+                  startPoint,
+                  endPoint,
+                  panelData["existing"] as string,
+                  panelData["custom_title"] as string,
+                  panelData["notes"] as List<string>
+                );
+                if (decrease > decreaseY) {
+                  decreaseY = decrease;
+                }
+              }
+              else {
+                var decrease = CreateNotes(
+                  btr,
+                  tr,
+                  startPoint,
+                  endPoint,
+                  panelData["existing"] as string,
+                  null,
+                  null
+                );
+                if (decrease > decreaseY) {
+                  decreaseY = decrease;
+                }
+              }
+
+              // Create the calculations section
+              CreateCalculations(btr, tr, startPoint, endPoint, panelData);
+
+              // Create the border of the panel
+              CreateRectangle(btr, tr, topRightCorner, startPoint, endPoint, layerName);
+
+              tr.Commit();
+            }
+
+            // Check if the endPoint.Y is the lowest point
+            if (endPoint.Y < lowestY) {
+              lowestY = endPoint.Y;
+            }
+
+            counter++;
+
+            // After printing 3 panels, reset X and decrease Y by 5
+            if (counter % 3 == 0) {
+              topRightCorner = new Point3d(originalTopRightCorner.X, lowestY - 1.5 - decreaseY, 0);
+              // Reset lowestY
+              lowestY = topRightCorner.Y;
+            }
+            else {
+              // Increase x-coordinate by 10 for the next panel
+              topRightCorner = new Point3d(
+                topRightCorner.X - (9.6 + (0.2 * totalLevel)),
+                topRightCorner.Y,
+                0
+              );
             }
           }
-          else {
-            var decrease = CreateNotes(
-              btr,
-              tr,
-              startPoint,
-              endPoint,
-              panelData["existing"] as string,
-              null,
-              null
-            );
-            if (decrease > decreaseY) {
-              decreaseY = decrease;
-            }
-          }
-
-          // Create the calculations section
-          CreateCalculations(btr, tr, startPoint, endPoint, panelData);
-
-          // Create the border of the panel
-          CreateRectangle(btr, tr, topRightCorner, startPoint, endPoint, layerName);
-
-          tr.Commit();
-        }
-
-        // Check if the endPoint.Y is the lowest point
-        if (endPoint.Y < lowestY) {
-          lowestY = endPoint.Y;
-        }
-
-        counter++;
-
-        // After printing 3 panels, reset X and decrease Y by 5
-        if (counter % 3 == 0) {
-          topRightCorner = new Point3d(originalTopRightCorner.X, lowestY - 1.5 - decreaseY, 0);
-          // Reset lowestY
-          lowestY = topRightCorner.Y;
-        }
-        else {
-          // Increase x-coordinate by 10 for the next panel
-          topRightCorner = new Point3d(
-            topRightCorner.X - (9.6 + (0.2 * totalLevel)),
-            topRightCorner.Y,
-            0
-          );
         }
       }
     }
@@ -1010,10 +1247,10 @@ namespace ElectricalCommands {
       return (doc, db, ed);
     }
 
-    public void Create_Panel(Dictionary<string, object> panelData) {
+    public void CreatePanel(Dictionary<string, object> panelData) {
       List<Dictionary<string, object>> panels = new List<Dictionary<string, object>>();
       panels.Add(panelData);
-      Create_Panels(panels);
+      CreatePanels(panels);
     }
 
     private static FileInfo GetFileInfo(string filePath) {
@@ -1557,7 +1794,7 @@ namespace ElectricalCommands {
       CreateAndPositionRightText(tr, GetSafeString("lcl"), "ROMANS", 0.09375, 1, 2, "PNLTXT", new Point3d(endPoint.X - 7.59414061117746, endPoint.Y - 0.413648726513742, 0));
       CreateAndPositionText(tr, "=", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 7.03028501835593, endPoint.Y - 0.437756414851634, 0));
       CreateAndPositionRightText(tr, GetSafeString("lcl125"), "ROMANS", 0.09375, 1, 2, "PNLTXT", new Point3d(endPoint.X - 6.69695957617801, endPoint.Y - 0.413648726513742, 0));
-      CreateAndPositionText(tr, "LML @ 125 %", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 8.9456956126196, endPoint.Y - 0.616854044919108, 0));
+      CreateAndPositionText(tr, "LML @ 125 %", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 8.91077927366155, endPoint.Y - 0.616854044919108, 0));
       CreateAndPositionRightText(tr, GetSafeString("lml"), "ROMANS", 0.09375, 1, 2, "PNLTXT", new Point3d(endPoint.X - 7.59414061117746, endPoint.Y - 0.618180694030713, 0));
       CreateAndPositionText(tr, "=", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 7.03028501835593, endPoint.Y - 0.618180694030713, 0));
       CreateAndPositionRightText(tr, GetSafeString("lml125"), "ROMANS", 0.09375, 1, 2, "PNLTXT", new Point3d(endPoint.X - 6.69695957617801, endPoint.Y - 0.618180694030713, 0));
@@ -2782,22 +3019,28 @@ namespace ElectricalCommands {
       data.Add("initial half breaker text y", -0.816333638994546);
       data.Add("header height", 0.7488);
 
-      for (int i = 0; i < descriptions.Count; i += 2) {
-        double phase = GetPhase(breakers, circuits, i);
-
-        if (phase == 0.5) {
+      int i = 0;
+      while (i < descriptions.Count) {
+        BreakerType breakerType = GetBreakerType(breakers, circuits, i);
+        if (breakerType == BreakerType.SplitMini) {
+          CreateHalfSplit2PoleBreakers(tr, btr, startPoint, panelData, data, left, is2Pole, i);
+          i += 4;
+        }
+        else if (breakerType == BreakerType.Mini) {
           CreateHalfBreaker(tr, btr, startPoint, panelData, data, left, is2Pole, i);
-        }
-        else if (phase == 1.0) {
-          Create1PoleBreaker(tr, btr, startPoint, panelData, data, left, is2Pole, i);
-        }
-        else if (phase == 2.0) {
-          Create2PoleBreaker(tr, btr, startPoint, panelData, data, left, is2Pole, i);
           i += 2;
+        }
+        else if (breakerType == BreakerType.SinglePole) {
+          Create1PoleBreaker(tr, btr, startPoint, panelData, data, left, is2Pole, i);
+          i += 2;
+        }
+        else if (breakerType == BreakerType.TwoPole) {
+          Create2PoleBreaker(tr, btr, startPoint, panelData, data, left, is2Pole, i);
+          i += 4;
         }
         else {
           Create3PoleBreaker(tr, btr, startPoint, panelData, data, left, is2Pole, i);
-          i += 4;
+          i += 6;
         }
       }
     }
@@ -2823,19 +3066,24 @@ namespace ElectricalCommands {
         { "initial half breaker text y", -0.816333638994546 },
         { "header height", 0.7488 }
       };
-
-      for (int i = 0; i < descriptions.Count; i += 2) {
-        double phase = GetPhase(breakers, circuits, i);
-
-        if (phase == 0.5) {
-          CreateHalfBreaker2P(tr, btr, startPoint, panelData, data, left, is2Pole, i);
+      int i = 0;
+      while (i < descriptions.Count) {
+        BreakerType breakerType = GetBreakerType(breakers, circuits, i);
+        if (breakerType == BreakerType.SplitMini) {
+          CreateHalfSplit2PoleBreakers2Ph(tr, btr, startPoint, panelData, data, left, is2Pole, i);
+          i += 4;
         }
-        else if (phase == 1.0) {
+        else if (breakerType == BreakerType.Mini) {
+          CreateHalfBreaker2P(tr, btr, startPoint, panelData, data, left, is2Pole, i);
+          i += 2;
+        }
+        else if (breakerType == BreakerType.SinglePole) {
           Create1PoleBreaker2P(tr, btr, startPoint, panelData, data, left, is2Pole, i);
+          i += 2;
         }
         else {
           Create2PoleBreaker2P(tr, btr, startPoint, panelData, data, left, is2Pole, i);
-          i += 2;
+          i += 4;
         }
       }
     }
@@ -2872,6 +3120,14 @@ namespace ElectricalCommands {
       string circuit = circuits[i];
 
       for (var j = i; j <= i + 1; j++) {
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+          List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
+          foreach (Dictionary<string, object> panel in panelStorage) {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+              descriptions[j] = "PANEL " + panel["panel"] as string;
+            }
+          }
+        }
         string description =
           (descriptionHighlights[j] && descriptions[j] != "EXISTING LOAD")
             ? "(E)" + descriptions[j]
@@ -2959,6 +3215,14 @@ namespace ElectricalCommands {
       string circuit = circuits[i];
 
       for (var j = i; j <= i + 1; j++) {
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+          List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
+          foreach (Dictionary<string, object> panel in panelStorage) {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+              descriptions[j] = "PANEL " + panel["panel"] as string;
+            }
+          }
+        }
         string description =
           (descriptionHighlights[j] && descriptions[j] != "EXISTING LOAD")
             ? "(E)" + descriptions[j]
@@ -3028,7 +3292,14 @@ namespace ElectricalCommands {
         GetCorrectBreakerData(panelData, left, is2Pole);
 
       List<string> phaseList = GetPhaseList(i, phaseA, phaseB, phaseC);
-
+      if (Regex.IsMatch(descriptions[i], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+        List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
+        foreach (Dictionary<string, object> panel in panelStorage) {
+          if ((panel["id"] as string).ToLower() == descriptions[i].ToLower()) {
+            descriptions[i] = "PANEL " + panel["panel"] as string;
+          }
+        }
+      }
       string description =
         (descriptionHighlights[i] && descriptions[i] != "EXISTING LOAD")
           ? "(E)" + descriptions[i]
@@ -3048,7 +3319,7 @@ namespace ElectricalCommands {
         description,
         "ROMANS",
         0.09375,
-        1.0,
+        GetDescriptionWidthFactor(description),
         2,
         "0",
         new Point3d(descriptionX, height, 0)
@@ -3111,7 +3382,14 @@ namespace ElectricalCommands {
       ) = GetCorrectBreakerData(panelData, left, is2Pole);
 
       List<string> phaseList = GetPhaseList2P(i, phaseA, phaseB);
-
+      if (Regex.IsMatch(descriptions[i], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+        List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
+        foreach (Dictionary<string, object> panel in panelStorage) {
+          if ((panel["id"] as string).ToLower() == descriptions[i].ToLower()) {
+            descriptions[i] = "PANEL " + panel["panel"] as string;
+          }
+        }
+      }
       string description =
         (descriptionHighlights[i] && descriptions[i] != "EXISTING LOAD")
           ? "(E)" + descriptions[i]
@@ -3131,7 +3409,7 @@ namespace ElectricalCommands {
         description,
         "ROMANS",
         0.09375,
-        1.0,
+        GetDescriptionWidthFactor(description),
         2,
         "0",
         new Point3d(descriptionX, height, 0)
@@ -3200,6 +3478,14 @@ namespace ElectricalCommands {
 
       for (var j = i; j <= i + 2; j += 2) {
         List<string> phaseList = GetPhaseList(j, phaseA, phaseB, phaseC);
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+          List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
+          foreach (Dictionary<string, object> panel in panelStorage) {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+              descriptions[j] = "PANEL " + panel["panel"] as string;
+            }
+          }
+        }
         string description =
           (descriptionHighlights[j] && descriptions[j] != "EXISTING LOAD")
             ? "(E)" + descriptions[j]
@@ -3221,7 +3507,7 @@ namespace ElectricalCommands {
           description,
           "ROMANS",
           0.09375,
-          1.0,
+          GetDescriptionWidthFactor(description),
           2,
           "0",
           new Point3d(descriptionX, height, 0)
@@ -3265,6 +3551,257 @@ namespace ElectricalCommands {
       CreateBreakerLine(startPoint, i, left, tr, btr, 4);
     }
 
+    private void CreateHalfSplit2PoleBreakers(
+      Transaction tr,
+      BlockTableRecord btr,
+      Point3d startPoint,
+      Dictionary<string, object> panelData,
+      Dictionary<string, double> data,
+      bool left,
+      bool is2Pole,
+      int i
+    ) {
+      var (
+        descriptions,
+        breakers,
+        circuits,
+        phaseA,
+        phaseB,
+        phaseC,
+        descriptionHighlights,
+        descriptionTags
+      ) = GetCorrectBreakerData(panelData, left, is2Pole);
+
+      double descriptionX = GetDescriptionX(startPoint, left);
+      double breakerX = GetBreakerX(startPoint, left);
+      double circuitX = GetCircuitX(startPoint, left);
+      double textHeight = 0.0725;
+      double length = 0.14;
+
+      for (var j = i; j <= i + 3; j ++) {
+        List<string> phaseList = GetPhaseList(j, phaseA, phaseB, phaseC);
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+          List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
+          foreach (Dictionary<string, object> panel in panelStorage) {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+              descriptions[j] = "PANEL " + panel["panel"] as string;
+            }
+          }
+        }
+        string description =
+          (descriptionHighlights[j] && descriptions[j] != "EXISTING LOAD")
+            ? "(E)" + descriptions[j]
+            : descriptions[j];
+        string breaker = breakers[j];
+        string phase = phaseList[j];
+        string circuit = circuits[j];
+        double height = startPoint.Y + (-0.890211813771344 - ((j / 2) * 0.1872));
+        double phaseX = GetPhaseX(j, startPoint, left);
+
+        if (j == i + 2) {
+          description = "---";
+          breakerX += 0.16;
+        }
+        if (j == i + 3) {
+          breakerX -= 0.16 + 0.045;
+        }
+
+        double yShift = 0;
+        if ((j - i) % 2 == 0) {
+          yShift = 0.0575;
+        }
+        else {
+          yShift = -0.0378;
+        }
+        height = height + yShift;
+
+        if ((j - i) == 0 || (j - i) == 3) {
+          breaker = breaker + "-1";
+          length = 0.23;
+        }
+        else if ((j - i) == 1) {
+          length = 0.105;
+        }
+        else {
+          length = 0.045;
+          breakerX += 0.045;
+        }
+
+        CreateAndPositionText(
+          tr,
+          description,
+          "ROMANS",
+          textHeight,
+          1,
+          2,
+          "0",
+          new Point3d(descriptionX, height, 0)
+        );
+        if (phase != "0")
+          CreateAndPositionCenteredText(
+            tr,
+            phase,
+            "ROMANS",
+            textHeight,
+            1.0,
+            2,
+            "0",
+            new Point3d(phaseX, height, 0)
+          );
+        if (breaker != "") {
+          CreateAndPositionFittedText(
+            tr,
+            breaker,
+            "ROMANS",
+            textHeight,
+            1.0,
+            2,
+            "0",
+            new Point3d(breakerX, height, 0),
+            length
+          );
+        }
+        CreateAndPositionText(
+          tr,
+          circuit,
+          "ROMANS",
+          textHeight,
+          1.0,
+          7,
+          "0",
+          new Point3d(circuitX, height, 0)
+        );
+        CreateHorizontalLine(startPoint.X, startPoint.Y, circuit, left, tr, btr);
+      }
+      CreateBreakerLine(new Point3d(startPoint.X, startPoint.Y - 0.0936, 0), i, left, tr, btr, 2);
+    }
+
+    private void CreateHalfSplit2PoleBreakers2Ph(
+      Transaction tr,
+      BlockTableRecord btr,
+      Point3d startPoint,
+      Dictionary<string, object> panelData,
+      Dictionary<string, double> data,
+      bool left,
+      bool is2Pole,
+      int i
+    ) {
+      var (
+        descriptions,
+        breakers,
+        circuits,
+        phaseA,
+        phaseB,
+        phaseC,
+        descriptionHighlights,
+        descriptionTags
+      ) = GetCorrectBreakerData(panelData, left, is2Pole);
+
+      double descriptionX = GetDescriptionX2P(startPoint, left);
+      double breakerX = GetBreakerX(startPoint, left);
+      double circuitX = GetCircuitX(startPoint, left);
+      double textHeight = 0.0725;
+      double length = 0.14;
+
+      for (var j = i; j <= i + 3; j++) {
+        List<string> phaseList = GetPhaseList2P(j, phaseA, phaseB);
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+          List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
+          foreach (Dictionary<string, object> panel in panelStorage) {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+              descriptions[j] = "PANEL " + panel["panel"] as string;
+            }
+          }
+        }
+        string description =
+          (descriptionHighlights[j] && descriptions[j] != "EXISTING LOAD")
+            ? "(E)" + descriptions[j]
+            : descriptions[j];
+        string breaker = breakers[j];
+        string phase = phaseList[j];
+        string circuit = circuits[j];
+        double height = startPoint.Y + (-0.890211813771344 - ((j / 2) * 0.1872));
+        double phaseX = GetPhaseX2P(j, startPoint, left);
+
+        if (j == i + 2) {
+          description = "---";
+          breakerX += 0.16;
+        }
+        if (j == i + 3) {
+          breakerX -= 0.16 + 0.045;
+        }
+
+        double yShift = 0;
+        if ((j - i) % 2 == 0) {
+          yShift = 0.0575;
+        }
+        else {
+          yShift = -0.0378;
+        }
+        height = height + yShift;
+
+        if ((j - i) == 0 || (j - i) == 3) {
+          breaker = breaker + "-1";
+          length = 0.23;
+        }
+        else if ((j - i) == 1) {
+          length = 0.105;
+        }
+        else {
+          length = 0.045;
+          breakerX += 0.045;
+        }
+
+        CreateAndPositionText(
+          tr,
+          description,
+          "ROMANS",
+          textHeight,
+          1,
+          2,
+          "0",
+          new Point3d(descriptionX, height, 0)
+        );
+        if (phase != "0") {
+          CreateAndPositionCenteredText(
+            tr,
+            phase,
+            "ROMANS",
+            textHeight,
+            1.0,
+            2,
+            "0",
+            new Point3d(phaseX, height, 0)
+          );
+        }
+        if (breaker != "") {
+          CreateAndPositionFittedText(
+            tr,
+            breaker,
+            "ROMANS",
+            textHeight,
+            1.0,
+            2,
+            "0",
+            new Point3d(breakerX, height, 0),
+            length
+          );
+        }
+        CreateAndPositionText(
+          tr,
+          circuit,
+          "ROMANS",
+          textHeight,
+          1.0,
+          7,
+          "0",
+          new Point3d(circuitX, height, 0)
+        );
+        CreateHorizontalLine(startPoint.X, startPoint.Y, circuit, left, tr, btr);
+      }
+      CreateBreakerLine(new Point3d(startPoint.X, startPoint.Y - 0.0936, 0), i, left, tr, btr, 2);
+    }
+
     private void Create2PoleBreaker2P(
       Transaction tr,
       BlockTableRecord btr,
@@ -3294,6 +3831,14 @@ namespace ElectricalCommands {
 
       for (var j = i; j <= i + 2; j += 2) {
         List<string> phaseList = GetPhaseList2P(j, phaseA, phaseB);
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+          List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
+          foreach (Dictionary<string, object> panel in panelStorage) {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+              descriptions[j] = "PANEL " + panel["panel"] as string;
+            }
+          }
+        }
         string description =
           (descriptionHighlights[j] && descriptions[j] != "EXISTING LOAD")
             ? "(E)" + descriptions[j]
@@ -3315,7 +3860,7 @@ namespace ElectricalCommands {
           description,
           "ROMANS",
           0.09375,
-          1.0,
+          GetDescriptionWidthFactor(description),
           2,
           "0",
           new Point3d(descriptionX, height, 0)
@@ -3387,6 +3932,14 @@ namespace ElectricalCommands {
 
       for (var j = i; j <= i + 4; j += 2) {
         List<string> phaseList = GetPhaseList(j, phaseA, phaseB, phaseC);
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+          List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
+          foreach (Dictionary<string, object> panel in panelStorage) {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+              descriptions[j] = "PANEL " + panel["panel"] as string;
+            }
+          }
+        }
         string description =
           (descriptionHighlights[j] && descriptions[j] != "EXISTING LOAD")
             ? "(E)" + descriptions[j]
@@ -3411,7 +3964,7 @@ namespace ElectricalCommands {
           description,
           "ROMANS",
           0.09375,
-          1.0,
+          GetDescriptionWidthFactor(description),
           2,
           "0",
           new Point3d(descriptionX, height, 0)
@@ -3526,10 +4079,10 @@ namespace ElectricalCommands {
 
     public double GetPhaseX(int i, Point3d startPoint, bool left) {
       if (left) {
-        if (i % 6 == 0) {
+        if (i % 6 == 0 || i % 6 == 1) {
           return startPoint.X + 1.64526228334811;
         }
-        else if (i % 6 == 2) {
+        else if (i % 6 == 2 || i % 6 == 3) {
           return startPoint.X + 2.0792421731542;
         }
         else {
@@ -3537,10 +4090,10 @@ namespace ElectricalCommands {
         }
       }
       else {
-        if (i % 6 == 0) {
+        if (i % 6 == 0 || i % 6 == 1) {
           return startPoint.X + 6.11211889838299;
         }
-        else if (i % 6 == 2) {
+        else if (i % 6 == 2 || i % 6 == 3) {
           return startPoint.X + 6.53328984899773;
         }
         else {
@@ -3551,7 +4104,7 @@ namespace ElectricalCommands {
 
     public double GetPhaseX2P(int i, Point3d startPoint, bool left) {
       if (left) {
-        if (i % 4 == 0) {
+        if (i % 4 == 0 || i % 4 == 1) {
           return startPoint.X + 1.8390082793234;
         }
         else {
@@ -3559,7 +4112,7 @@ namespace ElectricalCommands {
         }
       }
       else {
-        if (i % 4 == 0) {
+        if (i % 4 == 0 || i % 4 == 1) {
           return startPoint.X + 6.21960728338948;
         }
         else {
@@ -3574,10 +4127,10 @@ namespace ElectricalCommands {
       List<string> phaseB,
       List<string> phaseC
     ) {
-      if (i % 6 == 0) {
+      if (i % 6 == 0 || i % 6 == 1) {
         return phaseA;
       }
-      else if (i % 6 == 2) {
+      else if (i % 6 == 2 || i % 3 == 3) {
         return phaseB;
       }
       else {
@@ -3586,7 +4139,7 @@ namespace ElectricalCommands {
     }
 
     public List<string> GetPhaseList2P(int i, List<string> phaseA, List<string> phaseB) {
-      if (i % 4 == 0) {
+      if (i % 4 == 0 || i % 4 == 1) {
         return phaseA;
       }
       else {
@@ -3594,26 +4147,37 @@ namespace ElectricalCommands {
       }
     }
 
-    private double GetPhase(List<string> breakers, List<string> circuits, int i) {
+    private enum BreakerType {
+      OutOfRange,
+      SplitMini,
+      Mini,
+      ThreePole,
+      TwoPole,
+      SinglePole
+    }
+
+    private BreakerType GetBreakerType(List<string> breakers, List<string> circuits, int i) {
       // If index i is out of range for the circuits list, return 0.0
       if (i >= circuits.Count)
-        return 0.0;
+        return BreakerType.OutOfRange;
 
+      if ((i + 2) < breakers.Count && breakers[i + 2] == "2" && (circuits[i].Contains('A') || circuits[i].Contains('B'))) {
+        return BreakerType.SplitMini;
+      }
       // Check if circuit at index i contains 'A' or 'B'
       if (circuits[i].Contains('A') || circuits[i].Contains('B')) {
-        return 0.5;
+        return BreakerType.Mini;
       }
       // Check if breakers has a value at [i+2] and if it is '3'
-      else if ((i + 4) < breakers.Count && breakers[i + 4] == "3") {
-        return 3.0;
+      if ((i + 4) < breakers.Count && breakers[i + 4] == "3") {
+        return BreakerType.ThreePole;
       }
       // Check if breakers has a value at [i+1] and if it is '2'
-      else if ((i + 2) < breakers.Count && breakers[i + 2] == "2") {
-        return 2.0;
+      if ((i + 2) < breakers.Count && breakers[i + 2] == "2") {
+        return BreakerType.TwoPole;
       }
-      else {
-        return 1.0;
-      }
+      return BreakerType.SinglePole;
+     
     }
 
     private void ProcessLineData(
@@ -3836,13 +4400,6 @@ namespace ElectricalCommands {
         (
           startPoint.X + 2.2222,
           startPoint.Y - (0.3744 / 2),
-          startPoint.X + 5.0666,
-          startPoint.Y - (0.3744 / 2),
-          layerName
-        ),
-        (
-          startPoint.X + 6.9368,
-          startPoint.Y - (0.3744 / 2),
           endPoint.X,
           startPoint.Y - (0.3744 / 2),
           layerName
@@ -3920,8 +4477,18 @@ namespace ElectricalCommands {
 
       if (circuitNumber.Contains('A') || circuitNumber.Contains('B')) {
         // Remove 'A' or 'B' from the string
-        circuitNumber = circuitNumber.Replace("A", "").Replace("B", "");
-        circuitNumInt = int.Parse(circuitNumber);
+        if (left) {
+          circuitNumInt = circuitNumLeft;
+          if (circuitNumber.Contains('B')) {
+            circuitNumLeft += 2;
+          }
+        }
+        else {
+          circuitNumInt = circuitNumRight;
+          if (circuitNumber.Contains('B')) {
+            circuitNumRight += 2;
+          }
+        }
         CreateCircuitLine(
           circuitNumInt,
           circuitNumReducer,
@@ -3935,7 +4502,14 @@ namespace ElectricalCommands {
         );
       }
       else {
-        circuitNumInt = int.Parse(circuitNumber);
+        if (left) {
+          circuitNumInt = circuitNumLeft;
+          circuitNumLeft += 2;
+        }
+        else {
+          circuitNumInt = circuitNumRight;
+          circuitNumRight += 2;
+        }
       }
 
       return CreateCircuitLine(
@@ -3975,6 +4549,19 @@ namespace ElectricalCommands {
       tr.AddNewlyCreatedDBObject(line, true);
 
       return line.StartPoint.Y;
+    }
+
+    private double GetDescriptionWidthFactor(string description) {
+      if (description.Length <= 20) {
+        return 0.8;
+      }
+      if (description.Length <= 24) {
+        return 0.75;
+      }
+      if (description.Length <= 28) {
+        return 0.65;
+      }
+      return 0.6;
     }
   }
 }

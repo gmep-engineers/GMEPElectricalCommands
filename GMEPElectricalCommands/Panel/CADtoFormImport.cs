@@ -802,33 +802,5 @@ namespace ElectricalCommands
 
       return (doc, db, ed);
     }
-
-    public static void put_in_json_file(object thing)
-    {
-      // json write the panel data to the desktop
-      string json = JsonConvert.SerializeObject(thing, Formatting.Indented);
-      string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-
-      var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-      var ed = doc.Editor;
-
-      string baseFileName = "Test";
-
-      if (string.IsNullOrEmpty(baseFileName))
-      {
-        baseFileName = "panel_data";
-      }
-      string extension = ".json";
-      string path = Path.Combine(desktopPath, baseFileName + extension);
-
-      int count = 1;
-      while (File.Exists(path))
-      {
-        string tempFileName = string.Format("{0}({1})", baseFileName, count++);
-        path = Path.Combine(desktopPath, tempFileName + extension);
-      }
-
-      File.WriteAllText(path, json);
-    }
   }
 }

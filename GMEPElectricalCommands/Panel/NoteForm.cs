@@ -27,7 +27,7 @@ namespace ElectricalCommands
       // Add event listener for form closing
       this.FormClosing += new FormClosingEventHandler(this.NOTE_FORM_Closing);
 
-      match_notes_textbox_to_notes_storage(userInterface.getNotesStorage());
+      match_notes_textbox_to_notes_storage(userInterface.GetNotesStorage());
     }
 
     private void match_notes_textbox_to_notes_storage(List<string> notesStorage)
@@ -53,7 +53,7 @@ namespace ElectricalCommands
       }
 
       // Call the update_notes_storage method on the userInterface
-      this.userInterface.update_notes_storage(notesStorageCopy);
+      this.userInterface.UpdateNotesStorage(notesStorageCopy);
     }
 
     private void ADD_NOTE_BUTTON_Click(object sender, EventArgs e)

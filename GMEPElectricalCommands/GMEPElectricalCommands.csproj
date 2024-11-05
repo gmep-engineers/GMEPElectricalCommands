@@ -99,7 +99,7 @@
       <HintPath>C:\Program Files\Autodesk\AutoCAD 2024\AcMPolygonMGD.dll</HintPath>
     </Reference>
     <Reference Include="AutoCADCommands">
-      <HintPath>..\..\AutoCADCodePack\bin\Release\r23\AutoCADCommands.dll</HintPath>
+      <HintPath>3rdPartyDeps\AutoCADCodePack\AutoCADCommands.dll</HintPath>
     </Reference>
     <Reference Include="DocumentFormat.OpenXml, Version=3.1.0.0, Culture=neutral, PublicKeyToken=8fb06cb64d019a17, processorArchitecture=MSIL">
       <HintPath>..\packages\DocumentFormat.OpenXml.3.1.0\lib\net46\DocumentFormat.OpenXml.dll</HintPath>
@@ -172,7 +172,7 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xml" />
     <Reference Include="Triangle">
-      <HintPath>..\..\Triangle.NET\src\Triangle\bin\Release\netstandard2.0\Triangle.dll</HintPath>
+      <HintPath>3rdPartyDeps\Triangle.NET\Triangle.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
   </ItemGroup>
@@ -248,6 +248,7 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Panel\PanelUserControl.resx">
       <DependentUpon>PanelUserControl.cs</DependentUpon>
+      <SubType>Designer</SubType>
     </EmbeddedResource>
   </ItemGroup>
   <ItemGroup>
@@ -684,7 +685,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="3rdPartyDeps\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>"C:\Program Files\Autodesk\AutoCAD 2024\acad.exe" /product ACAD /language "en-US"</PostBuildEvent>

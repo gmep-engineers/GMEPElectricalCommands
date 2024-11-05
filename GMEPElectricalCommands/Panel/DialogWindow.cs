@@ -14,10 +14,13 @@ using System.Windows.Forms;
 namespace ElectricalCommands {
 
   public partial class MainForm : Form {
-    private PanelCommands myCommandsInstance;
+    private readonly PanelCommands myCommandsInstance;
     private NewPanelForm newPanelForm;
-    private List<PanelUserControl> userControls;
+    private readonly List<PanelUserControl> userControls;
     private Document acDoc;
+    private readonly string acDocPath;
+    private readonly string acDocFileName;
+    private readonly string acDocName;
     public bool initialized = false;
 
     public MainForm(PanelCommands myCommands) {
@@ -31,36 +34,40 @@ namespace ElectricalCommands {
       this.KeyDown += new KeyEventHandler(MAINFORM_KEYDOWN);
       this.Deactivate += MAINFORM_DEACTIVATE;
       this.acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-      this.acDoc.BeginDocumentClose -= new DocumentBeginCloseEventHandler(docBeginDocClose);
-      this.acDoc.BeginDocumentClose += new DocumentBeginCloseEventHandler(docBeginDocClose);
+      this.acDoc.BeginDocumentClose -= new DocumentBeginCloseEventHandler(DocBeginDocClose);
+      this.acDoc.BeginDocumentClose += new DocumentBeginCloseEventHandler(DocBeginDocClose);
+      this.acDocPath = Path.GetDirectoryName(this.acDoc.Name);
+      this.acDocFileName = Path.GetFileNameWithoutExtension(acDoc.Name);
+      this.acDocName = this.acDoc.Name;
     }
 
-    private void docBeginDocClose(object sender, DocumentBeginCloseEventArgs e) {
+    private void DocBeginDocClose(object sender, DocumentBeginCloseEventArgs e) {
       SavePanelDataToLocalJsonFile();
-      string fileName = this.acDoc.Name;
       this.acDoc.Database.SaveAs(
-          fileName,
+          acDocName,
           true,
           DwgVersion.Current,
           this.acDoc.Database.SecurityParameters
       );
     }
 
-    public List<PanelUserControl> retrieve_userControls() {
+    public List<PanelUserControl> RetrieveUserControls() {
       return this.userControls;
     }
 
-    public UserControl findUserControl(string panelName) {
+    public UserControl FindUserControl(string panelName) {
       foreach (PanelUserControl userControl in userControls) {
         string userControlName = userControl.Name.Replace("'", "");
         userControlName = userControlName.Replace(" ", "");
         userControlName = userControlName.Replace("-", "");
         userControlName = userControlName.Replace("PANEL", "");
+        userControlName = userControlName.Replace("DISTRIB.", "");
 
         panelName = panelName.Replace("'", "");
         panelName = panelName.Replace(" ", "");
         panelName = panelName.Replace("-", "");
         panelName = panelName.Replace("PANEL", "");
+        panelName = panelName.Replace("DISTRIB.", "");
 
         if (userControlName.ToLower() == panelName.ToLower()) {
           return userControl;
@@ -70,10 +77,10 @@ namespace ElectricalCommands {
       return null;
     }
 
-    public void initialize_modal() {
+    public void InitializeModal() {
       PANEL_TABS.TabPages.Clear();
 
-      List<Dictionary<string, object>> panelStorage = retrieve_saved_panel_data();
+      List<Dictionary<string, object>> panelStorage = RetrieveSavedPanelData();
 
       if (panelStorage.Count == 0) {
         return;
@@ -94,7 +101,7 @@ namespace ElectricalCommands {
         PanelUserControl selectedUserControl = (PanelUserControl)selectedTab.Controls[0];
 
         // Retrieve the panel data from the selected UserControl
-        Dictionary<string, object> selectedPanelData = selectedUserControl.retrieve_data_from_modal();
+        Dictionary<string, object> selectedPanelData = selectedUserControl.RetrieveDataFromModal();
 
         // Create a deep copy of the selected panel data using serialization
         string jsonData = JsonConvert.SerializeObject(selectedPanelData);
@@ -167,44 +174,47 @@ namespace ElectricalCommands {
     }
 
     private void MakeTabsAndPopulate(List<Dictionary<string, object>> panelStorage) {
-      set_up_cell_values_from_panel_data(panelStorage);
-      set_up_tags_from_panel_data(panelStorage);
+      SetupCellsValuesFromPanelData(panelStorage);
+      SetupTagsFromPanelData(panelStorage);
 
       var sortedPanels = panelStorage.OrderBy(panel => panel["panel"].ToString()).ToList();
 
       foreach (Dictionary<string, object> panel in sortedPanels) {
         string panelName = panel["panel"].ToString();
-        PanelUserControl userControl = (PanelUserControl)findUserControl(panelName);
+        PanelUserControl userControl = (PanelUserControl)FindUserControl(panelName);
         if (userControl == null) {
           continue;
         }
         userControl.AddListeners();
+        userControl.ConfigureDistributionPanel(null, null);
+        userControl.LinkSubpanels();
         userControl.UpdatePerCellValueChange();
+        userControl.SetWarnings();
       }
     }
 
-    private void set_up_cell_values_from_panel_data(List<Dictionary<string, object>> panelStorage) {
+    private void SetupCellsValuesFromPanelData(List<Dictionary<string, object>> panelStorage) {
       var sortedPanels = panelStorage.OrderBy(panel => panel["panel"].ToString()).ToList();
 
       foreach (Dictionary<string, object> panel in sortedPanels) {
         string panelName = panel["panel"].ToString();
-        bool is3PH = panel.ContainsKey("phase_c_left");
-        PanelUserControl userControl1 = create_new_panel_tab(panelName, is3PH, true);
-        userControl1.clear_modal_and_remove_rows(panel);
-        userControl1.populate_modal_with_panel_data(panel);
+        bool is3Ph = panel.ContainsKey("phase_c_left");
+        PanelUserControl userControl1 = CreateNewPanelTab(panelName, is3Ph);
+        userControl1.ClearModalAndRemoveRows(panel);
+        userControl1.PopulateModalWithPanelData(panel);
         var notes = JsonConvert.DeserializeObject<List<string>>(panel["notes"].ToString());
-        userControl1.update_notes_storage(notes);
+        userControl1.UpdateNotesStorage(notes);
       }
     }
 
-    private void set_up_tags_from_panel_data(List<Dictionary<string, object>> panelStorage) {
+    private void SetupTagsFromPanelData(List<Dictionary<string, object>> panelStorage) {
       foreach (Dictionary<string, object> panel in panelStorage) {
         string panelName = panel["panel"].ToString();
-        PanelUserControl userControl1 = (PanelUserControl)findUserControl(panelName);
+        PanelUserControl userControl1 = (PanelUserControl)FindUserControl(panelName);
         if (userControl1 == null) {
           continue;
         }
-        DataGridView panelGrid = userControl1.retrieve_panelGrid();
+        DataGridView panelGrid = userControl1.RetrievePanelGrid();
         foreach (DataGridViewRow row in panelGrid.Rows) {
           int rowIndex = row.Index;
           var tagNames = new Dictionary<string, int>();
@@ -235,16 +245,16 @@ namespace ElectricalCommands {
 
           foreach (var tagName in tagNames) {
             if (panel.ContainsKey(tagName.Key)) {
-              set_cell_value(panel, tagName.Key, rowIndex, tagName.Value, row);
+              SetCellValue(panel, tagName.Key, rowIndex, tagName.Value, row);
             }
           }
         }
-        userControl1.update_cell_background_color();
+        userControl1.UpdateCellBackgroundColor();
         userControl1.CalculateBreakerLoad();
       }
     }
 
-    private void set_cell_value(Dictionary<string, object> panel, string key, int rowIndex, int cellIndex, DataGridViewRow row) {
+    private void SetCellValue(Dictionary<string, object> panel, string key, int rowIndex, int cellIndex, DataGridViewRow row) {
       string tag = panel[key].ToString();
       List<string> tagList = JsonConvert.DeserializeObject<List<string>>(tag);
 
@@ -264,7 +274,7 @@ namespace ElectricalCommands {
       }
     }
 
-    internal void delete_panel(PanelUserControl userControl1) {
+    internal void DeletePanel(PanelUserControl userControl1) {
       DialogResult dialogResult = MessageBox.Show(
           "Are you sure you want to delete this panel?",
           "Delete Panel",
@@ -277,27 +287,35 @@ namespace ElectricalCommands {
             DocumentLock docLock =
                 Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
         ) {
-          remove_panel_from_storage(userControl1);
+          RemovePanelFromStorage(userControl1);
         }
       }
     }
 
-    private void remove_panel_from_storage(PanelUserControl userControl1) {
-      var panelData = retrieve_saved_panel_data();
-
+    private void RemovePanelFromStorage(PanelUserControl userControl1) {
+      var panelData = RetrieveSavedPanelData();
+      var userControlName = userControl1.Name.Replace("\'", "").Replace("`", "");
+      Dictionary<string, object> panelToRemove = null;
       foreach (Dictionary<string, object> panel in panelData) {
         var panelName = panel["panel"].ToString().Replace("\'", "").Replace("`", "");
-        var userControlName = userControl1.Name.Replace("\'", "").Replace("`", "");
         if (panelName == userControlName) {
-          panelData.Remove(panel);
-          break;
+          panelToRemove = panel;
+        }
+        else {
+          // check if panel is fed from deleted panel
+          PanelUserControl p = (PanelUserControl)FindUserControl(panelName);
+          p.RemoveFedFrom(userControlName);
+          // check if panel is feeding deleted panel
+          p.RemoveSubpanel(userControlName, userControl1.Is3Ph());
         }
       }
-
+      if (panelToRemove != null) {
+        panelData.Remove(panelToRemove);
+      }
       StoreDataInJsonFile(panelData);
     }
 
-    internal bool panel_name_exists(string panelName) {
+    internal bool PanelNameExists(string panelName) {
       foreach (TabPage tabPage in PANEL_TABS.TabPages) {
         if (tabPage.Text.Split(' ')[1].ToLower() == panelName.ToLower()) {
           return true;
@@ -306,7 +324,7 @@ namespace ElectricalCommands {
       return false;
     }
 
-    public void add_usercontrol_to_new_tab(UserControl control, TabPage tabPage) {
+    public void AddUserControlToNewTab(UserControl control, TabPage tabPage) {
       // Set the user control location and size if needed
       control.Location = new Point(0, 0); // Top-left corner of the tab page
       control.Dock = DockStyle.Fill; // If you want to dock it to fill the tab
@@ -315,35 +333,7 @@ namespace ElectricalCommands {
       tabPage.Controls.Add(control);
     }
 
-    public static void put_in_json_file(object thing) {
-      string json = JsonConvert.SerializeObject(thing, Formatting.Indented);
-      string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-
-      var doc = Autodesk
-          .AutoCAD
-          .ApplicationServices
-          .Application
-          .DocumentManager
-          .MdiActiveDocument;
-
-      string baseFileName = "Test";
-
-      if (string.IsNullOrEmpty(baseFileName)) {
-        baseFileName = "panel_data";
-      }
-      string extension = ".json";
-      string path = Path.Combine(desktopPath, baseFileName + extension);
-
-      int count = 1;
-      while (File.Exists(path)) {
-        string tempFileName = string.Format("{0}({1})", baseFileName, count++);
-        path = Path.Combine(desktopPath, tempFileName + extension);
-      }
-
-      File.WriteAllText(path, json);
-    }
-
-    public PanelUserControl create_new_panel_tab(string tabName, bool is3PH, bool isLoadingData = false) {
+    public PanelUserControl CreateNewPanelTab(string tabName, bool is3Ph) {
       // if tabname has "PANEL" in it replace it with "Panel"
       if (tabName.Contains("PANEL") || tabName.Contains("Panel")) {
         tabName = tabName.Replace("PANEL", "");
@@ -360,21 +350,21 @@ namespace ElectricalCommands {
       PANEL_TABS.SelectedTab = newTabPage;
 
       // Create a new UserControl
-      PanelUserControl userControl1 = new PanelUserControl(this.myCommandsInstance, this, this.newPanelForm, tabName, is3PH, isLoadingData);
+      PanelUserControl userControl1 = new PanelUserControl(this.myCommandsInstance, this, this.newPanelForm, tabName, is3Ph);
 
       // Add the UserControl to the list of UserControls
       this.userControls.Add(userControl1);
 
       // Call the method to add the UserControl to the new tab
-      add_usercontrol_to_new_tab(userControl1, newTabPage);
+      AddUserControlToNewTab(userControl1, newTabPage);
+      userControl1.SetLoading(false);
 
       return userControl1;
     }
 
-    public List<Dictionary<string, object>> retrieve_saved_panel_data() {
+    public List<Dictionary<string, object>> RetrieveSavedPanelData() {
       List<Dictionary<string, object>> allPanelData = new List<Dictionary<string, object>>();
 
-      string acDocPath = Path.GetDirectoryName(this.acDoc.Name);
       string savesDirectory = Path.Combine(acDocPath, "Saves");
       string panelSavesDirectory = Path.Combine(savesDirectory, "Panel");
 
@@ -404,18 +394,15 @@ namespace ElectricalCommands {
       List<Dictionary<string, object>> panelStorage = new List<Dictionary<string, object>>();
 
       if (this.acDoc != null) {
-        using (DocumentLock docLock = this.acDoc.LockDocument()) {
-          foreach (PanelUserControl userControl in this.userControls) {
-            panelStorage.Add(userControl.retrieve_data_from_modal());
-          }
-
-          StoreDataInJsonFile(panelStorage);
+        foreach (PanelUserControl userControl in this.userControls) {
+          panelStorage.Add(userControl.RetrieveDataFromModal());
         }
+
+        StoreDataInJsonFile(panelStorage);
       }
     }
 
     public void StoreDataInJsonFile(List<Dictionary<string, object>> saveData) {
-      string acDocPath = Path.GetDirectoryName(this.acDoc.Name);
       string savesDirectory = Path.Combine(acDocPath, "Saves");
       string panelSavesDirectory = Path.Combine(savesDirectory, "Panel");
 
@@ -430,7 +417,7 @@ namespace ElectricalCommands {
       }
 
       // Create a JSON file name based on the AutoCAD file name and the current timestamp
-      string acDocFileName = Path.GetFileNameWithoutExtension(acDoc.Name);
+      
       string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
       string jsonFileName = acDocFileName + "_" + timestamp + ".json";
       string jsonFilePath = Path.Combine(panelSavesDirectory, jsonFileName);
@@ -443,21 +430,44 @@ namespace ElectricalCommands {
     }
 
     private void MAINFORM_CLOSING(object sender, FormClosingEventArgs e) {
-      this.acDoc.BeginDocumentClose -= new DocumentBeginCloseEventHandler(docBeginDocClose);
+      this.acDoc.BeginDocumentClose -= new DocumentBeginCloseEventHandler(DocBeginDocClose);
       SavePanelDataToLocalJsonFile();
     }
 
-    public void PANEL_NAME_INPUT_TextChanged(object sender, EventArgs e, string input) {
+    public void PANEL_NAME_INPUT_TextChanged(object sender, EventArgs e, string input, bool distribSect = false) {
       int selectedIndex = PANEL_TABS.SelectedIndex;
 
       if (selectedIndex >= 0) {
-        PANEL_TABS.TabPages[selectedIndex].Text = "PANEL " + input.ToUpper();
+        if (distribSect) {
+          PANEL_TABS.TabPages[selectedIndex].Text = "DISTRIB. " + input.ToUpper();
+        }
+        else {
+          PANEL_TABS.TabPages[selectedIndex].Text = "PANEL " + input.ToUpper();
+        }
       }
+    }
+
+    public void PANEL_NAME_INPUT_Leave(object sender, EventArgs e, string input, string id, string fedFrom) {
+      int selectedIndex = PANEL_TABS.SelectedIndex;
+      List<Dictionary<string, object>> panelStorage = RetrieveSavedPanelData();
+      string oldPanelName = "";
+      foreach (Dictionary<string, object> panel in panelStorage) {
+        if (!String.IsNullOrEmpty(id) && (panel["id"] as string).ToLower() == id.ToLower()) {
+          oldPanelName = (panel["panel"] as string).Replace("'", "");
+        }
+      }
+      if (!String.IsNullOrEmpty(oldPanelName) && !String.IsNullOrEmpty(fedFrom)) {
+        PanelUserControl fedFromUserControl = (PanelUserControl)FindUserControl(fedFrom);
+        fedFromUserControl.UpdateSubpanelName("PANEL " + oldPanelName, "PANEL " + input);
+      }
+      PanelUserControl userControl = (PanelUserControl)FindUserControl(input);
+      userControl.UpdateSubpanelFedFrom();
+      SavePanelDataToLocalJsonFile();
     }
 
     private void MAINFORM_DEACTIVATE(object sender, EventArgs e) {
       foreach (PanelUserControl userControl in userControls) {
-        DataGridView panelGrid = userControl.retrieve_panelGrid();
+        DataGridView panelGrid = userControl.RetrievePanelGrid();
         panelGrid.ClearSelection();
       }
     }
@@ -467,11 +477,11 @@ namespace ElectricalCommands {
     }
 
     private void CREATE_ALL_PANELS_BUTTON_Click(object sender, EventArgs e) {
-      List<PanelUserControl> userControls = retrieve_userControls();
+      List<PanelUserControl> userControls = RetrieveUserControls();
       List<Dictionary<string, object>> panels = new List<Dictionary<string, object>>();
 
       foreach (PanelUserControl userControl in userControls) {
-        Dictionary<string, object> panelData = userControl.retrieve_data_from_modal();
+        Dictionary<string, object> panelData = userControl.RetrieveDataFromModal();
         panels.Add(panelData);
       }
 
@@ -480,7 +490,7 @@ namespace ElectricalCommands {
               Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
       ) {
         Close();
-        myCommandsInstance.Create_Panels(panels);
+        myCommandsInstance.CreatePanels(panels);
 
         Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk.AutoCAD.Windows.Window.State.Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
@@ -657,94 +667,101 @@ namespace ElectricalCommands {
       }
     }
 
-    public void UpdateLCLLML() {
+    public void UpdateLclLml() {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
-      LCLLMLManager manager = new LCLLMLManager();
+      LclLmlManager manager = new LclLmlManager();
 
       // First pass: Collect initial data
       foreach (PanelUserControl userControl in this.userControls) {
-        LCLLMLObject obj = new LCLLMLObject(userControl.Name.Replace("'", ""));
-        var LCLOverride = (int)userControl.GetLCLOverride();
-        var LMLOverride = (int)userControl.GetLMLOverride();
-        obj.LCLOVERRIDE = LCLOverride != 0;
-        obj.LMLOVERRIDE = LMLOverride != 0;
-        obj.LCL = (LCLOverride != 0) ? LCLOverride : (int)Math.Round(userControl.CalculateWattageSum("LCL"));
-        obj.LML = (LMLOverride != 0) ? LMLOverride : (int)Math.Round(userControl.StoreItemsAndWattage("LML"));
+        LclLmlObject obj = new LclLmlObject(userControl.Name.Replace("'", ""));
+        var LclOverride = (int)userControl.GetLclOverride();
+        var LmlOverride = (int)userControl.GetLmlOverride();
+        obj.LclOverride = LclOverride != 0;
+        obj.LmlOverride = LmlOverride != 0;
+        obj.Lcl = (LclOverride != 0) ? LclOverride : (int)Math.Round(userControl.CalculateWattageSum("LCL"));
+        obj.Lml = (LmlOverride != 0) ? LmlOverride : (int)Math.Round(userControl.StoreItemsAndWattage("LML"));
         obj.Subpanels = userControl.GetSubPanels();
         manager.List.Add(obj);
       }
 
       // Second pass: Calculate final LCL and LML values
       foreach (var panel in manager.List) {
-        CalculateLCL(panel, manager.List);
-        CalculateLML(panel, manager.List);
+        CalculateLcl(panel, manager.List);
+        CalculateLml(panel, manager.List);
       }
 
       // Third pass: Update user controls with calculated values
       foreach (PanelUserControl userControl in this.userControls) {
         var panelObj = manager.List.Find(p => p.PanelName == userControl.Name.Replace("'", ""));
         if (panelObj != null) {
-          userControl.UpdateLCLLMLLabels(panelObj.LCL, panelObj.LML);
+          userControl.UpdateLclLmlLabels(panelObj.Lcl, panelObj.Lml);
         }
       }
     }
 
-    private void CalculateLCL(LCLLMLObject panel, List<LCLLMLObject> allPanels) {
-      if (panel.LCLOVERRIDE) return;
+    private void CalculateLcl(LclLmlObject panel, List<LclLmlObject> allPanels) {
+      if (panel.LclOverride) return;
 
-      int totalLCL = panel.LCL;
+      int totalLcl = panel.Lcl;
       foreach (var subpanelName in panel.Subpanels) {
         var subpanel = allPanels.Find(p => p.PanelName == subpanelName);
         if (subpanel != null) {
-          totalLCL += subpanel.LCL;
+          totalLcl += subpanel.Lcl;
         }
       }
-      panel.LCL = totalLCL;
+      panel.Lcl = totalLcl;
     }
 
-    private void CalculateLML(LCLLMLObject panel, List<LCLLMLObject> allPanels) {
-      if (panel.LMLOVERRIDE) return;
+    private void CalculateLml(LclLmlObject panel, List<LclLmlObject> allPanels) {
+      if (panel.LmlOverride) return;
 
-      int maxLML = panel.LML;
-      maxLML = RecursiveCalculateLML(panel, allPanels, maxLML);
-      panel.LML = maxLML;
+      int maxLml = panel.Lml;
+      maxLml = RecursiveCalculateLml(panel, allPanels, maxLml);
+      panel.Lml = maxLml;
     }
 
-    private int RecursiveCalculateLML(LCLLMLObject panel, List<LCLLMLObject> allPanels, int currentMax) {
+    private int RecursiveCalculateLml(LclLmlObject panel, List<LclLmlObject> allPanels, int currentMax) {
       foreach (var subpanelName in panel.Subpanels) {
         var subpanel = allPanels.Find(p => p.PanelName == subpanelName);
-        if (subpanel != null && !subpanel.LMLOVERRIDE) {
-          currentMax = Math.Max(currentMax, subpanel.LML);
-          currentMax = RecursiveCalculateLML(subpanel, allPanels, currentMax);
+        if (subpanel != null && !subpanel.LmlOverride) {
+          currentMax = Math.Max(currentMax, subpanel.Lml);
+          currentMax = RecursiveCalculateLml(subpanel, allPanels, currentMax);
         }
       }
       return currentMax;
     }
+
+    public void RemoveFedFrom(string panelName) {
+      PanelUserControl panel = (PanelUserControl)FindUserControl(panelName);
+      if (panel != null) {
+        panel.RemoveFedFrom(panelName, false);
+      }
+    }
   }
 
-  public class LCLLMLObject {
-    public int LCL { get; set; }
-    public int LML { get; set; }
-    public bool LCLOVERRIDE { get; set; }
-    public bool LMLOVERRIDE { get; set; }
+  public class LclLmlObject {
+    public int Lcl { get; set; }
+    public int Lml { get; set; }
+    public bool LclOverride { get; set; }
+    public bool LmlOverride { get; set; }
     public List<string> Subpanels { get; set; }
     public string PanelName { get; }
 
-    public LCLLMLObject(string panelName) {
-      LCL = 0;
-      LML = 0;
+    public LclLmlObject(string panelName) {
+      Lcl = 0;
+      Lml = 0;
       Subpanels = new List<string>();
       PanelName = panelName;
     }
   }
 
-  public class LCLLMLManager {
-    public List<LCLLMLObject> List { get; set; }
+  public class LclLmlManager {
+    public List<LclLmlObject> List { get; set; }
 
-    public LCLLMLManager() {
-      List = new List<LCLLMLObject>();
+    public LclLmlManager() {
+      List = new List<LclLmlObject>();
     }
   }
 }
