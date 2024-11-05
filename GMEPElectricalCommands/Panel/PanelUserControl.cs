@@ -3253,9 +3253,10 @@ namespace ElectricalCommands {
       sanitized = Regex.Replace(sanitized, @"\p{Zs}+", "+");
       sanitized = Regex.Replace(sanitized, @"-+", "+");
       sanitized = sanitized.Replace("HP", "");
-      if (!Regex.IsMatch(sanitized, @"^\d+((\+\d)?\/\d)?$")) {
+      if (!Regex.IsMatch(sanitized, @"^\d+((\+\d)?\/\d)?$") && !Regex.IsMatch(sanitized, @"^\d*\.\d+$")) {
         return "-1";
       }
+      Console.WriteLine(sanitized);
       System.Data.DataTable dt = new System.Data.DataTable();
       double sumObject = Convert.ToDouble(dt.Compute(sanitized, null));
       string phaseVA = "";
