@@ -529,6 +529,7 @@
             this.PHASE_VOLTAGE_COMBOBOX.Name = "PHASE_VOLTAGE_COMBOBOX";
             this.PHASE_VOLTAGE_COMBOBOX.Size = new System.Drawing.Size(121, 21);
             this.PHASE_VOLTAGE_COMBOBOX.TabIndex = 149;
+            this.PHASE_VOLTAGE_COMBOBOX.SelectedIndexChanged += new System.EventHandler(this.PHASE_VOLTAGE_COMBOBOX_SelectedIndexChanged);
             // 
             // label1
             // 
