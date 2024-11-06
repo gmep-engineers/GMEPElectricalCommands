@@ -1596,7 +1596,7 @@ namespace ElectricalCommands {
 
       for (int i = 0; i < length * 2; i += 2) {
         foreach (string key in multi_row_datagrid_keys) {
-          if (selectedPanelData[key] is Newtonsoft.Json.Linq.JArray) {
+          if (selectedPanelData.ContainsKey(key) && selectedPanelData[key] is Newtonsoft.Json.Linq.JArray) {
             List<string> values = ((Newtonsoft.Json.Linq.JArray)selectedPanelData[key]).ToObject<List<string>>();
 
             if (i < values.Count) {
@@ -4028,10 +4028,15 @@ namespace ElectricalCommands {
     }
 
     private void PHASE_COMBOBOX_SelectedIndexChanged(object sender, EventArgs e) {
+
       if (isLoading) { return; }
+      if (PHASE_COMBOBOX.SelectedIndex == 1 && is3Ph) {
+        return;
+      }
       bool was3Ph = is3Ph;
       is3Ph = PHASE_COMBOBOX.Text == "3";
       string side = "left";
+      
       if (is3Ph) {
         WIRE_COMBOBOX.SelectedIndex = 1;
         AddOrRemovePanelGridColumns(is3Ph);
