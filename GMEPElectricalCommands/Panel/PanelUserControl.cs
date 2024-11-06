@@ -3143,6 +3143,15 @@ namespace ElectricalCommands {
     }
 
     private void VoltageCombobox_SelectedValueChanged(object sender, EventArgs e) {
+      if (isLoading) { return; }
+      if (LINE_VOLTAGE_COMBOBOX.SelectedIndex == 2) {
+        PHASE_VOLTAGE_COMBOBOX.SelectedIndex = 1;
+      }
+      else if (LINE_VOLTAGE_COMBOBOX.SelectedIndex == 0 || LINE_VOLTAGE_COMBOBOX.SelectedIndex == 1) {
+        var previousIndex = LINE_VOLTAGE_COMBOBOX.SelectedIndex;
+        PHASE_VOLTAGE_COMBOBOX.SelectedIndex = 0;
+        LINE_VOLTAGE_COMBOBOX.SelectedIndex = previousIndex;
+      }
       UpdatePerCellValueChange();
       if (is3Ph) {
         Color3pPanel(sender, e);
@@ -4027,6 +4036,21 @@ namespace ElectricalCommands {
       }
     }
 
+    private void PHASE_VOLTAGE_COMBOBOX_SelectedIndexChanged(object sender, EventArgs e) {
+      if (isLoading) { return; }
+      if (PHASE_VOLTAGE_COMBOBOX.SelectedIndex == 1) {
+          LINE_VOLTAGE_COMBOBOX.SelectedIndex = 2;
+      }
+      else if (PHASE_VOLTAGE_COMBOBOX.SelectedIndex == 0) {
+        if (is3Ph) {
+          LINE_VOLTAGE_COMBOBOX.SelectedIndex = 0;
+        }
+        else {
+          LINE_VOLTAGE_COMBOBOX.SelectedIndex = 1;
+        }
+      }
+    }
+   
     private void PHASE_COMBOBOX_SelectedIndexChanged(object sender, EventArgs e) {
 
       if (isLoading) { return; }
