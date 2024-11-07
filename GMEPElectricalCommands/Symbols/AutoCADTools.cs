@@ -1177,6 +1177,9 @@ namespace ElectricalCommands {
       if (Phase == 3) {
         numWires = 4;
       }
+      if (Voltage == 120) {
+        numWires = 2;
+      }
 
       ConduitSpec spec = GetConduitAndWireSize(loadAmperage, mocp, distance, multiplier, maxVoltageDropAllowed, numWires);
       string gndSize = "";
