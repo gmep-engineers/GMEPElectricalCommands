@@ -1037,7 +1037,7 @@ namespace ElectricalCommands {
           WIRE_COMBOBOX.Enabled = false;
           PHASE_WARNING_LABEL.Visible = true;
         }
-        if (is3Ph && i % 3 == 2
+        if (is3Ph && i % 3 == 1
           && LINE_VOLTAGE_COMBOBOX.Text == "240"
           && RowIsSinglePhase(i, "left")) {
           HIGH_LEG_WARNING_LEFT_LABEL.Visible = true;
@@ -1048,7 +1048,7 @@ namespace ElectricalCommands {
           row.Cells["breaker_left"].Style.BackColor = Color.White;
           row.Cells["breaker_left"].Style.ForeColor = Color.Black;
         }
-        if (is3Ph && i % 3 == 2
+        if (is3Ph && i % 3 == 1
           && LINE_VOLTAGE_COMBOBOX.Text == "240"
           && RowIsSinglePhase(i, "right")) {
           HIGH_LEG_WARNING_RIGHT_LABEL.Visible = true;
@@ -1317,24 +1317,26 @@ namespace ElectricalCommands {
             PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.BackColor = phaseColor;
             PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = backColor1;
+            if (lineVoltage != 240) {
+              PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = phaseColor;
+              PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.BackColor = phaseColor;
+              PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.ForeColor = foreColor1;
+              PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.ForeColor = foreColor1;
+            }
+            else {
+              PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = hiLegColor;
+              PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.BackColor = hiLegColor;
+              PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.ForeColor = foreColor2;
+              PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.ForeColor = foreColor2;
+            }
           }
           else { // phase c shaded
             PANEL_GRID.Rows[i].Cells["phase_a_left"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_a_right"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.BackColor = backColor1;
-            if (lineVoltage != 240) {
-              PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = phaseColor;
-              PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = phaseColor;
-              PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.ForeColor = foreColor1;
-              PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.ForeColor = foreColor1;
-            }
-            else {
-              PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = hiLegColor;
-              PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = hiLegColor;
-              PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.ForeColor = foreColor2;
-              PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.ForeColor = foreColor2;
-            }
+            PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = phaseColor;
+            PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = phaseColor;
           }
           PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = backColor1;
           PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = backColor1;
