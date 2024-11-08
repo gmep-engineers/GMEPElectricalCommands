@@ -35,12 +35,14 @@ namespace ElectricalCommands {
     private bool isLoading;
     private bool contains3PhEquip;
 
+
     public PanelUserControl(
       PanelCommands myCommands,
       MainForm mainForm,
       NewPanelForm newPanelForm,
       string tabName,
-      bool is3Ph = false
+      bool is3Ph = false,
+      int highLegPhase = 1
     ) {
       InitializeComponent();
       this.isLoading = true;
@@ -50,7 +52,12 @@ namespace ElectricalCommands {
       this.Name = tabName;
       this.notesStorage = new List<string>();
       this.is3Ph = is3Ph;
+      this.highLegPhase = highLegPhase;
       this.contains3PhEquip = false;
+
+
+
+
 
       INFO_LABEL.Text = "";
 
@@ -71,6 +78,16 @@ namespace ElectricalCommands {
       DeselectCells();
     }
 
+    private void checkHighLegPhase() {
+      if (PHASE_VOLTAGE_COMBOBOX.SelectedIndex == 0 && LINE_VOLTAGE_COMBOBOX.SelectedIndex == 1 && is3Ph) {
+        highLegComboBox.Visible = true;
+        highLegLabel.Visible = true;
+      }
+      else {
+        highLegComboBox.Visible = false;
+        highLegLabel.Visible = false;
+      }
+    }
     private void TogglePrefixInSelectedCells(string prefix) {
       bool allCellsEmptyOrWithPrefix = true;
       List<DataGridViewCell> cellsToUpdate = new List<DataGridViewCell>();
@@ -1037,7 +1054,7 @@ namespace ElectricalCommands {
           WIRE_COMBOBOX.Enabled = false;
           PHASE_WARNING_LABEL.Visible = true;
         }
-        if (is3Ph && i % 3 == 1
+        if (is3Ph && i % 3 == highLegPhase
           && LINE_VOLTAGE_COMBOBOX.Text == "240"
           && RowIsSinglePhase(i, "left")) {
           HIGH_LEG_WARNING_LEFT_LABEL.Visible = true;
@@ -1048,7 +1065,7 @@ namespace ElectricalCommands {
           row.Cells["breaker_left"].Style.BackColor = Color.White;
           row.Cells["breaker_left"].Style.ForeColor = Color.Black;
         }
-        if (is3Ph && i % 3 == 1
+        if (is3Ph && i % 3 == highLegPhase
           && LINE_VOLTAGE_COMBOBOX.Text == "240"
           && RowIsSinglePhase(i, "right")) {
           HIGH_LEG_WARNING_RIGHT_LABEL.Visible = true;
@@ -1302,32 +1319,42 @@ namespace ElectricalCommands {
           SAFETY_FACTOR_CHECKBOX.Enabled = true;
         }
         else {
-          if (i % 3 == 0) { // phase a shaded
-            PANEL_GRID.Rows[i].Cells["phase_a_left"].Style.BackColor = phaseColor;
-            PANEL_GRID.Rows[i].Cells["phase_a_right"].Style.BackColor = phaseColor;
+          
+          if (i % 3 == 0) { // phase a shaded            
             PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = backColor1;
+            if (lineVoltage == 240 && highLegPhase == 0) {
+              PANEL_GRID.Rows[i].Cells["phase_a_left"].Style.BackColor = hiLegColor;
+              PANEL_GRID.Rows[i].Cells["phase_a_right"].Style.BackColor = hiLegColor;
+              PANEL_GRID.Rows[i].Cells["phase_a_left"].Style.ForeColor = foreColor2;
+              PANEL_GRID.Rows[i].Cells["phase_a_right"].Style.ForeColor = foreColor2;
+            }
+            else {
+              PANEL_GRID.Rows[i].Cells["phase_a_left"].Style.BackColor = phaseColor;
+              PANEL_GRID.Rows[i].Cells["phase_a_right"].Style.BackColor = phaseColor;
+              PANEL_GRID.Rows[i].Cells["phase_a_left"].Style.ForeColor = foreColor1;
+              PANEL_GRID.Rows[i].Cells["phase_a_right"].Style.ForeColor = foreColor1;
+            }
+           
           }
           else if (i % 3 == 1) { // phase b shaded
             PANEL_GRID.Rows[i].Cells["phase_a_left"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_a_right"].Style.BackColor = backColor1;
-            PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = phaseColor;
-            PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.BackColor = phaseColor;
             PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = backColor1;
-            if (lineVoltage != 240) {
-              PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = phaseColor;
-              PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.BackColor = phaseColor;
-              PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.ForeColor = foreColor1;
-              PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.ForeColor = foreColor1;
-            }
-            else {
+            if (lineVoltage == 240 && highLegPhase == 1) {
               PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = hiLegColor;
               PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.BackColor = hiLegColor;
               PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.ForeColor = foreColor2;
               PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.ForeColor = foreColor2;
+            }
+            else {
+              PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = phaseColor;
+              PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.BackColor = phaseColor;
+              PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.ForeColor = foreColor1;
+              PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.ForeColor = foreColor1;
             }
           }
           else { // phase c shaded
@@ -1335,8 +1362,18 @@ namespace ElectricalCommands {
             PANEL_GRID.Rows[i].Cells["phase_a_right"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_b_left"].Style.BackColor = backColor1;
             PANEL_GRID.Rows[i].Cells["phase_b_right"].Style.BackColor = backColor1;
-            PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = phaseColor;
-            PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = phaseColor;
+            if (lineVoltage == 240 && highLegPhase == 2) {
+              PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = hiLegColor;
+              PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = hiLegColor;
+              PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.ForeColor = foreColor2;
+              PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.ForeColor = foreColor2;
+            }
+            else {
+              PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.BackColor = phaseColor;
+              PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.BackColor = phaseColor;
+              PANEL_GRID.Rows[i].Cells["phase_c_left"].Style.ForeColor = foreColor1;
+              PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.ForeColor = foreColor1;
+            }
           }
           PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = backColor1;
           PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = backColor1;
@@ -3159,6 +3196,7 @@ namespace ElectricalCommands {
         Color3pPanel(sender, e);
       }
       SetWarnings();
+      checkHighLegPhase();
     }
 
     private void ADD_ALL_PANELS_BUTTON_Click(object sender, EventArgs e) {
@@ -4051,6 +4089,7 @@ namespace ElectricalCommands {
           LINE_VOLTAGE_COMBOBOX.SelectedIndex = 1;
         }
       }
+      checkHighLegPhase();
     }
    
     private void PHASE_COMBOBOX_SelectedIndexChanged(object sender, EventArgs e) {
@@ -4130,6 +4169,7 @@ namespace ElectricalCommands {
       DISTRIBUTION_SECTION_CHECKBOX.Checked = !DISTRIBUTION_SECTION_CHECKBOX.Checked;
 
       SetWarnings();
+      checkHighLegPhase();
     }
 
     private void PHASE_WARNING_LABEL_MouseHover(object sender, EventArgs e) {
@@ -4161,6 +4201,14 @@ namespace ElectricalCommands {
     public void SetLoading(bool l) {
       isLoading = l;
     }
+
+    private void highLegComboBox_SelectedIndexChanged(object sender, EventArgs e) {
+        highLegPhase = highLegComboBox.SelectedIndex;
+        Color3pPanel(sender, e);
+        SetWarnings();
+    }
+
+   
   }
 
   public class PanelItem {
