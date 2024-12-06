@@ -177,6 +177,13 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Equipment\EquipmentCommands.cs" />
+    <Compile Include="Equipment\EquipmentDialogWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Equipment\EquipmentDialogWindow.Designer.cs">
+      <DependentUpon>EquipmentDialogWindow.cs</DependentUpon>
+    </Compile>
     <Compile Include="Lighting\Commands.cs" />
     <Compile Include="Lighting\Initialize Lighting Form.cs">
       <SubType>Form</SubType>
@@ -230,6 +237,9 @@
     <Compile Include="XREF\SetupXREFCommands.cs" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Equipment\EquipmentDialogWindow.resx">
+      <DependentUpon>EquipmentDialogWindow.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Lighting\Initialize Lighting Form.resx">
       <DependentUpon>Initialize Lighting Form.cs</DependentUpon>
     </EmbeddedResource>
