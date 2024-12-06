@@ -37,8 +37,11 @@
       this.filterPanelComboBox = new System.Windows.Forms.ComboBox();
       this.equipmentGroupBox = new System.Windows.Forms.GroupBox();
       this.equipmentListView = new System.Windows.Forms.ListView();
+      this.feedersGroupBox = new System.Windows.Forms.GroupBox();
+      this.feederListView = new System.Windows.Forms.ListView();
       this.filtersGroupBox.SuspendLayout();
       this.equipmentGroupBox.SuspendLayout();
+      this.feedersGroupBox.SuspendLayout();
       this.SuspendLayout();
       // 
       // filtersGroupBox
@@ -56,7 +59,7 @@
       this.filtersGroupBox.Controls.Add(this.filterVoltageLabel);
       this.filtersGroupBox.Controls.Add(this.filterPanelLabel);
       this.filtersGroupBox.Controls.Add(this.filterPanelComboBox);
-      this.filtersGroupBox.Location = new System.Drawing.Point(12, 12);
+      this.filtersGroupBox.Location = new System.Drawing.Point(12, 251);
       this.filtersGroupBox.Name = "filtersGroupBox";
       this.filtersGroupBox.Size = new System.Drawing.Size(860, 56);
       this.filtersGroupBox.TabIndex = 0;
@@ -176,9 +179,9 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
       this.equipmentGroupBox.Controls.Add(this.equipmentListView);
-      this.equipmentGroupBox.Location = new System.Drawing.Point(12, 74);
+      this.equipmentGroupBox.Location = new System.Drawing.Point(12, 313);
       this.equipmentGroupBox.Name = "equipmentGroupBox";
-      this.equipmentGroupBox.Size = new System.Drawing.Size(860, 775);
+      this.equipmentGroupBox.Size = new System.Drawing.Size(860, 536);
       this.equipmentGroupBox.TabIndex = 1;
       this.equipmentGroupBox.TabStop = false;
       this.equipmentGroupBox.Text = "Equipment";
@@ -191,15 +194,40 @@
       this.equipmentListView.HideSelection = false;
       this.equipmentListView.Location = new System.Drawing.Point(7, 20);
       this.equipmentListView.Name = "equipmentListView";
-      this.equipmentListView.Size = new System.Drawing.Size(847, 749);
+      this.equipmentListView.Size = new System.Drawing.Size(847, 510);
       this.equipmentListView.TabIndex = 0;
       this.equipmentListView.UseCompatibleStateImageBehavior = false;
+      // 
+      // feedersGroupBox
+      // 
+      this.feedersGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+      this.feedersGroupBox.Controls.Add(this.feederListView);
+      this.feedersGroupBox.Location = new System.Drawing.Point(12, 13);
+      this.feedersGroupBox.Name = "feedersGroupBox";
+      this.feedersGroupBox.Size = new System.Drawing.Size(860, 232);
+      this.feedersGroupBox.TabIndex = 2;
+      this.feedersGroupBox.TabStop = false;
+      this.feedersGroupBox.Text = "Feeders";
+      // 
+      // feederListView
+      // 
+      this.feederListView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
+      this.feederListView.HideSelection = false;
+      this.feederListView.Location = new System.Drawing.Point(6, 19);
+      this.feederListView.Name = "feederListView";
+      this.feederListView.Size = new System.Drawing.Size(848, 207);
+      this.feederListView.TabIndex = 0;
+      this.feederListView.UseCompatibleStateImageBehavior = false;
       // 
       // EquipmentDialogWindow
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.ClientSize = new System.Drawing.Size(884, 861);
+      this.Controls.Add(this.feedersGroupBox);
       this.Controls.Add(this.equipmentGroupBox);
       this.Controls.Add(this.filtersGroupBox);
       this.Name = "EquipmentDialogWindow";
@@ -207,6 +235,7 @@
       this.filtersGroupBox.ResumeLayout(false);
       this.filtersGroupBox.PerformLayout();
       this.equipmentGroupBox.ResumeLayout(false);
+      this.feedersGroupBox.ResumeLayout(false);
       this.ResumeLayout(false);
 
     }
@@ -227,5 +256,7 @@
     private System.Windows.Forms.ComboBox filterCategoryComboBox;
     private System.Windows.Forms.ListView equipmentListView;
     private System.Windows.Forms.Button filterClearButton;
+    private System.Windows.Forms.GroupBox feedersGroupBox;
+    private System.Windows.Forms.ListView feederListView;
   }
 }
