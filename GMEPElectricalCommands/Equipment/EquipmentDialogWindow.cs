@@ -1,29 +1,83 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
-using System.Drawing;
-using System.Globalization;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
-using Autodesk.AutoCAD.Runtime;
+using GMEPElectricalCommands.GmepDatabase;
 
 namespace ElectricalCommands.Equipment
 {
   public struct Equipment
   {
-    public string equip_id,
-      fed_from_id,
-      object_id;
+    public string equipId,
+      fedFromId,
+      objectId;
+    public string equipNo,
+      description,
+      category,
+      fedFromName;
+    public int voltage;
+    public bool is3Phase;
+    public int feederDistance;
     public Point3d pos;
-    public double feederDistance;
+
+    public Equipment(
+      string eqId = "",
+      string ffId = "",
+      string eqName = "",
+      string desc = "",
+      string cat = "",
+      string fdrName = "",
+      int volts = 0,
+      bool is3Ph = false,
+      int fdrDist = 0,
+      double xLoc = 0,
+      double yLoc = 0
+    )
+    {
+      equipId = eqId;
+      fedFromId = ffId;
+      equipNo = eqName;
+      description = desc;
+      category = cat;
+      fedFromName = fdrName;
+      voltage = volts;
+      is3Phase = is3Ph;
+      pos = new Point3d(xLoc, yLoc, 0);
+      feederDistance = fdrDist;
+    }
+  }
+
+  public struct Feeder
+  {
+    public string feederId,
+      name,
+      fedFromId,
+      type;
+    public Point3d pos;
+    public int feederDistance;
+
+    public Feeder(
+      string fdrId,
+      string n,
+      string ffId,
+      string t,
+      int fdrDist = 0,
+      double xLoc = 0,
+      double yLoc = 0
+    )
+    {
+      feederId = fdrId;
+      name = n;
+      fedFromId = ffId;
+      type = t;
+      feederDistance = fdrDist;
+      pos = new Point3d(xLoc, yLoc, 0);
+    }
   }
 
   public partial class EquipmentDialogWindow : Form
@@ -33,7 +87,13 @@ namespace ElectricalCommands.Equipment
     private string filterPhase;
     private string filterEquipNo;
     private string filterCategory;
-    private List<ListViewItem> equipmentList;
+    private List<ListViewItem> equipmentListViewList;
+    private List<Equipment> equipmentList;
+    private List<ListViewItem> feederListViewList;
+    private List<Feeder> feederList;
+    private string projectId;
+
+    public GmepDatabase db = new GmepDatabase();
 
     public EquipmentDialogWindow(EquipmentCommands EquipCommands)
     {
@@ -42,32 +102,43 @@ namespace ElectricalCommands.Equipment
 
     public void InitializeModal()
     {
-      PopulateList();
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Core
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      string fileName = Path.GetFileName(doc.Name);
+      //string projectNo = Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
+      string projectNo = "24-123";
+      projectId = db.GetProjectId(projectNo);
+      Console.WriteLine(projectId);
+      feederList = db.GetFeeders(projectId);
+      //projectId = "811962e4-d572-467c-afd2-13cd182fc5ef";
+      equipmentList = db.GetEquipment(projectId);
+      //equipmentList = new List<Equipment>();
+      feederList = new List<Feeder>();
       CreateEquipmentListView();
       CreateFeederListView();
     }
 
-    private void PopulateList() { }
-
     private void CreateEquipmentListView()
     {
       equipmentListView.View = View.Details;
-      ListViewItem item = new ListViewItem("11", 0);
-      item.SubItems.Add("Toaster");
-      item.SubItems.Add("General");
-      item.SubItems.Add("A");
-      item.SubItems.Add("111");
-      item.SubItems.Add("120");
-      item.SubItems.Add("1");
-      item.SubItems.Add("222,333");
-      ListViewItem item2 = new ListViewItem("RTU-72", 0);
-      item2.SubItems.Add("A/C unit");
-      item2.SubItems.Add("Mechanical");
-      item2.SubItems.Add("B");
-      item2.SubItems.Add("111");
-      item2.SubItems.Add("208");
-      item2.SubItems.Add("3");
-      item2.SubItems.Add("222,222");
+      equipmentListView.FullRowSelect = true;
+      foreach (Equipment equipment in equipmentList)
+      {
+        ListViewItem item = new ListViewItem(equipment.equipNo, 0);
+        item.SubItems.Add(equipment.description);
+        item.SubItems.Add(equipment.category);
+        item.SubItems.Add(equipment.fedFromName);
+        item.SubItems.Add(equipment.feederDistance.ToString());
+        item.SubItems.Add(equipment.voltage.ToString());
+        item.SubItems.Add(equipment.is3Phase ? "3" : "1");
+        item.SubItems.Add(equipment.pos.ToString());
+        equipmentListView.Items.Add(item);
+      }
       equipmentListView.Columns.Add("Equip #", -2, HorizontalAlignment.Left);
       equipmentListView.Columns.Add("Description", -2, HorizontalAlignment.Left);
       equipmentListView.Columns.Add("Category", -2, HorizontalAlignment.Left);
@@ -76,32 +147,22 @@ namespace ElectricalCommands.Equipment
       equipmentListView.Columns.Add("Voltage", -2, HorizontalAlignment.Left);
       equipmentListView.Columns.Add("Phase", -2, HorizontalAlignment.Left);
       equipmentListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
-
-      equipmentListView.Items.Add(item);
-      equipmentListView.Items.Add(item2);
     }
 
     private void CreateFeederListView()
     {
       feederListView.View = View.Details;
-      ListViewItem item = new ListViewItem("A", 0);
-      item.SubItems.Add("Panel");
-      item.SubItems.Add("333,222");
-      item.SubItems.Add("MSB-1");
-      item.SubItems.Add("100");
-      ListViewItem item2 = new ListViewItem("MSB-1", 0);
-      item2.SubItems.Add("Distribution");
-      item2.SubItems.Add("333,444");
-      item2.SubItems.Add("MS-1");
-      item2.SubItems.Add("15");
+      feederListView.FullRowSelect = true;
+      foreach (Feeder feeder in feederList)
+      {
+        ListViewItem item = new ListViewItem(feeder.name, 0);
+        item.SubItems.Add(feeder.type);
+        item.SubItems.Add(feeder.pos.ToString());
+        feederListView.Items.Add(item);
+      }
       feederListView.Columns.Add("Name", -2, HorizontalAlignment.Left);
       feederListView.Columns.Add("Type", -2, HorizontalAlignment.Left);
       feederListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
-      feederListView.Columns.Add("Feeder", -2, HorizontalAlignment.Left);
-      feederListView.Columns.Add("Feeder Distance", -2, HorizontalAlignment.Left);
-
-      feederListView.Items.Add(item);
-      feederListView.Items.Add(item2);
     }
 
     private void FilterPanelComboBox_SelectedIndexChanged(object sender, EventArgs e)
@@ -148,17 +209,12 @@ namespace ElectricalCommands.Equipment
                 if (prop.PropertyName == "equip_id")
                 {
                   addEquip = true;
-                  eq.equip_id = prop.Value as string;
+                  eq.equipId = prop.Value as string;
                 }
                 if (prop.PropertyName == "fed_from_id")
                 {
                   addEquip = true;
-                  eq.fed_from_id = prop.Value as string;
-                }
-                if (prop.PropertyName == "object_id")
-                {
-                  addEquip = true;
-                  eq.object_id = prop.Value as string;
+                  eq.fedFromId = prop.Value as string;
                 }
               }
               eq.pos = br.Position;
@@ -175,10 +231,12 @@ namespace ElectricalCommands.Equipment
       {
         for (int j = 0; j < equipmentList.Count; j++)
         {
-          if (equipmentList[j].fed_from_id == equipmentList[i].equip_id)
+          if (equipmentList[j].fedFromId == equipmentList[i].equipId)
           {
             Equipment equip = equipmentList[j];
-            equip.feederDistance = equipmentList[j].pos.DistanceTo(equipmentList[i].pos);
+            equip.feederDistance = Convert.ToInt32(
+              equipmentList[j].pos.DistanceTo(equipmentList[i].pos)
+            );
             Console.WriteLine(equip.feederDistance);
           }
         }
