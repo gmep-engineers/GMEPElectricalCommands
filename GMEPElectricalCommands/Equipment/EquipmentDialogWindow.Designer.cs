@@ -39,6 +39,7 @@
       this.equipmentListView = new System.Windows.Forms.ListView();
       this.feedersGroupBox = new System.Windows.Forms.GroupBox();
       this.feederListView = new System.Windows.Forms.ListView();
+      this.placeSelectedButton = new System.Windows.Forms.Button();
       this.filtersGroupBox.SuspendLayout();
       this.equipmentGroupBox.SuspendLayout();
       this.feedersGroupBox.SuspendLayout();
@@ -181,7 +182,7 @@
       this.equipmentGroupBox.Controls.Add(this.equipmentListView);
       this.equipmentGroupBox.Location = new System.Drawing.Point(12, 313);
       this.equipmentGroupBox.Name = "equipmentGroupBox";
-      this.equipmentGroupBox.Size = new System.Drawing.Size(860, 536);
+      this.equipmentGroupBox.Size = new System.Drawing.Size(860, 502);
       this.equipmentGroupBox.TabIndex = 1;
       this.equipmentGroupBox.TabStop = false;
       this.equipmentGroupBox.Text = "Equipment";
@@ -194,9 +195,10 @@
       this.equipmentListView.HideSelection = false;
       this.equipmentListView.Location = new System.Drawing.Point(7, 20);
       this.equipmentListView.Name = "equipmentListView";
-      this.equipmentListView.Size = new System.Drawing.Size(847, 510);
+      this.equipmentListView.Size = new System.Drawing.Size(847, 476);
       this.equipmentListView.TabIndex = 0;
       this.equipmentListView.UseCompatibleStateImageBehavior = false;
+      this.equipmentListView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.EquipmentListView_MouseDoubleClick);
       // 
       // feedersGroupBox
       // 
@@ -222,11 +224,22 @@
       this.feederListView.TabIndex = 0;
       this.feederListView.UseCompatibleStateImageBehavior = false;
       // 
+      // placeSelectedButton
+      // 
+      this.placeSelectedButton.Location = new System.Drawing.Point(21, 826);
+      this.placeSelectedButton.Name = "placeSelectedButton";
+      this.placeSelectedButton.Size = new System.Drawing.Size(124, 23);
+      this.placeSelectedButton.TabIndex = 3;
+      this.placeSelectedButton.Text = "Place Selected";
+      this.placeSelectedButton.UseVisualStyleBackColor = true;
+      this.placeSelectedButton.Click += new System.EventHandler(this.PlaceSelectedButton_Click);
+      // 
       // EquipmentDialogWindow
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.ClientSize = new System.Drawing.Size(884, 861);
+      this.Controls.Add(this.placeSelectedButton);
       this.Controls.Add(this.feedersGroupBox);
       this.Controls.Add(this.equipmentGroupBox);
       this.Controls.Add(this.filtersGroupBox);
@@ -258,5 +271,6 @@
     private System.Windows.Forms.Button filterClearButton;
     private System.Windows.Forms.GroupBox feedersGroupBox;
     private System.Windows.Forms.ListView feederListView;
+    private System.Windows.Forms.Button placeSelectedButton;
   }
 }

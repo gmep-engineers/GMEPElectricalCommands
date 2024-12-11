@@ -60,8 +60,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         feeders.Add(
           new Feeder(
             reader.GetString("id"),
-            reader.GetString("name"),
             reader.GetString("parent_id"),
+            reader.GetString("name"),
             "Panel",
             reader.GetInt32("parent_distance"),
             reader.GetFloat("loc_x"),
@@ -81,6 +81,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         SELECT
         electrical_equipment.id,
         electrical_equipment.parent_id,
+        electrical_panels.name,
         electrical_equipment.equip_no,
         electrical_equipment_categories.category,
         electrical_equipment.description,
@@ -103,26 +104,22 @@ namespace GMEPElectricalCommands.GmepDatabase
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
-        string feederId = reader.GetString("parent_id");
         bool is3Phase = reader.GetInt32("is_three_phase") == 1;
-        if (!String.IsNullOrEmpty(feederId))
-        {
-          equip.Add(
-            new Equipment(
-              reader.GetString("id"),
-              reader.GetString("parent_id"),
-              reader.GetString("equip_no"),
-              "",
-              reader.GetString("category"),
-              reader.GetString("description"),
-              reader.GetInt32("voltage"),
-              is3Phase,
-              reader.GetInt32("parent_distance"),
-              reader.GetFloat("loc_x"),
-              reader.GetFloat("loc_y")
-            )
-          );
-        }
+        equip.Add(
+          new Equipment(
+            reader.GetString("id"),
+            reader.GetString("parent_id"),
+            reader.GetString("name"),
+            reader.GetString("equip_no"),
+            reader.GetString("description"),
+            reader.GetString("category"),
+            reader.GetInt32("voltage"),
+            is3Phase,
+            reader.GetInt32("parent_distance"),
+            reader.GetFloat("loc_x"),
+            reader.GetFloat("loc_y")
+          )
+        );
       }
       reader.Close();
       return equip;
@@ -130,7 +127,6 @@ namespace GMEPElectricalCommands.GmepDatabase
 
     public string GetProjectId(string projectNo)
     {
-      Console.WriteLine(projectNo);
       string query = @"SELECT id FROM projects WHERE gmep_project_no = @projectNo";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);

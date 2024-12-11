@@ -7,6 +7,7 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
+using Dreambuild.AutoCAD;
 using GMEPElectricalCommands.GmepDatabase;
 
 namespace ElectricalCommands.Equipment
@@ -14,41 +15,41 @@ namespace ElectricalCommands.Equipment
   public struct Equipment
   {
     public string equipId,
-      fedFromId,
+      parentId,
+      parentName,
       objectId;
     public string equipNo,
       description,
-      category,
-      fedFromName;
+      category;
     public int voltage;
     public bool is3Phase;
-    public int feederDistance;
-    public Point3d pos;
+    public int parentDistance;
+    public Point3d loc;
 
     public Equipment(
       string eqId = "",
-      string ffId = "",
+      string pId = "",
+      string pName = "",
       string eqName = "",
       string desc = "",
       string cat = "",
-      string fdrName = "",
       int volts = 0,
       bool is3Ph = false,
-      int fdrDist = 0,
+      int pDist = 0,
       double xLoc = 0,
       double yLoc = 0
     )
     {
       equipId = eqId;
-      fedFromId = ffId;
+      parentId = pId;
+      parentName = pName;
       equipNo = eqName;
       description = desc;
       category = cat;
-      fedFromName = fdrName;
       voltage = volts;
       is3Phase = is3Ph;
-      pos = new Point3d(xLoc, yLoc, 0);
-      feederDistance = fdrDist;
+      loc = new Point3d(xLoc, yLoc, 0);
+      parentDistance = pDist;
     }
   }
 
@@ -56,27 +57,27 @@ namespace ElectricalCommands.Equipment
   {
     public string feederId,
       name,
-      fedFromId,
+      parentId,
       type;
-    public Point3d pos;
-    public int feederDistance;
+    public Point3d loc;
+    public int parentDistance;
 
     public Feeder(
-      string fdrId,
+      string id,
+      string pId,
       string n,
-      string ffId,
       string t,
       int fdrDist = 0,
       double xLoc = 0,
       double yLoc = 0
     )
     {
-      feederId = fdrId;
+      feederId = id;
+      parentId = pId;
       name = n;
-      fedFromId = ffId;
       type = t;
-      feederDistance = fdrDist;
-      pos = new Point3d(xLoc, yLoc, 0);
+      parentDistance = fdrDist;
+      loc = new Point3d(xLoc, yLoc, 0);
     }
   }
 
@@ -113,12 +114,8 @@ namespace ElectricalCommands.Equipment
       //string projectNo = Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
       string projectNo = "24-123";
       projectId = db.GetProjectId(projectNo);
-      Console.WriteLine(projectId);
       feederList = db.GetFeeders(projectId);
-      //projectId = "811962e4-d572-467c-afd2-13cd182fc5ef";
       equipmentList = db.GetEquipment(projectId);
-      //equipmentList = new List<Equipment>();
-      feederList = new List<Feeder>();
       CreateEquipmentListView();
       CreateFeederListView();
     }
@@ -132,11 +129,17 @@ namespace ElectricalCommands.Equipment
         ListViewItem item = new ListViewItem(equipment.equipNo, 0);
         item.SubItems.Add(equipment.description);
         item.SubItems.Add(equipment.category);
-        item.SubItems.Add(equipment.fedFromName);
-        item.SubItems.Add(equipment.feederDistance.ToString());
+        item.SubItems.Add(equipment.parentName);
+        item.SubItems.Add(equipment.parentDistance.ToString());
         item.SubItems.Add(equipment.voltage.ToString());
         item.SubItems.Add(equipment.is3Phase ? "3" : "1");
-        item.SubItems.Add(equipment.pos.ToString());
+        item.SubItems.Add(
+          Math.Round(equipment.loc.X, 1).ToString()
+            + ", "
+            + Math.Round(equipment.loc.Y, 1).ToString()
+        );
+        item.SubItems.Add(equipment.equipId);
+        item.SubItems.Add(equipment.parentId);
         equipmentListView.Items.Add(item);
       }
       equipmentListView.Columns.Add("Equip #", -2, HorizontalAlignment.Left);
@@ -157,7 +160,9 @@ namespace ElectricalCommands.Equipment
       {
         ListViewItem item = new ListViewItem(feeder.name, 0);
         item.SubItems.Add(feeder.type);
-        item.SubItems.Add(feeder.pos.ToString());
+        item.SubItems.Add(
+          Math.Round(feeder.loc.X, 1).ToString() + ", " + Math.Round(feeder.loc.Y, 1).ToString()
+        );
         feederListView.Items.Add(item);
       }
       feederListView.Columns.Add("Name", -2, HorizontalAlignment.Left);
@@ -175,6 +180,95 @@ namespace ElectricalCommands.Equipment
       filterVoltage = GeneralCommands.GetComboBoxValue(filterVoltageComboBox);
     }
 
+    private Point3d PlaceEquipment(string equipId, string parentId, string equipNo)
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      Point3d point;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+        var promptOptions = new PromptPointOptions("\nSelect point for " + equipNo + ": ");
+        var promptResult = ed.GetPoint(promptOptions);
+        if (promptResult.Status != PromptStatus.OK)
+          return new Point3d();
+
+        // Initial point
+        point = promptResult.Value;
+        try
+        {
+          ObjectId blockId = bt["EQUIP_MARKER"];
+          using (BlockReference acBlkRef = new BlockReference(point, blockId))
+          {
+            BlockTableRecord acCurSpaceBlkTblRec;
+            acCurSpaceBlkTblRec =
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+            acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+            //tr.AddNewlyCreatedDBObject(acBlkRef, true);
+
+            DynamicBlockReferencePropertyCollection pc =
+              acBlkRef.DynamicBlockReferencePropertyCollection;
+            Equipment eq = new Equipment();
+            foreach (DynamicBlockReferenceProperty prop in pc)
+            {
+              if (prop.PropertyName == "gmep_equip_id")
+              {
+                prop.Value = equipId;
+              }
+              if (prop.PropertyName == "gmep_equip_parent_id")
+              {
+                prop.Value = parentId;
+              }
+            }
+
+            AttributeDefinition attrDef = new AttributeDefinition();
+            attrDef.Position = point;
+            attrDef.LockPositionInBlock = true;
+            attrDef.Tag = equipNo;
+            attrDef.IsMTextAttributeDefinition = false;
+            attrDef.TextString = equipNo;
+            attrDef.Justify = AttachmentPoint.MiddleCenter;
+            attrDef.Visible = true;
+            attrDef.Invisible = false;
+            attrDef.Constant = false;
+            attrDef.Height = 4.5;
+            attrDef.WidthFactor = 0.85;
+            attrDef.AlignmentPoint = point;
+
+            acCurSpaceBlkTblRec.AppendEntity(attrDef);
+
+            tr.AddNewlyCreatedDBObject(attrDef, true);
+
+            AttributeReference attrRef = new AttributeReference();
+            attrRef.TextString = attrDef.TextString;
+            attrRef.Invisible = false;
+            attrRef.Height = 4.5;
+            attrRef.Layer = "0";
+            attrRef.Visible = false;
+
+            acBlkRef.AttributeCollection.AppendAttribute(attrRef);
+
+            tr.AddNewlyCreatedDBObject(attrRef, true);
+            tr.AddNewlyCreatedDBObject(acBlkRef, true);
+          }
+          tr.Commit();
+        }
+        catch (Autodesk.AutoCAD.Runtime.Exception ex)
+        {
+          tr.Commit();
+        }
+      }
+      return point;
+    }
+
     private void CalculateDistances()
     {
       Document doc = Autodesk
@@ -187,7 +281,6 @@ namespace ElectricalCommands.Equipment
       Database db = doc.Database;
       Editor ed = doc.Editor;
       Transaction tr = db.TransactionManager.StartTransaction();
-      List<Equipment> equipmentList = new List<Equipment>();
       using (tr)
       {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -206,18 +299,18 @@ namespace ElectricalCommands.Equipment
               Equipment eq = new Equipment();
               foreach (DynamicBlockReferenceProperty prop in pc)
               {
-                if (prop.PropertyName == "equip_id")
+                if (prop.PropertyName == "gmep_equip_id" && prop.Value as string != "0")
                 {
                   addEquip = true;
                   eq.equipId = prop.Value as string;
                 }
-                if (prop.PropertyName == "fed_from_id")
+                if (prop.PropertyName == "gmep_equip_parent_id" && prop.Value as string != "0")
                 {
                   addEquip = true;
-                  eq.fedFromId = prop.Value as string;
+                  eq.parentId = prop.Value as string;
                 }
               }
-              eq.pos = br.Position;
+              eq.loc = br.Position;
               if (addEquip)
               {
                 equipmentList.Add(eq);
@@ -231,13 +324,12 @@ namespace ElectricalCommands.Equipment
       {
         for (int j = 0; j < equipmentList.Count; j++)
         {
-          if (equipmentList[j].fedFromId == equipmentList[i].equipId)
+          if (equipmentList[j].parentId == equipmentList[i].equipId)
           {
             Equipment equip = equipmentList[j];
-            equip.feederDistance = Convert.ToInt32(
-              equipmentList[j].pos.DistanceTo(equipmentList[i].pos)
+            equip.parentDistance = Convert.ToInt32(
+              equipmentList[j].loc.DistanceTo(equipmentList[i].loc)
             );
-            Console.WriteLine(equip.feederDistance);
           }
         }
       }
@@ -246,6 +338,55 @@ namespace ElectricalCommands.Equipment
     private void filterClearButton_Click(object sender, EventArgs e)
     {
       CalculateDistances();
+    }
+
+    private void EquipmentListView_MouseDoubleClick(object sender, MouseEventArgs e)
+    {
+      using (
+        DocumentLock docLock =
+          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
+      )
+      {
+        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
+          .AutoCAD
+          .Windows
+          .Window
+          .State
+          .Maximized;
+        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
+        int numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
+        PlaceEquipment(
+          equipmentListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
+          equipmentListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
+          equipmentListView.SelectedItems[0].Text
+        );
+      }
+    }
+
+    private void PlaceSelectedButton_Click(object sender, EventArgs e)
+    {
+      using (
+        DocumentLock docLock =
+          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
+      )
+      {
+        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
+          .AutoCAD
+          .Windows
+          .Window
+          .State
+          .Maximized;
+        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
+        int numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
+        foreach (ListViewItem item in equipmentListView.SelectedItems)
+        {
+          PlaceEquipment(
+            item.SubItems[numSubItems - 2].Text,
+            item.SubItems[numSubItems - 1].Text,
+            item.Text
+          );
+        }
+      }
     }
   }
 }
