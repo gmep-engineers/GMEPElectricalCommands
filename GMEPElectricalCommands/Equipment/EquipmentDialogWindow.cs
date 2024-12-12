@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
 using Autodesk.AutoCAD.ApplicationServices;
@@ -241,7 +242,7 @@ namespace ElectricalCommands.Equipment
             attrDef.Constant = false;
             attrDef.Height = 4.5;
             attrDef.WidthFactor = 0.85;
-            attrDef.AlignmentPoint = point;
+            attrDef.Layer = "DEFPOINTS";
 
             acCurSpaceBlkTblRec.AppendEntity(attrDef);
 
@@ -251,12 +252,11 @@ namespace ElectricalCommands.Equipment
             attrRef.TextString = attrDef.TextString;
             attrRef.Invisible = false;
             attrRef.Height = 4.5;
-            attrRef.Layer = "0";
             attrRef.Visible = false;
 
+            attrRef.SetAttributeFromBlock(attrDef, acBlkRef.BlockTransform);
             acBlkRef.AttributeCollection.AppendAttribute(attrRef);
-
-            tr.AddNewlyCreatedDBObject(attrRef, true);
+            acBlkRef.Layer = "DEFPOINTS";
             tr.AddNewlyCreatedDBObject(acBlkRef, true);
           }
           tr.Commit();
@@ -355,11 +355,22 @@ namespace ElectricalCommands.Equipment
           .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
         int numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
-        PlaceEquipment(
+        Point3d p = PlaceEquipment(
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
           equipmentListView.SelectedItems[0].Text
         );
+        for (int i = 0; i < equipmentList.Count; i++)
+        {
+          Equipment equipment = equipmentList[i];
+          if (
+            equipmentList[i].equipId
+            == equipmentListView.SelectedItems[0].SubItems[numSubItems - 2].Text
+          )
+          {
+            equipment.loc = p;
+          }
+        }
       }
     }
 
@@ -378,14 +389,28 @@ namespace ElectricalCommands.Equipment
           .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
         int numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
+        Dictionary<string, Point3d> equipLocs = new Dictionary<string, Point3d>();
         foreach (ListViewItem item in equipmentListView.SelectedItems)
         {
-          PlaceEquipment(
+          Point3d p = PlaceEquipment(
             item.SubItems[numSubItems - 2].Text,
             item.SubItems[numSubItems - 1].Text,
             item.Text
           );
+          equipLocs[item.SubItems[numSubItems - 2].Text] = p;
         }
+
+        for (int i = 0; i < equipmentList.Count; i++)
+        {
+          Equipment equip = equipmentList[i];
+          if (equipLocs.ContainsKey(equip.equipId))
+          {
+            equip.loc = equipLocs[equip.equipId];
+          }
+          equipmentList[i] = equip;
+        }
+        // update list views with new values
+        // update values in sql
       }
     }
   }
