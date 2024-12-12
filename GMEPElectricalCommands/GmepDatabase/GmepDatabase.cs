@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Xml.Linq;
+using DocumentFormat.OpenXml.Office2010.CustomUI;
 using ElectricalCommands.Equipment;
 using MySql.Data.MySqlClient;
 
@@ -35,9 +36,9 @@ namespace GMEPElectricalCommands.GmepDatabase
       }
     }
 
-    public List<Feeder> GetFeeders(string projectId)
+    public List<Panel> GetPanels(string projectId)
     {
-      List<Feeder> feeders = new List<Feeder>();
+      List<Panel> panels = new List<Panel>();
       //string query =
       //  @"
       //  SELECT * FROM electrical_panels
@@ -57,8 +58,8 @@ namespace GMEPElectricalCommands.GmepDatabase
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
-        feeders.Add(
-          new Feeder(
+        panels.Add(
+          new Panel(
             reader.GetString("id"),
             reader.GetString("parent_id"),
             reader.GetString("name"),
@@ -70,7 +71,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         );
       }
       reader.Close();
-      return feeders;
+      return panels;
     }
 
     public List<Equipment> GetEquipment(string projectId)
@@ -139,6 +140,46 @@ namespace GMEPElectricalCommands.GmepDatabase
       }
       reader.Close();
       return id;
+    }
+
+    public void UpdateEquipment(Equipment equip)
+    {
+      string query =
+        @"
+          UPDATE electrical_equipment
+          SET
+          loc_x = @xLoc,
+          loc_y = @yLoc,
+          parent_distance = @parentDistance
+          WHERE id = @equipId;
+          ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@xLoc", equip.loc.X);
+      command.Parameters.AddWithValue("@yLoc", equip.loc.Y);
+      command.Parameters.AddWithValue("@parentDistance", equip.parentDistance);
+      command.Parameters.AddWithValue("@equipId", equip.equipId);
+      command.ExecuteNonQuery();
+    }
+
+    public void UpdatePanel(Panel panel)
+    {
+      string query =
+        @"
+          UPDATE electrical_panels
+          SET
+          loc_x = @xLoc,
+          loc_y = @yLoc,
+          parent_distance = @parentDistance
+          WHERE id = @equipId
+          ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@xLoc", panel.loc.X);
+      command.Parameters.AddWithValue("@yLoc", panel.loc.Y);
+      command.Parameters.AddWithValue("@parentDistance", panel.parentDistance);
+      command.Parameters.AddWithValue("@equipId", panel.equipId);
+      command.ExecuteNonQuery();
     }
   }
 }

@@ -37,14 +37,14 @@
       this.filterPanelComboBox = new System.Windows.Forms.ComboBox();
       this.equipmentGroupBox = new System.Windows.Forms.GroupBox();
       this.equipmentListView = new System.Windows.Forms.ListView();
-      this.feedersGroupBox = new System.Windows.Forms.GroupBox();
-      this.feederListView = new System.Windows.Forms.ListView();
+      this.panelsGroupBox = new System.Windows.Forms.GroupBox();
+      this.panelListView = new System.Windows.Forms.ListView();
       this.placeSelectedButton = new System.Windows.Forms.Button();
       this.placeAllButton = new System.Windows.Forms.Button();
       this.recalculateDistancesButton = new System.Windows.Forms.Button();
       this.filtersGroupBox.SuspendLayout();
       this.equipmentGroupBox.SuspendLayout();
-      this.feedersGroupBox.SuspendLayout();
+      this.panelsGroupBox.SuspendLayout();
       this.SuspendLayout();
       // 
       // filtersGroupBox
@@ -202,33 +202,34 @@
       this.equipmentListView.UseCompatibleStateImageBehavior = false;
       this.equipmentListView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.EquipmentListView_MouseDoubleClick);
       // 
-      // feedersGroupBox
+      // panelsGroupBox
       // 
-      this.feedersGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+      this.panelsGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-      this.feedersGroupBox.Controls.Add(this.feederListView);
-      this.feedersGroupBox.Location = new System.Drawing.Point(12, 13);
-      this.feedersGroupBox.Name = "feedersGroupBox";
-      this.feedersGroupBox.Size = new System.Drawing.Size(860, 232);
-      this.feedersGroupBox.TabIndex = 2;
-      this.feedersGroupBox.TabStop = false;
-      this.feedersGroupBox.Text = "Feeders";
+      this.panelsGroupBox.Controls.Add(this.panelListView);
+      this.panelsGroupBox.Location = new System.Drawing.Point(12, 13);
+      this.panelsGroupBox.Name = "panelsGroupBox";
+      this.panelsGroupBox.Size = new System.Drawing.Size(860, 232);
+      this.panelsGroupBox.TabIndex = 2;
+      this.panelsGroupBox.TabStop = false;
+      this.panelsGroupBox.Text = "Panels";
       // 
-      // feederListView
+      // panelListView
       // 
-      this.feederListView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+      this.panelListView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-      this.feederListView.HideSelection = false;
-      this.feederListView.Location = new System.Drawing.Point(6, 19);
-      this.feederListView.Name = "feederListView";
-      this.feederListView.Size = new System.Drawing.Size(848, 207);
-      this.feederListView.TabIndex = 0;
-      this.feederListView.UseCompatibleStateImageBehavior = false;
-      this.feederListView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.FeederListView_MouseDoubleClick);
+      this.panelListView.HideSelection = false;
+      this.panelListView.Location = new System.Drawing.Point(6, 19);
+      this.panelListView.Name = "panelListView";
+      this.panelListView.Size = new System.Drawing.Size(848, 207);
+      this.panelListView.TabIndex = 0;
+      this.panelListView.UseCompatibleStateImageBehavior = false;
+      this.panelListView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.PanelListView_MouseDoubleClick);
       // 
       // placeSelectedButton
       // 
+      this.placeSelectedButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
       this.placeSelectedButton.Location = new System.Drawing.Point(21, 826);
       this.placeSelectedButton.Name = "placeSelectedButton";
       this.placeSelectedButton.Size = new System.Drawing.Size(100, 23);
@@ -239,6 +240,7 @@
       // 
       // placeAllButton
       // 
+      this.placeAllButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
       this.placeAllButton.Location = new System.Drawing.Point(141, 826);
       this.placeAllButton.Name = "placeAllButton";
       this.placeAllButton.Size = new System.Drawing.Size(75, 23);
@@ -249,6 +251,7 @@
       // 
       // recalculateDistancesButton
       // 
+      this.recalculateDistancesButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
       this.recalculateDistancesButton.Location = new System.Drawing.Point(728, 826);
       this.recalculateDistancesButton.Name = "recalculateDistancesButton";
       this.recalculateDistancesButton.Size = new System.Drawing.Size(138, 23);
@@ -265,7 +268,7 @@
       this.Controls.Add(this.recalculateDistancesButton);
       this.Controls.Add(this.placeAllButton);
       this.Controls.Add(this.placeSelectedButton);
-      this.Controls.Add(this.feedersGroupBox);
+      this.Controls.Add(this.panelsGroupBox);
       this.Controls.Add(this.equipmentGroupBox);
       this.Controls.Add(this.filtersGroupBox);
       this.Name = "EquipmentDialogWindow";
@@ -273,7 +276,7 @@
       this.filtersGroupBox.ResumeLayout(false);
       this.filtersGroupBox.PerformLayout();
       this.equipmentGroupBox.ResumeLayout(false);
-      this.feedersGroupBox.ResumeLayout(false);
+      this.panelsGroupBox.ResumeLayout(false);
       this.ResumeLayout(false);
 
     }
@@ -294,8 +297,8 @@
     private System.Windows.Forms.ComboBox filterCategoryComboBox;
     private System.Windows.Forms.ListView equipmentListView;
     private System.Windows.Forms.Button filterClearButton;
-    private System.Windows.Forms.GroupBox feedersGroupBox;
-    private System.Windows.Forms.ListView feederListView;
+    private System.Windows.Forms.GroupBox panelsGroupBox;
+    private System.Windows.Forms.ListView panelListView;
     private System.Windows.Forms.Button placeSelectedButton;
     private System.Windows.Forms.Button placeAllButton;
     private System.Windows.Forms.Button recalculateDistancesButton;

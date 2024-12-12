@@ -54,16 +54,16 @@ namespace ElectricalCommands.Equipment
     }
   }
 
-  public struct Feeder
+  public struct Panel
   {
-    public string feederId,
+    public string equipId,
       name,
       parentId,
       type;
     public Point3d loc;
     public int parentDistance;
 
-    public Feeder(
+    public Panel(
       string id,
       string pId,
       string n,
@@ -73,7 +73,7 @@ namespace ElectricalCommands.Equipment
       double yLoc = 0
     )
     {
-      feederId = id;
+      equipId = id;
       parentId = pId;
       name = n;
       type = t;
@@ -89,7 +89,7 @@ namespace ElectricalCommands.Equipment
     public Point3d loc;
     public int parentDistance;
 
-    public PooledEquipment(string eqId, string pId, Point3d p)
+    public PooledEquipment(string eqId = "0", string pId = "0", Point3d p = new Point3d())
     {
       equipId = eqId;
       parentId = pId;
@@ -107,11 +107,11 @@ namespace ElectricalCommands.Equipment
     private string filterCategory;
     private List<ListViewItem> equipmentListViewList;
     private List<Equipment> equipmentList;
-    private List<ListViewItem> feederListViewList;
-    private List<Feeder> feederList;
+    private List<ListViewItem> panelListViewList;
+    private List<Panel> panelList;
     private string projectId;
 
-    public GmepDatabase db = new GmepDatabase();
+    public GmepDatabase gmepDb = new GmepDatabase();
 
     public EquipmentDialogWindow(EquipmentCommands EquipCommands)
     {
@@ -130,11 +130,11 @@ namespace ElectricalCommands.Equipment
       string fileName = Path.GetFileName(doc.Name);
       //string projectNo = Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
       string projectNo = "24-123";
-      projectId = db.GetProjectId(projectNo);
-      feederList = db.GetFeeders(projectId);
-      equipmentList = db.GetEquipment(projectId);
+      projectId = gmepDb.GetProjectId(projectNo);
+      panelList = gmepDb.GetPanels(projectId);
+      equipmentList = gmepDb.GetEquipment(projectId);
       CreateEquipmentListView();
-      CreateFeederListView();
+      CreatePanelListView();
     }
 
     private void CreateEquipmentListView(bool updateOnly = false)
@@ -176,32 +176,32 @@ namespace ElectricalCommands.Equipment
       }
     }
 
-    private void CreateFeederListView(bool updateOnly = false)
+    private void CreatePanelListView(bool updateOnly = false)
     {
       if (updateOnly)
       {
-        feederListView.Items.Clear();
+        panelListView.Items.Clear();
       }
-      feederListView.View = View.Details;
-      feederListView.FullRowSelect = true;
-      foreach (Feeder feeder in feederList)
+      panelListView.View = View.Details;
+      panelListView.FullRowSelect = true;
+      foreach (Panel panel in panelList)
       {
-        ListViewItem item = new ListViewItem(feeder.name, 0);
-        item.SubItems.Add(feeder.type);
+        ListViewItem item = new ListViewItem(panel.name, 0);
+        item.SubItems.Add(panel.type);
         item.SubItems.Add(
-          Math.Round(feeder.loc.X / 12, 1).ToString()
+          Math.Round(panel.loc.X / 12, 1).ToString()
             + ", "
-            + Math.Round(feeder.loc.Y / 12, 1).ToString()
+            + Math.Round(panel.loc.Y / 12, 1).ToString()
         );
-        item.SubItems.Add(feeder.feederId);
-        item.SubItems.Add(feeder.parentId);
-        feederListView.Items.Add(item);
+        item.SubItems.Add(panel.equipId);
+        item.SubItems.Add(panel.parentId);
+        panelListView.Items.Add(item);
       }
       if (!updateOnly)
       {
-        feederListView.Columns.Add("Name", -2, HorizontalAlignment.Left);
-        feederListView.Columns.Add("Type", -2, HorizontalAlignment.Left);
-        feederListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
+        panelListView.Columns.Add("Name", -2, HorizontalAlignment.Left);
+        panelListView.Columns.Add("Type", -2, HorizontalAlignment.Left);
+        panelListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
       }
     }
 
@@ -295,7 +295,6 @@ namespace ElectricalCommands.Equipment
                 prop.Value = parentId;
               }
             }
-            Console.WriteLine(equipNo);
             AttributeDefinition attrDef = new AttributeDefinition();
             attrDef.Position = point;
             attrDef.LockPositionInBlock = true;
@@ -357,7 +356,7 @@ namespace ElectricalCommands.Equipment
               DynamicBlockReferencePropertyCollection pc =
                 br.DynamicBlockReferencePropertyCollection;
               bool addEquip = false;
-              Equipment eq = new Equipment();
+              PooledEquipment eq = new PooledEquipment();
               foreach (DynamicBlockReferenceProperty prop in pc)
               {
                 if (prop.PropertyName == "gmep_equip_id" && prop.Value as string != "0")
@@ -397,17 +396,49 @@ namespace ElectricalCommands.Equipment
       }
       for (int i = 0; i < pooledEquipment.Count; i++)
       {
+        bool isMatch = false;
         for (int j = 0; j < equipmentList.Count; j++)
         {
           if (equipmentList[j].equipId == pooledEquipment[i].equipId)
           {
+            isMatch = true;
             Equipment equip = equipmentList[j];
-            equip.parentDistance = pooledEquipment[i].parentDistance;
-            equip.loc = pooledEquipment[i].loc;
-            equipmentList[j] = equip;
+            if (
+              equip.parentDistance != pooledEquipment[i].parentDistance
+              || equip.loc.X != pooledEquipment[i].loc.X
+              || equip.loc.Y != pooledEquipment[i].loc.Y
+            )
+            {
+              equip.parentDistance = pooledEquipment[i].parentDistance;
+              equip.loc = pooledEquipment[i].loc;
+              equipmentList[j] = equip;
+              gmepDb.UpdateEquipment(equip);
+            }
+          }
+        }
+        if (!isMatch)
+        {
+          for (int j = 0; j < panelList.Count; j++)
+          {
+            if (panelList[j].equipId == pooledEquipment[i].equipId)
+            {
+              Panel panel = panelList[j];
+              if (
+                panel.parentDistance != pooledEquipment[i].parentDistance
+                || panel.loc.X != pooledEquipment[i].loc.X
+                || panel.loc.Y != pooledEquipment[i].loc.Y
+              )
+              {
+                panel.parentDistance = pooledEquipment[i].parentDistance;
+                panel.loc = pooledEquipment[i].loc;
+                panelList[j] = panel;
+                gmepDb.UpdatePanel(panel);
+              }
+            }
           }
         }
       }
+      CreatePanelListView(true);
       CreateEquipmentListView(true);
     }
 
@@ -449,7 +480,7 @@ namespace ElectricalCommands.Equipment
       CalculateDistances();
     }
 
-    private void FeederListView_MouseDoubleClick(object sender, MouseEventArgs e)
+    private void PanelListView_MouseDoubleClick(object sender, MouseEventArgs e)
     {
       using (
         DocumentLock docLock =
@@ -463,25 +494,14 @@ namespace ElectricalCommands.Equipment
           .State
           .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
-        int numSubItems = feederListView.SelectedItems[0].SubItems.Count;
+        int numSubItems = panelListView.SelectedItems[0].SubItems.Count;
         Point3d p = PlaceEquipment(
-          feederListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
-          feederListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
-          feederListView.SelectedItems[0].Text
+          panelListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
+          panelListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
+          panelListView.SelectedItems[0].Text
         );
-        for (int i = 0; i < feederList.Count; i++)
-        {
-          Feeder feeder = feederList[i];
-          if (
-            feederList[i].feederId == feederListView.SelectedItems[0].SubItems[numSubItems - 2].Text
-          )
-          {
-            feeder.loc = p;
-            feederList[i] = feeder;
-          }
-        }
       }
-      CreateFeederListView(true);
+      CreatePanelListView(true);
       CalculateDistances();
     }
 
@@ -500,13 +520,13 @@ namespace ElectricalCommands.Equipment
           .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
         int numSubItems = 0;
-        if (feederListView.SelectedItems.Count > 0)
+        if (panelListView.SelectedItems.Count > 0)
         {
-          numSubItems = feederListView.SelectedItems[0].SubItems.Count;
+          numSubItems = panelListView.SelectedItems[0].SubItems.Count;
         }
-        Dictionary<string, Point3d> feederLocs = new Dictionary<string, Point3d>();
+        Dictionary<string, Point3d> panelLocs = new Dictionary<string, Point3d>();
         bool brk = false;
-        foreach (ListViewItem item in feederListView.SelectedItems)
+        foreach (ListViewItem item in panelListView.SelectedItems)
         {
           Point3d p = PlaceEquipment(
             item.SubItems[numSubItems - 2].Text,
@@ -518,18 +538,8 @@ namespace ElectricalCommands.Equipment
             brk = true;
             break;
           }
-          feederLocs[item.SubItems[numSubItems - 2].Text] = p;
+          panelLocs[item.SubItems[numSubItems - 2].Text] = p;
         }
-        for (int i = 0; i < feederList.Count; i++)
-        {
-          Feeder feeder = feederList[i];
-          if (feederLocs.ContainsKey(feeder.feederId))
-          {
-            feeder.loc = feederLocs[feeder.feederId];
-          }
-          feederList[i] = feeder;
-        }
-        CreateFeederListView(true);
         if (brk || equipmentListView.SelectedItems.Count == 0)
         {
           return;
@@ -549,17 +559,6 @@ namespace ElectricalCommands.Equipment
           }
           equipLocs[item.SubItems[numSubItems - 2].Text] = p;
         }
-
-        for (int i = 0; i < equipmentList.Count; i++)
-        {
-          Equipment equip = equipmentList[i];
-          if (equipLocs.ContainsKey(equip.equipId))
-          {
-            equip.loc = equipLocs[equip.equipId];
-          }
-          equipmentList[i] = equip;
-        }
-        // update values in sql
       }
       CalculateDistances();
     }
@@ -579,13 +578,13 @@ namespace ElectricalCommands.Equipment
           .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
         int numSubItems = 0;
-        if (feederListView.Items.Count > 0)
+        if (panelListView.Items.Count > 0)
         {
-          numSubItems = feederListView.Items[0].SubItems.Count;
+          numSubItems = panelListView.Items[0].SubItems.Count;
         }
-        Dictionary<string, Point3d> feederLocs = new Dictionary<string, Point3d>();
+        Dictionary<string, Point3d> panelLocs = new Dictionary<string, Point3d>();
         bool brk = false;
-        foreach (ListViewItem item in feederListView.Items)
+        foreach (ListViewItem item in panelListView.Items)
         {
           Point3d p = PlaceEquipment(
             item.SubItems[numSubItems - 2].Text,
@@ -597,18 +596,8 @@ namespace ElectricalCommands.Equipment
             brk = true;
             break;
           }
-          feederLocs[item.SubItems[numSubItems - 2].Text] = p;
+          panelLocs[item.SubItems[numSubItems - 2].Text] = p;
         }
-        for (int i = 0; i < feederList.Count; i++)
-        {
-          Feeder feeder = feederList[i];
-          if (feederLocs.ContainsKey(feeder.feederId))
-          {
-            feeder.loc = feederLocs[feeder.feederId];
-          }
-          feederList[i] = feeder;
-        }
-        CreateFeederListView(true);
         if (brk || equipmentListView.Items.Count == 0)
         {
           CalculateDistances();
@@ -629,17 +618,6 @@ namespace ElectricalCommands.Equipment
           }
           equipLocs[item.SubItems[numSubItems - 2].Text] = p;
         }
-
-        for (int i = 0; i < equipmentList.Count; i++)
-        {
-          Equipment equip = equipmentList[i];
-          if (equipLocs.ContainsKey(equip.equipId))
-          {
-            equip.loc = equipLocs[equip.equipId];
-          }
-          equipmentList[i] = equip;
-        }
-        // update values in sql
       }
       CalculateDistances();
     }

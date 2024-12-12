@@ -16,8 +16,8 @@ namespace ElectricalCommands.Equipment
   {
     private EquipmentDialogWindow EquipWindow;
 
-    [CommandMethod("EQUIPLOC")]
-    public void EQUIPLOC()
+    [CommandMethod("EQUIP")]
+    public void EQUIP()
     {
       Document doc = Autodesk
         .AutoCAD
