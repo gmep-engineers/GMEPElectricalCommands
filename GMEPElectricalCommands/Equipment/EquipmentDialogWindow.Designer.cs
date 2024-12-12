@@ -40,6 +40,8 @@
       this.feedersGroupBox = new System.Windows.Forms.GroupBox();
       this.feederListView = new System.Windows.Forms.ListView();
       this.placeSelectedButton = new System.Windows.Forms.Button();
+      this.placeAllButton = new System.Windows.Forms.Button();
+      this.recalculateDistancesButton = new System.Windows.Forms.Button();
       this.filtersGroupBox.SuspendLayout();
       this.equipmentGroupBox.SuspendLayout();
       this.feedersGroupBox.SuspendLayout();
@@ -75,7 +77,7 @@
       this.filterClearButton.TabIndex = 10;
       this.filterClearButton.Text = "Clear";
       this.filterClearButton.UseVisualStyleBackColor = true;
-      this.filterClearButton.Click += new System.EventHandler(this.filterClearButton_Click);
+      this.filterClearButton.Click += new System.EventHandler(this.FilterClearButton_Click);
       // 
       // filterCategoryComboBox
       // 
@@ -223,22 +225,45 @@
       this.feederListView.Size = new System.Drawing.Size(848, 207);
       this.feederListView.TabIndex = 0;
       this.feederListView.UseCompatibleStateImageBehavior = false;
+      this.feederListView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.FeederListView_MouseDoubleClick);
       // 
       // placeSelectedButton
       // 
       this.placeSelectedButton.Location = new System.Drawing.Point(21, 826);
       this.placeSelectedButton.Name = "placeSelectedButton";
-      this.placeSelectedButton.Size = new System.Drawing.Size(124, 23);
+      this.placeSelectedButton.Size = new System.Drawing.Size(100, 23);
       this.placeSelectedButton.TabIndex = 3;
       this.placeSelectedButton.Text = "Place Selected";
       this.placeSelectedButton.UseVisualStyleBackColor = true;
       this.placeSelectedButton.Click += new System.EventHandler(this.PlaceSelectedButton_Click);
+      // 
+      // placeAllButton
+      // 
+      this.placeAllButton.Location = new System.Drawing.Point(141, 826);
+      this.placeAllButton.Name = "placeAllButton";
+      this.placeAllButton.Size = new System.Drawing.Size(75, 23);
+      this.placeAllButton.TabIndex = 4;
+      this.placeAllButton.Text = "Place All";
+      this.placeAllButton.UseVisualStyleBackColor = true;
+      this.placeAllButton.Click += new System.EventHandler(this.PlaceAllButton_Click);
+      // 
+      // recalculateDistancesButton
+      // 
+      this.recalculateDistancesButton.Location = new System.Drawing.Point(728, 826);
+      this.recalculateDistancesButton.Name = "recalculateDistancesButton";
+      this.recalculateDistancesButton.Size = new System.Drawing.Size(138, 23);
+      this.recalculateDistancesButton.TabIndex = 5;
+      this.recalculateDistancesButton.Text = "Recalculate Distances";
+      this.recalculateDistancesButton.UseVisualStyleBackColor = true;
+      this.recalculateDistancesButton.Click += new System.EventHandler(this.RecalculateDistancesButton_Click);
       // 
       // EquipmentDialogWindow
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.ClientSize = new System.Drawing.Size(884, 861);
+      this.Controls.Add(this.recalculateDistancesButton);
+      this.Controls.Add(this.placeAllButton);
       this.Controls.Add(this.placeSelectedButton);
       this.Controls.Add(this.feedersGroupBox);
       this.Controls.Add(this.equipmentGroupBox);
@@ -272,5 +297,7 @@
     private System.Windows.Forms.GroupBox feedersGroupBox;
     private System.Windows.Forms.ListView feederListView;
     private System.Windows.Forms.Button placeSelectedButton;
+    private System.Windows.Forms.Button placeAllButton;
+    private System.Windows.Forms.Button recalculateDistancesButton;
   }
 }
