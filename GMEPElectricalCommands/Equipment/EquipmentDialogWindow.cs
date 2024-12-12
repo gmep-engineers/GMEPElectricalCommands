@@ -197,15 +197,47 @@ namespace ElectricalCommands.Equipment
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord btr = (BlockTableRecord)
           tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+
+        //remove any previous marker with the same equipId
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+        foreach (ObjectId id in modelSpace)
+        {
+          try
+          {
+            BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
+            if (
+              br != null
+              && br.IsDynamicBlock
+              && br.DynamicBlockReferencePropertyCollection.Count > 0
+            )
+            {
+              DynamicBlockReferencePropertyCollection pc =
+                br.DynamicBlockReferencePropertyCollection;
+              foreach (DynamicBlockReferenceProperty prop in pc)
+              {
+                if (prop.PropertyName == "gmep_equip_id" && prop.Value as string == equipId)
+                {
+                  BlockReference eraseBlock = (BlockReference)tr.GetObject(id, OpenMode.ForWrite);
+                  eraseBlock.Erase();
+                }
+              }
+            }
+          }
+          catch { }
+        }
+        tr.Commit();
+      }
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         var promptOptions = new PromptPointOptions("\nSelect point for " + equipNo + ": ");
         var promptResult = ed.GetPoint(promptOptions);
         if (promptResult.Status != PromptStatus.OK)
-          return new Point3d();
-
-        // Initial point
+          return new Point3d(0, 0, 0);
         point = promptResult.Value;
         try
         {
+          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
           ObjectId blockId = bt["EQUIP_MARKER"];
           using (BlockReference acBlkRef = new BlockReference(point, blockId))
           {
@@ -246,13 +278,7 @@ namespace ElectricalCommands.Equipment
 
             acCurSpaceBlkTblRec.AppendEntity(attrDef);
 
-            tr.AddNewlyCreatedDBObject(attrDef, true);
-
             AttributeReference attrRef = new AttributeReference();
-            attrRef.TextString = attrDef.TextString;
-            attrRef.Invisible = false;
-            attrRef.Height = 4.5;
-            attrRef.Visible = false;
 
             attrRef.SetAttributeFromBlock(attrDef, acBlkRef.BlockTransform);
             acBlkRef.AttributeCollection.AppendAttribute(attrRef);
@@ -397,6 +423,10 @@ namespace ElectricalCommands.Equipment
             item.SubItems[numSubItems - 1].Text,
             item.Text
           );
+          if (p.X == 0 & p.Y == 0 & p.Z == 0)
+          {
+            break;
+          }
           equipLocs[item.SubItems[numSubItems - 2].Text] = p;
         }
 
@@ -409,6 +439,8 @@ namespace ElectricalCommands.Equipment
           }
           equipmentList[i] = equip;
         }
+        equipmentListView.Items.Clear();
+        CreateEquipmentListView();
         // update list views with new values
         // update values in sql
       }
