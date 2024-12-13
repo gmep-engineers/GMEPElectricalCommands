@@ -63,7 +63,6 @@ namespace GMEPElectricalCommands.GmepDatabase
             reader.GetString("id"),
             reader.GetString("parent_id"),
             reader.GetString("name"),
-            "Panel",
             reader.GetInt32("parent_distance"),
             reader.GetFloat("loc_x"),
             reader.GetFloat("loc_y")

@@ -58,25 +58,15 @@ namespace ElectricalCommands.Equipment
   {
     public string equipId,
       name,
-      parentId,
-      type;
+      parentId;
     public Point3d loc;
     public int parentDistance;
 
-    public Panel(
-      string id,
-      string pId,
-      string n,
-      string t,
-      int pDist = -1,
-      double xLoc = 0,
-      double yLoc = 0
-    )
+    public Panel(string id, string pId, string n, int pDist = -1, double xLoc = 0, double yLoc = 0)
     {
       equipId = id;
       parentId = pId;
       name = n;
-      type = t;
       parentDistance = pDist;
       loc = new Point3d(xLoc, yLoc, 0);
     }
@@ -203,7 +193,25 @@ namespace ElectricalCommands.Equipment
       foreach (Panel panel in panelList)
       {
         ListViewItem item = new ListViewItem(panel.name, 0);
-        item.SubItems.Add(panel.type);
+        if (panel.parentDistance == -1)
+        {
+          item.SubItems.Add("Not Set");
+          item.SubItems.Add("Not Set");
+        }
+        else
+        {
+          string parent = "";
+          foreach (Panel p in panelList)
+          {
+            if (p.equipId == panel.parentId)
+            {
+              parent = p.name;
+              break;
+            }
+          }
+          item.SubItems.Add(parent);
+          item.SubItems.Add(panel.parentDistance.ToString() + "'");
+        }
         if (panel.loc.X == 0 && panel.loc.Y == 0)
         {
           item.SubItems.Add("Not Set");
@@ -223,7 +231,8 @@ namespace ElectricalCommands.Equipment
       if (!updateOnly)
       {
         panelListView.Columns.Add("Name", -2, HorizontalAlignment.Left);
-        panelListView.Columns.Add("Type", -2, HorizontalAlignment.Left);
+        panelListView.Columns.Add("Parent", -2, HorizontalAlignment.Left);
+        panelListView.Columns.Add("Parent Distance", -2, HorizontalAlignment.Left);
         panelListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
       }
     }
