@@ -42,9 +42,12 @@
       this.placeSelectedButton = new System.Windows.Forms.Button();
       this.placeAllButton = new System.Windows.Forms.Button();
       this.recalculateDistancesButton = new System.Windows.Forms.Button();
+      this.transformerGroupBox = new System.Windows.Forms.GroupBox();
+      this.listView1 = new System.Windows.Forms.ListView();
       this.filtersGroupBox.SuspendLayout();
       this.equipmentGroupBox.SuspendLayout();
       this.panelsGroupBox.SuspendLayout();
+      this.transformerGroupBox.SuspendLayout();
       this.SuspendLayout();
       // 
       // filtersGroupBox
@@ -203,21 +206,19 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
       this.equipmentListView.HideSelection = false;
-      this.equipmentListView.Location = new System.Drawing.Point(7, 20);
+      this.equipmentListView.Location = new System.Drawing.Point(6, 20);
       this.equipmentListView.Name = "equipmentListView";
-      this.equipmentListView.Size = new System.Drawing.Size(847, 476);
+      this.equipmentListView.Size = new System.Drawing.Size(848, 476);
       this.equipmentListView.TabIndex = 0;
       this.equipmentListView.UseCompatibleStateImageBehavior = false;
       this.equipmentListView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.EquipmentListView_MouseDoubleClick);
       // 
       // panelsGroupBox
       // 
-      this.panelsGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
       this.panelsGroupBox.Controls.Add(this.panelListView);
       this.panelsGroupBox.Location = new System.Drawing.Point(12, 13);
       this.panelsGroupBox.Name = "panelsGroupBox";
-      this.panelsGroupBox.Size = new System.Drawing.Size(860, 232);
+      this.panelsGroupBox.Size = new System.Drawing.Size(420, 232);
       this.panelsGroupBox.TabIndex = 2;
       this.panelsGroupBox.TabStop = false;
       this.panelsGroupBox.Text = "Panels";
@@ -230,7 +231,7 @@
       this.panelListView.HideSelection = false;
       this.panelListView.Location = new System.Drawing.Point(6, 19);
       this.panelListView.Name = "panelListView";
-      this.panelListView.Size = new System.Drawing.Size(848, 207);
+      this.panelListView.Size = new System.Drawing.Size(408, 207);
       this.panelListView.TabIndex = 0;
       this.panelListView.UseCompatibleStateImageBehavior = false;
       this.panelListView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.PanelListView_MouseDoubleClick);
@@ -268,23 +269,47 @@
       this.recalculateDistancesButton.UseVisualStyleBackColor = true;
       this.recalculateDistancesButton.Click += new System.EventHandler(this.RecalculateDistancesButton_Click);
       // 
+      // transformerGroupBox
+      // 
+      this.transformerGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+      this.transformerGroupBox.Controls.Add(this.listView1);
+      this.transformerGroupBox.Location = new System.Drawing.Point(439, 13);
+      this.transformerGroupBox.Name = "transformerGroupBox";
+      this.transformerGroupBox.Size = new System.Drawing.Size(433, 232);
+      this.transformerGroupBox.TabIndex = 6;
+      this.transformerGroupBox.TabStop = false;
+      this.transformerGroupBox.Text = "Transformers";
+      // 
+      // listView1
+      // 
+      this.listView1.HideSelection = false;
+      this.listView1.Location = new System.Drawing.Point(7, 19);
+      this.listView1.Name = "listView1";
+      this.listView1.Size = new System.Drawing.Size(420, 207);
+      this.listView1.TabIndex = 0;
+      this.listView1.UseCompatibleStateImageBehavior = false;
+      // 
       // EquipmentDialogWindow
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.ClientSize = new System.Drawing.Size(884, 861);
+      this.Controls.Add(this.transformerGroupBox);
       this.Controls.Add(this.recalculateDistancesButton);
       this.Controls.Add(this.placeAllButton);
       this.Controls.Add(this.placeSelectedButton);
       this.Controls.Add(this.panelsGroupBox);
       this.Controls.Add(this.equipmentGroupBox);
       this.Controls.Add(this.filtersGroupBox);
+      this.MaximumSize = new System.Drawing.Size(900, 1200);
+      this.MinimumSize = new System.Drawing.Size(900, 500);
       this.Name = "EquipmentDialogWindow";
       this.Text = "EquipmentDialogWindow";
       this.filtersGroupBox.ResumeLayout(false);
       this.filtersGroupBox.PerformLayout();
       this.equipmentGroupBox.ResumeLayout(false);
       this.panelsGroupBox.ResumeLayout(false);
+      this.transformerGroupBox.ResumeLayout(false);
       this.ResumeLayout(false);
 
     }
@@ -310,5 +335,7 @@
     private System.Windows.Forms.Button placeSelectedButton;
     private System.Windows.Forms.Button placeAllButton;
     private System.Windows.Forms.Button recalculateDistancesButton;
+    private System.Windows.Forms.GroupBox transformerGroupBox;
+    private System.Windows.Forms.ListView listView1;
   }
 }
