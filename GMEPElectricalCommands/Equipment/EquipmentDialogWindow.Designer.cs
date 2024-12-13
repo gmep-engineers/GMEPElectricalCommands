@@ -82,10 +82,16 @@
       // filterCategoryComboBox
       // 
       this.filterCategoryComboBox.FormattingEnabled = true;
+      this.filterCategoryComboBox.Items.AddRange(new object[] {
+            "General",
+            "Lighting",
+            "Mechanical",
+            "Plumbing"});
       this.filterCategoryComboBox.Location = new System.Drawing.Point(605, 22);
       this.filterCategoryComboBox.Name = "filterCategoryComboBox";
       this.filterCategoryComboBox.Size = new System.Drawing.Size(121, 21);
       this.filterCategoryComboBox.TabIndex = 9;
+      this.filterCategoryComboBox.SelectedIndexChanged += new System.EventHandler(this.FilterCategoryComboBox_SelectedIndexChanged);
       // 
       // filterCategoryLabel
       // 
@@ -102,6 +108,7 @@
       this.filterEquipNoTextBox.Name = "filterEquipNoTextBox";
       this.filterEquipNoTextBox.Size = new System.Drawing.Size(100, 20);
       this.filterEquipNoTextBox.TabIndex = 7;
+      this.filterEquipNoTextBox.KeyUp += new System.Windows.Forms.KeyEventHandler(this.FilterEquipNoTextBox_KeyUp);
       // 
       // filterEquipNoLabel
       // 
@@ -131,6 +138,7 @@
       this.filterPhaseComboBox.Name = "filterPhaseComboBox";
       this.filterPhaseComboBox.Size = new System.Drawing.Size(50, 21);
       this.filterPhaseComboBox.TabIndex = 4;
+      this.filterPhaseComboBox.SelectedIndexChanged += new System.EventHandler(this.FilterPhaseComboBox_SelectedIndexChanged);
       // 
       // filterVoltageComboBox
       // 

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing.Text;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Forms;
+using System.Windows.Input;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
@@ -31,7 +33,7 @@ namespace ElectricalCommands.Equipment
       string eqId = "",
       string pId = "",
       string pName = "",
-      string eqName = "",
+      string eqNo = "",
       string desc = "",
       string cat = "",
       int volts = 0,
@@ -44,7 +46,7 @@ namespace ElectricalCommands.Equipment
       equipId = eqId;
       parentId = pId;
       parentName = pName;
-      equipNo = eqName;
+      equipNo = eqNo.ToUpper();
       description = desc;
       category = cat;
       voltage = volts;
@@ -100,6 +102,7 @@ namespace ElectricalCommands.Equipment
     private List<ListViewItem> panelListViewList;
     private List<Panel> panelList;
     private string projectId;
+    private bool isLoading;
 
     public GmepDatabase gmepDb = new GmepDatabase();
 
@@ -127,6 +130,7 @@ namespace ElectricalCommands.Equipment
       CreatePanelListView();
       ResetLocations();
       CalculateDistances();
+      isLoading = false;
     }
 
     private void CreateEquipmentListView(bool updateOnly = false)
@@ -139,6 +143,41 @@ namespace ElectricalCommands.Equipment
       equipmentListView.FullRowSelect = true;
       foreach (Equipment equipment in equipmentList)
       {
+        if (!String.IsNullOrEmpty(filterPanel) && equipment.parentName != filterPanel)
+        {
+          continue;
+        }
+        if (!String.IsNullOrEmpty(filterVoltage) && equipment.voltage.ToString() != filterVoltage)
+        {
+          continue;
+        }
+        if (
+          !String.IsNullOrEmpty(filterPhase)
+          && filterPhase.ToString() == "1"
+          && equipment.is3Phase
+        )
+        {
+          continue;
+        }
+        if (
+          !String.IsNullOrEmpty(filterPhase)
+          && filterPhase.ToString() == "3"
+          && !equipment.is3Phase
+        )
+        {
+          continue;
+        }
+        if (!String.IsNullOrEmpty(filterEquipNo) && equipment.equipNo != filterEquipNo)
+        {
+          continue;
+        }
+        if (
+          !String.IsNullOrEmpty(filterCategory)
+          && equipment.category.ToUpper() != filterCategory.ToUpper()
+        )
+        {
+          continue;
+        }
         ListViewItem item = new ListViewItem(equipment.equipNo, 0);
         item.SubItems.Add(equipment.description);
         item.SubItems.Add(equipment.category);
@@ -227,6 +266,10 @@ namespace ElectricalCommands.Equipment
         item.SubItems.Add(panel.equipId);
         item.SubItems.Add(panel.parentId);
         panelListView.Items.Add(item);
+        if (!updateOnly)
+        {
+          filterPanelComboBox.Items.Add(panel.name);
+        }
       }
       if (!updateOnly)
       {
@@ -235,16 +278,6 @@ namespace ElectricalCommands.Equipment
         panelListView.Columns.Add("Parent Distance", -2, HorizontalAlignment.Left);
         panelListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
       }
-    }
-
-    private void FilterPanelComboBox_SelectedIndexChanged(object sender, EventArgs e)
-    {
-      filterPanel = GeneralCommands.GetComboBoxValue(filterPanelComboBox);
-    }
-
-    private void FilterVoltageComboBox_SelectedIndexChanged(object sender, EventArgs e)
-    {
-      filterVoltage = GeneralCommands.GetComboBoxValue(filterVoltageComboBox);
     }
 
     private void ResetLocations()
@@ -557,9 +590,10 @@ namespace ElectricalCommands.Equipment
       CreateEquipmentListView(true);
     }
 
-    private void FilterClearButton_Click(object sender, EventArgs e) { }
-
-    private void EquipmentListView_MouseDoubleClick(object sender, MouseEventArgs e)
+    private void EquipmentListView_MouseDoubleClick(
+      object sender,
+      System.Windows.Forms.MouseEventArgs e
+    )
     {
       using (
         DocumentLock docLock =
@@ -595,7 +629,10 @@ namespace ElectricalCommands.Equipment
       CalculateDistances();
     }
 
-    private void PanelListView_MouseDoubleClick(object sender, MouseEventArgs e)
+    private void PanelListView_MouseDoubleClick(
+      object sender,
+      System.Windows.Forms.MouseEventArgs e
+    )
     {
       using (
         DocumentLock docLock =
@@ -741,6 +778,63 @@ namespace ElectricalCommands.Equipment
     {
       ResetLocations();
       CalculateDistances();
+    }
+
+    private void FilterClearButton_Click(object sender, EventArgs e)
+    {
+      isLoading = true;
+      filterPanelComboBox.SelectedIndex = -1;
+      filterVoltageComboBox.SelectedIndex = -1;
+      filterPhaseComboBox.SelectedIndex = -1;
+      filterCategoryComboBox.SelectedIndex = -1;
+      filterEquipNoTextBox.Clear();
+      isLoading = false;
+      CreateEquipmentListView(true);
+    }
+
+    private void FilterPanelComboBox_SelectedIndexChanged(object sender, EventArgs e)
+    {
+      filterPanel = GeneralCommands.GetComboBoxValue(filterPanelComboBox);
+      if (!isLoading)
+      {
+        CreateEquipmentListView(true);
+      }
+    }
+
+    private void FilterVoltageComboBox_SelectedIndexChanged(object sender, EventArgs e)
+    {
+      filterVoltage = GeneralCommands.GetComboBoxValue(filterVoltageComboBox);
+      if (!isLoading)
+      {
+        CreateEquipmentListView(true);
+      }
+    }
+
+    private void FilterPhaseComboBox_SelectedIndexChanged(object sender, EventArgs e)
+    {
+      filterPhase = GeneralCommands.GetComboBoxValue(filterPhaseComboBox);
+      if (!isLoading)
+      {
+        CreateEquipmentListView(true);
+      }
+    }
+
+    private void FilterCategoryComboBox_SelectedIndexChanged(object sender, EventArgs e)
+    {
+      filterCategory = GeneralCommands.GetComboBoxValue(filterCategoryComboBox);
+      if (!isLoading)
+      {
+        CreateEquipmentListView(true);
+      }
+    }
+
+    private void FilterEquipNoTextBox_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
+    {
+      if (e.KeyCode == Keys.Enter)
+      {
+        filterEquipNo = filterEquipNoTextBox.Text.ToUpper();
+        CreateEquipmentListView(true);
+      }
     }
   }
 }
