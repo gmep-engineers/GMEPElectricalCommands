@@ -214,12 +214,14 @@ namespace ElectricalCommands.Equipment
         equipmentListView.Columns.Add("Phase", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
         ContextMenu contextMenu = new ContextMenu();
-        contextMenu.MenuItems.Add(new MenuItem("Show on plan", new EventHandler(ShowOnPlan_Click)));
+        contextMenu.MenuItems.Add(
+          new MenuItem("Show on plan", new EventHandler(ShowEquipOnPlan_Click))
+        );
         equipmentListView.ContextMenu = contextMenu;
       }
     }
 
-    private void ShowOnPlan_Click(object sender, EventArgs e)
+    private void ShowEquipOnPlan_Click(object sender, EventArgs e)
     {
       if (equipmentListView.SelectedItems.Count > 0)
       {
@@ -227,7 +229,7 @@ namespace ElectricalCommands.Equipment
         string equipId = equipmentListView.SelectedItems[0].SubItems[numSubitems - 2].Text;
         foreach (Equipment eq in equipmentList)
         {
-          if (eq.equipId == equipId && eq.parentDistance != -1)
+          if (eq.equipId == equipId && eq.loc.X != 0 && eq.loc.Y != 0)
           {
             Document doc = Autodesk
               .AutoCAD
@@ -311,6 +313,47 @@ namespace ElectricalCommands.Equipment
         panelListView.Columns.Add("Parent", -2, HorizontalAlignment.Left);
         panelListView.Columns.Add("Parent Distance", -2, HorizontalAlignment.Left);
         panelListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
+        ContextMenu contextMenu = new ContextMenu();
+        contextMenu.MenuItems.Add(
+          new MenuItem("Show on plan", new EventHandler(ShowPanelOnPlan_Click))
+        );
+        panelListView.ContextMenu = contextMenu;
+      }
+    }
+
+    private void ShowPanelOnPlan_Click(object sender, EventArgs e)
+    {
+      if (panelListView.SelectedItems.Count > 0)
+      {
+        int numSubitems = panelListView.SelectedItems[0].SubItems.Count;
+        string equipId = panelListView.SelectedItems[0].SubItems[numSubitems - 2].Text;
+        foreach (Panel p in panelList)
+        {
+          if (p.equipId == equipId && p.loc.X != 0 && p.loc.Y != 0)
+          {
+            Document doc = Autodesk
+              .AutoCAD
+              .ApplicationServices
+              .Application
+              .DocumentManager
+              .MdiActiveDocument;
+
+            Editor ed = doc.Editor;
+            using (var view = ed.GetCurrentView())
+            {
+              var UCS2DCS =
+                (
+                  Matrix3d.Rotation(-view.ViewTwist, view.ViewDirection, view.Target)
+                  * Matrix3d.Displacement(view.Target - Point3d.Origin)
+                  * Matrix3d.PlaneToWorld(view.ViewDirection)
+                ).Inverse() * ed.CurrentUserCoordinateSystem;
+              var center = p.loc.TransformBy(UCS2DCS);
+              view.CenterPoint = new Point2d(center.X, center.Y);
+              ed.SetCurrentView(view);
+            }
+            break;
+          }
+        }
       }
     }
 
