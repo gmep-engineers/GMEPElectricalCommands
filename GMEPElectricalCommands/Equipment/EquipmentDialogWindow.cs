@@ -1,16 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Drawing.Text;
 using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
 using System.Windows.Forms;
-using System.Windows.Input;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
-using Dreambuild.AutoCAD;
 using GMEPElectricalCommands.GmepDatabase;
 
 namespace ElectricalCommands.Equipment
@@ -218,6 +213,45 @@ namespace ElectricalCommands.Equipment
         equipmentListView.Columns.Add("Voltage", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Phase", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
+        ContextMenu contextMenu = new ContextMenu();
+        contextMenu.MenuItems.Add(new MenuItem("Show on plan", new EventHandler(ShowOnPlan_Click)));
+        equipmentListView.ContextMenu = contextMenu;
+      }
+    }
+
+    private void ShowOnPlan_Click(object sender, EventArgs e)
+    {
+      if (equipmentListView.SelectedItems.Count > 0)
+      {
+        int numSubitems = equipmentListView.SelectedItems[0].SubItems.Count;
+        string equipId = equipmentListView.SelectedItems[0].SubItems[numSubitems - 2].Text;
+        foreach (Equipment eq in equipmentList)
+        {
+          if (eq.equipId == equipId && eq.parentDistance != -1)
+          {
+            Document doc = Autodesk
+              .AutoCAD
+              .ApplicationServices
+              .Application
+              .DocumentManager
+              .MdiActiveDocument;
+
+            Editor ed = doc.Editor;
+            using (var view = ed.GetCurrentView())
+            {
+              var UCS2DCS =
+                (
+                  Matrix3d.Rotation(-view.ViewTwist, view.ViewDirection, view.Target)
+                  * Matrix3d.Displacement(view.Target - Point3d.Origin)
+                  * Matrix3d.PlaneToWorld(view.ViewDirection)
+                ).Inverse() * ed.CurrentUserCoordinateSystem;
+              var center = eq.loc.TransformBy(UCS2DCS);
+              view.CenterPoint = new Point2d(center.X, center.Y);
+              ed.SetCurrentView(view);
+            }
+            break;
+          }
+        }
       }
     }
 
@@ -590,10 +624,7 @@ namespace ElectricalCommands.Equipment
       CreateEquipmentListView(true);
     }
 
-    private void EquipmentListView_MouseDoubleClick(
-      object sender,
-      System.Windows.Forms.MouseEventArgs e
-    )
+    private void EquipmentListView_MouseDoubleClick(object sender, MouseEventArgs e)
     {
       using (
         DocumentLock docLock =
@@ -629,10 +660,7 @@ namespace ElectricalCommands.Equipment
       CalculateDistances();
     }
 
-    private void PanelListView_MouseDoubleClick(
-      object sender,
-      System.Windows.Forms.MouseEventArgs e
-    )
+    private void PanelListView_MouseDoubleClick(object sender, MouseEventArgs e)
     {
       using (
         DocumentLock docLock =
@@ -828,7 +856,7 @@ namespace ElectricalCommands.Equipment
       }
     }
 
-    private void FilterEquipNoTextBox_KeyUp(object sender, System.Windows.Forms.KeyEventArgs e)
+    private void FilterEquipNoTextBox_KeyUp(object sender, KeyEventArgs e)
     {
       if (e.KeyCode == Keys.Enter)
       {
