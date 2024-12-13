@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Colors;
@@ -26,6 +28,12 @@ namespace ElectricalCommands.Equipment
         .DocumentManager
         .MdiActiveDocument;
       Editor ed = doc.Editor;
+      string fileName = Path.GetFileName(doc.Name).Substring(0, 6);
+      if (!Regex.IsMatch(fileName, @"[0-9]{2}-[0-9]{3}"))
+      {
+        ed.WriteMessage("\nFilename invalid format. Filename must begin with GMEP project number.");
+        return;
+      }
       try
       {
         if (this.EquipWindow != null && !this.EquipWindow.IsDisposed)

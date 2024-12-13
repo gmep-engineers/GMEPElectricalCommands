@@ -36,7 +36,7 @@ namespace ElectricalCommands.Equipment
       string cat = "",
       int volts = 0,
       bool is3Ph = false,
-      int pDist = 0,
+      int pDist = -1,
       double xLoc = 0,
       double yLoc = 0
     )
@@ -68,7 +68,7 @@ namespace ElectricalCommands.Equipment
       string pId,
       string n,
       string t,
-      int fdrDist = 0,
+      int pDist = -1,
       double xLoc = 0,
       double yLoc = 0
     )
@@ -77,7 +77,7 @@ namespace ElectricalCommands.Equipment
       parentId = pId;
       name = n;
       type = t;
-      parentDistance = fdrDist;
+      parentDistance = pDist;
       loc = new Point3d(xLoc, yLoc, 0);
     }
   }
@@ -94,7 +94,7 @@ namespace ElectricalCommands.Equipment
       equipId = eqId;
       parentId = pId;
       loc = p;
-      parentDistance = 0;
+      parentDistance = -1;
     }
   }
 
@@ -135,6 +135,8 @@ namespace ElectricalCommands.Equipment
       equipmentList = gmepDb.GetEquipment(projectId);
       CreateEquipmentListView();
       CreatePanelListView();
+      ResetLocations();
+      CalculateDistances();
     }
 
     private void CreateEquipmentListView(bool updateOnly = false)
@@ -151,14 +153,28 @@ namespace ElectricalCommands.Equipment
         item.SubItems.Add(equipment.description);
         item.SubItems.Add(equipment.category);
         item.SubItems.Add(equipment.parentName);
-        item.SubItems.Add(equipment.parentDistance.ToString() + "'");
+        if (equipment.parentDistance == -1)
+        {
+          item.SubItems.Add("Not Set");
+        }
+        else
+        {
+          item.SubItems.Add(equipment.parentDistance.ToString() + "'");
+        }
         item.SubItems.Add(equipment.voltage.ToString());
         item.SubItems.Add(equipment.is3Phase ? "3" : "1");
-        item.SubItems.Add(
-          Math.Round(equipment.loc.X / 12, 1).ToString()
-            + ", "
-            + Math.Round(equipment.loc.Y / 12, 1).ToString()
-        );
+        if (equipment.loc.X == 0 && equipment.loc.Y == 0)
+        {
+          item.SubItems.Add("Not Set");
+        }
+        else
+        {
+          item.SubItems.Add(
+            Math.Round(equipment.loc.X / 12, 1).ToString()
+              + ", "
+              + Math.Round(equipment.loc.Y / 12, 1).ToString()
+          );
+        }
         item.SubItems.Add(equipment.equipId);
         item.SubItems.Add(equipment.parentId);
         equipmentListView.Items.Add(item);
@@ -188,11 +204,18 @@ namespace ElectricalCommands.Equipment
       {
         ListViewItem item = new ListViewItem(panel.name, 0);
         item.SubItems.Add(panel.type);
-        item.SubItems.Add(
-          Math.Round(panel.loc.X / 12, 1).ToString()
-            + ", "
-            + Math.Round(panel.loc.Y / 12, 1).ToString()
-        );
+        if (panel.loc.X == 0 && panel.loc.Y == 0)
+        {
+          item.SubItems.Add("Not Set");
+        }
+        else
+        {
+          item.SubItems.Add(
+            Math.Round(panel.loc.X / 12, 1).ToString()
+              + ", "
+              + Math.Round(panel.loc.Y / 12, 1).ToString()
+          );
+        }
         item.SubItems.Add(panel.equipId);
         item.SubItems.Add(panel.parentId);
         panelListView.Items.Add(item);
@@ -213,6 +236,89 @@ namespace ElectricalCommands.Equipment
     private void FilterVoltageComboBox_SelectedIndexChanged(object sender, EventArgs e)
     {
       filterVoltage = GeneralCommands.GetComboBoxValue(filterVoltageComboBox);
+    }
+
+    private void ResetLocations()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      Transaction tr = db.TransactionManager.StartTransaction();
+
+      List<string> eqIds = new List<string>();
+      using (tr)
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+        foreach (ObjectId id in modelSpace)
+        {
+          try
+          {
+            BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
+            if (br != null && br.IsDynamicBlock)
+            {
+              DynamicBlockReferencePropertyCollection pc =
+                br.DynamicBlockReferencePropertyCollection;
+              PooledEquipment eq = new PooledEquipment();
+              foreach (DynamicBlockReferenceProperty prop in pc)
+              {
+                if (prop.PropertyName == "gmep_equip_id" && prop.Value as string != "0")
+                {
+                  eqIds.Add(prop.Value as string);
+                }
+              }
+            }
+          }
+          catch { }
+        }
+      }
+      for (int i = 0; i < equipmentList.Count; i++)
+      {
+        bool found = false;
+        foreach (string eqId in eqIds)
+        {
+          if (eqId == equipmentList[i].equipId)
+          {
+            found = true;
+            break;
+          }
+        }
+        if (!found)
+        {
+          Equipment eq = equipmentList[i];
+          eq.loc = new Point3d(0, 0, 0);
+          eq.parentDistance = -1;
+          equipmentList[i] = eq;
+          gmepDb.UpdateEquipment(eq);
+        }
+      }
+      for (int i = 0; i < panelList.Count; i++)
+      {
+        bool found = false;
+        foreach (string eqId in eqIds)
+        {
+          if (eqId == panelList[i].equipId)
+          {
+            found = true;
+            break;
+          }
+        }
+        if (!found)
+        {
+          Panel panel = panelList[i];
+          panel.loc = new Point3d(0, 0, 0);
+          panel.parentDistance = -1;
+          panelList[i] = panel;
+          gmepDb.UpdatePanel(panel);
+        }
+      }
     }
 
     private Point3d PlaceEquipment(string equipId, string parentId, string equipNo)
@@ -624,6 +730,7 @@ namespace ElectricalCommands.Equipment
 
     private void RecalculateDistancesButton_Click(object sender, EventArgs e)
     {
+      ResetLocations();
       CalculateDistances();
     }
   }
