@@ -39,13 +39,6 @@ namespace GMEPElectricalCommands.GmepDatabase
     public List<Panel> GetPanels(string projectId)
     {
       List<Panel> panels = new List<Panel>();
-      //string query =
-      //  @"
-      //  SELECT * FROM electrical_panels
-      //  WHERE electrical_panels.project_id = @projectId
-      //  UNION
-      //  SELECT * FROM electrical_transformers
-      //  WHERE electrical_transformers.project_id = @projectId";
       string query =
         @"
         SELECT * FROM electrical_panels
@@ -71,6 +64,38 @@ namespace GMEPElectricalCommands.GmepDatabase
       }
       reader.Close();
       return panels;
+    }
+
+    public List<Transformer> GetTransformers(string projectId)
+    {
+      List<Transformer> xfmrs = new List<Transformer>();
+      string query =
+        @"
+        SELECT * FROM electrical_transformers
+        LEFT JOIN electrical_transformer_kva_ratings
+        ON electrical_transformer_kva_ratings.id = electrical_transformers.kva_id
+        LEFT JOIN electrical_transformer_voltages
+        ON electrical_transformer_voltages.id = electrical_transformers.voltage_id
+        WHERE electrical_transformers.project_id = @projectId";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read())
+      {
+        xfmrs.Add(
+          new Transformer(
+            reader.GetString("id"),
+            reader.GetString("parent_id"),
+            reader.GetString("name"),
+            reader.GetInt32("parent_distance"),
+            reader.GetFloat("loc_x"),
+            reader.GetFloat("loc_y")
+          )
+        );
+      }
+      reader.Close();
+      return xfmrs;
     }
 
     public List<Equipment> GetEquipment(string projectId)

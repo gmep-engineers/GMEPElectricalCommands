@@ -43,7 +43,7 @@
       this.placeAllButton = new System.Windows.Forms.Button();
       this.recalculateDistancesButton = new System.Windows.Forms.Button();
       this.transformerGroupBox = new System.Windows.Forms.GroupBox();
-      this.listView1 = new System.Windows.Forms.ListView();
+      this.transformerListView = new System.Windows.Forms.ListView();
       this.filtersGroupBox.SuspendLayout();
       this.equipmentGroupBox.SuspendLayout();
       this.panelsGroupBox.SuspendLayout();
@@ -272,7 +272,7 @@
       // transformerGroupBox
       // 
       this.transformerGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-      this.transformerGroupBox.Controls.Add(this.listView1);
+      this.transformerGroupBox.Controls.Add(this.transformerListView);
       this.transformerGroupBox.Location = new System.Drawing.Point(439, 13);
       this.transformerGroupBox.Name = "transformerGroupBox";
       this.transformerGroupBox.Size = new System.Drawing.Size(433, 232);
@@ -280,14 +280,14 @@
       this.transformerGroupBox.TabStop = false;
       this.transformerGroupBox.Text = "Transformers";
       // 
-      // listView1
+      // transformerListView
       // 
-      this.listView1.HideSelection = false;
-      this.listView1.Location = new System.Drawing.Point(7, 19);
-      this.listView1.Name = "listView1";
-      this.listView1.Size = new System.Drawing.Size(420, 207);
-      this.listView1.TabIndex = 0;
-      this.listView1.UseCompatibleStateImageBehavior = false;
+      this.transformerListView.HideSelection = false;
+      this.transformerListView.Location = new System.Drawing.Point(7, 19);
+      this.transformerListView.Name = "transformerListView";
+      this.transformerListView.Size = new System.Drawing.Size(420, 207);
+      this.transformerListView.TabIndex = 0;
+      this.transformerListView.UseCompatibleStateImageBehavior = false;
       // 
       // EquipmentDialogWindow
       // 
@@ -304,7 +304,7 @@
       this.MaximumSize = new System.Drawing.Size(900, 1200);
       this.MinimumSize = new System.Drawing.Size(900, 500);
       this.Name = "EquipmentDialogWindow";
-      this.Text = "EquipmentDialogWindow";
+      this.Text = "Electrical Equipment";
       this.filtersGroupBox.ResumeLayout(false);
       this.filtersGroupBox.PerformLayout();
       this.equipmentGroupBox.ResumeLayout(false);
@@ -336,6 +336,6 @@
     private System.Windows.Forms.Button placeAllButton;
     private System.Windows.Forms.Button recalculateDistancesButton;
     private System.Windows.Forms.GroupBox transformerGroupBox;
-    private System.Windows.Forms.ListView listView1;
+    private System.Windows.Forms.ListView transformerListView;
   }
 }

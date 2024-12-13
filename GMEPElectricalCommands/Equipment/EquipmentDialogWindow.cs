@@ -14,8 +14,8 @@ namespace ElectricalCommands.Equipment
   {
     public string equipId,
       parentId,
-      parentName,
-      objectId;
+      parentName;
+
     public string equipNo,
       description,
       category;
@@ -69,6 +69,31 @@ namespace ElectricalCommands.Equipment
     }
   }
 
+  public struct Transformer
+  {
+    public string equipId,
+      name,
+      parentId;
+    public Point3d loc;
+    public int parentDistance;
+
+    public Transformer(
+      string id,
+      string pId,
+      string n,
+      int pDist = -1,
+      double xLoc = 0,
+      double yLoc = 0
+    )
+    {
+      equipId = id;
+      parentId = pId;
+      name = n;
+      parentDistance = pDist;
+      loc = new Point3d(xLoc, yLoc, 0);
+    }
+  }
+
   public struct PooledEquipment
   {
     public string equipId;
@@ -96,6 +121,8 @@ namespace ElectricalCommands.Equipment
     private List<Equipment> equipmentList;
     private List<ListViewItem> panelListViewList;
     private List<Panel> panelList;
+    private List<ListViewItem> transformerListViewList;
+    private List<Transformer> transformerList;
     private string projectId;
     private bool isLoading;
 
@@ -121,8 +148,10 @@ namespace ElectricalCommands.Equipment
       projectId = gmepDb.GetProjectId(projectNo);
       panelList = gmepDb.GetPanels(projectId);
       equipmentList = gmepDb.GetEquipment(projectId);
+      transformerList = gmepDb.GetTransformers(projectId);
       CreateEquipmentListView();
       CreatePanelListView();
+      CreateTransformerListView();
       ResetLocations();
       CalculateDistances();
       isLoading = false;
@@ -348,6 +377,106 @@ namespace ElectricalCommands.Equipment
                   * Matrix3d.PlaneToWorld(view.ViewDirection)
                 ).Inverse() * ed.CurrentUserCoordinateSystem;
               var center = p.loc.TransformBy(UCS2DCS);
+              view.CenterPoint = new Point2d(center.X, center.Y);
+              ed.SetCurrentView(view);
+            }
+            break;
+          }
+        }
+      }
+    }
+
+    private void CreateTransformerListView(bool updateOnly = false)
+    {
+      if (updateOnly)
+      {
+        transformerListView.Items.Clear();
+      }
+      transformerListView.View = View.Details;
+      transformerListView.FullRowSelect = true;
+      foreach (Transformer xfmr in transformerList)
+      {
+        ListViewItem item = new ListViewItem(xfmr.name, 0);
+        if (xfmr.parentDistance == -1)
+        {
+          item.SubItems.Add("Not Set");
+          item.SubItems.Add("Not Set");
+        }
+        else
+        {
+          string parent = "";
+          foreach (Panel p in panelList)
+          {
+            if (p.equipId == xfmr.parentId)
+            {
+              parent = p.name;
+              break;
+            }
+          }
+          item.SubItems.Add(parent);
+          item.SubItems.Add(xfmr.parentDistance.ToString() + "'");
+        }
+        if (xfmr.loc.X == 0 && xfmr.loc.Y == 0)
+        {
+          item.SubItems.Add("Not Set");
+        }
+        else
+        {
+          item.SubItems.Add(
+            Math.Round(xfmr.loc.X / 12, 1).ToString()
+              + ", "
+              + Math.Round(xfmr.loc.Y / 12, 1).ToString()
+          );
+        }
+        item.SubItems.Add(xfmr.equipId);
+        item.SubItems.Add(xfmr.parentId);
+        transformerListView.Items.Add(item);
+        if (!updateOnly)
+        {
+          filterPanelComboBox.Items.Add(xfmr.name);
+        }
+      }
+      if (!updateOnly)
+      {
+        transformerListView.Columns.Add("Name", -2, HorizontalAlignment.Left);
+        transformerListView.Columns.Add("Parent", -2, HorizontalAlignment.Left);
+        transformerListView.Columns.Add("Parent Distance", -2, HorizontalAlignment.Left);
+        transformerListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
+        ContextMenu contextMenu = new ContextMenu();
+        contextMenu.MenuItems.Add(
+          new MenuItem("Show on plan", new EventHandler(ShowTransformerOnPlan_Click))
+        );
+        transformerListView.ContextMenu = contextMenu;
+      }
+    }
+
+    private void ShowTransformerOnPlan_Click(object sender, EventArgs e)
+    {
+      if (transformerListView.SelectedItems.Count > 0)
+      {
+        int numSubitems = transformerListView.SelectedItems[0].SubItems.Count;
+        string equipId = transformerListView.SelectedItems[0].SubItems[numSubitems - 2].Text;
+        foreach (Transformer t in transformerList)
+        {
+          if (t.equipId == equipId && t.loc.X != 0 && t.loc.Y != 0)
+          {
+            Document doc = Autodesk
+              .AutoCAD
+              .ApplicationServices
+              .Application
+              .DocumentManager
+              .MdiActiveDocument;
+
+            Editor ed = doc.Editor;
+            using (var view = ed.GetCurrentView())
+            {
+              var UCS2DCS =
+                (
+                  Matrix3d.Rotation(-view.ViewTwist, view.ViewDirection, view.Target)
+                  * Matrix3d.Displacement(view.Target - Point3d.Origin)
+                  * Matrix3d.PlaneToWorld(view.ViewDirection)
+                ).Inverse() * ed.CurrentUserCoordinateSystem;
+              var center = t.loc.TransformBy(UCS2DCS);
               view.CenterPoint = new Point2d(center.X, center.Y);
               ed.SetCurrentView(view);
             }
