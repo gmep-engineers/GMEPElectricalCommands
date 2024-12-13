@@ -10,106 +10,6 @@ using GMEPElectricalCommands.GmepDatabase;
 
 namespace ElectricalCommands.Equipment
 {
-  public struct Equipment
-  {
-    public string equipId,
-      parentId,
-      parentName;
-
-    public string equipNo,
-      description,
-      category;
-    public int voltage;
-    public bool is3Phase;
-    public int parentDistance;
-    public Point3d loc;
-
-    public Equipment(
-      string eqId = "",
-      string pId = "",
-      string pName = "",
-      string eqNo = "",
-      string desc = "",
-      string cat = "",
-      int volts = 0,
-      bool is3Ph = false,
-      int pDist = -1,
-      double xLoc = 0,
-      double yLoc = 0
-    )
-    {
-      equipId = eqId;
-      parentId = pId;
-      parentName = pName;
-      equipNo = eqNo.ToUpper();
-      description = desc;
-      category = cat;
-      voltage = volts;
-      is3Phase = is3Ph;
-      loc = new Point3d(xLoc, yLoc, 0);
-      parentDistance = pDist;
-    }
-  }
-
-  public struct Panel
-  {
-    public string equipId,
-      name,
-      parentId;
-    public Point3d loc;
-    public int parentDistance;
-
-    public Panel(string id, string pId, string n, int pDist = -1, double xLoc = 0, double yLoc = 0)
-    {
-      equipId = id;
-      parentId = pId;
-      name = n;
-      parentDistance = pDist;
-      loc = new Point3d(xLoc, yLoc, 0);
-    }
-  }
-
-  public struct Transformer
-  {
-    public string equipId,
-      name,
-      parentId;
-    public Point3d loc;
-    public int parentDistance;
-
-    public Transformer(
-      string id,
-      string pId,
-      string n,
-      int pDist = -1,
-      double xLoc = 0,
-      double yLoc = 0
-    )
-    {
-      equipId = id;
-      parentId = pId;
-      name = n;
-      parentDistance = pDist;
-      loc = new Point3d(xLoc, yLoc, 0);
-    }
-  }
-
-  public struct PooledEquipment
-  {
-    public string equipId;
-    public string parentId;
-    public Point3d loc;
-    public int parentDistance;
-
-    public PooledEquipment(string eqId = "0", string pId = "0", Point3d p = new Point3d())
-    {
-      equipId = eqId;
-      parentId = pId;
-      loc = p;
-      parentDistance = -1;
-    }
-  }
-
   public partial class EquipmentDialogWindow : Form
   {
     private string filterPanel;
@@ -191,7 +91,7 @@ namespace ElectricalCommands.Equipment
         {
           continue;
         }
-        if (!String.IsNullOrEmpty(filterEquipNo) && equipment.equipNo != filterEquipNo)
+        if (!String.IsNullOrEmpty(filterEquipNo) && equipment.name != filterEquipNo)
         {
           continue;
         }
@@ -202,7 +102,7 @@ namespace ElectricalCommands.Equipment
         {
           continue;
         }
-        ListViewItem item = new ListViewItem(equipment.equipNo, 0);
+        ListViewItem item = new ListViewItem(equipment.name, 0);
         item.SubItems.Add(equipment.description);
         item.SubItems.Add(equipment.category);
         item.SubItems.Add(equipment.parentName);
@@ -228,7 +128,7 @@ namespace ElectricalCommands.Equipment
               + Math.Round(equipment.loc.Y / 12, 1).ToString()
           );
         }
-        item.SubItems.Add(equipment.equipId);
+        item.SubItems.Add(equipment.id);
         item.SubItems.Add(equipment.parentId);
         equipmentListView.Items.Add(item);
       }
@@ -258,7 +158,7 @@ namespace ElectricalCommands.Equipment
         string equipId = equipmentListView.SelectedItems[0].SubItems[numSubitems - 2].Text;
         foreach (Equipment eq in equipmentList)
         {
-          if (eq.equipId == equipId && eq.loc.X != 0 && eq.loc.Y != 0)
+          if (eq.id == equipId && eq.loc.X != 0 && eq.loc.Y != 0)
           {
             Document doc = Autodesk
               .AutoCAD
@@ -307,7 +207,7 @@ namespace ElectricalCommands.Equipment
           string parent = "";
           foreach (Panel p in panelList)
           {
-            if (p.equipId == panel.parentId)
+            if (p.id == panel.parentId)
             {
               parent = p.name;
               break;
@@ -328,7 +228,7 @@ namespace ElectricalCommands.Equipment
               + Math.Round(panel.loc.Y / 12, 1).ToString()
           );
         }
-        item.SubItems.Add(panel.equipId);
+        item.SubItems.Add(panel.id);
         item.SubItems.Add(panel.parentId);
         panelListView.Items.Add(item);
         if (!updateOnly)
@@ -358,7 +258,7 @@ namespace ElectricalCommands.Equipment
         string equipId = panelListView.SelectedItems[0].SubItems[numSubitems - 2].Text;
         foreach (Panel p in panelList)
         {
-          if (p.equipId == equipId && p.loc.X != 0 && p.loc.Y != 0)
+          if (p.id == equipId && p.loc.X != 0 && p.loc.Y != 0)
           {
             Document doc = Autodesk
               .AutoCAD
@@ -407,7 +307,7 @@ namespace ElectricalCommands.Equipment
           string parent = "";
           foreach (Panel p in panelList)
           {
-            if (p.equipId == xfmr.parentId)
+            if (p.id == xfmr.parentId)
             {
               parent = p.name;
               break;
@@ -428,7 +328,7 @@ namespace ElectricalCommands.Equipment
               + Math.Round(xfmr.loc.Y / 12, 1).ToString()
           );
         }
-        item.SubItems.Add(xfmr.equipId);
+        item.SubItems.Add(xfmr.id);
         item.SubItems.Add(xfmr.parentId);
         transformerListView.Items.Add(item);
         if (!updateOnly)
@@ -458,7 +358,7 @@ namespace ElectricalCommands.Equipment
         string equipId = transformerListView.SelectedItems[0].SubItems[numSubitems - 2].Text;
         foreach (Transformer t in transformerList)
         {
-          if (t.equipId == equipId && t.loc.X != 0 && t.loc.Y != 0)
+          if (t.id == equipId && t.loc.X != 0 && t.loc.Y != 0)
           {
             Document doc = Autodesk
               .AutoCAD
@@ -514,7 +414,6 @@ namespace ElectricalCommands.Equipment
             {
               DynamicBlockReferencePropertyCollection pc =
                 br.DynamicBlockReferencePropertyCollection;
-              PooledEquipment eq = new PooledEquipment();
               foreach (DynamicBlockReferenceProperty prop in pc)
               {
                 if (prop.PropertyName == "gmep_equip_id" && prop.Value as string != "0")
@@ -532,7 +431,7 @@ namespace ElectricalCommands.Equipment
         bool found = false;
         foreach (string eqId in eqIds)
         {
-          if (eqId == equipmentList[i].equipId)
+          if (eqId == equipmentList[i].id)
           {
             found = true;
             break;
@@ -552,7 +451,7 @@ namespace ElectricalCommands.Equipment
         bool found = false;
         foreach (string eqId in eqIds)
         {
-          if (eqId == panelList[i].equipId)
+          if (eqId == panelList[i].id)
           {
             found = true;
             break;
@@ -565,6 +464,26 @@ namespace ElectricalCommands.Equipment
           panel.parentDistance = -1;
           panelList[i] = panel;
           gmepDb.UpdatePanel(panel);
+        }
+      }
+      for (int i = 0; i < transformerList.Count; i++)
+      {
+        bool found = false;
+        foreach (string eqId in eqIds)
+        {
+          if (eqId == transformerList[i].id)
+          {
+            found = true;
+            break;
+          }
+        }
+        if (!found)
+        {
+          Transformer xfmr = transformerList[i];
+          xfmr.loc = new Point3d(0, 0, 0);
+          xfmr.parentDistance = -1;
+          transformerList[i] = xfmr;
+          gmepDb.UpdateTransformer(xfmr);
         }
       }
     }
@@ -694,7 +613,7 @@ namespace ElectricalCommands.Equipment
       Database db = doc.Database;
       Editor ed = doc.Editor;
       Transaction tr = db.TransactionManager.StartTransaction();
-      List<PooledEquipment> pooledEquipment = new List<PooledEquipment>();
+      List<Placeable> pooledEquipment = new List<Placeable>();
       using (tr)
       {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -710,13 +629,13 @@ namespace ElectricalCommands.Equipment
               DynamicBlockReferencePropertyCollection pc =
                 br.DynamicBlockReferencePropertyCollection;
               bool addEquip = false;
-              PooledEquipment eq = new PooledEquipment();
+              Placeable eq = new Placeable();
               foreach (DynamicBlockReferenceProperty prop in pc)
               {
                 if (prop.PropertyName == "gmep_equip_id" && prop.Value as string != "0")
                 {
                   addEquip = true;
-                  eq.equipId = prop.Value as string;
+                  eq.id = prop.Value as string;
                 }
                 if (prop.PropertyName == "gmep_equip_parent_id" && prop.Value as string != "0")
                 {
@@ -727,7 +646,11 @@ namespace ElectricalCommands.Equipment
               eq.loc = br.Position;
               if (addEquip)
               {
-                pooledEquipment.Add(new PooledEquipment(eq.equipId, eq.parentId, eq.loc));
+                Placeable p = new Placeable();
+                p.id = eq.id;
+                p.parentId = eq.parentId;
+                p.loc = eq.loc;
+                pooledEquipment.Add(p);
               }
             }
           }
@@ -738,9 +661,9 @@ namespace ElectricalCommands.Equipment
       {
         for (int j = 0; j < pooledEquipment.Count; j++)
         {
-          if (pooledEquipment[j].parentId == pooledEquipment[i].equipId)
+          if (pooledEquipment[j].parentId == pooledEquipment[i].id)
           {
-            PooledEquipment equip = pooledEquipment[j];
+            Placeable equip = pooledEquipment[j];
             equip.parentDistance = Convert.ToInt32(
               pooledEquipment[j].loc.DistanceTo(pooledEquipment[i].loc) / 12
             );
@@ -753,7 +676,7 @@ namespace ElectricalCommands.Equipment
         bool isMatch = false;
         for (int j = 0; j < equipmentList.Count; j++)
         {
-          if (equipmentList[j].equipId == pooledEquipment[i].equipId)
+          if (equipmentList[j].id == pooledEquipment[i].id)
           {
             isMatch = true;
             Equipment equip = equipmentList[j];
@@ -774,8 +697,9 @@ namespace ElectricalCommands.Equipment
         {
           for (int j = 0; j < panelList.Count; j++)
           {
-            if (panelList[j].equipId == pooledEquipment[i].equipId)
+            if (panelList[j].id == pooledEquipment[i].id)
             {
+              isMatch = true;
               Panel panel = panelList[j];
               if (
                 panel.parentDistance != pooledEquipment[i].parentDistance
@@ -791,8 +715,31 @@ namespace ElectricalCommands.Equipment
             }
           }
         }
+        if (!isMatch)
+        {
+          for (int j = 0; j < transformerList.Count; j++)
+          {
+            if (transformerList[j].id == pooledEquipment[i].id)
+            {
+              isMatch = true;
+              Transformer xfmr = transformerList[j];
+              if (
+                xfmr.parentDistance != pooledEquipment[i].parentDistance
+                || xfmr.loc.X != pooledEquipment[i].loc.X
+                || xfmr.loc.Y != pooledEquipment[i].loc.Y
+              )
+              {
+                xfmr.parentDistance = pooledEquipment[i].parentDistance;
+                xfmr.loc = pooledEquipment[i].loc;
+                transformerList[j] = xfmr;
+                gmepDb.UpdateTransformer(xfmr);
+              }
+            }
+          }
+        }
       }
       CreatePanelListView(true);
+      CreateTransformerListView(true);
       CreateEquipmentListView(true);
     }
 
@@ -820,8 +767,7 @@ namespace ElectricalCommands.Equipment
         {
           Equipment equipment = equipmentList[i];
           if (
-            equipmentList[i].equipId
-            == equipmentListView.SelectedItems[0].SubItems[numSubItems - 2].Text
+            equipmentList[i].id == equipmentListView.SelectedItems[0].SubItems[numSubItems - 2].Text
           )
           {
             equipment.loc = p;
@@ -854,6 +800,31 @@ namespace ElectricalCommands.Equipment
         );
       }
       CreatePanelListView(true);
+      CalculateDistances();
+    }
+
+    private void TransformerListView_MouseDoubleClick(object sender, MouseEventArgs e)
+    {
+      using (
+        DocumentLock docLock =
+          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
+      )
+      {
+        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
+          .AutoCAD
+          .Windows
+          .Window
+          .State
+          .Maximized;
+        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
+        int numSubItems = transformerListView.SelectedItems[0].SubItems.Count;
+        Point3d p = PlaceEquipment(
+          transformerListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
+          transformerListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
+          transformerListView.SelectedItems[0].Text
+        );
+      }
+      CreateTransformerListView(true);
       CalculateDistances();
     }
 
@@ -892,24 +863,47 @@ namespace ElectricalCommands.Equipment
           }
           panelLocs[item.SubItems[numSubItems - 2].Text] = p;
         }
-        if (brk || equipmentListView.SelectedItems.Count == 0)
+        if (
+          !brk
+          && (
+            transformerListView.SelectedItems.Count > 0 || equipmentListView.SelectedItems.Count > 0
+          )
+        )
         {
-          return;
-        }
-        numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
-        Dictionary<string, Point3d> equipLocs = new Dictionary<string, Point3d>();
-        foreach (ListViewItem item in equipmentListView.SelectedItems)
-        {
-          Point3d p = PlaceEquipment(
-            item.SubItems[numSubItems - 2].Text,
-            item.SubItems[numSubItems - 1].Text,
-            item.Text
-          );
-          if (p.X == 0 & p.Y == 0 & p.Z == 0)
+          if (transformerListView.SelectedItems.Count > 0)
           {
-            break;
+            numSubItems = transformerListView.SelectedItems[0].SubItems.Count;
+            foreach (ListViewItem item in transformerListView.SelectedItems)
+            {
+              Point3d p = PlaceEquipment(
+                item.SubItems[numSubItems - 2].Text,
+                item.SubItems[numSubItems - 1].Text,
+                item.Text
+              );
+              if (p.X == 0 & p.Y == 0 & p.Z == 0)
+              {
+                brk = true;
+                break;
+              }
+            }
           }
-          equipLocs[item.SubItems[numSubItems - 2].Text] = p;
+          if (!brk && equipmentListView.SelectedItems.Count > 0)
+          {
+            numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
+            foreach (ListViewItem item in equipmentListView.SelectedItems)
+            {
+              Console.WriteLine(item.Text);
+              Point3d p = PlaceEquipment(
+                item.SubItems[numSubItems - 2].Text,
+                item.SubItems[numSubItems - 1].Text,
+                item.Text
+              );
+              if (p.X == 0 & p.Y == 0 & p.Z == 0)
+              {
+                break;
+              }
+            }
+          }
         }
       }
       CalculateDistances();
@@ -934,7 +928,6 @@ namespace ElectricalCommands.Equipment
         {
           numSubItems = panelListView.Items[0].SubItems.Count;
         }
-        Dictionary<string, Point3d> panelLocs = new Dictionary<string, Point3d>();
         bool brk = false;
         foreach (ListViewItem item in panelListView.Items)
         {
@@ -948,27 +941,42 @@ namespace ElectricalCommands.Equipment
             brk = true;
             break;
           }
-          panelLocs[item.SubItems[numSubItems - 2].Text] = p;
         }
-        if (brk || equipmentListView.Items.Count == 0)
+        if (!brk && (transformerListView.Items.Count > 0 || equipmentListView.Items.Count > 0))
         {
-          CalculateDistances();
-          return;
-        }
-        numSubItems = equipmentListView.Items[0].SubItems.Count;
-        Dictionary<string, Point3d> equipLocs = new Dictionary<string, Point3d>();
-        foreach (ListViewItem item in equipmentListView.Items)
-        {
-          Point3d p = PlaceEquipment(
-            item.SubItems[numSubItems - 2].Text,
-            item.SubItems[numSubItems - 1].Text,
-            item.Text
-          );
-          if (p.X == 0 & p.Y == 0 & p.Z == 0)
+          if (transformerListView.SelectedItems.Count > 0)
           {
-            break;
+            numSubItems = transformerListView.Items[0].SubItems.Count;
+            foreach (ListViewItem item in transformerListView.Items)
+            {
+              Point3d p = PlaceEquipment(
+                item.SubItems[numSubItems - 2].Text,
+                item.SubItems[numSubItems - 1].Text,
+                item.Text
+              );
+              if (p.X == 0 & p.Y == 0 & p.Z == 0)
+              {
+                brk = true;
+                break;
+              }
+            }
           }
-          equipLocs[item.SubItems[numSubItems - 2].Text] = p;
+          if (!brk && equipmentListView.Items.Count > 0)
+          {
+            numSubItems = equipmentListView.Items[0].SubItems.Count;
+            foreach (ListViewItem item in equipmentListView.Items)
+            {
+              Point3d p = PlaceEquipment(
+                item.SubItems[numSubItems - 2].Text,
+                item.SubItems[numSubItems - 1].Text,
+                item.Text
+              );
+              if (p.X == 0 & p.Y == 0 & p.Z == 0)
+              {
+                break;
+              }
+            }
+          }
         }
       }
       CalculateDistances();

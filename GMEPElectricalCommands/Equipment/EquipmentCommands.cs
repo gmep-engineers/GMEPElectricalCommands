@@ -1,15 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
+﻿using System.IO;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.Colors;
-using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 
 namespace ElectricalCommands.Equipment

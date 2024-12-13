@@ -182,7 +182,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       command.Parameters.AddWithValue("@xLoc", equip.loc.X);
       command.Parameters.AddWithValue("@yLoc", equip.loc.Y);
       command.Parameters.AddWithValue("@parentDistance", equip.parentDistance);
-      command.Parameters.AddWithValue("@equipId", equip.equipId);
+      command.Parameters.AddWithValue("@equipId", equip.id);
       command.ExecuteNonQuery();
     }
 
@@ -202,7 +202,27 @@ namespace GMEPElectricalCommands.GmepDatabase
       command.Parameters.AddWithValue("@xLoc", panel.loc.X);
       command.Parameters.AddWithValue("@yLoc", panel.loc.Y);
       command.Parameters.AddWithValue("@parentDistance", panel.parentDistance);
-      command.Parameters.AddWithValue("@equipId", panel.equipId);
+      command.Parameters.AddWithValue("@equipId", panel.id);
+      command.ExecuteNonQuery();
+    }
+
+    public void UpdateTransformer(Transformer xfmr)
+    {
+      string query =
+        @"
+          UPDATE electrical_transformers
+          SET
+          loc_x = @xLoc,
+          loc_y = @yLoc,
+          parent_distance = @parentDistance
+          WHERE id = @equipId;
+          ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@xLoc", xfmr.loc.X);
+      command.Parameters.AddWithValue("@yLoc", xfmr.loc.Y);
+      command.Parameters.AddWithValue("@parentDistance", xfmr.parentDistance);
+      command.Parameters.AddWithValue("@equipId", xfmr.id);
       command.ExecuteNonQuery();
     }
   }

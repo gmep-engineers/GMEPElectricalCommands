@@ -288,6 +288,7 @@
       this.transformerListView.Size = new System.Drawing.Size(420, 207);
       this.transformerListView.TabIndex = 0;
       this.transformerListView.UseCompatibleStateImageBehavior = false;
+      this.transformerListView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.TransformerListView_MouseDoubleClick);
       // 
       // EquipmentDialogWindow
       // 
