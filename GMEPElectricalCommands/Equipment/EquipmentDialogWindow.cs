@@ -25,6 +25,7 @@ namespace ElectricalCommands.Equipment
     private List<Transformer> transformerList;
     private string projectId;
     private bool isLoading;
+    private Dictionary<string, string> services;
 
     public GmepDatabase gmepDb = new GmepDatabase();
 
@@ -49,6 +50,63 @@ namespace ElectricalCommands.Equipment
       panelList = gmepDb.GetPanels(projectId);
       equipmentList = gmepDb.GetEquipment(projectId);
       transformerList = gmepDb.GetTransformers(projectId);
+      services = gmepDb.GetServices(projectId);
+      for (int i = 0; i < panelList.Count; i++)
+      {
+        if (services.ContainsKey(panelList[i].parentId))
+        {
+          Panel panel = panelList[i];
+          panel.parentName = services[panel.parentId];
+          panelList[i] = panel;
+        }
+        else
+        {
+          bool found = false;
+          for (int j = 0; j < panelList.Count; j++)
+          {
+            if (panelList[i].parentId == panelList[j].id)
+            {
+              Panel panel = panelList[i];
+              panel.parentName = panelList[j].name;
+              panelList[i] = panel;
+              found = true;
+            }
+          }
+          if (!found)
+          {
+            for (int j = 0; j < transformerList.Count; j++)
+            {
+              if (panelList[i].parentId == transformerList[j].id)
+              {
+                Panel panel = panelList[i];
+                panel.parentName = transformerList[j].name;
+                panelList[i] = panel;
+              }
+            }
+          }
+        }
+      }
+      for (int i = 0; i < transformerList.Count; i++)
+      {
+        if (services.ContainsKey(transformerList[i].parentId))
+        {
+          Transformer xfmr = transformerList[i];
+          xfmr.parentName = services[xfmr.parentId];
+          transformerList[i] = xfmr;
+        }
+        else
+        {
+          for (int j = 0; j < panelList.Count; j++)
+          {
+            if (transformerList[i].parentId == panelList[j].id)
+            {
+              Transformer xfmr = transformerList[i];
+              xfmr.parentName = panelList[j].name;
+              transformerList[i] = xfmr;
+            }
+          }
+        }
+      }
       CreateEquipmentListView();
       CreatePanelListView();
       CreateTransformerListView();
@@ -197,23 +255,13 @@ namespace ElectricalCommands.Equipment
       foreach (Panel panel in panelList)
       {
         ListViewItem item = new ListViewItem(panel.name, 0);
+        item.SubItems.Add(panel.parentName);
         if (panel.parentDistance == -1)
         {
-          item.SubItems.Add("Not Set");
           item.SubItems.Add("Not Set");
         }
         else
         {
-          string parent = "";
-          foreach (Panel p in panelList)
-          {
-            if (p.id == panel.parentId)
-            {
-              parent = p.name;
-              break;
-            }
-          }
-          item.SubItems.Add(parent);
           item.SubItems.Add(panel.parentDistance.ToString() + "'");
         }
         if (panel.loc.X == 0 && panel.loc.Y == 0)
@@ -297,23 +345,13 @@ namespace ElectricalCommands.Equipment
       foreach (Transformer xfmr in transformerList)
       {
         ListViewItem item = new ListViewItem(xfmr.name, 0);
+        item.SubItems.Add(xfmr.parentName);
         if (xfmr.parentDistance == -1)
         {
-          item.SubItems.Add("Not Set");
           item.SubItems.Add("Not Set");
         }
         else
         {
-          string parent = "";
-          foreach (Panel p in panelList)
-          {
-            if (p.id == xfmr.parentId)
-            {
-              parent = p.name;
-              break;
-            }
-          }
-          item.SubItems.Add(parent);
           item.SubItems.Add(xfmr.parentDistance.ToString() + "'");
         }
         if (xfmr.loc.X == 0 && xfmr.loc.Y == 0)
@@ -944,7 +982,7 @@ namespace ElectricalCommands.Equipment
         }
         if (!brk && (transformerListView.Items.Count > 0 || equipmentListView.Items.Count > 0))
         {
-          if (transformerListView.SelectedItems.Count > 0)
+          if (transformerListView.Items.Count > 0)
           {
             numSubItems = transformerListView.Items[0].SubItems.Count;
             foreach (ListViewItem item in transformerListView.Items)
@@ -996,6 +1034,7 @@ namespace ElectricalCommands.Equipment
       filterPhaseComboBox.SelectedIndex = -1;
       filterCategoryComboBox.SelectedIndex = -1;
       filterEquipNoTextBox.Clear();
+      filterEquipNo = "";
       isLoading = false;
       CreateEquipmentListView(true);
     }

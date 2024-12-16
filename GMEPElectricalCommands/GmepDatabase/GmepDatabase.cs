@@ -36,6 +36,24 @@ namespace GMEPElectricalCommands.GmepDatabase
       }
     }
 
+    public Dictionary<string, string> GetServices(string projectId)
+    {
+      Dictionary<string, string> services = new Dictionary<string, string>();
+      string query =
+        @"SELECT `id`, `name` FROM `electrical_services`
+          WHERE `project_id` = @projectId";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read())
+      {
+        services[reader.GetString("id")] = reader.GetString("name");
+      }
+      reader.Close();
+      return services;
+    }
+
     public List<Panel> GetPanels(string projectId)
     {
       List<Panel> panels = new List<Panel>();
