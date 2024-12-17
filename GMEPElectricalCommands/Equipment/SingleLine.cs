@@ -36,6 +36,11 @@ namespace ElectricalCommands.Equipment
       }
     }
 
+    public void SetChildEndingPoint(Point3d endingPoint)
+    {
+      this.endingPoint = endingPoint;
+    }
+
     public virtual void Make()
     {
       foreach (SingleLine child in children)
@@ -99,7 +104,7 @@ namespace ElectricalCommands.Equipment
     public SLPanel(string id, string name)
     {
       type = "panel";
-      width = 1;
+      width = 2;
       this.name = name;
       this.id = id;
     }
@@ -112,10 +117,17 @@ namespace ElectricalCommands.Equipment
         double offset = 0.5;
         foreach (SingleLine child in children)
         {
-          SetChildStartingPoints(
+          child.SetChildEndingPoint(
             new Point3d(
               startingPoint.X + (child.width / 2) + offset,
-              startingPoint.Y,
+              startingPoint.Y - 5,
+              startingPoint.Z
+            )
+          );
+          child.SetChildStartingPoints(
+            new Point3d(
+              startingPoint.X + (child.width / 2) + offset,
+              startingPoint.Y - 0.25,
               startingPoint.Z
             )
           );
@@ -125,7 +137,16 @@ namespace ElectricalCommands.Equipment
       else
       {
         int index = 0;
-        foreach (SingleLine child in children) { }
+        foreach (SingleLine child in children)
+        {
+          if (index == 0)
+          {
+            child.SetChildEndingPoint(new Point3d(endingPoint.X + 1, endingPoint.Y - 3.25, 0));
+            child.SetChildStartingPoints(
+              new Point3d(endingPoint.X + (5 / 16), endingPoint.Y - (7 / 8), 0)
+            );
+          }
+        }
         if (children.Count == 1) { }
         if (children.Count == 2) { }
         if (children.Count == 3) { }
