@@ -229,6 +229,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Equipment\Placeable.cs" />
+    <Compile Include="Equipment\SingleLine.cs" />
     <Compile Include="GmepDatabase\GmepDatabase.cs" />
     <Compile Include="Equipment\EquipmentCommands.cs" />
     <Compile Include="Equipment\EquipmentDialogWindow.cs">

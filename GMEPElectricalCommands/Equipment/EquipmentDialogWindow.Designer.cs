@@ -44,6 +44,7 @@
       this.recalculateDistancesButton = new System.Windows.Forms.Button();
       this.transformerGroupBox = new System.Windows.Forms.GroupBox();
       this.transformerListView = new System.Windows.Forms.ListView();
+      this.makeSingleLineButton = new System.Windows.Forms.Button();
       this.filtersGroupBox.SuspendLayout();
       this.equipmentGroupBox.SuspendLayout();
       this.panelsGroupBox.SuspendLayout();
@@ -290,11 +291,22 @@
       this.transformerListView.UseCompatibleStateImageBehavior = false;
       this.transformerListView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.TransformerListView_MouseDoubleClick);
       // 
+      // makeSingleLineButton
+      // 
+      this.makeSingleLineButton.Location = new System.Drawing.Point(581, 826);
+      this.makeSingleLineButton.Name = "makeSingleLineButton";
+      this.makeSingleLineButton.Size = new System.Drawing.Size(130, 23);
+      this.makeSingleLineButton.TabIndex = 7;
+      this.makeSingleLineButton.Text = "Make Single Line";
+      this.makeSingleLineButton.UseVisualStyleBackColor = true;
+      this.makeSingleLineButton.Click += new System.EventHandler(this.MakeSingleLineButton_Click);
+      // 
       // EquipmentDialogWindow
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.ClientSize = new System.Drawing.Size(884, 861);
+      this.Controls.Add(this.makeSingleLineButton);
       this.Controls.Add(this.transformerGroupBox);
       this.Controls.Add(this.recalculateDistancesButton);
       this.Controls.Add(this.placeAllButton);
@@ -338,5 +350,6 @@
     private System.Windows.Forms.Button recalculateDistancesButton;
     private System.Windows.Forms.GroupBox transformerGroupBox;
     private System.Windows.Forms.ListView transformerListView;
+    private System.Windows.Forms.Button makeSingleLineButton;
   }
 }

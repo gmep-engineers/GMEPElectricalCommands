@@ -6,6 +6,7 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using GMEPElectricalCommands.GmepDatabase;
 
 namespace ElectricalCommands.Equipment
@@ -580,6 +581,10 @@ namespace ElectricalCommands.Equipment
         if (promptResult.Status != PromptStatus.OK)
           return new Point3d(0, 0, 0);
         point = promptResult.Value;
+        if (point.X == 0 && point.Y == 0 && point.Z == 0)
+        {
+          point = new Point3d(0.01, 0, 0);
+        }
         try
         {
           BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -930,7 +935,6 @@ namespace ElectricalCommands.Equipment
             numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
             foreach (ListViewItem item in equipmentListView.SelectedItems)
             {
-              Console.WriteLine(item.Text);
               Point3d p = PlaceEquipment(
                 item.SubItems[numSubItems - 2].Text,
                 item.SubItems[numSubItems - 1].Text,
@@ -1082,6 +1086,94 @@ namespace ElectricalCommands.Equipment
         filterEquipNo = filterEquipNoTextBox.Text.ToUpper();
         CreateEquipmentListView(true);
       }
+    }
+
+    private void MakeSingleLineNodeTreeFromPanel(SLPanel panel)
+    {
+      foreach (Panel p in panelList)
+      {
+        if (p.parentId == panel.id)
+        {
+          SLPanel childPanel = new SLPanel(p.id, p.name);
+          MakeSingleLineNodeTreeFromPanel(childPanel);
+          panel.children.Add(childPanel);
+        }
+      }
+      foreach (Transformer t in transformerList)
+      {
+        if (t.parentId == panel.id)
+        {
+          SLTransformer childXfmr = new SLTransformer(t.id, t.name);
+          MakeSingleLineNodeTreeFromTransformer(childXfmr);
+          panel.children.Add(childXfmr);
+        }
+      }
+    }
+
+    private void MakeSingleLineNodeTreeFromTransformer(SLTransformer transformer)
+    {
+      foreach (Panel p in panelList)
+      {
+        if (p.parentId == transformer.id)
+        {
+          SLPanel childPanel = new SLPanel(p.id, p.name);
+          MakeSingleLineNodeTreeFromPanel(childPanel);
+          transformer.children.Add(childPanel);
+        }
+      }
+    }
+
+    private void MakeSingleLineNodeTreeFromService(SLServiceFeeder sf)
+    {
+      foreach (Panel panel in panelList)
+      {
+        if (panel.parentId == sf.id)
+        {
+          SLPanel p = new SLPanel(panel.id, panel.name);
+          MakeSingleLineNodeTreeFromPanel(p);
+          sf.children.Add(p);
+        }
+      }
+    }
+
+    private SingleLine MakeSingleLineNodeTree()
+    {
+      SingleLine singleLine = new SingleLine();
+      foreach (KeyValuePair<string, string> kv in services)
+      {
+        SLServiceFeeder sf = new SLServiceFeeder(kv.Key, kv.Value);
+        MakeSingleLineNodeTreeFromService(sf);
+        sf.children.Add(sf);
+      }
+      return singleLine;
+    }
+
+    private void MakeSingleLineButton_Click(object sender, EventArgs e)
+    {
+      Point3d startingPoint;
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        var promptOptions = new PromptPointOptions("\nSelect upper left point:");
+        var promptResult = ed.GetPoint(promptOptions);
+        if (promptResult.Status == PromptStatus.OK)
+          startingPoint = promptResult.Value;
+        else
+        {
+          return;
+        }
+      }
+      SingleLine singleLineNodeTree = MakeSingleLineNodeTree();
+      singleLineNodeTree.AggregateWidths();
+      singleLineNodeTree.SetChildStartingPoints(startingPoint);
+      singleLineNodeTree.Make();
     }
   }
 }
