@@ -36,19 +36,31 @@ namespace GMEPElectricalCommands.GmepDatabase
       }
     }
 
-    public Dictionary<string, string> GetServices(string projectId)
+    public List<Service> GetServices(string projectId)
     {
-      Dictionary<string, string> services = new Dictionary<string, string>();
+      List<Service> services = new List<Service>();
       string query =
-        @"SELECT `id`, `name` FROM `electrical_services`
-          WHERE `project_id` = @projectId";
+        @"SELECT 
+          electrical_services.id,
+          electrical_services.name,
+          electrical_service_meter_configs.meter_config
+          FROM `electrical_services`
+          LEFT JOIN electrical_service_meter_configs
+          ON electrical_services.electrical_service_meter_config_id = electrical_service_meter_configs.id
+          WHERE electrical_services.project_id = @projectId";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("projectId", projectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
-        services[reader.GetString("id")] = reader.GetString("name");
+        services.Add(
+          new Service(
+            reader.GetString("id"),
+            reader.GetString("name"),
+            reader.GetString("meter_config")
+          )
+        );
       }
       reader.Close();
       return services;
@@ -59,7 +71,16 @@ namespace GMEPElectricalCommands.GmepDatabase
       List<Panel> panels = new List<Panel>();
       string query =
         @"
-        SELECT * FROM electrical_panels
+        SELECT
+        electrical_panels.id,
+        electrical_panels.parent_id,
+        electrical_panels.name,
+        electrical_panels.parent_distance,
+        electrical_panels.loc_x,
+        electrical_panels.loc_y,
+        electrical_panels.is_distribution,
+        electrical_panel_bus_amp_ratings.amp_rating
+        FROM electrical_panels
         LEFT JOIN electrical_panel_bus_amp_ratings
         ON electrical_panel_bus_amp_ratings.id = electrical_panels.bus_amp_rating_id
         WHERE electrical_panels.project_id = @projectId";
@@ -76,7 +97,10 @@ namespace GMEPElectricalCommands.GmepDatabase
             reader.GetString("name"),
             reader.GetInt32("parent_distance"),
             reader.GetFloat("loc_x"),
-            reader.GetFloat("loc_y")
+            reader.GetFloat("loc_y"),
+            reader.GetInt32("is_distribution"),
+            0,
+            reader.GetInt32("amp_rating")
           )
         );
       }

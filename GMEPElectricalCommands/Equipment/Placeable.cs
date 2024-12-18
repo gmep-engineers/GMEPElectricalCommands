@@ -48,13 +48,30 @@ namespace ElectricalCommands.Equipment
 
   public class Panel : Placeable
   {
-    public Panel(string _id, string pId, string n, int pDist = -1, double xLoc = 0, double yLoc = 0)
+    public bool isDistribution;
+    public bool isMultiMeter;
+    public int busSize;
+
+    public Panel(
+      string _id,
+      string pId,
+      string n,
+      int pDist = -1,
+      double xLoc = 0,
+      double yLoc = 0,
+      int isDistrib = 0,
+      int isMm = 0,
+      int bus = 0
+    )
     {
       id = _id;
       parentId = pId;
       name = n;
       parentDistance = pDist;
       loc = new Point3d(xLoc, yLoc, 0);
+      isDistribution = isDistrib == 1;
+      isMultiMeter = isMm == 1;
+      busSize = bus;
     }
   }
 

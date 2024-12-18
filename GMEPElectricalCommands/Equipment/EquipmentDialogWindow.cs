@@ -11,6 +11,20 @@ using GMEPElectricalCommands.GmepDatabase;
 
 namespace ElectricalCommands.Equipment
 {
+  public struct Service
+  {
+    public string id;
+    public string name;
+    public bool isMultiMeter;
+
+    public Service(string id, string name, string meterConfig)
+    {
+      this.id = id;
+      this.name = name;
+      isMultiMeter = meterConfig == "MULTIMETER";
+    }
+  }
+
   public partial class EquipmentDialogWindow : Form
   {
     private string filterPanel;
@@ -26,8 +40,7 @@ namespace ElectricalCommands.Equipment
     private List<Transformer> transformerList;
     private string projectId;
     private bool isLoading;
-    private Dictionary<string, string> services;
-
+    private List<Service> services;
     public GmepDatabase gmepDb = new GmepDatabase();
 
     public EquipmentDialogWindow(EquipmentCommands EquipCommands)
@@ -54,34 +67,37 @@ namespace ElectricalCommands.Equipment
       services = gmepDb.GetServices(projectId);
       for (int i = 0; i < panelList.Count; i++)
       {
-        if (services.ContainsKey(panelList[i].parentId))
+        foreach (Service service in services)
         {
-          Panel panel = panelList[i];
-          panel.parentName = services[panel.parentId];
-          panelList[i] = panel;
-        }
-        else
-        {
-          bool found = false;
-          for (int j = 0; j < panelList.Count; j++)
+          if (service.id == panelList[i].parentId)
           {
-            if (panelList[i].parentId == panelList[j].id)
-            {
-              Panel panel = panelList[i];
-              panel.parentName = panelList[j].name;
-              panelList[i] = panel;
-              found = true;
-            }
+            Panel panel = panelList[i];
+            panel.parentName = service.name;
+            panelList[i] = panel;
           }
-          if (!found)
+          else
           {
-            for (int j = 0; j < transformerList.Count; j++)
+            bool found = false;
+            for (int j = 0; j < panelList.Count; j++)
             {
-              if (panelList[i].parentId == transformerList[j].id)
+              if (panelList[i].parentId == panelList[j].id)
               {
                 Panel panel = panelList[i];
-                panel.parentName = transformerList[j].name;
+                panel.parentName = panelList[j].name;
                 panelList[i] = panel;
+                found = true;
+              }
+            }
+            if (!found)
+            {
+              for (int j = 0; j < transformerList.Count; j++)
+              {
+                if (panelList[i].parentId == transformerList[j].id)
+                {
+                  Panel panel = panelList[i];
+                  panel.parentName = transformerList[j].name;
+                  panelList[i] = panel;
+                }
               }
             }
           }
@@ -89,21 +105,24 @@ namespace ElectricalCommands.Equipment
       }
       for (int i = 0; i < transformerList.Count; i++)
       {
-        if (services.ContainsKey(transformerList[i].parentId))
+        foreach (Service service in services)
         {
-          Transformer xfmr = transformerList[i];
-          xfmr.parentName = services[xfmr.parentId];
-          transformerList[i] = xfmr;
-        }
-        else
-        {
-          for (int j = 0; j < panelList.Count; j++)
+          if (service.id == transformerList[i].parentId)
           {
-            if (transformerList[i].parentId == panelList[j].id)
+            Transformer xfmr = transformerList[i];
+            xfmr.parentName = service.name;
+            transformerList[i] = xfmr;
+          }
+          else
+          {
+            for (int j = 0; j < panelList.Count; j++)
             {
-              Transformer xfmr = transformerList[i];
-              xfmr.parentName = panelList[j].name;
-              transformerList[i] = xfmr;
+              if (transformerList[i].parentId == panelList[j].id)
+              {
+                Transformer xfmr = transformerList[i];
+                xfmr.parentName = panelList[j].name;
+                transformerList[i] = xfmr;
+              }
             }
           }
         }
@@ -625,8 +644,6 @@ namespace ElectricalCommands.Equipment
             attrDef.WidthFactor = 0.85;
             attrDef.Layer = "DEFPOINTS";
 
-            acCurSpaceBlkTblRec.AppendEntity(attrDef);
-
             AttributeReference attrRef = new AttributeReference();
 
             attrRef.SetAttributeFromBlock(attrDef, acBlkRef.BlockTransform);
@@ -1094,7 +1111,19 @@ namespace ElectricalCommands.Equipment
       {
         if (p.parentId == panel.id)
         {
-          SLPanel childPanel = new SLPanel(p.id, p.name);
+          SLPanel childPanel = new SLPanel(p.id, p.name, false, false, p.parentDistance);
+          if (panel.isDistribution)
+          {
+            if (!panel.hasMeter)
+            {
+              childPanel.hasMeter = true;
+            }
+            childPanel.distributionBreakerSize = p.busSize;
+            if (p.busSize >= 400)
+            {
+              childPanel.hasCts = true;
+            }
+          }
           MakeSingleLineNodeTreeFromPanel(childPanel);
           panel.children.Add(childPanel);
         }
@@ -1116,7 +1145,7 @@ namespace ElectricalCommands.Equipment
       {
         if (p.parentId == transformer.id)
         {
-          SLPanel childPanel = new SLPanel(p.id, p.name);
+          SLPanel childPanel = new SLPanel(p.id, p.name, false, false, p.parentDistance);
           MakeSingleLineNodeTreeFromPanel(childPanel);
           transformer.children.Add(childPanel);
         }
@@ -1129,7 +1158,13 @@ namespace ElectricalCommands.Equipment
       {
         if (panel.parentId == sf.id)
         {
-          SLPanel p = new SLPanel(panel.id, panel.name);
+          SLPanel p = new SLPanel(
+            panel.id,
+            panel.name,
+            true,
+            !sf.isMultiMeter,
+            panel.parentDistance
+          );
           MakeSingleLineNodeTreeFromPanel(p);
           sf.children.Add(p);
         }
@@ -1139,41 +1174,54 @@ namespace ElectricalCommands.Equipment
     private SingleLine MakeSingleLineNodeTree()
     {
       SingleLine singleLine = new SingleLine();
-      foreach (KeyValuePair<string, string> kv in services)
+      foreach (Service service in services)
       {
-        SLServiceFeeder sf = new SLServiceFeeder(kv.Key, kv.Value);
+        SLServiceFeeder sf = new SLServiceFeeder(service.id, service.name, service.isMultiMeter);
         MakeSingleLineNodeTreeFromService(sf);
-        sf.children.Add(sf);
+        singleLine.children.Add(sf);
       }
       return singleLine;
     }
 
     private void MakeSingleLineButton_Click(object sender, EventArgs e)
     {
-      Point3d startingPoint;
-      Document doc = Autodesk
-        .AutoCAD
-        .ApplicationServices
-        .Application
-        .DocumentManager
-        .MdiActiveDocument;
-      Database db = doc.Database;
-      Editor ed = doc.Editor;
-      using (Transaction tr = db.TransactionManager.StartTransaction())
+      using (
+        DocumentLock docLock =
+          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
+      )
       {
-        var promptOptions = new PromptPointOptions("\nSelect upper left point:");
-        var promptResult = ed.GetPoint(promptOptions);
-        if (promptResult.Status == PromptStatus.OK)
-          startingPoint = promptResult.Value;
-        else
+        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
+          .AutoCAD
+          .Windows
+          .Window
+          .State
+          .Maximized;
+        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
+        Point3d startingPoint;
+        Document doc = Autodesk
+          .AutoCAD
+          .ApplicationServices
+          .Application
+          .DocumentManager
+          .MdiActiveDocument;
+        Database db = doc.Database;
+        Editor ed = doc.Editor;
+        using (Transaction tr = db.TransactionManager.StartTransaction())
         {
-          return;
+          var promptOptions = new PromptPointOptions("\nSelect upper left point:");
+          var promptResult = ed.GetPoint(promptOptions);
+          if (promptResult.Status == PromptStatus.OK)
+            startingPoint = promptResult.Value;
+          else
+          {
+            return;
+          }
         }
+        SingleLine singleLineNodeTree = MakeSingleLineNodeTree();
+        singleLineNodeTree.AggregateWidths();
+        singleLineNodeTree.SetChildStartingPoints(startingPoint);
+        singleLineNodeTree.Make();
       }
-      SingleLine singleLineNodeTree = MakeSingleLineNodeTree();
-      singleLineNodeTree.AggregateWidths();
-      singleLineNodeTree.SetChildStartingPoints(startingPoint);
-      singleLineNodeTree.Make();
     }
   }
 }
