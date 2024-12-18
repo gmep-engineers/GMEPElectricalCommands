@@ -61,14 +61,16 @@ namespace ElectricalCommands.Equipment
   public class SLServiceFeeder : SingleLine
   {
     public bool isMultiMeter;
+    public int amp;
 
-    public SLServiceFeeder(string id, string name, bool isMultiMeter)
+    public SLServiceFeeder(string id, string name, bool isMultiMeter, int amp)
     {
       type = "service feeder";
       width = 2.5;
       this.name = name;
       this.id = id;
       this.isMultiMeter = isMultiMeter;
+      this.amp = amp;
     }
 
     public override void SetChildStartingPoints(Point3d startingPoint)
@@ -99,45 +101,163 @@ namespace ElectricalCommands.Equipment
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord btr = (BlockTableRecord)
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
-        LineData lineData1 = new LineData();
-        lineData1.Layer = "E-SYM1";
-        lineData1.StartPoint = new SimpleVector3d();
-        lineData1.EndPoint = new SimpleVector3d();
-        lineData1.StartPoint.X = startingPoint.X;
-        lineData1.StartPoint.Y = startingPoint.Y;
-        lineData1.EndPoint.X = startingPoint.X + 2.5;
-        lineData1.EndPoint.Y = startingPoint.Y;
-        CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1, "HIDDEN");
+        LineData boxLine1 = new LineData();
+        boxLine1.Layer = "E-SYM1";
+        boxLine1.StartPoint = new SimpleVector3d();
+        boxLine1.EndPoint = new SimpleVector3d();
+        boxLine1.StartPoint.X = startingPoint.X;
+        boxLine1.StartPoint.Y = startingPoint.Y;
+        boxLine1.EndPoint.X = startingPoint.X + 2.5;
+        boxLine1.EndPoint.Y = startingPoint.Y;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine1, 1, "HIDDEN");
 
-        LineData lineData2 = new LineData();
-        lineData2.Layer = "E-SYM1";
-        lineData2.StartPoint = new SimpleVector3d();
-        lineData2.EndPoint = new SimpleVector3d();
-        lineData2.StartPoint.X = startingPoint.X;
-        lineData2.StartPoint.Y = startingPoint.Y;
-        lineData2.EndPoint.X = startingPoint.X;
-        lineData2.EndPoint.Y = startingPoint.Y - 2;
-        CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData2, 1, "HIDDEN");
+        LineData boxLine2 = new LineData();
+        boxLine2.Layer = "E-SYM1";
+        boxLine2.StartPoint = new SimpleVector3d();
+        boxLine2.EndPoint = new SimpleVector3d();
+        boxLine2.StartPoint.X = startingPoint.X;
+        boxLine2.StartPoint.Y = startingPoint.Y;
+        boxLine2.EndPoint.X = startingPoint.X;
+        boxLine2.EndPoint.Y = startingPoint.Y - 2;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine2, 1, "HIDDEN");
 
-        LineData lineData3 = new LineData();
-        lineData3.Layer = "E-SYM1";
-        lineData3.StartPoint = new SimpleVector3d();
-        lineData3.EndPoint = new SimpleVector3d();
-        lineData3.StartPoint.X = startingPoint.X;
-        lineData3.StartPoint.Y = startingPoint.Y - 2;
-        lineData3.EndPoint.X = startingPoint.X + 2.5;
-        lineData3.EndPoint.Y = startingPoint.Y - 2;
-        CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData3, 1, "HIDDEN");
+        LineData boxLine3 = new LineData();
+        boxLine3.Layer = "E-SYM1";
+        boxLine3.StartPoint = new SimpleVector3d();
+        boxLine3.EndPoint = new SimpleVector3d();
+        boxLine3.StartPoint.X = startingPoint.X;
+        boxLine3.StartPoint.Y = startingPoint.Y - 2;
+        boxLine3.EndPoint.X = startingPoint.X + 2.5;
+        boxLine3.EndPoint.Y = startingPoint.Y - 2;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine3, 1, "HIDDEN");
 
-        LineData lineData4 = new LineData();
-        lineData4.Layer = "E-SYM1";
-        lineData4.StartPoint = new SimpleVector3d();
-        lineData4.EndPoint = new SimpleVector3d();
-        lineData4.StartPoint.X = startingPoint.X + 0.75;
-        lineData4.StartPoint.Y = startingPoint.Y;
-        lineData4.EndPoint.X = startingPoint.X + 0.75;
-        lineData4.EndPoint.Y = startingPoint.Y - 2;
-        CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData4, 1, "HIDDEN");
+        LineData boxLine4 = new LineData();
+        boxLine4.Layer = "E-SYM1";
+        boxLine4.StartPoint = new SimpleVector3d();
+        boxLine4.EndPoint = new SimpleVector3d();
+        boxLine4.StartPoint.X = startingPoint.X + 0.75;
+        boxLine4.StartPoint.Y = startingPoint.Y;
+        boxLine4.EndPoint.X = startingPoint.X + 0.75;
+        boxLine4.EndPoint.Y = startingPoint.Y - 2;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine4, 1, "HIDDEN");
+
+        LineData conduitLine1 = new LineData();
+        conduitLine1.Layer = "E-CND1";
+        conduitLine1.StartPoint = new SimpleVector3d();
+        conduitLine1.EndPoint = new SimpleVector3d();
+        conduitLine1.StartPoint.X = startingPoint.X + 0.375;
+        conduitLine1.StartPoint.Y = startingPoint.Y - 0.2188;
+        conduitLine1.EndPoint.X = startingPoint.X + 0.375;
+        conduitLine1.EndPoint.Y = startingPoint.Y - 2;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
+
+        LineData conduitLine2 = new LineData();
+        conduitLine2.Layer = "E-CND1";
+        conduitLine2.StartPoint = new SimpleVector3d();
+        conduitLine2.EndPoint = new SimpleVector3d();
+        conduitLine2.StartPoint.X = startingPoint.X + 0.375;
+        conduitLine2.StartPoint.Y = startingPoint.Y - 0.2188;
+        conduitLine2.EndPoint.X = startingPoint.X + 1.25;
+        conduitLine2.EndPoint.Y = startingPoint.Y - 0.2188;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine2, 1);
+
+        LineData conduitLine3 = new LineData();
+        conduitLine3.Layer = "E-CND1";
+        conduitLine3.StartPoint = new SimpleVector3d();
+        conduitLine3.EndPoint = new SimpleVector3d();
+        conduitLine3.StartPoint.X = startingPoint.X + 1.25;
+        conduitLine3.StartPoint.Y = startingPoint.Y - 1.5;
+        conduitLine3.EndPoint.X = startingPoint.X + 2;
+        conduitLine3.EndPoint.Y = startingPoint.Y - 1.5;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine3, 1);
+
+        LineData conduitLine4 = new LineData();
+        conduitLine4.Layer = "E-CND1";
+        conduitLine4.StartPoint = new SimpleVector3d();
+        conduitLine4.EndPoint = new SimpleVector3d();
+        conduitLine4.StartPoint.X = startingPoint.X + 2;
+        conduitLine4.StartPoint.Y = startingPoint.Y - 1.5;
+        conduitLine4.EndPoint.X = startingPoint.X + 2;
+        conduitLine4.EndPoint.Y = startingPoint.Y - 0.2188;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine4, 1);
+
+        LineData conduitLine5 = new LineData();
+        conduitLine5.Layer = "E-CND1";
+        conduitLine5.StartPoint = new SimpleVector3d();
+        conduitLine5.EndPoint = new SimpleVector3d();
+        conduitLine5.StartPoint.X = startingPoint.X + 2;
+        conduitLine5.StartPoint.Y = startingPoint.Y - 0.2188;
+        conduitLine5.EndPoint.X = startingPoint.X + 2.25;
+        conduitLine5.EndPoint.Y = startingPoint.Y - 0.2188;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine5, 1);
+
+        LineData feederLine = new LineData();
+        feederLine.Layer = "E-CND1";
+        feederLine.StartPoint = new SimpleVector3d();
+        feederLine.EndPoint = new SimpleVector3d();
+        feederLine.StartPoint.X = startingPoint.X + 0.375;
+        feederLine.StartPoint.Y = startingPoint.Y - 2;
+        feederLine.EndPoint.X = startingPoint.X + 0.375;
+        feederLine.EndPoint.Y = startingPoint.Y - 2.875;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, feederLine, 1, "HIDDEN2");
+        ObjectId arrowSymbol = bt["DOWN ARROW (AUTO SINGLE LINE)"];
+        using (
+          BlockReference acBlkRef = new BlockReference(
+            new Point3d(startingPoint.X + 0.375, startingPoint.Y - 2.875, 0),
+            arrowSymbol
+          )
+        )
+        {
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+        }
+        ObjectId dash1 = bt["SERVICE FEEDER DASH (AUTO SINGLE LINE)"];
+        using (
+          BlockReference acBlkRef = new BlockReference(
+            new Point3d(startingPoint.X + 0.375, startingPoint.Y - 0.5, 0),
+            dash1
+          )
+        )
+        {
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+        }
+        ObjectId dash2 = bt["SERVICE FEEDER DASH (AUTO SINGLE LINE)"];
+        using (
+          BlockReference acBlkRef = new BlockReference(
+            new Point3d(startingPoint.X + 0.375, startingPoint.Y - 1.5, 0),
+            dash2
+          )
+        )
+        {
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+        }
+
+        ObjectId gndBus = bt["GND BUS (AUTO SINGLE LINE)"];
+        using (
+          BlockReference acBlkRef = new BlockReference(
+            new Point3d(startingPoint.X + 1.125, startingPoint.Y - 1.875, 0),
+            gndBus
+          )
+        )
+        {
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+        }
+
         tr.Commit();
       }
       foreach (var child in children)
@@ -176,6 +296,7 @@ namespace ElectricalCommands.Equipment
     public bool isDistribution;
     public bool hasMeter;
     public bool hasCts;
+    public bool hasGfp;
     public int distributionBreakerSize;
     public int mainBreakerSize;
     public int parentDistance;
@@ -330,6 +451,186 @@ namespace ElectricalCommands.Equipment
           );
           polyData.Closed = true;
           CADObjectCommands.CreatePolyline2d(new Point3d(), tr, btr, polyData, 1);
+
+          if (hasMeter)
+          {
+            if (hasCts)
+            {
+              LineData conduitLine1 = new LineData();
+              conduitLine1.Layer = "E-CND1";
+              conduitLine1.StartPoint = new SimpleVector3d();
+              conduitLine1.EndPoint = new SimpleVector3d();
+              conduitLine1.StartPoint.X = startingPoint.X - 1.25;
+              conduitLine1.StartPoint.Y = startingPoint.Y - 0.2188;
+              conduitLine1.EndPoint.X = startingPoint.X - 1.25;
+              conduitLine1.EndPoint.Y = startingPoint.Y - 1;
+              CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
+              LineData conduitLine2 = new LineData();
+              conduitLine2.Layer = "E-CND1";
+              conduitLine2.StartPoint = new SimpleVector3d();
+              conduitLine2.EndPoint = new SimpleVector3d();
+              conduitLine2.StartPoint.X = startingPoint.X - 1.25;
+              conduitLine2.StartPoint.Y = startingPoint.Y - 1 - (5.0 / 16.0);
+              conduitLine2.EndPoint.X = startingPoint.X - 1.25;
+              conduitLine2.EndPoint.Y = startingPoint.Y - 1.5;
+              CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine2, 1);
+              ObjectId meterSymbol = bt["METER CTS (AUTO SINGLE LINE)"];
+              using (
+                BlockReference acBlkRef = new BlockReference(
+                  new Point3d(startingPoint.X - 1.25, startingPoint.Y - 0.5, 0),
+                  meterSymbol
+                )
+              )
+              {
+                BlockTableRecord acCurSpaceBlkTblRec;
+                acCurSpaceBlkTblRec =
+                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              }
+              ObjectId breakerSymbol = bt["DS BREAKER (AUTO SINGLE LINE)"];
+              using (
+                BlockReference acBlkRef = new BlockReference(
+                  new Point3d(startingPoint.X - 1.25, startingPoint.Y - 1, 0),
+                  breakerSymbol
+                )
+              )
+              {
+                BlockTableRecord acCurSpaceBlkTblRec;
+                acCurSpaceBlkTblRec =
+                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              }
+            }
+            else
+            {
+              LineData conduitLine1 = new LineData();
+              conduitLine1.Layer = "E-CND1";
+              conduitLine1.StartPoint = new SimpleVector3d();
+              conduitLine1.EndPoint = new SimpleVector3d();
+              conduitLine1.StartPoint.X = startingPoint.X - 1.25;
+              conduitLine1.StartPoint.Y = startingPoint.Y - 0.2188;
+              conduitLine1.EndPoint.X = startingPoint.X - 1.25;
+              conduitLine1.EndPoint.Y = startingPoint.Y - 0.5;
+              CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
+              LineData conduitLine2 = new LineData();
+              conduitLine2.Layer = "E-CND1";
+              conduitLine2.StartPoint = new SimpleVector3d();
+              conduitLine2.EndPoint = new SimpleVector3d();
+              conduitLine2.StartPoint.X = startingPoint.X - 1.25;
+              conduitLine2.StartPoint.Y = startingPoint.Y - 0.75;
+              conduitLine2.EndPoint.X = startingPoint.X - 1.25;
+              conduitLine2.EndPoint.Y = startingPoint.Y - 1;
+              CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine2, 1);
+              LineData conduitLine3 = new LineData();
+              conduitLine3.Layer = "E-CND1";
+              conduitLine3.StartPoint = new SimpleVector3d();
+              conduitLine3.EndPoint = new SimpleVector3d();
+              conduitLine3.StartPoint.X = startingPoint.X - 1.25;
+              conduitLine3.StartPoint.Y = startingPoint.Y - 1 - (5.0 / 16.0);
+              conduitLine3.EndPoint.X = startingPoint.X - 1.25;
+              conduitLine3.EndPoint.Y = startingPoint.Y - 1.5;
+              CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine3, 1);
+              ObjectId meterSymbol = bt["METER (AUTO SINGLE LINE)"];
+              using (
+                BlockReference acBlkRef = new BlockReference(
+                  new Point3d(startingPoint.X - 1.25, startingPoint.Y - 0.625, 0),
+                  meterSymbol
+                )
+              )
+              {
+                BlockTableRecord acCurSpaceBlkTblRec;
+                acCurSpaceBlkTblRec =
+                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              }
+              ObjectId breakerSymbol = bt["DS BREAKER (AUTO SINGLE LINE)"];
+              using (
+                BlockReference acBlkRef = new BlockReference(
+                  new Point3d(startingPoint.X - 1.25, startingPoint.Y - 1, 0),
+                  breakerSymbol
+                )
+              )
+              {
+                BlockTableRecord acCurSpaceBlkTblRec;
+                acCurSpaceBlkTblRec =
+                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              }
+            }
+            if (hasGfp)
+            {
+              ObjectId gfpSymbol = bt["GFP (AUTO SINGLE LINE)"];
+              using (
+                BlockReference acBlkRef = new BlockReference(
+                  new Point3d(startingPoint.X - 1.25, startingPoint.Y - 1.4375, 0),
+                  gfpSymbol
+                )
+              )
+              {
+                BlockTableRecord acCurSpaceBlkTblRec;
+                acCurSpaceBlkTblRec =
+                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              }
+            }
+          }
+          else
+          {
+            LineData conduitLine1 = new LineData();
+            conduitLine1.Layer = "E-CND1";
+            conduitLine1.StartPoint = new SimpleVector3d();
+            conduitLine1.EndPoint = new SimpleVector3d();
+            conduitLine1.StartPoint.X = startingPoint.X - 1.25;
+            conduitLine1.StartPoint.Y = startingPoint.Y - 0.2188;
+            conduitLine1.EndPoint.X = startingPoint.X - 1.25;
+            conduitLine1.EndPoint.Y = startingPoint.Y - 0.75;
+            CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
+            LineData conduitLine2 = new LineData();
+            conduitLine2.Layer = "E-CND1";
+            conduitLine2.StartPoint = new SimpleVector3d();
+            conduitLine2.EndPoint = new SimpleVector3d();
+            conduitLine2.StartPoint.X = startingPoint.X - 1.25;
+            conduitLine2.StartPoint.Y = startingPoint.Y - 0.75 - (5.0 / 16.0);
+            conduitLine2.EndPoint.X = startingPoint.X - 1.25;
+            conduitLine2.EndPoint.Y = startingPoint.Y - 1.5;
+            CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine2, 1);
+            ObjectId breakerSymbol = bt["DS BREAKER (AUTO SINGLE LINE)"];
+            using (
+              BlockReference acBlkRef = new BlockReference(
+                new Point3d(startingPoint.X - 1.25, startingPoint.Y - 0.75, 0),
+                breakerSymbol
+              )
+            )
+            {
+              BlockTableRecord acCurSpaceBlkTblRec;
+              acCurSpaceBlkTblRec =
+                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+              acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+              tr.AddNewlyCreatedDBObject(acBlkRef, true);
+            }
+            if (hasGfp)
+            {
+              ObjectId gfpSymbol = bt["GFP (AUTO SINGLE LINE)"];
+              using (
+                BlockReference acBlkRef = new BlockReference(
+                  new Point3d(startingPoint.X - 1.25, startingPoint.Y - 1.1875, 0),
+                  gfpSymbol
+                )
+              )
+              {
+                BlockTableRecord acCurSpaceBlkTblRec;
+                acCurSpaceBlkTblRec =
+                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              }
+            }
+          }
         }
         else if (!isDistribution && distributionBreakerSize > 0)
         {
@@ -413,34 +714,20 @@ namespace ElectricalCommands.Equipment
             CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
           }
 
-          // first breaker circle
-          CircleData circleData1 = new CircleData();
-          circleData1.Layer = "E-SYMBOL";
-          circleData1.Center = new SimpleVector3d();
-          circleData1.Center.X = startingPoint.X;
-          circleData1.Center.Y = startingPoint.Y - (9.0 / 8.0) - (1.0 / 32.0);
-          circleData1.Radius = 1.0 / 32.0;
-          CADObjectCommands.CreateCircle(new Point3d(), tr, btr, circleData1, 1);
-
-          // distribution section breaker arc
-          ArcData arcData = new ArcData();
-          arcData.Layer = "E-SYMBOL";
-          arcData.Center = new SimpleVector3d();
-          arcData.Radius = 1.0 / 8.0;
-          arcData.Center.X = startingPoint.X;
-          arcData.Center.Y = startingPoint.Y - (9.0 / 8.0) - (5.0 / 32.0);
-          arcData.StartAngle = 5.07891;
-          arcData.EndAngle = 1.20428;
-          CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData, 1);
-
-          // second breaker circle
-          CircleData circleData2 = new CircleData();
-          circleData2.Layer = "E-SYMBOL";
-          circleData2.Center = new SimpleVector3d();
-          circleData2.Center.X = startingPoint.X;
-          circleData2.Center.Y = startingPoint.Y - (9.0 / 8.0) - (5.0 / 16.0) + (1.0 / 32.0);
-          circleData2.Radius = 1.0 / 32.0;
-          CADObjectCommands.CreateCircle(new Point3d(), tr, btr, circleData2, 1);
+          ObjectId breakerSymbol = bt["DS BREAKER (AUTO SINGLE LINE)"];
+          using (
+            BlockReference acBlkRef = new BlockReference(
+              new Point3d(startingPoint.X, startingPoint.Y - 1.125, 0),
+              breakerSymbol
+            )
+          )
+          {
+            BlockTableRecord acCurSpaceBlkTblRec;
+            acCurSpaceBlkTblRec =
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+            acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+            tr.AddNewlyCreatedDBObject(acBlkRef, true);
+          }
 
           // line from breaker
           LineData lineData3 = new LineData();

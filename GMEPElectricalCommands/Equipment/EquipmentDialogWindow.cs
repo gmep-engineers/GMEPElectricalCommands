@@ -16,12 +16,14 @@ namespace ElectricalCommands.Equipment
     public string id;
     public string name;
     public bool isMultiMeter;
+    public int amp;
 
-    public Service(string id, string name, string meterConfig)
+    public Service(string id, string name, string meterConfig, int amp)
     {
       this.id = id;
       this.name = name;
       isMultiMeter = meterConfig == "MULTIMETER";
+      this.amp = amp;
     }
   }
 
@@ -1158,13 +1160,20 @@ namespace ElectricalCommands.Equipment
       {
         if (panel.parentId == sf.id)
         {
-          SLPanel p = new SLPanel(
-            panel.id,
-            panel.name,
-            true,
-            !sf.isMultiMeter,
-            panel.parentDistance
-          );
+          bool hasMeter = false;
+          if (!sf.isMultiMeter)
+          {
+            hasMeter = true;
+          }
+          SLPanel p = new SLPanel(panel.id, panel.name, true, hasMeter, panel.parentDistance);
+          if (sf.amp >= 400)
+          {
+            p.hasCts = true;
+          }
+          if (sf.amp >= 1200)
+          {
+            p.hasGfp = true;
+          }
           MakeSingleLineNodeTreeFromPanel(p);
           sf.children.Add(p);
         }
@@ -1176,7 +1185,12 @@ namespace ElectricalCommands.Equipment
       SingleLine singleLine = new SingleLine();
       foreach (Service service in services)
       {
-        SLServiceFeeder sf = new SLServiceFeeder(service.id, service.name, service.isMultiMeter);
+        SLServiceFeeder sf = new SLServiceFeeder(
+          service.id,
+          service.name,
+          service.isMultiMeter,
+          service.amp
+        );
         MakeSingleLineNodeTreeFromService(sf);
         singleLine.children.Add(sf);
       }
