@@ -44,12 +44,15 @@ namespace GMEPElectricalCommands.GmepDatabase
           electrical_services.id,
           electrical_services.name,
           electrical_service_meter_configs.meter_config,
-          electrical_service_amp_ratings.amp_rating
+          electrical_service_amp_ratings.amp_rating,
+          electrical_service_voltages.voltage
           FROM `electrical_services`
           LEFT JOIN electrical_service_meter_configs
           ON electrical_services.electrical_service_meter_config_id = electrical_service_meter_configs.id
           LEFT JOIN electrical_service_amp_ratings
           ON electrical_service_amp_ratings.id = electrical_services.electrical_service_amp_rating_id
+          LEFT JOIN electrical_service_voltages
+          ON electrical_service_voltages.id = electrical_services.electrical_service_voltage_id
           WHERE electrical_services.project_id = @projectId";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
@@ -62,7 +65,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             reader.GetString("id"),
             reader.GetString("name"),
             reader.GetString("meter_config"),
-            reader.GetInt32("amp_rating")
+            reader.GetInt32("amp_rating"),
+            reader.GetString("voltage")
           )
         );
       }

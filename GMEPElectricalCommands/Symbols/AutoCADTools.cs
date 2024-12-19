@@ -9,11 +9,13 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+using DocumentFormat.OpenXml.Presentation;
 //using DocumentFormat.OpenXml.Wordprocessing;
 using Emgu.CV.Dnn;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using OfficeOpenXml.Drawing;
+using Org.BouncyCastle.Bcpg.OpenPgp;
 using TriangleNet.Tools;
 
 namespace ElectricalCommands
@@ -901,7 +903,7 @@ namespace ElectricalCommands
       public string conduitSize;
     }
 
-    private double GetVoltageDrop(
+    private static double GetVoltageDrop(
       string wireSize,
       double distance,
       int parallelWires,
@@ -950,7 +952,7 @@ namespace ElectricalCommands
       return -1;
     }
 
-    private WireSpec GetWireSize(
+    private static WireSpec GetWireSize(
       double amperage,
       double distance,
       double multiplier,
@@ -1019,7 +1021,7 @@ namespace ElectricalCommands
       return wireSpec;
     }
 
-    private ConduitSpec GetConduitAndWireSize(
+    private static ConduitSpec GetConduitAndWireSize(
       double loadAmperage,
       double mocp,
       double distance,
@@ -1103,7 +1105,7 @@ namespace ElectricalCommands
       return spec;
     }
 
-    private string GetGroundingSize(double mocp)
+    private static string GetGroundingSize(double mocp)
     {
       string gndSize = "";
       mocp = Math.Round(mocp, 0);
@@ -1167,7 +1169,7 @@ namespace ElectricalCommands
       return gndSize;
     }
 
-    double GetMaxWireAmpacity(string wireSize)
+    private static double GetMaxWireAmpacity(string wireSize)
     {
       switch (wireSize)
       {
@@ -1206,6 +1208,77 @@ namespace ElectricalCommands
         default:
           return 380;
       }
+    }
+
+    public static (string, string, string, string, string, string) GetWireAndConduitSizeText(
+      double loadAmperage,
+      double mocp,
+      double distance,
+      double voltage,
+      double maxVoltageDropPercent,
+      int phase
+    )
+    {
+      double maxVoltageDropAllowed = voltage * maxVoltageDropPercent / 100;
+      double minVoltageDropAllowedAtLoad = voltage * maxVoltageDropAllowed;
+      double multiplier = 2.0;
+      if (Phase == 3)
+      {
+        multiplier = 1.732;
+      }
+
+      int numWires = 3;
+      if (phase == 3)
+      {
+        numWires = 4;
+      }
+      if (voltage == 120)
+      {
+        numWires = 2;
+      }
+
+      ConduitSpec spec = GetConduitAndWireSize(
+        loadAmperage,
+        mocp,
+        distance,
+        multiplier,
+        maxVoltageDropAllowed,
+        numWires
+      );
+      string gndSize = "";
+      double voltageDropPercent = 0;
+      gndSize = GetGroundingSize(mocp);
+      voltageDropPercent =
+        GetVoltageDrop(
+          spec.wireSpec.wireSize,
+          distance,
+          spec.wireSpec.parallelWires,
+          loadAmperage,
+          multiplier
+        )
+        / voltage
+        * 100;
+      string firstLine;
+      string secondLine;
+      string thirdLine;
+      if (spec.wireSpec.parallelWires > 1)
+      {
+        firstLine =
+          $"[{spec.wireSpec.parallelWires}]{spec.conduitSize}\" C.; {numWires}#{spec.wireSpec.wireSize} CU.";
+      }
+      else
+      {
+        firstLine = $"{spec.conduitSize}\" C.; {numWires}#{spec.wireSpec.wireSize} CU.";
+      }
+      secondLine = $"PLUS 1#{gndSize} CU. GND.";
+      string voltageDropPercentString =
+        voltageDropPercent < 0.1 ? "NEGL." : Math.Round(voltageDropPercent, 1).ToString() + "%";
+      thirdLine = $"{distance}'; VD={voltageDropPercentString}";
+      double loadWireSize = distance > 100 ? Math.Round(loadAmperage, 1) : mocp;
+      string supplemental1 = $"C. SIZED FOR {mocp}A";
+      string supplemental2 = $"W. SIZED FOR {loadWireSize}A";
+      string supplemental3 = $"@{voltage}V-{phase}\u0081-{numWires}W";
+      return (firstLine, secondLine, thirdLine, supplemental1, supplemental2, supplemental3);
     }
 
     [CommandMethod("HCND")]
@@ -1312,14 +1385,6 @@ namespace ElectricalCommands
           return;
         }
       }
-
-      double maxVoltageDropAllowed = Voltage * MaxVoltageDropPercent / 100;
-      double minVoltageDropAllowedAtLoad = Voltage * maxVoltageDropAllowed;
-      double multiplier = 2.0;
-      if (Phase == 3)
-      {
-        multiplier = 1.732;
-      }
       var feederLengthPrompt = new PromptStringOptions("\nEnter the feeder length in feet: ");
       double distance = 0;
       var feederLengthResult = ed.GetString(feederLengthPrompt);
@@ -1344,58 +1409,21 @@ namespace ElectricalCommands
           return;
         }
       }
-
-      int numWires = 3;
-      if (Phase == 3)
-      {
-        numWires = 4;
-      }
-      if (Voltage == 120)
-      {
-        numWires = 2;
-      }
-
-      ConduitSpec spec = GetConduitAndWireSize(
+      (
+        string firstLine,
+        string secondLine,
+        string thirdLine,
+        string supplemental1,
+        string supplemental2,
+        string supplemental3
+      ) = GetWireAndConduitSizeText(
         loadAmperage,
         mocp,
         distance,
-        multiplier,
-        maxVoltageDropAllowed,
-        numWires
+        Voltage,
+        MaxVoltageDropPercent,
+        Phase
       );
-      string gndSize = "";
-      double voltageDropPercent = 0;
-      gndSize = GetGroundingSize(mocp);
-      voltageDropPercent =
-        GetVoltageDrop(
-          spec.wireSpec.wireSize,
-          distance,
-          spec.wireSpec.parallelWires,
-          loadAmperage,
-          multiplier
-        )
-        / Voltage
-        * 100;
-      string firstLine;
-      string secondLine;
-      string thirdLine;
-      if (spec.wireSpec.parallelWires > 1)
-      {
-        firstLine =
-          $"[{spec.wireSpec.parallelWires}]{spec.conduitSize}\" C.; {numWires}#{spec.wireSpec.wireSize} CU.";
-      }
-      else
-      {
-        firstLine = $"{spec.conduitSize}\" C.; {numWires}#{spec.wireSpec.wireSize} CU.";
-      }
-      secondLine = $"PLUS 1#{gndSize} CU. GND.";
-      string voltageDropPercentString =
-        voltageDropPercent < 0.1 ? "NEGL." : Math.Round(voltageDropPercent, 1).ToString() + "%";
-      thirdLine = $"{distance}'; VD={voltageDropPercentString}";
-      double loadWireSize = distance > 100 ? Math.Round(loadAmperage, 1) : mocp;
-      string supplemental1 = $"C. SIZED FOR {mocp}A";
-      string supplemental2 = $"W. SIZED FOR {loadWireSize}A";
-      string supplemental3 = $"@{Voltage}V-{Phase}\u0081-{numWires}W";
       // Prompt for a point
       PromptPointOptions ppo = new PromptPointOptions("\nSelect start point:");
       PromptPointResult ppr = ed.GetPoint(ppo);

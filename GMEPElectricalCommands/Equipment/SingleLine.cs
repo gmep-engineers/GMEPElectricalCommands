@@ -62,8 +62,9 @@ namespace ElectricalCommands.Equipment
   {
     public bool isMultiMeter;
     public int amp;
+    public string voltage;
 
-    public SLServiceFeeder(string id, string name, bool isMultiMeter, int amp)
+    public SLServiceFeeder(string id, string name, bool isMultiMeter, int amp, string voltage)
     {
       type = "service feeder";
       width = 2.5;
@@ -71,6 +72,7 @@ namespace ElectricalCommands.Equipment
       this.id = id;
       this.isMultiMeter = isMultiMeter;
       this.amp = amp;
+      this.voltage = voltage;
     }
 
     public override void SetChildStartingPoints(Point3d startingPoint)
@@ -246,7 +248,7 @@ namespace ElectricalCommands.Equipment
         ObjectId gndBus = bt["GND BUS (AUTO SINGLE LINE)"];
         using (
           BlockReference acBlkRef = new BlockReference(
-            new Point3d(startingPoint.X + 1.125, startingPoint.Y - 1.875, 0),
+            new Point3d(startingPoint.X + 1.125, startingPoint.Y - 1.85, 0),
             gndBus
           )
         )
@@ -257,7 +259,206 @@ namespace ElectricalCommands.Equipment
           acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
           tr.AddNewlyCreatedDBObject(acBlkRef, true);
         }
-
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          "(N)GND BUS",
+          "gmep",
+          0.0876943284922549,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(startingPoint.X + 1, startingPoint.Y - 1.75, 0)
+        );
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          "(N)1#3/0 CU.",
+          "gmep",
+          0.0876943284922549,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(startingPoint.X + 1.6, startingPoint.Y - 2.2, 0)
+        );
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          "TO COLD WATER PIPE",
+          "gmep",
+          0.0876943284922549,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(startingPoint.X + 1.6, startingPoint.Y - 2.33, 0)
+        );
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          "(N)1#3/0 CU.",
+          "gmep",
+          0.0876943284922549,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(startingPoint.X + 1.37, startingPoint.Y - 2.6, 0)
+        );
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          "TO COLD BUILDING STEEL",
+          "gmep",
+          0.0876943284922549,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(startingPoint.X + 1.37, startingPoint.Y - 2.73, 0)
+        );
+        ObjectId spoon1 = bt["SPOON SMALL LEFT (AUTO SINGLE LINE)"];
+        using (
+          BlockReference acBlkRef = new BlockReference(
+            new Point3d(startingPoint.X + 1.35, startingPoint.Y - 2.15, 0),
+            spoon1
+          )
+        )
+        {
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+        }
+        ObjectId spoon2 = bt["SPOON SMALL LEFT (AUTO SINGLE LINE)"];
+        using (
+          BlockReference acBlkRef = new BlockReference(
+            new Point3d(startingPoint.X + 1.125, startingPoint.Y - 2.55, 0),
+            spoon2
+          )
+        )
+        {
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+        }
+        ObjectId labelLeader1 = bt["SECTION LABEL LEADER (AUTO SINGLE LINE)"];
+        using (
+          BlockReference acBlkRef = new BlockReference(
+            new Point3d(startingPoint.X + 0.25, startingPoint.Y, 0),
+            labelLeader1
+          )
+        )
+        {
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+        }
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          "(N)" + amp + "A",
+          "gmep",
+          0.0876943284922549,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(startingPoint.X + 0.35, startingPoint.Y + 0.53, 0)
+        );
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          "UNDERGROUND",
+          "gmep",
+          0.0876943284922549,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(startingPoint.X + 0.35, startingPoint.Y + 0.38, 0)
+        );
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          "PULL SECTION",
+          "gmep",
+          0.0876943284922549,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(startingPoint.X + 0.35, startingPoint.Y + 0.25, 0)
+        );
+        if (isMultiMeter)
+        {
+          ObjectId labelLeader2 = bt["SECTION LABEL LEADER SMALL (AUTO SINGLE LINE)"];
+          using (
+            BlockReference acBlkRef = new BlockReference(
+              new Point3d(startingPoint.X + 1.625, startingPoint.Y, 0),
+              labelLeader2
+            )
+          )
+          {
+            BlockTableRecord acCurSpaceBlkTblRec;
+            acCurSpaceBlkTblRec =
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+            acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+            tr.AddNewlyCreatedDBObject(acBlkRef, true);
+          }
+        }
+        else
+        {
+          ObjectId labelLeader2 = bt["SECTION LABEL LEADER (AUTO SINGLE LINE)"];
+          using (
+            BlockReference acBlkRef = new BlockReference(
+              new Point3d(startingPoint.X + 1.625, startingPoint.Y, 0),
+              labelLeader2
+            )
+          )
+          {
+            BlockTableRecord acCurSpaceBlkTblRec;
+            acCurSpaceBlkTblRec =
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+            acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+            tr.AddNewlyCreatedDBObject(acBlkRef, true);
+          }
+        }
+        ObjectId spoon3 = bt["SPOON SMALL RIGHT (AUTO SINGLE LINE)"];
+        using (
+          BlockReference acBlkRef = new BlockReference(
+            new Point3d(startingPoint.X + 0.375, startingPoint.Y - 2.25, 0),
+            spoon3
+          )
+        )
+        {
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+        }
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          "FROM",
+          "gmep",
+          0.0876943284922549,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(startingPoint.X - 0.25, startingPoint.Y - 2.3, 0)
+        );
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          "SERVICE",
+          "gmep",
+          0.0876943284922549,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(startingPoint.X - 0.25, startingPoint.Y - 2.43, 0)
+        );
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          "FEEDER",
+          "gmep",
+          0.0876943284922549,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(startingPoint.X - 0.25, startingPoint.Y - 2.56, 0)
+        );
         tr.Commit();
       }
       foreach (var child in children)
@@ -303,6 +504,8 @@ namespace ElectricalCommands.Equipment
     public string conduitSize;
     public string wireSize;
     public string voltageDrop;
+    public string voltageSpec;
+    public bool is3Phase;
 
     public SLPanel(string id, string name, bool isDistribution, bool hasMeter, int parentDistance)
     {
@@ -402,6 +605,93 @@ namespace ElectricalCommands.Equipment
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         if (isDistribution)
         {
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "(N)" + distributionBreakerSize.ToString() + "A BUS",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(startingPoint.X + 0.1, startingPoint.Y - 0.145, 0)
+          );
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "(N)" + (hasMeter ? "METER&" : "") + "MAIN",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(startingPoint.X - 0.75, startingPoint.Y + 0.53, 0)
+          );
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "BREAKER",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(startingPoint.X - 0.75, startingPoint.Y + 0.38, 0)
+          );
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "SECTION",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(startingPoint.X - 0.75, startingPoint.Y + 0.25, 0)
+          );
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "(N)" + (hasMeter ? "DISTRIBUTION" : "MULTI-METER") + " SECTION",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(startingPoint.X + 0.6, startingPoint.Y + 0.53, 0)
+          );
+          string voltageText = "";
+          if (voltageSpec.StartsWith("120/208 3"))
+          {
+            voltageText = "120/208V-3\u0081-4W";
+          }
+          if (voltageSpec.StartsWith("120/240 1"))
+          {
+            voltageText = "120/240V-1\u0081-3W";
+          }
+          if (voltageSpec.StartsWith("277/480 3"))
+          {
+            voltageText = "277/480V-3\u0081-4W";
+          }
+          if (voltageSpec.StartsWith("120/240 3"))
+          {
+            voltageText = "120/240V-3\u0081-4W";
+          }
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            distributionBreakerSize.ToString() + "A " + voltageText,
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(startingPoint.X + 0.6, startingPoint.Y + 0.38, 0)
+          );
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "65 KAIC OR MATCH FAULT CURRENT ON SITE",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(startingPoint.X + 0.6, startingPoint.Y + 0.25, 0)
+          );
           LineData lineData1 = new LineData();
           lineData1.Layer = "E-SYM1";
           lineData1.StartPoint = new SimpleVector3d();
@@ -451,11 +741,64 @@ namespace ElectricalCommands.Equipment
           );
           polyData.Closed = true;
           CADObjectCommands.CreatePolyline2d(new Point3d(), tr, btr, polyData, 1);
-
+          ObjectId labelLeader = bt["SECTION LABEL LEADER LONG (AUTO SINGLE LINE)"];
+          using (
+            BlockReference acBlkRef = new BlockReference(
+              new Point3d(startingPoint.X + 0.5, startingPoint.Y, 0),
+              labelLeader
+            )
+          )
+          {
+            BlockTableRecord acCurSpaceBlkTblRec;
+            acCurSpaceBlkTblRec =
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+            acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+            tr.AddNewlyCreatedDBObject(acBlkRef, true);
+          }
           if (hasMeter)
           {
+            GeneralCommands.CreateAndPositionText(
+              tr,
+              "(N)",
+              "gmep",
+              0.0876943284922549,
+              0.85,
+              2,
+              "E-TXT1",
+              new Point3d(startingPoint.X - 1.0725, startingPoint.Y - 1.07, 0)
+            );
+            GeneralCommands.CreateAndPositionText(
+              tr,
+              distributionBreakerSize.ToString() + "A",
+              "gmep",
+              0.0876943284922549,
+              0.85,
+              2,
+              "E-TXT1",
+              new Point3d(startingPoint.X - 1.0725, startingPoint.Y - 1.20, 0)
+            );
+            GeneralCommands.CreateAndPositionText(
+              tr,
+              is3Phase ? "3P" : "2P",
+              "gmep",
+              0.0876943284922549,
+              0.85,
+              2,
+              "E-TXT1",
+              new Point3d(startingPoint.X - 1.0725, startingPoint.Y - 1.33, 0)
+            );
             if (hasCts)
             {
+              GeneralCommands.CreateAndPositionText(
+                tr,
+                "(N)",
+                "gmep",
+                0.0876943284922549,
+                0.85,
+                2,
+                "E-TXT1",
+                new Point3d(startingPoint.X - 0.92, startingPoint.Y - 0.369, 0)
+              );
               LineData conduitLine1 = new LineData();
               conduitLine1.Layer = "E-CND1";
               conduitLine1.StartPoint = new SimpleVector3d();
@@ -505,6 +848,16 @@ namespace ElectricalCommands.Equipment
             }
             else
             {
+              GeneralCommands.CreateAndPositionText(
+                tr,
+                "(N)",
+                "gmep",
+                0.0876943284922549,
+                0.85,
+                2,
+                "E-TXT1",
+                new Point3d(startingPoint.X - 1.14, startingPoint.Y - 0.51, 0)
+              );
               LineData conduitLine1 = new LineData();
               conduitLine1.Layer = "E-CND1";
               conduitLine1.StartPoint = new SimpleVector3d();
@@ -581,6 +934,36 @@ namespace ElectricalCommands.Equipment
           }
           else
           {
+            GeneralCommands.CreateAndPositionText(
+              tr,
+              "(N)",
+              "gmep",
+              0.0876943284922549,
+              0.85,
+              2,
+              "E-TXT1",
+              new Point3d(startingPoint.X - 1.0725, startingPoint.Y - 0.82, 0)
+            );
+            GeneralCommands.CreateAndPositionText(
+              tr,
+              distributionBreakerSize.ToString() + "A",
+              "gmep",
+              0.0876943284922549,
+              0.85,
+              2,
+              "E-TXT1",
+              new Point3d(startingPoint.X - 1.0725, startingPoint.Y - 0.95, 0)
+            );
+            GeneralCommands.CreateAndPositionText(
+              tr,
+              is3Phase ? "3P" : "2P",
+              "gmep",
+              0.0876943284922549,
+              0.85,
+              2,
+              "E-TXT1",
+              new Point3d(startingPoint.X - 1.0725, startingPoint.Y - 1.08, 0)
+            );
             LineData conduitLine1 = new LineData();
             conduitLine1.Layer = "E-CND1";
             conduitLine1.StartPoint = new SimpleVector3d();

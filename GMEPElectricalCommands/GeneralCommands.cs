@@ -2462,7 +2462,7 @@ namespace ElectricalCommands
       }
     }
 
-    private static void CreateAndPositionText(
+    public static void CreateAndPositionText(
       Transaction tr,
       string content,
       string style,

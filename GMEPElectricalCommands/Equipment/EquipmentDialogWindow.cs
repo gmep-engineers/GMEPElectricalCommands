@@ -17,13 +17,15 @@ namespace ElectricalCommands.Equipment
     public string name;
     public bool isMultiMeter;
     public int amp;
+    public string voltage;
 
-    public Service(string id, string name, string meterConfig, int amp)
+    public Service(string id, string name, string meterConfig, int amp, string voltage)
     {
       this.id = id;
       this.name = name;
       isMultiMeter = meterConfig == "MULTIMETER";
       this.amp = amp;
+      this.voltage = voltage;
     }
   }
 
@@ -1174,6 +1176,13 @@ namespace ElectricalCommands.Equipment
           {
             p.hasGfp = true;
           }
+          p.distributionBreakerSize = sf.amp;
+          p.voltageSpec = sf.voltage;
+          p.is3Phase = false;
+          if (sf.voltage.Contains("3"))
+          {
+            p.is3Phase = true;
+          }
           MakeSingleLineNodeTreeFromPanel(p);
           sf.children.Add(p);
         }
@@ -1189,7 +1198,8 @@ namespace ElectricalCommands.Equipment
           service.id,
           service.name,
           service.isMultiMeter,
-          service.amp
+          service.amp,
+          service.voltage
         );
         MakeSingleLineNodeTreeFromService(sf);
         singleLine.children.Add(sf);
