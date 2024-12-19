@@ -2410,7 +2410,8 @@ namespace ElectricalCommands
       double height,
       double widthFactor,
       Autodesk.AutoCAD.Colors.Color color,
-      string layer
+      string layer,
+      AttachmentPoint justify = AttachmentPoint.BaseLeft
     )
     {
       var (doc, db, _) = GeneralCommands.GetGlobals();
@@ -2449,7 +2450,7 @@ namespace ElectricalCommands
           TextStyleId = textStyleId,
           HorizontalMode = horizontalMode,
           VerticalMode = verticalMode,
-          Justify = AttachmentPoint.BaseLeft,
+          Justify = justify,
         };
 
         var currentSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
@@ -2472,7 +2473,8 @@ namespace ElectricalCommands
       string layerName,
       Point3d position,
       TextHorizontalMode horizontalMode = TextHorizontalMode.TextLeft,
-      TextVerticalMode verticalMode = TextVerticalMode.TextBase
+      TextVerticalMode verticalMode = TextVerticalMode.TextBase,
+      AttachmentPoint justify = AttachmentPoint.BaseLeft
     )
     {
       var color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(
@@ -2487,10 +2489,18 @@ namespace ElectricalCommands
         height,
         widthFactor,
         color,
-        layerName
+        layerName,
+        justify
       );
       var text = (DBText)tr.GetObject(textId, OpenMode.ForWrite);
-      text.Position = position;
+      if (justify == AttachmentPoint.BaseLeft)
+      {
+        text.Position = position;
+      }
+      else
+      {
+        text.AlignmentPoint = position;
+      }
     }
 
     public static ObjectId GetTextStyleId(string styleName)

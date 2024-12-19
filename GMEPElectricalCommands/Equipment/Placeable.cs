@@ -51,6 +51,7 @@ namespace ElectricalCommands.Equipment
     public bool isDistribution;
     public bool isMultiMeter;
     public int busSize;
+    public string voltage;
 
     public Panel(
       string _id,
@@ -61,7 +62,8 @@ namespace ElectricalCommands.Equipment
       double yLoc = 0,
       int isDistrib = 0,
       int isMm = 0,
-      int bus = 0
+      int bus = 0,
+      string volt = ""
     )
     {
       id = _id;
@@ -72,6 +74,7 @@ namespace ElectricalCommands.Equipment
       isDistribution = isDistrib == 1;
       isMultiMeter = isMm == 1;
       busSize = bus;
+      voltage = volt;
     }
   }
 

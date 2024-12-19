@@ -1116,6 +1116,8 @@ namespace ElectricalCommands.Equipment
         if (p.parentId == panel.id)
         {
           SLPanel childPanel = new SLPanel(p.id, p.name, false, false, p.parentDistance);
+          childPanel.mainBreakerSize = p.busSize;
+          childPanel.voltageSpec = p.voltage;
           if (panel.isDistribution)
           {
             if (!panel.hasMeter)

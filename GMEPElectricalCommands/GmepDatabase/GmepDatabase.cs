@@ -87,10 +87,13 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_panels.loc_x,
         electrical_panels.loc_y,
         electrical_panels.is_distribution,
-        electrical_panel_bus_amp_ratings.amp_rating
+        electrical_panel_bus_amp_ratings.amp_rating,
+        electrical_service_voltages.voltage
         FROM electrical_panels
         LEFT JOIN electrical_panel_bus_amp_ratings
         ON electrical_panel_bus_amp_ratings.id = electrical_panels.bus_amp_rating_id
+        LEFT JOIN electrical_service_voltages
+        ON electrical_service_voltages.id = electrical_panels.voltage_id
         WHERE electrical_panels.project_id = @projectId";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
@@ -108,7 +111,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             reader.GetFloat("loc_y"),
             reader.GetInt32("is_distribution"),
             0,
-            reader.GetInt32("amp_rating")
+            reader.GetInt32("amp_rating"),
+            reader.GetString("voltage")
           )
         );
       }

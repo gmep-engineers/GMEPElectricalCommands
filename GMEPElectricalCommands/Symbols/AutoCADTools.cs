@@ -1281,6 +1281,145 @@ namespace ElectricalCommands
       return (firstLine, secondLine, thirdLine, supplemental1, supplemental2, supplemental3);
     }
 
+    public static void AddWireAndConduitTextToPlan(
+      Database acCurDb,
+      Point3d ppr,
+      string firstLine,
+      string secondLine,
+      string thirdLine,
+      string supplemental1,
+      string supplemental2,
+      string supplemental3,
+      bool horizontal
+    )
+    {
+      using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
+      {
+        BlockTable acBlkTbl =
+          acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord acBlkTblRec =
+          acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite)
+          as BlockTableRecord;
+        var textStyleId = GeneralCommands.GetTextStyleId("gmep");
+        var textStyle = (TextStyleTableRecord)acTrans.GetObject(textStyleId, OpenMode.ForRead);
+        List<DBText> allTexts = new List<DBText>();
+        double scaleFactor = 1;
+        if (IsInModel() || IsInLayoutViewport())
+        {
+          if (Scale <= 0)
+          {
+            SetScale();
+          }
+          scaleFactor = 12 / Scale;
+        }
+        var firstLineText = new DBText
+        {
+          TextString = firstLine,
+          Position = horizontal
+            ? new Point3d(ppr.X, ppr.Y + 0.20 * scaleFactor, 0)
+            : new Point3d(ppr.X - 0.20 * scaleFactor, ppr.Y, 0),
+          Height = 0.1 * scaleFactor,
+          WidthFactor = 0.85,
+          Layer = "E-TEXT",
+          TextStyleId = textStyleId,
+          HorizontalMode = TextHorizontalMode.TextLeft,
+          VerticalMode = TextVerticalMode.TextVerticalMid,
+          Justify = AttachmentPoint.BaseLeft,
+          Rotation = horizontal ? 0 : 1.5708,
+        };
+        allTexts.Add(firstLineText);
+        var secondLineText = new DBText
+        {
+          TextString = secondLine,
+          Position = horizontal
+            ? new Point3d(ppr.X, ppr.Y + 0.04 * scaleFactor, 0)
+            : new Point3d(ppr.X - 0.04 * scaleFactor, ppr.Y, 0),
+          Height = 0.1 * scaleFactor,
+          WidthFactor = 0.85,
+          Layer = "E-TEXT",
+          TextStyleId = textStyleId,
+          HorizontalMode = TextHorizontalMode.TextLeft,
+          VerticalMode = TextVerticalMode.TextVerticalMid,
+          Justify = AttachmentPoint.BaseLeft,
+          Rotation = horizontal ? 0 : 1.5708,
+        };
+        allTexts.Add(secondLineText);
+        var thirdLineText = new DBText
+        {
+          TextString = thirdLine,
+          Position = horizontal
+            ? new Point3d(ppr.X, ppr.Y - 0.13 * scaleFactor, 0)
+            : new Point3d(ppr.X + 0.13 * scaleFactor, ppr.Y, 0),
+          Height = 0.1 * scaleFactor,
+          WidthFactor = 0.85,
+          Layer = "E-TEXT",
+          TextStyleId = textStyleId,
+          HorizontalMode = TextHorizontalMode.TextLeft,
+          VerticalMode = TextVerticalMode.TextVerticalMid,
+          Justify = AttachmentPoint.BaseLeft,
+          Rotation = horizontal ? 0 : 1.5708,
+        };
+        allTexts.Add(thirdLineText);
+        var supplementalText1 = new DBText
+        {
+          TextString = supplemental1,
+          Position = horizontal
+            ? new Point3d(ppr.X, ppr.Y - 0.29 * scaleFactor, 0)
+            : new Point3d(ppr.X + 0.29 * scaleFactor, ppr.Y, 0),
+          Height = 0.1 * scaleFactor,
+          WidthFactor = 0.85,
+          Layer = "DEFPOINTS",
+          TextStyleId = textStyleId,
+          HorizontalMode = TextHorizontalMode.TextLeft,
+          VerticalMode = TextVerticalMode.TextVerticalMid,
+          Justify = AttachmentPoint.BaseLeft,
+          Rotation = horizontal ? 0 : 1.5708,
+        };
+        allTexts.Add(supplementalText1);
+        var supplementalText2 = new DBText
+        {
+          TextString = supplemental2,
+          Position = horizontal
+            ? new Point3d(ppr.X, ppr.Y - 0.45 * scaleFactor, 0)
+            : new Point3d(ppr.X + 0.45 * scaleFactor, ppr.Y, 0),
+          Height = 0.1 * scaleFactor,
+          WidthFactor = 0.85,
+          Layer = "DEFPOINTS",
+          TextStyleId = textStyleId,
+          HorizontalMode = TextHorizontalMode.TextLeft,
+          VerticalMode = TextVerticalMode.TextVerticalMid,
+          Justify = AttachmentPoint.BaseLeft,
+          Rotation = horizontal ? 0 : 1.5708,
+        };
+        allTexts.Add(supplementalText2);
+        var supplementalText3 = new DBText
+        {
+          TextString = supplemental3,
+          Position = horizontal
+            ? new Point3d(ppr.X, ppr.Y - 0.61 * scaleFactor, 0)
+            : new Point3d(ppr.X + 0.61 * scaleFactor, ppr.Y, 0),
+          Height = 0.1 * scaleFactor,
+          WidthFactor = 0.85,
+          Layer = "DEFPOINTS",
+          TextStyleId = textStyleId,
+          HorizontalMode = TextHorizontalMode.TextLeft,
+          VerticalMode = TextVerticalMode.TextVerticalMid,
+          Justify = AttachmentPoint.BaseLeft,
+          Rotation = horizontal ? 0 : 1.5708,
+        };
+        allTexts.Add(supplementalText3);
+
+        var currentSpace = (BlockTableRecord)
+          acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite);
+        foreach (DBText text in allTexts)
+        {
+          currentSpace.AppendEntity(text);
+          acTrans.AddNewlyCreatedDBObject(text, true);
+        }
+        acTrans.Commit();
+      }
+    }
+
     [CommandMethod("HCND")]
     public void HCND()
     {
@@ -1429,131 +1568,18 @@ namespace ElectricalCommands
       PromptPointResult ppr = ed.GetPoint(ppo);
       if (ppr.Status == PromptStatus.OK)
       {
-        using (Transaction acTrans = acCurDb.TransactionManager.StartTransaction())
-        {
-          BlockTable acBlkTbl =
-            acTrans.GetObject(acCurDb.BlockTableId, OpenMode.ForRead) as BlockTable;
-          BlockTableRecord acBlkTblRec =
-            acTrans.GetObject(acBlkTbl[BlockTableRecord.ModelSpace], OpenMode.ForWrite)
-            as BlockTableRecord;
-          var textStyleId = GeneralCommands.GetTextStyleId("gmep");
-          var textStyle = (TextStyleTableRecord)acTrans.GetObject(textStyleId, OpenMode.ForRead);
-          List<DBText> allTexts = new List<DBText>();
-          double scaleFactor = 1;
-          if (IsInModel() || IsInLayoutViewport())
-          {
-            if (Scale <= 0)
-            {
-              SetScale();
-            }
-            scaleFactor = 12 / Scale;
-          }
-          var firstLineText = new DBText
-          {
-            TextString = firstLine,
-            Position = horizontal
-              ? new Point3d(ppr.Value.X, ppr.Value.Y + 0.20 * scaleFactor, 0)
-              : new Point3d(ppr.Value.X - 0.20 * scaleFactor, ppr.Value.Y, 0),
-            Height = 0.1 * scaleFactor,
-            WidthFactor = 0.85,
-            Layer = "E-TEXT",
-            TextStyleId = textStyleId,
-            HorizontalMode = TextHorizontalMode.TextLeft,
-            VerticalMode = TextVerticalMode.TextVerticalMid,
-            Justify = AttachmentPoint.BaseLeft,
-            Rotation = horizontal ? 0 : 1.5708,
-          };
-          allTexts.Add(firstLineText);
-          var secondLineText = new DBText
-          {
-            TextString = secondLine,
-            Position = horizontal
-              ? new Point3d(ppr.Value.X, ppr.Value.Y + 0.04 * scaleFactor, 0)
-              : new Point3d(ppr.Value.X - 0.04 * scaleFactor, ppr.Value.Y, 0),
-            Height = 0.1 * scaleFactor,
-            WidthFactor = 0.85,
-            Layer = "E-TEXT",
-            TextStyleId = textStyleId,
-            HorizontalMode = TextHorizontalMode.TextLeft,
-            VerticalMode = TextVerticalMode.TextVerticalMid,
-            Justify = AttachmentPoint.BaseLeft,
-            Rotation = horizontal ? 0 : 1.5708,
-          };
-          allTexts.Add(secondLineText);
-          var thirdLineText = new DBText
-          {
-            TextString = thirdLine,
-            Position = horizontal
-              ? new Point3d(ppr.Value.X, ppr.Value.Y - 0.13 * scaleFactor, 0)
-              : new Point3d(ppr.Value.X + 0.13 * scaleFactor, ppr.Value.Y, 0),
-            Height = 0.1 * scaleFactor,
-            WidthFactor = 0.85,
-            Layer = "E-TEXT",
-            TextStyleId = textStyleId,
-            HorizontalMode = TextHorizontalMode.TextLeft,
-            VerticalMode = TextVerticalMode.TextVerticalMid,
-            Justify = AttachmentPoint.BaseLeft,
-            Rotation = horizontal ? 0 : 1.5708,
-          };
-          allTexts.Add(thirdLineText);
-          var supplementalText1 = new DBText
-          {
-            TextString = supplemental1,
-            Position = horizontal
-              ? new Point3d(ppr.Value.X, ppr.Value.Y - 0.29 * scaleFactor, 0)
-              : new Point3d(ppr.Value.X + 0.29 * scaleFactor, ppr.Value.Y, 0),
-            Height = 0.1 * scaleFactor,
-            WidthFactor = 0.85,
-            Layer = "DEFPOINTS",
-            TextStyleId = textStyleId,
-            HorizontalMode = TextHorizontalMode.TextLeft,
-            VerticalMode = TextVerticalMode.TextVerticalMid,
-            Justify = AttachmentPoint.BaseLeft,
-            Rotation = horizontal ? 0 : 1.5708,
-          };
-          allTexts.Add(supplementalText1);
-          var supplementalText2 = new DBText
-          {
-            TextString = supplemental2,
-            Position = horizontal
-              ? new Point3d(ppr.Value.X, ppr.Value.Y - 0.45 * scaleFactor, 0)
-              : new Point3d(ppr.Value.X + 0.45 * scaleFactor, ppr.Value.Y, 0),
-            Height = 0.1 * scaleFactor,
-            WidthFactor = 0.85,
-            Layer = "DEFPOINTS",
-            TextStyleId = textStyleId,
-            HorizontalMode = TextHorizontalMode.TextLeft,
-            VerticalMode = TextVerticalMode.TextVerticalMid,
-            Justify = AttachmentPoint.BaseLeft,
-            Rotation = horizontal ? 0 : 1.5708,
-          };
-          allTexts.Add(supplementalText2);
-          var supplementalText3 = new DBText
-          {
-            TextString = supplemental3,
-            Position = horizontal
-              ? new Point3d(ppr.Value.X, ppr.Value.Y - 0.61 * scaleFactor, 0)
-              : new Point3d(ppr.Value.X + 0.61 * scaleFactor, ppr.Value.Y, 0),
-            Height = 0.1 * scaleFactor,
-            WidthFactor = 0.85,
-            Layer = "DEFPOINTS",
-            TextStyleId = textStyleId,
-            HorizontalMode = TextHorizontalMode.TextLeft,
-            VerticalMode = TextVerticalMode.TextVerticalMid,
-            Justify = AttachmentPoint.BaseLeft,
-            Rotation = horizontal ? 0 : 1.5708,
-          };
-          allTexts.Add(supplementalText3);
-
-          var currentSpace = (BlockTableRecord)
-            acTrans.GetObject(acCurDb.CurrentSpaceId, OpenMode.ForWrite);
-          foreach (DBText text in allTexts)
-          {
-            currentSpace.AppendEntity(text);
-            acTrans.AddNewlyCreatedDBObject(text, true);
-          }
-          acTrans.Commit();
-        }
+        Point3d p = new Point3d(ppr.Value.X, ppr.Value.Y, ppr.Value.Z);
+        AddWireAndConduitTextToPlan(
+          acCurDb,
+          p,
+          firstLine,
+          secondLine,
+          thirdLine,
+          supplemental1,
+          supplemental2,
+          supplemental3,
+          horizontal
+        );
       }
     }
 

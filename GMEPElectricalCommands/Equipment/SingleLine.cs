@@ -529,7 +529,7 @@ namespace ElectricalCommands.Equipment
           child.SetChildEndingPoint(
             new Point3d(
               startingPoint.X + (child.width / 2) + offset,
-              startingPoint.Y - 5,
+              startingPoint.Y - 4.5,
               startingPoint.Z
             )
           );
@@ -1022,6 +1022,16 @@ namespace ElectricalCommands.Equipment
           {
             if (hasCts)
             {
+              GeneralCommands.CreateAndPositionText(
+                tr,
+                "(N)",
+                "gmep",
+                0.0876943284922549,
+                0.85,
+                2,
+                "E-TXT1",
+                new Point3d(startingPoint.X + 0.36, startingPoint.Y - 0.4, 0)
+              );
               // line to breaker
               LineData lineData1 = new LineData();
               lineData1.Layer = "E-CND1";
@@ -1050,6 +1060,16 @@ namespace ElectricalCommands.Equipment
             }
             else
             {
+              GeneralCommands.CreateAndPositionText(
+                tr,
+                "(N)",
+                "gmep",
+                0.0876943284922549,
+                0.85,
+                2,
+                "E-TXT1",
+                new Point3d(startingPoint.X + 0.13, startingPoint.Y - 0.4, 0)
+              );
               LineData lineData1 = new LineData();
               lineData1.Layer = "E-CND1";
               lineData1.StartPoint = new SimpleVector3d();
@@ -1096,7 +1116,40 @@ namespace ElectricalCommands.Equipment
             lineData1.EndPoint.Y = startingPoint.Y - (9.0 / 8.0);
             CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
           }
-
+          if (voltageSpec.Contains("3"))
+          {
+            is3Phase = true;
+          }
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "(N)",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(startingPoint.X + 0.15, startingPoint.Y - 1.19, 0)
+          );
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            mainBreakerSize.ToString() + "A",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(startingPoint.X + 0.15, startingPoint.Y - 1.32, 0)
+          );
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            is3Phase ? "3P" : "2P",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(startingPoint.X + 0.15, startingPoint.Y - 1.45, 0)
+          );
           ObjectId breakerSymbol = bt["DS BREAKER (AUTO SINGLE LINE)"];
           using (
             BlockReference acBlkRef = new BlockReference(
@@ -1112,6 +1165,45 @@ namespace ElectricalCommands.Equipment
             tr.AddNewlyCreatedDBObject(acBlkRef, true);
           }
 
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "(N)",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(endingPoint.X, endingPoint.Y - 0.44, 0),
+            TextHorizontalMode.TextCenter,
+            TextVerticalMode.TextBase,
+            AttachmentPoint.BaseCenter
+          );
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "PANEL",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(endingPoint.X, endingPoint.Y - 0.57, 0),
+            TextHorizontalMode.TextCenter,
+            TextVerticalMode.TextBase,
+            AttachmentPoint.BaseCenter
+          );
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "'" + name + "'",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(endingPoint.X, endingPoint.Y - 0.70, 0),
+            TextHorizontalMode.TextCenter,
+            TextVerticalMode.TextBase,
+            AttachmentPoint.BaseCenter
+          );
           // line from breaker
           LineData lineData3 = new LineData();
           lineData3.Layer = "E-CND1";
@@ -1160,7 +1252,69 @@ namespace ElectricalCommands.Equipment
             arcData2.StartAngle = 4.92183;
             arcData2.EndAngle = 1.32645;
             CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData2, 1);
+            ObjectId breakerLeader = bt["BREAKER LEADER RIGHT (AUTO SINGLE LINE)"];
+            using (
+              BlockReference acBlkRef = new BlockReference(
+                new Point3d(endingPoint.X, endingPoint.Y, 0),
+                breakerLeader
+              )
+            )
+            {
+              BlockTableRecord acCurSpaceBlkTblRec;
+              acCurSpaceBlkTblRec =
+                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+              acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+              tr.AddNewlyCreatedDBObject(acBlkRef, true);
+            }
+            GeneralCommands.CreateAndPositionText(
+              tr,
+              "(N)" + mainBreakerSize + "A/" + (is3Phase ? "3P" : "2P"),
+              "gmep",
+              0.0876943284922549,
+              0.85,
+              2,
+              "E-TXT1",
+              new Point3d(endingPoint.X - 0.42, endingPoint.Y + 0.165, 0),
+              TextHorizontalMode.TextCenter,
+              TextVerticalMode.TextBase,
+              AttachmentPoint.BaseRight
+            );
           }
+          double voltage = 208;
+          if (voltageSpec.Contains("480"))
+          {
+            voltage = 480;
+          }
+          if (voltageSpec.Contains("240"))
+          {
+            voltage = 240;
+          }
+          (
+            string firstLine,
+            string secondLine,
+            string thirdLine,
+            string supplemental1,
+            string supplemental2,
+            string supplemental3
+          ) = CADObjectCommands.GetWireAndConduitSizeText(
+            mainBreakerSize,
+            mainBreakerSize,
+            parentDistance,
+            voltage,
+            1,
+            is3Phase ? 3 : 1
+          );
+          CADObjectCommands.AddWireAndConduitTextToPlan(
+            db,
+            new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
+            firstLine,
+            secondLine,
+            thirdLine,
+            supplemental1,
+            supplemental2,
+            supplemental3,
+            false
+          );
         }
         else { }
         tr.Commit();
