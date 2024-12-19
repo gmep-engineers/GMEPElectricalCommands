@@ -551,19 +551,19 @@ namespace ElectricalCommands.Equipment
           if (index == 0)
           {
             child.SetChildEndingPoint(
-              new Point3d(endingPoint.X + (child.width / 2), endingPoint.Y - 3.25, 0)
+              new Point3d(endingPoint.X + (child.width / 2.0), endingPoint.Y - 3.25, 0)
             );
             child.SetChildStartingPoints(
-              new Point3d(endingPoint.X + (5 / 16), endingPoint.Y - (7 / 8), 0)
+              new Point3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (7.0 / 8.0), 0)
             );
           }
           if (index == 1)
           {
             child.SetChildEndingPoint(
-              new Point3d(endingPoint.X - (child.width / 2), endingPoint.Y - 3.25, 0)
+              new Point3d(endingPoint.X - (child.width / 2.0), endingPoint.Y - 3.25, 0)
             );
             child.SetChildStartingPoints(
-              new Point3d(endingPoint.X - (5 / 16), endingPoint.Y - (7 / 8), 0)
+              new Point3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (7.0 / 8.0), 0)
             );
           }
           if (index == 2)
@@ -572,7 +572,7 @@ namespace ElectricalCommands.Equipment
               new Point3d(endingPoint.X + child.width, endingPoint.Y - 3.25, 0)
             );
             child.SetChildStartingPoints(
-              new Point3d(endingPoint.X + (5 / 16), endingPoint.Y - (1 / 8), 0)
+              new Point3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (1.0 / 8.0), 0)
             );
           }
           if (index == 3)
@@ -581,7 +581,7 @@ namespace ElectricalCommands.Equipment
               new Point3d(endingPoint.X - child.width, endingPoint.Y - 3.25, 0)
             );
             child.SetChildStartingPoints(
-              new Point3d(endingPoint.X - (5 / 16), endingPoint.Y - (1 / 8), 0)
+              new Point3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (1.0 / 8.0), 0)
             );
           }
         }
@@ -1299,7 +1299,7 @@ namespace ElectricalCommands.Equipment
           ) = CADObjectCommands.GetWireAndConduitSizeText(
             mainBreakerSize,
             mainBreakerSize,
-            parentDistance,
+            parentDistance + 10,
             voltage,
             1,
             is3Phase ? 3 : 1
@@ -1316,7 +1316,81 @@ namespace ElectricalCommands.Equipment
             false
           );
         }
-        else { }
+        else
+        {
+          // panel is subpanel
+          // panel rectangle
+          Polyline2dData polyData = new Polyline2dData();
+          polyData.Layer = "E-SYMBOL";
+          polyData.Vertices.Add(new SimpleVector3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y, 0));
+          polyData.Vertices.Add(
+            new SimpleVector3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (17.0 / 16.0), 0)
+          );
+          polyData.Vertices.Add(
+            new SimpleVector3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (17.0 / 16.0), 0)
+          );
+          polyData.Vertices.Add(new SimpleVector3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y, 0));
+          polyData.Vertices.Add(new SimpleVector3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y, 0));
+          polyData.Closed = true;
+          CADObjectCommands.CreatePolyline2d(new Point3d(), tr, btr, polyData, 1);
+          LineData lineData1 = new LineData();
+          lineData1.Layer = "E-CND1";
+          lineData1.StartPoint = new SimpleVector3d();
+          lineData1.EndPoint = new SimpleVector3d();
+          lineData1.StartPoint.X = startingPoint.X;
+          lineData1.StartPoint.Y = startingPoint.Y;
+          lineData1.EndPoint.X = startingPoint.X + (endingPoint.X - startingPoint.X);
+          lineData1.EndPoint.Y = startingPoint.Y;
+          CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
+          LineData lineData2 = new LineData();
+          lineData2.Layer = "E-CND1";
+          lineData2.StartPoint = new SimpleVector3d();
+          lineData2.EndPoint = new SimpleVector3d();
+          lineData2.StartPoint.X = startingPoint.X + (endingPoint.X - startingPoint.X);
+          lineData2.StartPoint.Y = startingPoint.Y;
+          lineData2.EndPoint.X = endingPoint.X;
+          lineData2.EndPoint.Y = endingPoint.Y;
+          CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData2, 1);
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "(N)",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(endingPoint.X, endingPoint.Y - 0.44, 0),
+            TextHorizontalMode.TextCenter,
+            TextVerticalMode.TextBase,
+            AttachmentPoint.BaseCenter
+          );
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "PANEL",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(endingPoint.X, endingPoint.Y - 0.57, 0),
+            TextHorizontalMode.TextCenter,
+            TextVerticalMode.TextBase,
+            AttachmentPoint.BaseCenter
+          );
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "'" + name + "'",
+            "gmep",
+            0.0876943284922549,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(endingPoint.X, endingPoint.Y - 0.70, 0),
+            TextHorizontalMode.TextCenter,
+            TextVerticalMode.TextBase,
+            AttachmentPoint.BaseCenter
+          );
+        }
         tr.Commit();
       }
       foreach (var child in children)
