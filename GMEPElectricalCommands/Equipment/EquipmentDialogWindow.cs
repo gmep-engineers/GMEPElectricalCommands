@@ -1130,6 +1130,10 @@ namespace ElectricalCommands.Equipment
               childPanel.hasCts = true;
             }
           }
+          if (p.voltage.Contains("3"))
+          {
+            childPanel.is3Phase = true;
+          }
           MakeSingleLineNodeTreeFromPanel(childPanel);
           panel.children.Add(childPanel);
         }
@@ -1138,9 +1142,11 @@ namespace ElectricalCommands.Equipment
       {
         if (t.parentId == panel.id)
         {
+          SLDisconnect disc = new SLDisconnect(t.id);
           SLTransformer childXfmr = new SLTransformer(t.id, t.name);
+          disc.children.Add(childXfmr);
           MakeSingleLineNodeTreeFromTransformer(childXfmr);
-          panel.children.Add(childXfmr);
+          panel.children.Add(disc);
         }
       }
     }
