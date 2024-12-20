@@ -1,4 +1,5 @@
-﻿using Autodesk.AutoCAD.Geometry;
+﻿using System.Windows.Forms;
+using Autodesk.AutoCAD.Geometry;
 
 namespace ElectricalCommands.Equipment
 {
@@ -80,13 +81,18 @@ namespace ElectricalCommands.Equipment
 
   public class Transformer : Placeable
   {
+    public double kva;
+    public string voltageSpec;
+
     public Transformer(
       string _id,
       string pId,
       string n,
       int pDist = -1,
       double xLoc = 0,
-      double yLoc = 0
+      double yLoc = 0,
+      double kva = 0,
+      string volt = ""
     )
     {
       id = _id;
@@ -94,6 +100,8 @@ namespace ElectricalCommands.Equipment
       name = n;
       parentDistance = pDist;
       loc = new Point3d(xLoc, yLoc, 0);
+      this.kva = kva;
+      voltageSpec = volt;
     }
   }
 }

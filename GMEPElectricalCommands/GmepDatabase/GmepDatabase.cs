@@ -144,7 +144,9 @@ namespace GMEPElectricalCommands.GmepDatabase
             reader.GetString("name"),
             reader.GetInt32("parent_distance"),
             reader.GetFloat("loc_x"),
-            reader.GetFloat("loc_y")
+            reader.GetFloat("loc_y"),
+            reader.GetFloat("kva_rating"),
+            reader.GetString("voltage")
           )
         );
       }

@@ -1142,8 +1142,90 @@ namespace ElectricalCommands.Equipment
       {
         if (t.parentId == panel.id)
         {
-          SLDisconnect disc = new SLDisconnect(t.id);
+          SLDisconnect disc = new SLDisconnect(t.name);
+          bool is3Phase = false;
+          if (t.voltageSpec.Contains("3"))
+          {
+            is3Phase = true;
+          }
+          double voltage = 208;
+          if (t.voltageSpec.StartsWith("480"))
+          {
+            voltage = 480;
+          }
+          double amperage = t.kva * 1000 / voltage;
+          int mainBreakerSize = 0;
+          string grounding = "(N)";
+          switch (amperage)
+          {
+            case var _ when amperage <= 100:
+              mainBreakerSize = 100;
+              grounding += "3/4\"C. (1#8CU.)";
+              break;
+            case var _ when amperage <= 125:
+              mainBreakerSize = 125;
+              grounding += "3/4\"C. (1#8CU.)";
+              break;
+            case var _ when amperage <= 150:
+              mainBreakerSize = 150;
+              grounding += "3/4\"C. (1#8CU.)";
+              break;
+            case var _ when amperage <= 175:
+              mainBreakerSize = 175;
+              grounding += "3/4\"C. (1#8CU.)";
+              break;
+            case var _ when amperage <= 200:
+              mainBreakerSize = 200;
+              grounding += "3/4\"C. (1#6CU.)";
+              break;
+            case var _ when amperage <= 225:
+              mainBreakerSize = 225;
+              grounding += "3/4\"C. (1#6CU.)";
+              break;
+            case var _ when amperage <= 250:
+              mainBreakerSize = 250;
+              grounding += "3/4\"C. (1#6CU.)";
+              break;
+            case var _ when amperage <= 275:
+              mainBreakerSize = 275;
+              grounding += "3/4\"C. (1#6CU.)";
+              break;
+            case var _ when amperage <= 400:
+              mainBreakerSize = 400;
+              grounding += "3/4\"C. (1#3CU.)";
+              break;
+            case var _ when amperage <= 500:
+              mainBreakerSize = 500;
+              grounding += "3/4\"C. (1#2CU.)";
+              break;
+            case var _ when amperage <= 600:
+              mainBreakerSize = 600;
+              grounding += "3/4\"C. (1#1CU.)";
+              break;
+            case var _ when amperage <= 800:
+              mainBreakerSize = 800;
+              grounding += "3/4\"C. (1#1/0CU.)";
+              break;
+          }
+          disc.is3Phase = is3Phase;
+          disc.voltage = voltage;
+          disc.mainBreakerSize = mainBreakerSize;
+          disc.fromDistribution = panel.isDistribution;
+          disc.parentDistance = t.parentDistance;
+          if (panel.isDistribution && !panel.hasMeter)
+          {
+            disc.hasMeter = true;
+            if (mainBreakerSize > 200)
+            {
+              disc.hasCts = true;
+            }
+          }
           SLTransformer childXfmr = new SLTransformer(t.id, t.name);
+          childXfmr.voltage = voltage;
+          childXfmr.parentDistance = 0;
+          childXfmr.is3Phase = panel.is3Phase;
+          childXfmr.mainBreakerSize = mainBreakerSize;
+          childXfmr.grounding = grounding;
           disc.children.Add(childXfmr);
           MakeSingleLineNodeTreeFromTransformer(childXfmr);
           panel.children.Add(disc);

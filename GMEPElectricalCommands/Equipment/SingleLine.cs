@@ -1536,6 +1536,9 @@ namespace ElectricalCommands.Equipment
     public bool is3Phase;
     public string voltageSpec;
     public int mainBreakerSize;
+    public int parentDistance;
+    public double voltage;
+    public string grounding;
 
     public SLTransformer(string id, string name)
     {
@@ -1554,6 +1557,82 @@ namespace ElectricalCommands.Equipment
           .SetChildEndingPoint(new Point3d(endingPoint.X, endingPoint.Y - 0.3739 - 2.5, 0));
         children[0].SetChildStartingPoints(new Point3d(endingPoint.X, endingPoint.Y - 0.3739, 0));
       }
+    }
+
+    public void MakeTransformer(
+      Transaction tr,
+      BlockTableRecord btr,
+      BlockTable bt,
+      Database db,
+      Point3d endingPoint
+    )
+    {
+      ObjectId discSymbol = bt["TRANSFORMER (AUTO SINGLE LINE)"];
+      using (
+        BlockReference acBlkRef = new BlockReference(
+          new Point3d(endingPoint.X, endingPoint.Y, 0),
+          discSymbol
+        )
+      )
+      {
+        BlockTableRecord acCurSpaceBlkTblRec;
+        acCurSpaceBlkTblRec =
+          tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+        acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+        tr.AddNewlyCreatedDBObject(acBlkRef, true);
+      }
+      GeneralCommands.CreateAndPositionText(
+        tr,
+        grounding,
+        "gmep",
+        0.0876943284922549,
+        0.85,
+        2,
+        "E-TXT1",
+        new Point3d(endingPoint.X - 0.25, endingPoint.Y - 0.86, 0),
+        TextHorizontalMode.TextCenter,
+        TextVerticalMode.TextBase,
+        AttachmentPoint.BaseRight
+      );
+      GeneralCommands.CreateAndPositionText(
+        tr,
+        "TO BUILDING STEEL",
+        "gmep",
+        0.0876943284922549,
+        0.85,
+        2,
+        "E-TXT1",
+        new Point3d(endingPoint.X - 0.25, endingPoint.Y - 1.0, 0),
+        TextHorizontalMode.TextCenter,
+        TextVerticalMode.TextBase,
+        AttachmentPoint.BaseRight
+      );
+      (
+        string firstLine,
+        string secondLine,
+        string thirdLine,
+        string supplemental1,
+        string supplemental2,
+        string supplemental3
+      ) = CADObjectCommands.GetWireAndConduitSizeText(
+        mainBreakerSize,
+        mainBreakerSize,
+        parentDistance + 10,
+        voltage,
+        1,
+        is3Phase ? 3 : 1
+      );
+      CADObjectCommands.AddWireAndConduitTextToPlan(
+        db,
+        new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
+        firstLine,
+        secondLine,
+        thirdLine,
+        supplemental1,
+        supplemental2,
+        supplemental3,
+        false
+      );
     }
 
     public override void Make()
@@ -1592,26 +1671,51 @@ namespace ElectricalCommands.Equipment
             lineData1.EndPoint = new SimpleVector3d();
             lineData1.StartPoint.X = startingPoint.X;
             lineData1.StartPoint.Y = startingPoint.Y;
-            lineData1.EndPoint.X = startingPoint.X;
-            lineData1.EndPoint.Y = startingPoint.Y - (9.0 / 8.0);
+            lineData1.EndPoint.X = endingPoint.X;
+            lineData1.EndPoint.Y = endingPoint.Y;
             CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
           }
           if (voltageSpec.Contains("3"))
           {
             is3Phase = true;
           }
-          MakeDistributionBreaker(tr, btr, bt, db, startingPoint, mainBreakerSize, is3Phase);
+          LineData lineData4 = new LineData();
+          lineData4.Layer = "E-SYM1";
+          lineData4.StartPoint = new SimpleVector3d();
+          lineData4.EndPoint = new SimpleVector3d();
+          lineData4.StartPoint.X = startingPoint.X + (width / 2.0);
+          lineData4.StartPoint.Y = startingPoint.Y + 0.25;
+          lineData4.EndPoint.X = startingPoint.X + (width / 2.0);
+          lineData4.EndPoint.Y = startingPoint.Y + 0.25 - 2;
+          CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData4, 1, "HIDDEN");
         }
-        else { }
+        else
+        {
+          LineData lineData1 = new LineData();
+          lineData1.Layer = "E-CND1";
+          lineData1.StartPoint = new SimpleVector3d();
+          lineData1.EndPoint = new SimpleVector3d();
+          lineData1.StartPoint.X = startingPoint.X;
+          lineData1.StartPoint.Y = startingPoint.Y;
+          lineData1.EndPoint.X = endingPoint.X;
+          lineData1.EndPoint.Y = endingPoint.Y;
+          CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
+        }
+        MakeTransformer(tr, btr, bt, db, endingPoint);
+        tr.Commit();
       }
     }
   }
 
   public class SLDisconnect : SingleLine
   {
-    public int distributionBreakerSize;
+    public bool fromDistribution;
     public bool hasMeter;
     public bool hasCts;
+    public int mainBreakerSize;
+    public bool is3Phase;
+    public double voltage;
+    public int parentDistance;
 
     public SLDisconnect(string name)
     {
@@ -1627,18 +1731,200 @@ namespace ElectricalCommands.Equipment
       children[0].SetChildStartingPoints(new Point3d(endingPoint.X, endingPoint.Y - 0.1201, 0));
     }
 
+    public void MakeDisconnect(
+      Transaction tr,
+      BlockTableRecord btr,
+      BlockTable bt,
+      Database db,
+      Point3d endingPoint
+    )
+    {
+      ObjectId discSymbol = bt["DISCONNECT (AUTO SINGLE LINE)"];
+      using (
+        BlockReference acBlkRef = new BlockReference(
+          new Point3d(endingPoint.X, endingPoint.Y, 0),
+          discSymbol
+        )
+      )
+      {
+        BlockTableRecord acCurSpaceBlkTblRec;
+        acCurSpaceBlkTblRec =
+          tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+        acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+        tr.AddNewlyCreatedDBObject(acBlkRef, true);
+      }
+      (
+        string firstLine,
+        string secondLine,
+        string thirdLine,
+        string supplemental1,
+        string supplemental2,
+        string supplemental3
+      ) = CADObjectCommands.GetWireAndConduitSizeText(
+        mainBreakerSize,
+        mainBreakerSize,
+        parentDistance + 10,
+        voltage,
+        1,
+        is3Phase ? 3 : 1
+      );
+      CADObjectCommands.AddWireAndConduitTextToPlan(
+        db,
+        new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
+        firstLine,
+        secondLine,
+        thirdLine,
+        supplemental1,
+        supplemental2,
+        supplemental3,
+        false
+      );
+      ObjectId arrowSymbol = bt["RIGHT ARROW (AUTO SINGLE LINE)"];
+      using (
+        BlockReference acBlkRef = new BlockReference(
+          new Point3d(endingPoint.X - 0.0601, endingPoint.Y - 0.0601, 0),
+          arrowSymbol
+        )
+      )
+      {
+        BlockTableRecord acCurSpaceBlkTblRec;
+        acCurSpaceBlkTblRec =
+          tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+        acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+        tr.AddNewlyCreatedDBObject(acBlkRef, true);
+      }
+      string text = "(N)";
+      switch (mainBreakerSize)
+      {
+        case var _ when mainBreakerSize <= 30:
+          text += "30AS/";
+          break;
+        case var _ when mainBreakerSize <= 60:
+          text += "60AS/";
+          break;
+        case var _ when mainBreakerSize <= 100:
+          text += "100AS/";
+          break;
+        case var _ when mainBreakerSize <= 200:
+          text += "200AS/";
+          break;
+        case var _ when mainBreakerSize <= 400:
+          text += "400AS/";
+          break;
+        case var _ when mainBreakerSize <= 600:
+          text += "600AS/";
+          break;
+      }
+      text += is3Phase ? "3P" : "2P";
+      GeneralCommands.CreateAndPositionText(
+        tr,
+        text,
+        "gmep",
+        0.0876943284922549,
+        0.85,
+        2,
+        "E-TXT1",
+        new Point3d(endingPoint.X - 0.25, endingPoint.Y - 0.037, 0),
+        TextHorizontalMode.TextCenter,
+        TextVerticalMode.TextBase,
+        AttachmentPoint.BaseRight
+      );
+      GeneralCommands.CreateAndPositionText(
+        tr,
+        "DISCONNECT",
+        "gmep",
+        0.0876943284922549,
+        0.85,
+        2,
+        "E-TXT1",
+        new Point3d(endingPoint.X - 0.25, endingPoint.Y - 0.18, 0),
+        TextHorizontalMode.TextCenter,
+        TextVerticalMode.TextBase,
+        AttachmentPoint.BaseRight
+      );
+      GeneralCommands.CreateAndPositionText(
+        tr,
+        "FOR XFMR '" + name + "'",
+        "gmep",
+        0.0876943284922549,
+        0.85,
+        2,
+        "E-TXT1",
+        new Point3d(endingPoint.X - 0.25, endingPoint.Y - 0.31, 0),
+        TextHorizontalMode.TextCenter,
+        TextVerticalMode.TextBase,
+        AttachmentPoint.BaseRight
+      );
+    }
+
     public override void Make()
     {
-      if (distributionBreakerSize > 0)
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
       {
-        if (hasMeter)
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+        if (fromDistribution)
         {
-          if (hasCts) { }
-          else { }
+          if (hasMeter)
+          {
+            if (hasCts)
+            {
+              MakeDistributionCtsMeter(tr, btr, bt, db, startingPoint);
+            }
+            else
+            {
+              MakeDistributionMeter(tr, btr, bt, db, startingPoint);
+            }
+          }
+          else
+          {
+            LineData lineData2 = new LineData();
+            lineData2.Layer = "E-CND1";
+            lineData2.StartPoint = new SimpleVector3d();
+            lineData2.EndPoint = new SimpleVector3d();
+            lineData2.StartPoint.X = startingPoint.X;
+            lineData2.StartPoint.Y = startingPoint.Y;
+            lineData2.EndPoint.X = endingPoint.X;
+            lineData2.EndPoint.Y = startingPoint.Y - (9.0 / 8.0);
+            CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData2, 1);
+            MakeDistributionBreaker(tr, btr, bt, db, startingPoint, mainBreakerSize, is3Phase);
+          }
+          LineData lineData3 = new LineData();
+          lineData3.Layer = "E-CND1";
+          lineData3.StartPoint = new SimpleVector3d();
+          lineData3.EndPoint = new SimpleVector3d();
+          lineData3.StartPoint.X = startingPoint.X;
+          lineData3.StartPoint.Y = startingPoint.Y - (9.0 / 8.0) - (5.0 / 16.0);
+          lineData3.EndPoint.X = endingPoint.X;
+          lineData3.EndPoint.Y = endingPoint.Y;
+          CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData3, 1);
+          LineData lineData4 = new LineData();
+          lineData4.Layer = "E-SYM1";
+          lineData4.StartPoint = new SimpleVector3d();
+          lineData4.EndPoint = new SimpleVector3d();
+          lineData4.StartPoint.X = startingPoint.X + (width / 2.0);
+          lineData4.StartPoint.Y = startingPoint.Y + 0.25;
+          lineData4.EndPoint.X = startingPoint.X + (width / 2.0);
+          lineData4.EndPoint.Y = startingPoint.Y + 0.25 - 2;
+          CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData4, 1, "HIDDEN");
         }
         else { }
+        MakeDisconnect(tr, btr, bt, db, endingPoint);
+        tr.Commit();
       }
-      else { }
+      if (children.Count > 0)
+      {
+        children[0].Make();
+      }
     }
   }
 }
