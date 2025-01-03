@@ -728,9 +728,11 @@ namespace ElectricalCommands.Equipment
           if (pooledEquipment[j].parentId == pooledEquipment[i].id)
           {
             Placeable equip = pooledEquipment[j];
-            equip.parentDistance = Convert.ToInt32(
-              pooledEquipment[j].loc.DistanceTo(pooledEquipment[i].loc) / 12
-            );
+            equip.parentDistance =
+              Convert.ToInt32(
+                Math.Abs(pooledEquipment[j].loc.X - pooledEquipment[i].loc.X)
+                  + Math.Abs(pooledEquipment[j].loc.Y - pooledEquipment[i].loc.Y)
+              ) / 12;
             pooledEquipment[j] = equip;
           }
         }
