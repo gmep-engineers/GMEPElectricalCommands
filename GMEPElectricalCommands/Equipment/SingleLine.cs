@@ -4,9 +4,6 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
-using Autodesk.AutoCAD.Runtime;
-using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.Drawing.Diagrams;
 
 namespace ElectricalCommands.Equipment
 {
@@ -19,13 +16,14 @@ namespace ElectricalCommands.Equipment
     public List<SingleLine> children;
     public Point3d startingPoint;
     public Point3d endingPoint;
+    public bool startChildRight;
 
     public SingleLine()
     {
       children = new List<SingleLine>();
     }
 
-    public virtual double AggregateWidths()
+    public virtual double AggregateWidths(bool fromDistribution = false)
     {
       double sum = width;
       foreach (SingleLine child in children)
@@ -671,6 +669,7 @@ namespace ElectricalCommands.Equipment
       this.isDistribution = isDistribution;
       this.hasMeter = hasMeter;
       this.parentDistance = parentDistance;
+      startChildRight = true;
     }
 
     public void MakePanel(
@@ -812,43 +811,114 @@ namespace ElectricalCommands.Equipment
       else
       {
         int index = 0;
-        foreach (SingleLine child in children)
+        for (int i = 0; i < children.Count; i++)
         {
-          if (index == 0)
+          SingleLine child = children[i];
+          if (startChildRight)
           {
-            child.SetChildEndingPoint(
-              new Point3d(endingPoint.X + (child.width) / 1.5, endingPoint.Y - 3.25, 0)
-            );
-            child.SetChildStartingPoints(
-              new Point3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (7.0 / 8.0), 0)
-            );
+            if (index == 0)
+            {
+              child.startChildRight = true;
+              child.SetChildEndingPoint(new Point3d(endingPoint.X + 2, endingPoint.Y - 3.25, 0));
+              child.SetChildStartingPoints(
+                new Point3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (7.0 / 8.0), 0)
+              );
+            }
+            if (index == 1)
+            {
+              child.startChildRight = false;
+              child.SetChildEndingPoint(new Point3d(endingPoint.X - 2, endingPoint.Y - 3.25, 0));
+              child.SetChildStartingPoints(
+                new Point3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (7.0 / 8.0), 0)
+              );
+            }
+            if (index == 2)
+            {
+              child.startChildRight = true;
+              child.SetChildEndingPoint(
+                new Point3d(
+                  endingPoint.X
+                    + Math.Floor(0.5 * child.children.Count)
+                    + (2 * children[i - 2].children.Count)
+                    + 4,
+                  endingPoint.Y - 3.25,
+                  0
+                )
+              );
+              child.SetChildStartingPoints(
+                new Point3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (2.0 / 8.0), 0)
+              );
+            }
+            if (index == 3)
+            {
+              child.startChildRight = false;
+              child.SetChildEndingPoint(
+                new Point3d(
+                  endingPoint.X
+                    - Math.Floor(0.5 * child.children.Count)
+                    - (2 * children[i - 2].children.Count)
+                    - 4,
+                  endingPoint.Y - 3.25,
+                  0
+                )
+              );
+              child.SetChildStartingPoints(
+                new Point3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (2.0 / 8.0), 0)
+              );
+            }
           }
-          if (index == 1)
+          else
           {
-            child.SetChildEndingPoint(
-              new Point3d(endingPoint.X - (child.width) / 1.5, endingPoint.Y - 3.25, 0)
-            );
-            child.SetChildStartingPoints(
-              new Point3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (7.0 / 8.0), 0)
-            );
-          }
-          if (index == 2)
-          {
-            child.SetChildEndingPoint(
-              new Point3d(endingPoint.X + child.width * 1.5, endingPoint.Y - 3.25, 0)
-            );
-            child.SetChildStartingPoints(
-              new Point3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (2.0 / 8.0), 0)
-            );
-          }
-          if (index == 3)
-          {
-            child.SetChildEndingPoint(
-              new Point3d(endingPoint.X - child.width * 1.5, endingPoint.Y - 3.25, 0)
-            );
-            child.SetChildStartingPoints(
-              new Point3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (2.0 / 8.0), 0)
-            );
+            if (index == 1)
+            {
+              child.startChildRight = false;
+              child.SetChildEndingPoint(new Point3d(endingPoint.X + 2, endingPoint.Y - 3.25, 0));
+              child.SetChildStartingPoints(
+                new Point3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (7.0 / 8.0), 0)
+              );
+            }
+            if (index == 0)
+            {
+              child.startChildRight = true;
+              child.SetChildEndingPoint(new Point3d(endingPoint.X - 2, endingPoint.Y - 3.25, 0));
+              child.SetChildStartingPoints(
+                new Point3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (7.0 / 8.0), 0)
+              );
+            }
+            if (index == 3)
+            {
+              child.startChildRight = false;
+              child.SetChildEndingPoint(
+                new Point3d(
+                  endingPoint.X
+                    + Math.Floor(0.5 * child.children.Count)
+                    + (2 * children[i - 2].children.Count)
+                    + 4,
+                  endingPoint.Y - 3.25,
+                  0
+                )
+              );
+              child.SetChildStartingPoints(
+                new Point3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (2.0 / 8.0), 0)
+              );
+            }
+            if (index == 2)
+            {
+              child.startChildRight = true;
+              child.SetChildEndingPoint(
+                new Point3d(
+                  endingPoint.X
+                    - Math.Floor(0.5 * child.children.Count)
+                    - (2 * children[i - 2].children.Count)
+                    - 4,
+                  endingPoint.Y - 3.25,
+                  0
+                )
+              );
+              child.SetChildStartingPoints(
+                new Point3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (2.0 / 8.0), 0)
+              );
+            }
           }
           index++;
         }
@@ -1896,8 +1966,8 @@ namespace ElectricalCommands.Equipment
             lineData2.EndPoint.X = endingPoint.X;
             lineData2.EndPoint.Y = startingPoint.Y - (9.0 / 8.0);
             CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData2, 1);
-            MakeDistributionBreaker(tr, btr, bt, db, startingPoint, mainBreakerSize, is3Phase);
           }
+          MakeDistributionBreaker(tr, btr, bt, db, startingPoint, mainBreakerSize, is3Phase);
           LineData lineData3 = new LineData();
           lineData3.Layer = "E-CND1";
           lineData3.StartPoint = new SimpleVector3d();
