@@ -1,26 +1,28 @@
-﻿using Autodesk.AutoCAD.ApplicationServices;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Windows.Forms;
+using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.Colors;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using OfficeOpenXml;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Windows.Forms;
 
-namespace ElectricalCommands {
-
-  public class PanelCommands {
+namespace ElectricalCommands
+{
+  public class PanelCommands
+  {
     private MainForm myForm;
     private int circuitNumLeft = 1;
     private int circuitNumRight = 2;
 
     [CommandMethod("PANEL")]
-    public void PANEL() {
+    public void PANEL()
+    {
       Document doc = Autodesk
         .AutoCAD
         .ApplicationServices
@@ -29,49 +31,60 @@ namespace ElectricalCommands {
         .MdiActiveDocument;
       Editor ed = doc.Editor;
 
-      try {
-        if (this.myForm != null && !this.myForm.IsDisposed) {
+      try
+      {
+        if (this.myForm != null && !this.myForm.IsDisposed)
+        {
           // Bring myForm to the front
           this.myForm.BringToFront();
         }
-        else {
+        else
+        {
           // Create a new MainForm if it's not already open
           this.myForm = new MainForm(this);
           this.myForm.InitializeModal();
           this.myForm.Show();
         }
       }
-      catch (System.Exception ex) {
+      catch (System.Exception ex)
+      {
         ed.WriteMessage("Error: " + ex.ToString());
       }
     }
 
     [CommandMethod("CREATEBLOCK")]
-    public void CREATEBLOCK() {
+    public void CREATEBLOCK()
+    {
       var (doc, db, _) = PanelCommands.GetGlobals();
 
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
         BlockTableRecord existingBtr = null;
         ObjectId existingBtrId = ObjectId.Null;
 
         // Check if block already exists
-        if (bt.Has("CIRCLEI")) {
+        if (bt.Has("CIRCLEI"))
+        {
           existingBtrId = bt["CIRCLEI"];
 
-          if (existingBtrId != ObjectId.Null) {
+          if (existingBtrId != ObjectId.Null)
+          {
             existingBtr = (BlockTableRecord)tr.GetObject(existingBtrId, OpenMode.ForWrite);
 
-            if (existingBtr != null && existingBtr.Name == "CIRCLEI") {
+            if (existingBtr != null && existingBtr.Name == "CIRCLEI")
+            {
               return; // Exit the function if existing block matches the new block
             }
           }
         }
 
         // Delete existing block and its contents
-        if (existingBtr != null) {
-          foreach (ObjectId id in existingBtr.GetBlockReferenceIds(true, true)) {
+        if (existingBtr != null)
+        {
+          foreach (ObjectId id in existingBtr.GetBlockReferenceIds(true, true))
+          {
             DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
             obj.Erase(true);
           }
@@ -103,13 +116,15 @@ namespace ElectricalCommands {
         // Check if the text style "ROMANS" exists
         TextStyleTable textStyleTable = (TextStyleTable)
           tr.GetObject(db.TextStyleTableId, OpenMode.ForRead);
-        if (textStyleTable.Has("ROMANS")) {
+        if (textStyleTable.Has("ROMANS"))
+        {
           text.TextStyleId = textStyleTable["ROMANS"]; // apply the "ROMANS" text style to the text entity
         }
 
         // Check if the layer "E-TEXT" exists
         LayerTable lt = (LayerTable)tr.GetObject(db.LayerTableId, OpenMode.ForRead);
-        if (lt.Has("E-TEXT")) {
+        if (lt.Has("E-TEXT"))
+        {
           circle.Layer = "E-TEXT"; // Set the layer of the circle to "E-TEXT"
           text.Layer = "E-TEXT"; // Set the layer of the text to "E-TEXT"
         }
@@ -122,13 +137,16 @@ namespace ElectricalCommands {
     }
 
     [CommandMethod("KEEPBREAKERS")]
-    public void KEEPBREAKERS() {
+    public void KEEPBREAKERS()
+    {
       var (doc, db, ed) = PanelCommands.GetGlobals();
 
-      using (var tr = db.TransactionManager.StartTransaction()) {
+      using (var tr = db.TransactionManager.StartTransaction())
+      {
         var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
-        if (!bt.Has("CIRCLEI")) {
+        if (!bt.Has("CIRCLEI"))
+        {
           PromptKeywordOptions pko = new PromptKeywordOptions(
             "\nThe block 'CIRCLEI' does not exist. Do you want to create it? [Yes/No] ",
             "Yes No"
@@ -149,7 +167,8 @@ namespace ElectricalCommands {
         var point2 = ed.GetPoint("\nSelect second point: ").Value;
 
         // Swap the points if the y-coordinate of the first point is lower than that of the second point
-        if (point1.Y < point2.Y) {
+        if (point1.Y < point2.Y)
+        {
           Point3d tempPoint = point1;
           point1 = point2;
           point2 = tempPoint;
@@ -180,7 +199,8 @@ namespace ElectricalCommands {
         var line3 = new Line(mid1, circleTop) { Layer = layerName };
         var line4 = new Line(mid2, circleBottom) { Layer = layerName };
 
-        if (dist > 0.3) {
+        if (dist > 0.3)
+        {
           btr.AppendEntity(line1);
           btr.AppendEntity(line2);
           tr.AddNewlyCreatedDBObject(line1, true);
@@ -191,7 +211,8 @@ namespace ElectricalCommands {
         btr.AppendEntity(blkRef);
         tr.AddNewlyCreatedDBObject(blkRef, true);
 
-        if (dist > 0.3) {
+        if (dist > 0.3)
+        {
           btr.AppendEntity(line3);
           btr.AppendEntity(line4);
           tr.AddNewlyCreatedDBObject(line3, true);
@@ -203,7 +224,8 @@ namespace ElectricalCommands {
     }
 
     [CommandMethod("IMPORTPANELS")]
-    public void IMPORTPANELS() {
+    public void IMPORTPANELS()
+    {
       CreatePanels(null);
     }
 
@@ -212,7 +234,8 @@ namespace ElectricalCommands {
       string layerName,
       Point3d startPoint,
       bool is2Pole
-    ) {
+    )
+    {
       CreateAndPositionText(
         tr,
         "PANEL",
@@ -594,7 +617,8 @@ namespace ElectricalCommands {
         new Point3d(startPoint.X + 8.30325740318381, startPoint.Y - 0.151432601608803, 0)
       );
 
-      if (is2Pole) {
+      if (is2Pole)
+      {
         CreateAndPositionText(
           tr,
           "OA",
@@ -656,7 +680,8 @@ namespace ElectricalCommands {
           new Point3d(startPoint.X + 6.91903366501083, startPoint.Y - 0.720370467604425, 0)
         );
       }
-      else {
+      else
+      {
         CreateAndPositionText(
           tr,
           "OA",
@@ -755,7 +780,8 @@ namespace ElectricalCommands {
       string layerName,
       Point3d startPoint,
       Dictionary<string, object> panelData
-    ) {
+    )
+    {
       CreateAndPositionText(
         tr,
         (panelData["panel"] as string).Trim(),
@@ -848,7 +874,11 @@ namespace ElectricalCommands {
       );
     }
 
-    public void CreateLoadSummary(Dictionary<string, object> panelData, List<Dictionary<string, object>> panelStorage) {
+    public void CreateLoadSummary(
+      Dictionary<string, object> panelData,
+      List<Dictionary<string, object>> panelStorage
+    )
+    {
       var (doc, db, ed) = PanelCommands.GetGlobals();
       var promptOptions = new PromptPointOptions("\nSelect top left corner point: ");
       var promptResult = ed.GetPoint(promptOptions);
@@ -863,29 +893,39 @@ namespace ElectricalCommands {
       // Initial point
       var topRightCorner = promptResult.Value;
 
-      double GetSafeDouble(object val) {
-        if (!String.IsNullOrEmpty(val as string)) {
+      double GetSafeDouble(object val)
+      {
+        if (!String.IsNullOrEmpty(val as string))
+        {
           return Convert.ToDouble(val as string);
         }
         return 0;
       }
 
-      bool GetSafeBoolean(string key) {
-        if (panelData.TryGetValue(key, out object value)) {
-          if (value is bool boolValue) {
+      bool GetSafeBoolean(string key)
+      {
+        if (panelData.TryGetValue(key, out object value))
+        {
+          if (value is bool boolValue)
+          {
             return boolValue;
           }
-          if (value is string stringValue) {
+          if (value is string stringValue)
+          {
             return bool.TryParse(stringValue, out bool result) && result;
           }
         }
         return false;
       }
 
-      string GetLoadName(string key) {
-        if (Regex.IsMatch(key, @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
-          foreach (Dictionary<string, object> panel in panelStorage) {
-            if ((panel["id"] as string).ToLower() == key.ToLower()) {
+      string GetLoadName(string key)
+      {
+        if (Regex.IsMatch(key, @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$"))
+        {
+          foreach (Dictionary<string, object> panel in panelStorage)
+          {
+            if ((panel["id"] as string).ToLower() == key.ToLower())
+            {
               return "PANEL " + panel["panel"] as string;
             }
           }
@@ -893,10 +933,14 @@ namespace ElectricalCommands {
         return key;
       }
 
-      double GetPanelKva(string key) {
-        if (Regex.IsMatch(key, @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
-          foreach (Dictionary<string, object> panel in panelStorage) {
-            if ((panel["id"] as string).ToLower() == key.ToLower()) {
+      double GetPanelKva(string key)
+      {
+        if (Regex.IsMatch(key, @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$"))
+        {
+          foreach (Dictionary<string, object> panel in panelStorage)
+          {
+            if ((panel["id"] as string).ToLower() == key.ToLower())
+            {
               return GetSafeDouble(panel["kva"] as string);
             }
           }
@@ -904,11 +948,12 @@ namespace ElectricalCommands {
         return 0;
       }
 
-      using (var tr = db.TransactionManager.StartTransaction()) {
+      using (var tr = db.TransactionManager.StartTransaction())
+      {
         var btr = (BlockTableRecord)tr.GetObject(spaceId, OpenMode.ForWrite);
 
         var startPoint = new Point3d(topRightCorner.X, topRightCorner.Y, 0);
-        
+
         List<string> descriptionLeft = (List<string>)panelData["description_left"];
         List<string> descriptionRight = (List<string>)panelData["description_right"];
         List<string> phaseALeft = (List<string>)panelData["phase_a_left"];
@@ -918,11 +963,22 @@ namespace ElectricalCommands {
         List<string> phaseCLeft = [];
         List<string> phaseCRight = [];
         int totalEntries = 0;
-        for (int i = 0; i < descriptionLeft.Count; i++) {
-          if (!String.IsNullOrEmpty(descriptionLeft[i]) && descriptionLeft[i] != "SPARE" && descriptionLeft[i] != "SPACE") {
+        for (int i = 0; i < descriptionLeft.Count; i++)
+        {
+          if (
+            !String.IsNullOrEmpty(descriptionLeft[i])
+            && descriptionLeft[i] != "SPARE"
+            && descriptionLeft[i] != "SPACE"
+          )
+          {
             totalEntries++;
           }
-          if (!String.IsNullOrEmpty(descriptionRight[i]) && descriptionRight[i] != "SPARE" && descriptionRight[i] != "SPACE") {
+          if (
+            !String.IsNullOrEmpty(descriptionRight[i])
+            && descriptionRight[i] != "SPARE"
+            && descriptionRight[i] != "SPACE"
+          )
+          {
             totalEntries++;
           }
         }
@@ -933,46 +989,64 @@ namespace ElectricalCommands {
         tb.SetSize(totalEntries + 5, 3);
         tb.SetRowHeight(0.5);
         tb.Cells[0, 0].TextHeight = (0.125);
-        tb.Cells[0, 0].TextString = $"{panelData["panel"] as string } LOAD SUMMARY";
+        tb.Cells[0, 0].TextString = $"{panelData["panel"] as string} LOAD SUMMARY";
         int tableRowIndex = 1;
         int increment = 2;
         tb.SetColumnWidth(2);
-        if (panelData.ContainsKey("phase_c_left")) {
+        if (panelData.ContainsKey("phase_c_left"))
+        {
           increment = 3;
           phaseCLeft = (List<string>)panelData["phase_c_left"];
           phaseCRight = (List<string>)panelData["phase_c_right"];
         }
-        for (int i = 0; i < descriptionLeft.Count; i += increment * 2) {
-          if (!String.IsNullOrEmpty(descriptionLeft[i]) && descriptionLeft[i] != "SPARE" && descriptionLeft[i] != "SPACE") {
+        for (int i = 0; i < descriptionLeft.Count; i += increment * 2)
+        {
+          if (
+            !String.IsNullOrEmpty(descriptionLeft[i])
+            && descriptionLeft[i] != "SPARE"
+            && descriptionLeft[i] != "SPACE"
+          )
+          {
             double panelKva = GetPanelKva(descriptionLeft[i]);
-            tb.Cells[tableRowIndex, 2].TextString = panelKva.ToString()+ " KVA";
+            tb.Cells[tableRowIndex, 2].TextString = panelKva.ToString() + " KVA";
             kvaList.Add(panelKva);
-            if (panelKva == 0) {
+            if (panelKva == 0)
+            {
               double phA = GetSafeDouble(phaseALeft[i]);
               double phB = GetSafeDouble(phaseBLeft[i + 2]);
               double phC = 0;
-              if (increment == 3) {
+              if (increment == 3)
+              {
                 phC = GetSafeDouble(phaseCLeft[i + 4]);
               }
-              tb.Cells[tableRowIndex, 2].TextString = Math.Round((phA + phB + phC) / 1000, 1).ToString() + " KVA";
+              tb.Cells[tableRowIndex, 2].TextString =
+                Math.Round((phA + phB + phC) / 1000, 1).ToString() + " KVA";
               kvaList.Add(Math.Round((phA + phB + phC) / 1000, 1));
             }
             tb.Cells[tableRowIndex, 0].TextString = $"{tableRowIndex}.";
             tb.Cells[tableRowIndex, 1].TextString = GetLoadName(descriptionLeft[i]);
             tableRowIndex++;
           }
-          if (!String.IsNullOrEmpty(descriptionRight[i]) && descriptionRight[i] != "SPARE" && descriptionRight[i] != "SPACE") {
+          if (
+            !String.IsNullOrEmpty(descriptionRight[i])
+            && descriptionRight[i] != "SPARE"
+            && descriptionRight[i] != "SPACE"
+          )
+          {
             double panelKva = GetPanelKva(descriptionRight[i]);
             tb.Cells[tableRowIndex, 2].TextString = panelKva.ToString() + " KVA";
             kvaList.Add(panelKva);
-            if (panelKva == 0) {
+            if (panelKva == 0)
+            {
               double phA = GetSafeDouble(phaseARight[i]);
               double phB = GetSafeDouble(phaseBRight[i + 2]);
               double phC = 0;
-              if (increment == 3) {
+              if (increment == 3)
+              {
                 phC = GetSafeDouble(phaseCRight[i + 4]);
               }
-              tb.Cells[tableRowIndex, 2].TextString = Math.Round((phA + phB + phC) / 1000, 1).ToString() + " KVA";
+              tb.Cells[tableRowIndex, 2].TextString =
+                Math.Round((phA + phB + phC) / 1000, 1).ToString() + " KVA";
               kvaList.Add(Math.Round((phA + phB + phC) / 1000, 1));
             }
             tb.Cells[tableRowIndex, 0].TextString = $"{tableRowIndex}.";
@@ -983,8 +1057,10 @@ namespace ElectricalCommands {
 
         var textStyleId = GetTextStyleId("gmep");
         tb.Layer = "E-TXT1";
-        for (int i = 0; i < totalEntries + 5; i++) {
-          for (int j = 0; j < 3; j++) {
+        for (int i = 0; i < totalEntries + 5; i++)
+        {
+          for (int j = 0; j < 3; j++)
+          {
             tb.Cells[i, j].TextHeight = 0.1;
             tb.Cells[i, j].Alignment = CellAlignment.MiddleCenter;
             tb.Cells[i, j].TextStyleId = textStyleId;
@@ -992,7 +1068,8 @@ namespace ElectricalCommands {
         }
 
         tb.Columns[0].Width = 0.5;
-        for (int i = totalEntries + 1; i < totalEntries + 5; i++) {
+        for (int i = totalEntries + 1; i < totalEntries + 5; i++)
+        {
           CellRange range = CellRange.Create(tb, i, 0, i, 1);
           tb.MergeCells(range);
         }
@@ -1007,44 +1084,70 @@ namespace ElectricalCommands {
         double yFactor = 1;
         int phase = 1;
         int wire = 3;
-        if (increment == 3 && lineVoltage != 240) {
+        if (increment == 3 && lineVoltage != 240)
+        {
           yFactor = 1.732;
           phase = 3;
           wire = 4;
         }
         double feederAmps = GetSafeDouble(panelData["feeder_amps"]);
 
-        double busSize = Convert.ToDouble(panelData.TryGetValue("bus_rating", out object bus) ? bus?.ToString().Replace("A", "") ?? "1" : "1");
+        double busSize = Convert.ToDouble(
+          panelData.TryGetValue("bus_rating", out object bus)
+            ? bus?.ToString().Replace("A", "") ?? "1"
+            : "1"
+        );
 
         double totalAmperage = 0;
-        if (usingSafetyFactor) {
-          double safetyFactor = Convert.ToDouble(panelData.TryGetValue("safety_factor", out object value) ? value?.ToString() ?? "1" : "1");
+        if (usingSafetyFactor)
+        {
+          double safetyFactor = Convert.ToDouble(
+            panelData.TryGetValue("safety_factor", out object value)
+              ? value?.ToString() ?? "1"
+              : "1"
+          );
           totalAmperage = Math.Round(kva * 1000 / lineVoltage / yFactor * safetyFactor, 1);
-          if (safetyFactor == 0) safetyFactor = 1;
+          if (safetyFactor == 0)
+            safetyFactor = 1;
           tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL KVA x{safetyFactor}";
           tb.Cells[totalEntries + 2, 2].TextString = Math.Round(kva * safetyFactor, 1).ToString();
-          tb.Cells[totalEntries + 3, 0].TextString = $"TOTAL AMP @{phaseVoltage}/{lineVoltage}V-{phase}\u0081-{wire}W";
+          tb.Cells[totalEntries + 3, 0].TextString =
+            $"TOTAL AMP @{phaseVoltage}/{lineVoltage}V-{phase}\u0081-{wire}W";
           tb.Cells[totalEntries + 3, 2].TextString = totalAmperage.ToString();
-          if (totalAmperage < busSize) {
+          if (totalAmperage < busSize)
+          {
             tb.Cells[totalEntries + 4, 0].TextString = "CONCLUSION";
-            tb.Cells[totalEntries + 4, 2].TextString = $"{busSize}A SERVICE CAN HANDLE {totalAmperage}A LOAD.";
+            tb.Cells[totalEntries + 4, 2].TextString =
+              $"{busSize}A SERVICE CAN HANDLE {totalAmperage}A LOAD.";
           }
-          else {
+          else
+          {
             tb.Cells[totalEntries + 4, 0].TextString = "CONCLUSION";
-            tb.Cells[totalEntries + 4, 2].TextString = $"{busSize}A SERVICE CANNOT HANDLE {totalAmperage}A LOAD.";
+            tb.Cells[totalEntries + 4, 2].TextString =
+              $"{busSize}A SERVICE CANNOT HANDLE {totalAmperage}A LOAD.";
           }
         }
-        else {
+        else
+        {
           totalAmperage = Math.Round(kva * 1000 / lineVoltage / yFactor, 1);
-          tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL AMP @{phaseVoltage}/{lineVoltage}V-{phase}\u0081-{wire}W";
-          tb.Cells[totalEntries + 2, 2].TextString = Math.Round(kva * 1000 / lineVoltage / yFactor, 1).ToString();
-          if (totalAmperage < busSize) {
+          tb.Cells[totalEntries + 2, 0].TextString =
+            $"TOTAL AMP @{phaseVoltage}/{lineVoltage}V-{phase}\u0081-{wire}W";
+          tb.Cells[totalEntries + 2, 2].TextString = Math.Round(
+              kva * 1000 / lineVoltage / yFactor,
+              1
+            )
+            .ToString();
+          if (totalAmperage < busSize)
+          {
             tb.Cells[totalEntries + 3, 0].TextString = "CONCLUSION";
-            tb.Cells[totalEntries + 3, 2].TextString = $"{busSize}A SERVICE CAN HANDLE {totalAmperage}A LOAD.";
+            tb.Cells[totalEntries + 3, 2].TextString =
+              $"{busSize}A SERVICE CAN HANDLE {totalAmperage}A LOAD.";
           }
-          else {
+          else
+          {
             tb.Cells[totalEntries + 3, 0].TextString = "CONCLUSION";
-            tb.Cells[totalEntries + 3, 2].TextString = $"{busSize}A SERVICE CANNOT HANDLE {totalAmperage}A LOAD.";
+            tb.Cells[totalEntries + 3, 2].TextString =
+              $"{busSize}A SERVICE CANNOT HANDLE {totalAmperage}A LOAD.";
           }
           tb.DeleteRows(totalEntries + 4, 1);
         }
@@ -1056,10 +1159,12 @@ namespace ElectricalCommands {
       }
     }
 
-    public void CreatePanels(List<Dictionary<string, object>> panelDataList) {
+    public void CreatePanels(List<Dictionary<string, object>> panelDataList)
+    {
       var (doc, db, ed) = PanelCommands.GetGlobals();
 
-      if (panelDataList == null) {
+      if (panelDataList == null)
+      {
         panelDataList = ImportExcelData(); // If not provided, import from Excel
       }
 
@@ -1086,16 +1191,19 @@ namespace ElectricalCommands {
 
       int counter = 0;
       CREATEBLOCK();
-      foreach (var panelData in panelDataList) {
+      foreach (var panelData in panelDataList)
+      {
         circuitNumLeft = 1;
         circuitNumRight = 2;
-        if (panelData.TryGetValue("distribution_section", out object value)) {
-          if (value is bool boolValue && boolValue == false) {
-
+        if (panelData.TryGetValue("distribution_section", out object value))
+        {
+          if (value is bool boolValue && boolValue == false)
+          {
             bool is2Pole = !panelData.ContainsKey("phase_c_left");
             var endPoint = new Point3d(0, 0, 0);
 
-            using (var tr = db.TransactionManager.StartTransaction()) {
+            using (var tr = db.TransactionManager.StartTransaction())
+            {
               var btr = (BlockTableRecord)tr.GetObject(spaceId, OpenMode.ForWrite);
 
               // Create initial values
@@ -1112,7 +1220,10 @@ namespace ElectricalCommands {
               totalLevel = ProcessTextData(tr, btr, startPoint, panelData, is2Pole);
 
               // Get end of data
-              var endOfDataY = GetEndOfDataY((List<string>)panelData["description_left"], startPoint);
+              var endOfDataY = GetEndOfDataY(
+                (List<string>)panelData["description_left"],
+                startPoint
+              );
               endPoint = new Point3d(topRightCorner.X, endOfDataY - 0.2533, 0);
 
               // Create all the data lines
@@ -1125,7 +1236,8 @@ namespace ElectricalCommands {
               CreateCenterLines(btr, tr, startPoint, endPoint, is2Pole);
 
               // Create the notes section
-              if (panelData.ContainsKey("notes")) {
+              if (panelData.ContainsKey("notes"))
+              {
                 var decrease = CreateNotes(
                   btr,
                   tr,
@@ -1135,11 +1247,13 @@ namespace ElectricalCommands {
                   panelData["custom_title"] as string,
                   panelData["notes"] as List<string>
                 );
-                if (decrease > decreaseY) {
+                if (decrease > decreaseY)
+                {
                   decreaseY = decrease;
                 }
               }
-              else {
+              else
+              {
                 var decrease = CreateNotes(
                   btr,
                   tr,
@@ -1149,7 +1263,8 @@ namespace ElectricalCommands {
                   null,
                   null
                 );
-                if (decrease > decreaseY) {
+                if (decrease > decreaseY)
+                {
                   decreaseY = decrease;
                 }
               }
@@ -1164,19 +1279,22 @@ namespace ElectricalCommands {
             }
 
             // Check if the endPoint.Y is the lowest point
-            if (endPoint.Y < lowestY) {
+            if (endPoint.Y < lowestY)
+            {
               lowestY = endPoint.Y;
             }
 
             counter++;
 
             // After printing 3 panels, reset X and decrease Y by 5
-            if (counter % 3 == 0) {
+            if (counter % 3 == 0)
+            {
               topRightCorner = new Point3d(originalTopRightCorner.X, lowestY - 1.5 - decreaseY, 0);
               // Reset lowestY
               lowestY = topRightCorner.Y;
             }
-            else {
+            else
+            {
               // Increase x-coordinate by 10 for the next panel
               topRightCorner = new Point3d(
                 topRightCorner.X - (9.6 + (0.2 * totalLevel)),
@@ -1189,7 +1307,8 @@ namespace ElectricalCommands {
       }
     }
 
-    private void SaveDataInJsonFileOnDesktop(object allXrefFileNames, string v) {
+    private void SaveDataInJsonFileOnDesktop(object allXrefFileNames, string v)
+    {
       string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
       string filePath = Path.Combine(desktopPath, v);
 
@@ -1200,46 +1319,58 @@ namespace ElectricalCommands {
       File.WriteAllText(filePath, json);
     }
 
-    private static List<Dictionary<string, object>> ImportExcelData() {
+    private static List<Dictionary<string, object>> ImportExcelData()
+    {
       var (doc, db, ed) = GetGlobals();
 
-      var openFileDialog = new System.Windows.Forms.OpenFileDialog {
+      var openFileDialog = new System.Windows.Forms.OpenFileDialog
+      {
         Filter = "Excel Files|*.xlsx;*.xls",
-        Title = "Select Excel File"
+        Title = "Select Excel File",
       };
 
       List<Dictionary<string, object>> panels = new List<Dictionary<string, object>>();
 
-      if (openFileDialog.ShowDialog() == DialogResult.OK) {
+      if (openFileDialog.ShowDialog() == DialogResult.OK)
+      {
         string filePath = openFileDialog.FileName;
-        try {
+        try
+        {
           FileInfo fileInfo = GetFileInfo(filePath);
-          using (var package = GetExcelPackage(fileInfo)) {
+          using (var package = GetExcelPackage(fileInfo))
+          {
             ExcelWorkbook workbook = package.Workbook;
-            if (ValidateWorkbook(workbook)) {
-              foreach (var selectedWorksheet in workbook.Worksheets) {
-                if (selectedWorksheet.Name.ToLower().Contains("panel")) {
+            if (ValidateWorkbook(workbook))
+            {
+              foreach (var selectedWorksheet in workbook.Worksheets)
+              {
+                if (selectedWorksheet.Name.ToLower().Contains("panel"))
+                {
                   panels.AddRange(ProcessWorksheet(selectedWorksheet));
                 }
               }
             }
           }
         }
-        catch (FileNotFoundException ex) {
+        catch (FileNotFoundException ex)
+        {
           HandleExceptions(ex);
         }
-        catch (Autodesk.AutoCAD.Runtime.Exception ex) {
+        catch (Autodesk.AutoCAD.Runtime.Exception ex)
+        {
           HandleExceptions(ex);
         }
       }
-      else {
+      else
+      {
         Console.WriteLine("No file selected.");
       }
 
       return panels;
     }
 
-    public static (Document doc, Database db, Editor ed) GetGlobals() {
+    public static (Document doc, Database db, Editor ed) GetGlobals()
+    {
       var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       var db = doc.Database;
       var ed = doc.Editor;
@@ -1247,26 +1378,32 @@ namespace ElectricalCommands {
       return (doc, db, ed);
     }
 
-    public void CreatePanel(Dictionary<string, object> panelData) {
+    public void CreatePanel(Dictionary<string, object> panelData)
+    {
       List<Dictionary<string, object>> panels = new List<Dictionary<string, object>>();
       panels.Add(panelData);
       CreatePanels(panels);
     }
 
-    private static FileInfo GetFileInfo(string filePath) {
+    private static FileInfo GetFileInfo(string filePath)
+    {
       var fileInfo = new FileInfo(filePath);
-      if (!fileInfo.Exists) {
+      if (!fileInfo.Exists)
+      {
         throw new FileNotFoundException($"The file {filePath} does not exist.");
       }
       return fileInfo;
     }
 
-    private static ExcelPackage GetExcelPackage(FileInfo fileInfo) {
+    private static ExcelPackage GetExcelPackage(FileInfo fileInfo)
+    {
       return new ExcelPackage(fileInfo);
     }
 
-    private static bool ValidateWorkbook(ExcelWorkbook workbook) {
-      if (workbook == null) {
+    private static bool ValidateWorkbook(ExcelWorkbook workbook)
+    {
+      if (workbook == null)
+      {
         Console.WriteLine("Workbook not found.");
         return false;
       }
@@ -1277,7 +1414,8 @@ namespace ElectricalCommands {
       ExcelWorksheet selectedWorksheet,
       int row,
       int col
-    ) {
+    )
+    {
       List<string> descriptionLeft = new List<string>();
       List<string> phaseALeft = new List<string>();
       List<string> phaseBLeft = new List<string>();
@@ -1294,7 +1432,8 @@ namespace ElectricalCommands {
       int panelRow = row + 4;
       int lastRow = panelRow;
 
-      while (selectedWorksheet.Cells[lastRow + 2, col + 6].Value != null) {
+      while (selectedWorksheet.Cells[lastRow + 2, col + 6].Value != null)
+      {
         lastRow += 2;
       }
 
@@ -1305,25 +1444,30 @@ namespace ElectricalCommands {
       List<bool> breakerLeftHighlights = new List<bool>();
       List<bool> breakerRightHighlights = new List<bool>();
 
-      for (int i = panelRow; i <= lastRow; i++) {
+      for (int i = panelRow; i <= lastRow; i++)
+      {
         string description = "";
         if (
           selectedWorksheet.Cells[i, col].Value == null
           && selectedWorksheet.Cells[i, col + 5].Value != null
-        ) {
+        )
+        {
           description = "SPARE";
         }
-        else {
+        else
+        {
           description = selectedWorksheet.Cells[i, col].Value?.ToString().ToUpper() ?? "SPACE";
         }
         string descriptionR = "";
         if (
           selectedWorksheet.Cells[i, col + 12].Value == null
           && selectedWorksheet.Cells[i, col + 8].Value != null
-        ) {
+        )
+        {
           descriptionR = "SPARE";
         }
-        else {
+        else
+        {
           descriptionR =
             selectedWorksheet.Cells[i, col + 12].Value?.ToString().ToUpper() ?? "SPACE";
         }
@@ -1369,11 +1513,13 @@ namespace ElectricalCommands {
       }
 
       string panelCellValue = selectedWorksheet.Cells[row, col + 2].Value?.ToString() ?? "";
-      if (!panelCellValue.StartsWith("'") || !panelCellValue.EndsWith("'")) {
+      if (!panelCellValue.StartsWith("'") || !panelCellValue.EndsWith("'"))
+      {
         panelCellValue = "'" + panelCellValue.Trim('\'') + "'";
       }
 
-      var panel = new Dictionary<string, object> {
+      var panel = new Dictionary<string, object>
+      {
         ["panel"] = panelCellValue,
         ["location"] = selectedWorksheet.Cells[row, col + 5].Value?.ToString() ?? "",
         ["bus_rating"] = selectedWorksheet.Cells[row, col + 9].Value?.ToString() ?? "",
@@ -1422,7 +1568,8 @@ namespace ElectricalCommands {
       ExcelWorksheet selectedWorksheet,
       int row,
       int col
-    ) {
+    )
+    {
       List<string> descriptionLeft = new List<string>();
       List<string> phaseALeft = new List<string>();
       List<string> phaseBLeft = new List<string>();
@@ -1442,32 +1589,38 @@ namespace ElectricalCommands {
       int lastRow = panelRow;
 
       // check for a circuit column cell value of NULL to end the loop
-      while (selectedWorksheet.Cells[lastRow + 2, col + 6].Value != null) {
+      while (selectedWorksheet.Cells[lastRow + 2, col + 6].Value != null)
+      {
         lastRow += 2;
       }
 
       lastRow += 1;
 
       // add cell values to lists
-      for (int i = panelRow; i <= lastRow; i++) {
+      for (int i = panelRow; i <= lastRow; i++)
+      {
         string description = "";
         if (
           selectedWorksheet.Cells[i, col].Value == null
           && selectedWorksheet.Cells[i, col + 5].Value != null
-        ) {
+        )
+        {
           description = "SPARE";
         }
-        else {
+        else
+        {
           description = selectedWorksheet.Cells[i, col].Value?.ToString().ToUpper() ?? "SPACE";
         }
         string descriptionR = "";
         if (
           selectedWorksheet.Cells[i, col + 11].Value == null
           && selectedWorksheet.Cells[i, col + 8].Value != null
-        ) {
+        )
+        {
           descriptionR = "SPARE";
         }
-        else {
+        else
+        {
           descriptionR =
             selectedWorksheet.Cells[i, col + 11].Value?.ToString().ToUpper() ?? "SPACE";
         }
@@ -1509,11 +1662,13 @@ namespace ElectricalCommands {
       }
 
       string panelCellValue = selectedWorksheet.Cells[row, col + 2].Value?.ToString() ?? "";
-      if (!panelCellValue.StartsWith("'") || !panelCellValue.EndsWith("'")) {
+      if (!panelCellValue.StartsWith("'") || !panelCellValue.EndsWith("'"))
+      {
         panelCellValue = "'" + panelCellValue.Trim('\'') + "'";
       }
 
-      var panel = new Dictionary<string, object> {
+      var panel = new Dictionary<string, object>
+      {
         ["panel"] = panelCellValue,
         ["location"] = selectedWorksheet.Cells[row, col + 5].Value?.ToString() ?? "",
         ["bus_rating"] = selectedWorksheet.Cells[row, col + 9].Value?.ToString() ?? "",
@@ -1560,9 +1715,12 @@ namespace ElectricalCommands {
       Dictionary<string, object> panel,
       string key,
       string toRemove
-    ) {
-      if (panel.ContainsKey(key)) {
-        if (panel[key] is string value) {
+    )
+    {
+      if (panel.ContainsKey(key))
+      {
+        if (panel[key] is string value)
+        {
           value = value.Replace(toRemove, "");
           panel[key] = value;
         }
@@ -1571,19 +1729,24 @@ namespace ElectricalCommands {
 
     private static List<Dictionary<string, object>> ProcessWorksheet(
       ExcelWorksheet selectedWorksheet
-    ) {
+    )
+    {
       var panels = new List<Dictionary<string, object>>();
       int rowCount = selectedWorksheet.Dimension.Rows;
       int colCount = selectedWorksheet.Dimension.Columns;
 
-      for (int row = 1; row <= rowCount; row++) {
-        for (int col = 1; col <= colCount; col++) {
+      for (int row = 1; row <= rowCount; row++)
+      {
+        for (int col = 1; col <= colCount; col++)
+        {
           string cellValue = selectedWorksheet.Cells[row, col].Value?.ToString();
           string phaseAMaybe = selectedWorksheet.Cells[row + 3, col + 2].Value?.ToString();
-          if (cellValue == "PANEL:" && phaseAMaybe == "PH A") {
+          if (cellValue == "PANEL:" && phaseAMaybe == "PH A")
+          {
             panels.Add(ProcessThreePolePanel(selectedWorksheet, row, col));
           }
-          else if (cellValue == "PANEL:") {
+          else if (cellValue == "PANEL:")
+          {
             panels.Add(ProcessTwoPolePanel(selectedWorksheet, row, col));
           }
         }
@@ -1591,7 +1754,8 @@ namespace ElectricalCommands {
       return panels;
     }
 
-    private static void HandleExceptions(System.Exception ex) {
+    private static void HandleExceptions(System.Exception ex)
+    {
       Console.WriteLine(ex.Message);
     }
 
@@ -1600,16 +1764,19 @@ namespace ElectricalCommands {
       Point3d point2,
       Point3d point3,
       string content
-    ) {
+    )
+    {
       var (doc, db, ed) = PanelCommands.GetGlobals();
 
-      using (var tr = db.TransactionManager.StartTransaction()) {
+      using (var tr = db.TransactionManager.StartTransaction())
+      {
         var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
         var activeSpaceId = db.CurrentSpaceId;
         var btr = (BlockTableRecord)tr.GetObject(activeSpaceId, OpenMode.ForWrite);
 
-        if (point1.Y < point2.Y) {
+        if (point1.Y < point2.Y)
+        {
           Point3d tempPoint = point1;
           point1 = point2;
           point2 = tempPoint;
@@ -1625,13 +1792,15 @@ namespace ElectricalCommands {
 
         string layerName = CreateOrGetLayer("E-TEXT", db, tr);
 
-        var line1 = new Line(line1Start, line1End) {
+        var line1 = new Line(line1Start, line1End)
+        {
           Layer = layerName,
-          Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(ColorMethod.ByLayer, 2)
+          Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(ColorMethod.ByLayer, 2),
         };
-        var line2 = new Line(line2Start, line2End) {
+        var line2 = new Line(line2Start, line2End)
+        {
           Layer = layerName,
-          Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(ColorMethod.ByLayer, 2)
+          Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(ColorMethod.ByLayer, 2),
         };
 
         var mid1 = new Point3d((line1Start.X + line1End.X) / 2, (line1Start.Y + line1End.Y) / 2, 0);
@@ -1641,16 +1810,19 @@ namespace ElectricalCommands {
         var circleTop = new Point3d(mid3.X, mid3.Y + 0.09, 0);
         var circleBottom = new Point3d(mid3.X, mid3.Y - 0.09, 0);
 
-        var line3 = new Line(mid1, circleTop) {
+        var line3 = new Line(mid1, circleTop)
+        {
           Layer = layerName,
-          Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(ColorMethod.ByLayer, 2)
+          Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(ColorMethod.ByLayer, 2),
         };
-        var line4 = new Line(mid2, circleBottom) {
+        var line4 = new Line(mid2, circleBottom)
+        {
           Layer = layerName,
-          Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(ColorMethod.ByLayer, 2)
+          Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(ColorMethod.ByLayer, 2),
         };
 
-        if (dist > 0.3) {
+        if (dist > 0.3)
+        {
           btr.AppendEntity(line1);
           btr.AppendEntity(line2);
           tr.AddNewlyCreatedDBObject(line1, true);
@@ -1660,7 +1832,8 @@ namespace ElectricalCommands {
         CreateCircle(btr, tr, mid3, 0.09, 2, false);
         CreateCircleText(btr, tr, mid3, 0.09, 2, "ROMANS", content);
 
-        if (dist > 0.3) {
+        if (dist > 0.3)
+        {
           btr.AppendEntity(line3);
           btr.AppendEntity(line4);
           tr.AddNewlyCreatedDBObject(line3, true);
@@ -1679,7 +1852,8 @@ namespace ElectricalCommands {
       int colorIndex,
       string textStyle,
       string content
-    ) {
+    )
+    {
       DBText text = new DBText();
       text.SetDatabaseDefaults();
       text.Height = height;
@@ -1690,10 +1864,12 @@ namespace ElectricalCommands {
       TextStyleTable textStyleTable = (TextStyleTable)
         tr.GetObject(btr.Database.TextStyleTableId, OpenMode.ForRead);
 
-      if (textStyleTable.Has(textStyle)) {
+      if (textStyleTable.Has(textStyle))
+      {
         text.TextStyleId = tr.GetObject(textStyleTable[textStyle], OpenMode.ForRead).ObjectId;
       }
-      else {
+      else
+      {
         text.TextStyleId = tr.GetObject(textStyleTable["Standard"], OpenMode.ForRead).ObjectId;
       }
 
@@ -1705,7 +1881,8 @@ namespace ElectricalCommands {
       tr.AddNewlyCreatedDBObject(text, true);
     }
 
-    public string CreateOrGetLayer(string layerName, Database db, Transaction tr) {
+    public string CreateOrGetLayer(string layerName, Database db, Transaction tr)
+    {
       var lt = (LayerTable)tr.GetObject(db.LayerTableId, OpenMode.ForRead);
 
       if (!lt.Has(layerName)) // check if layer exists
@@ -1721,87 +1898,303 @@ namespace ElectricalCommands {
     }
 
     private void CreateCalculations(
-    BlockTableRecord btr,
-    Transaction tr,
-    Point3d startPoint,
-    Point3d endPoint,
-    Dictionary<string, object> panelData
-) {
+      BlockTableRecord btr,
+      Transaction tr,
+      Point3d startPoint,
+      Point3d endPoint,
+      Dictionary<string, object> panelData
+    )
+    {
       var (_, _, ed) = GetGlobals();
 
       // Helper function to safely get string value from dictionary
-      string GetSafeString(string key) {
+      string GetSafeString(string key)
+      {
         return panelData.TryGetValue(key, out object value) ? value?.ToString() ?? "" : "0";
       }
 
       // Helper function to safely parse double
-      bool TryParseDouble(string key, out double result) {
+      bool TryParseDouble(string key, out double result)
+      {
         result = 0;
         string value = GetSafeString(key);
         return !string.IsNullOrEmpty(value) && double.TryParse(value, out result);
       }
 
       // KVA calculation
-      if (TryParseDouble("kva", out double kvaValue)) {
+      if (TryParseDouble("kva", out double kvaValue))
+      {
         CreateAndPositionRightText(
-            tr,
-            Math.Round(kvaValue, 1).ToString("0.0") + " KVA",
-            "ROMANS",
-            0.09375,
-            1,
-            2,
-            "PNLTXT",
-            new Point3d(endPoint.X - 6.69695957617801, endPoint.Y - 0.785594790702817, 0)
+          tr,
+          Math.Round(kvaValue, 1).ToString("0.0") + " KVA",
+          "ROMANS",
+          0.09375,
+          1,
+          2,
+          "PNLTXT",
+          new Point3d(endPoint.X - 6.69695957617801, endPoint.Y - 0.785594790702817, 0)
         );
       }
-      else {
+      else
+      {
         ed.WriteMessage($"Error: Unable to convert 'kva' value to double: {GetSafeString("kva")}");
       }
 
       // Feeder Amps calculation
-      if (TryParseDouble("feeder_amps", out double feederAmpsValue)) {
+      if (TryParseDouble("feeder_amps", out double feederAmpsValue))
+      {
         CreateAndPositionRightText(
-            tr,
-            Math.Round(feederAmpsValue, 1).ToString("0.0") + " A",
-            "ROMANS",
-            0.09375,
-            1,
-            2,
-            "PNLTXT",
-            new Point3d(endPoint.X - 6.70142386189229, endPoint.Y - 0.970762733814496, 0)
+          tr,
+          Math.Round(feederAmpsValue, 1).ToString("0.0") + " A",
+          "ROMANS",
+          0.09375,
+          1,
+          2,
+          "PNLTXT",
+          new Point3d(endPoint.X - 6.70142386189229, endPoint.Y - 0.970762733814496, 0)
         );
       }
-      else {
-        ed.WriteMessage($"Error: Unable to convert 'feeder_amps' value to double: {GetSafeString("feeder_amps")}");
+      else
+      {
+        ed.WriteMessage(
+          $"Error: Unable to convert 'feeder_amps' value to double: {GetSafeString("feeder_amps")}"
+        );
       }
 
       // Create the calculation lines
-      CreateLine(tr, btr, endPoint.X - 6.17759999999998, endPoint.Y - 0.0846396524177919, endPoint.X - 8.98559999999998, endPoint.Y - 0.0846396524177919, "0");
-      CreateLine(tr, btr, endPoint.X - 6.17759999999998, endPoint.Y - 1.02063965241777, endPoint.X - 6.17759999999998, endPoint.Y - 0.0846396524177919, "0");
-      CreateLine(tr, btr, endPoint.X - 8.98559999999998, endPoint.Y - 1.02063965241777, endPoint.X - 8.98559999999998, endPoint.Y - 0.0846396524177919, "0");
-      CreateLine(tr, btr, endPoint.X - 6.17759999999998, endPoint.Y - 1.02063965241777, endPoint.X - 8.98559999999998, endPoint.Y - 1.02063965241777, "0");
-      CreateLine(tr, btr, endPoint.X - 6.17759999999998, endPoint.Y - 0.833439652417809, endPoint.X - 8.98559999999998, endPoint.Y - 0.833439652417809, "0");
-      CreateLine(tr, btr, endPoint.X - 6.17759999999998, endPoint.Y - 0.64623965241779, endPoint.X - 8.98559999999998, endPoint.Y - 0.64623965241779, "0");
-      CreateLine(tr, btr, endPoint.X - 6.17759999999998, endPoint.Y - 0.459039652417772, endPoint.X - 8.98559999999998, endPoint.Y - 0.459039652417772, "0");
-      CreateLine(tr, btr, endPoint.X - 6.17759999999998, endPoint.Y - 0.27183965241781, endPoint.X - 8.98559999999998, endPoint.Y - 0.27183965241781, "0");
-      CreateLine(tr, btr, endPoint.X - 6.17759999999998, endPoint.Y - 0.0846396524177919, endPoint.X - 8.98559999999998, endPoint.Y - 0.0846396524177919, "0");
+      CreateLine(
+        tr,
+        btr,
+        endPoint.X - 6.17759999999998,
+        endPoint.Y - 0.0846396524177919,
+        endPoint.X - 8.98559999999998,
+        endPoint.Y - 0.0846396524177919,
+        "0"
+      );
+      CreateLine(
+        tr,
+        btr,
+        endPoint.X - 6.17759999999998,
+        endPoint.Y - 1.02063965241777,
+        endPoint.X - 6.17759999999998,
+        endPoint.Y - 0.0846396524177919,
+        "0"
+      );
+      CreateLine(
+        tr,
+        btr,
+        endPoint.X - 8.98559999999998,
+        endPoint.Y - 1.02063965241777,
+        endPoint.X - 8.98559999999998,
+        endPoint.Y - 0.0846396524177919,
+        "0"
+      );
+      CreateLine(
+        tr,
+        btr,
+        endPoint.X - 6.17759999999998,
+        endPoint.Y - 1.02063965241777,
+        endPoint.X - 8.98559999999998,
+        endPoint.Y - 1.02063965241777,
+        "0"
+      );
+      CreateLine(
+        tr,
+        btr,
+        endPoint.X - 6.17759999999998,
+        endPoint.Y - 0.833439652417809,
+        endPoint.X - 8.98559999999998,
+        endPoint.Y - 0.833439652417809,
+        "0"
+      );
+      CreateLine(
+        tr,
+        btr,
+        endPoint.X - 6.17759999999998,
+        endPoint.Y - 0.64623965241779,
+        endPoint.X - 8.98559999999998,
+        endPoint.Y - 0.64623965241779,
+        "0"
+      );
+      CreateLine(
+        tr,
+        btr,
+        endPoint.X - 6.17759999999998,
+        endPoint.Y - 0.459039652417772,
+        endPoint.X - 8.98559999999998,
+        endPoint.Y - 0.459039652417772,
+        "0"
+      );
+      CreateLine(
+        tr,
+        btr,
+        endPoint.X - 6.17759999999998,
+        endPoint.Y - 0.27183965241781,
+        endPoint.X - 8.98559999999998,
+        endPoint.Y - 0.27183965241781,
+        "0"
+      );
+      CreateLine(
+        tr,
+        btr,
+        endPoint.X - 6.17759999999998,
+        endPoint.Y - 0.0846396524177919,
+        endPoint.X - 8.98559999999998,
+        endPoint.Y - 0.0846396524177919,
+        "0"
+      );
 
       // Create the text
-      CreateAndPositionText(tr, "TOTAL CONNECTED VA", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 8.93821353998555, endPoint.Y - 0.244065644556514, 0));
-      CreateAndPositionRightText(tr, GetSafeString("total_va"), "ROMANS", 0.09375, 1, 2, "PNLTXT", new Point3d(endPoint.X - 6.69695957617801, endPoint.Y - 0.222040136230106, 0));
-      CreateAndPositionText(tr, "=", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 7.03028501835593, endPoint.Y - 0.242614932747216, 0));
-      CreateAndPositionText(tr, "LCL @ 125 %          ", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 8.91077927366155, endPoint.Y - 0.432165907882307, 0));
-      CreateAndPositionRightText(tr, GetSafeString("lcl"), "ROMANS", 0.09375, 1, 2, "PNLTXT", new Point3d(endPoint.X - 7.59414061117746, endPoint.Y - 0.413648726513742, 0));
-      CreateAndPositionText(tr, "=", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 7.03028501835593, endPoint.Y - 0.437756414851634, 0));
-      CreateAndPositionRightText(tr, GetSafeString("lcl125"), "ROMANS", 0.09375, 1, 2, "PNLTXT", new Point3d(endPoint.X - 6.69695957617801, endPoint.Y - 0.413648726513742, 0));
-      CreateAndPositionText(tr, "LML @ 125 %", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 8.91077927366155, endPoint.Y - 0.616854044919108, 0));
-      CreateAndPositionRightText(tr, GetSafeString("lml"), "ROMANS", 0.09375, 1, 2, "PNLTXT", new Point3d(endPoint.X - 7.59414061117746, endPoint.Y - 0.618180694030713, 0));
-      CreateAndPositionText(tr, "=", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 7.03028501835593, endPoint.Y - 0.618180694030713, 0));
-      CreateAndPositionRightText(tr, GetSafeString("lml125"), "ROMANS", 0.09375, 1, 2, "PNLTXT", new Point3d(endPoint.X - 6.69695957617801, endPoint.Y - 0.618180694030713, 0));
-      CreateAndPositionText(tr, "PANEL LOAD", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 8.92075537050664, endPoint.Y - 0.804954308244959, 0));
-      CreateAndPositionText(tr, "=", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 7.03028501835593, endPoint.Y - 0.809218166102625, 0));
-      CreateAndPositionText(tr, "FEEDER AMPS", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 8.9120262857673, endPoint.Y - 0.994381220682413, 0));
-      CreateAndPositionText(tr, "=", "Standard", 0.1248, 0.75, 256, "0", new Point3d(endPoint.X - 7.03028501835593, endPoint.Y - 0.998928989062989, 0));
+      CreateAndPositionText(
+        tr,
+        "TOTAL CONNECTED VA",
+        "Standard",
+        0.1248,
+        0.75,
+        256,
+        "0",
+        new Point3d(endPoint.X - 8.93821353998555, endPoint.Y - 0.244065644556514, 0)
+      );
+      CreateAndPositionRightText(
+        tr,
+        GetSafeString("total_va"),
+        "ROMANS",
+        0.09375,
+        1,
+        2,
+        "PNLTXT",
+        new Point3d(endPoint.X - 6.69695957617801, endPoint.Y - 0.222040136230106, 0)
+      );
+      CreateAndPositionText(
+        tr,
+        "=",
+        "Standard",
+        0.1248,
+        0.75,
+        256,
+        "0",
+        new Point3d(endPoint.X - 7.03028501835593, endPoint.Y - 0.242614932747216, 0)
+      );
+      CreateAndPositionText(
+        tr,
+        "LCL @ 125 %          ",
+        "Standard",
+        0.1248,
+        0.75,
+        256,
+        "0",
+        new Point3d(endPoint.X - 8.91077927366155, endPoint.Y - 0.432165907882307, 0)
+      );
+      CreateAndPositionRightText(
+        tr,
+        GetSafeString("lcl"),
+        "ROMANS",
+        0.09375,
+        1,
+        2,
+        "PNLTXT",
+        new Point3d(endPoint.X - 7.59414061117746, endPoint.Y - 0.413648726513742, 0)
+      );
+      CreateAndPositionText(
+        tr,
+        "=",
+        "Standard",
+        0.1248,
+        0.75,
+        256,
+        "0",
+        new Point3d(endPoint.X - 7.03028501835593, endPoint.Y - 0.437756414851634, 0)
+      );
+      CreateAndPositionRightText(
+        tr,
+        GetSafeString("lcl125"),
+        "ROMANS",
+        0.09375,
+        1,
+        2,
+        "PNLTXT",
+        new Point3d(endPoint.X - 6.69695957617801, endPoint.Y - 0.413648726513742, 0)
+      );
+      CreateAndPositionText(
+        tr,
+        "LML @ 125 %",
+        "Standard",
+        0.1248,
+        0.75,
+        256,
+        "0",
+        new Point3d(endPoint.X - 8.91077927366155, endPoint.Y - 0.616854044919108, 0)
+      );
+      CreateAndPositionRightText(
+        tr,
+        GetSafeString("lml"),
+        "ROMANS",
+        0.09375,
+        1,
+        2,
+        "PNLTXT",
+        new Point3d(endPoint.X - 7.59414061117746, endPoint.Y - 0.618180694030713, 0)
+      );
+      CreateAndPositionText(
+        tr,
+        "=",
+        "Standard",
+        0.1248,
+        0.75,
+        256,
+        "0",
+        new Point3d(endPoint.X - 7.03028501835593, endPoint.Y - 0.618180694030713, 0)
+      );
+      CreateAndPositionRightText(
+        tr,
+        GetSafeString("lml125"),
+        "ROMANS",
+        0.09375,
+        1,
+        2,
+        "PNLTXT",
+        new Point3d(endPoint.X - 6.69695957617801, endPoint.Y - 0.618180694030713, 0)
+      );
+      CreateAndPositionText(
+        tr,
+        "PANEL LOAD",
+        "Standard",
+        0.1248,
+        0.75,
+        256,
+        "0",
+        new Point3d(endPoint.X - 8.92075537050664, endPoint.Y - 0.804954308244959, 0)
+      );
+      CreateAndPositionText(
+        tr,
+        "=",
+        "Standard",
+        0.1248,
+        0.75,
+        256,
+        "0",
+        new Point3d(endPoint.X - 7.03028501835593, endPoint.Y - 0.809218166102625, 0)
+      );
+      CreateAndPositionText(
+        tr,
+        "FEEDER AMPS",
+        "Standard",
+        0.1248,
+        0.75,
+        256,
+        "0",
+        new Point3d(endPoint.X - 8.9120262857673, endPoint.Y - 0.994381220682413, 0)
+      );
+      CreateAndPositionText(
+        tr,
+        "=",
+        "Standard",
+        0.1248,
+        0.75,
+        256,
+        "0",
+        new Point3d(endPoint.X - 7.03028501835593, endPoint.Y - 0.998928989062989, 0)
+      );
     }
 
     private double CreateNotes(
@@ -1812,13 +2205,17 @@ namespace ElectricalCommands {
       string panelType,
       string customTitle,
       List<string> customNotes
-    ) {
+    )
+    {
       string title;
-      if (!string.IsNullOrEmpty(customTitle)) {
+      if (!string.IsNullOrEmpty(customTitle))
+      {
         title = customTitle;
       }
-      else {
-        switch (panelType.ToLower()) {
+      else
+      {
+        switch (panelType.ToLower())
+        {
           case "existing":
             title = "(EXISTING PANEL)";
             break;
@@ -1863,8 +2260,10 @@ namespace ElectricalCommands {
         new Point3d(endPoint.X - 5.96783070435049, endPoint.Y - 0.23875904811004, 0)
       );
 
-      if (customNotes == null) {
-        if (panelType.ToLower() == "existing" || panelType.ToLower() == "relocated") {
+      if (customNotes == null)
+      {
+        if (panelType.ToLower() == "existing" || panelType.ToLower() == "relocated")
+        {
           CreateAndPositionText(
             tr,
             "DENOTES EXISTING CIRCUIT BREAKER TO REMAIN; ALL OTHERS ARE NEW",
@@ -1886,7 +2285,8 @@ namespace ElectricalCommands {
             new Point3d(endPoint.X - 5.61904201783966, endPoint.Y - 0.610352149436778, 0)
           );
         }
-        else {
+        else
+        {
           CreateAndPositionText(
             tr,
             "65 KAIC SERIES RATED OR MATCH FAULT CURRENT AT SITE.",
@@ -1920,11 +2320,14 @@ namespace ElectricalCommands {
           new Point3d(endPoint.X - 5.85897687070053 - 0.145, endPoint.Y - 0.410151417346867, 0)
         );
       }
-      else {
+      else
+      {
         var number = 1;
         // for each notes that does not contain *NOT ADDED AS NOTE*, create a note
-        foreach (var note in customNotes) {
-          if (!note.Contains("NOT ADDED AS NOTE")) {
+        foreach (var note in customNotes)
+        {
+          if (!note.Contains("NOT ADDED AS NOTE"))
+          {
             // Create the circle
             CreateCircle(
               btr,
@@ -1953,7 +2356,8 @@ namespace ElectricalCommands {
 
             // if the string is longer than 65 characters, find the end of the word closest to the 65th character and split the string there into two strings and check the next string if it is longer than 65 characters and do the same, then return all the strings
             var noteStrings = SplitStringIntoLines(note, 65);
-            foreach (var noteString in noteStrings) {
+            foreach (var noteString in noteStrings)
+            {
               CreateAndPositionText(
                 tr,
                 noteString,
@@ -1974,12 +2378,14 @@ namespace ElectricalCommands {
             number++;
           }
         }
-        if (lines_of_text > lines - 1) {
+        if (lines_of_text > lines - 1)
+        {
           lines = lines_of_text + 1;
           decrease_y = (lines - 5) * 0.1872;
         }
       }
-      for (int i = 0; i <= lines; i++) {
+      for (int i = 0; i <= lines; i++)
+      {
         yOffset = y_initial + (i * y_increment);
         CreateLine(
           tr,
@@ -2015,10 +2421,12 @@ namespace ElectricalCommands {
       return decrease_y;
     }
 
-    private List<string> SplitStringIntoLines(string str, int maxLength) {
+    private List<string> SplitStringIntoLines(string str, int maxLength)
+    {
       List<string> lines = new List<string>();
 
-      while (str.Length > maxLength) {
+      while (str.Length > maxLength)
+      {
         int index = str.LastIndexOf(' ', maxLength);
         string line = str.Substring(0, index);
         lines.Add(line);
@@ -2036,11 +2444,13 @@ namespace ElectricalCommands {
       Point3d startPoint,
       Point3d endPoint,
       bool is2Pole
-    ) {
+    )
+    {
       // Create horizontal line above
       CreateLine(tr, btr, startPoint.X, endPoint.Y + 0.2533, endPoint.X, endPoint.Y + 0.2533, "0");
 
-      if (is2Pole) {
+      if (is2Pole)
+      {
         // Create the slashed line
         CreateLine(
           tr,
@@ -2081,7 +2491,8 @@ namespace ElectricalCommands {
           "0"
         );
       }
-      else {
+      else
+      {
         // Create the slashed line
         CreateLine(
           tr,
@@ -2150,7 +2561,8 @@ namespace ElectricalCommands {
       Point3d startPoint,
       Point3d endPoint,
       bool is2Pole
-    ) {
+    )
+    {
       double maxY = endPoint.Y + 0.2533;
       double increaseY = 0.1872;
       double increaseX = 0.1872;
@@ -2159,7 +2571,8 @@ namespace ElectricalCommands {
       double currentY = startPoint.Y - 0.8424;
       int num = 3;
 
-      if (is2Pole) {
+      if (is2Pole)
+      {
         baseX = startPoint.X + 4.30560000000014;
         currentX = baseX;
         increaseX = 0.3733;
@@ -2168,9 +2581,12 @@ namespace ElectricalCommands {
 
       bool conditionMet = false;
 
-      while (currentY >= maxY && !conditionMet) {
-        for (int i = 0; i < num; i++) {
-          if (currentY < maxY) {
+      while (currentY >= maxY && !conditionMet)
+      {
+        for (int i = 0; i < num; i++)
+        {
+          if (currentY < maxY)
+          {
             conditionMet = true;
             break;
           }
@@ -2205,8 +2621,10 @@ namespace ElectricalCommands {
       double radius,
       int colorIndex,
       bool doHatch = true
-    ) {
-      using (Circle circle = new Circle()) {
+    )
+    {
+      using (Circle circle = new Circle())
+      {
         circle.Center = center;
         circle.Radius = radius;
         circle.ColorIndex = colorIndex; // Setting the color
@@ -2214,9 +2632,11 @@ namespace ElectricalCommands {
         btr.AppendEntity(circle);
         tr.AddNewlyCreatedDBObject(circle, true);
 
-        if (doHatch) {
+        if (doHatch)
+        {
           // Creating a Hatch
-          using (Hatch hatch = new Hatch()) {
+          using (Hatch hatch = new Hatch())
+          {
             hatch.Layer = "0"; // Setting the layer to "0"
             btr.AppendEntity(hatch);
             tr.AddNewlyCreatedDBObject(hatch, true);
@@ -2238,8 +2658,10 @@ namespace ElectricalCommands {
       Point3d endPoint,
       Dictionary<string, object> panelData,
       bool is2Pole
-    ) {
-      if (is2Pole) {
+    )
+    {
+      if (is2Pole)
+      {
         CreateAndPositionText(
           tr,
           "SUB-TOTAL",
@@ -2311,7 +2733,8 @@ namespace ElectricalCommands {
           new Point3d(endPoint.X - 4.15962890179264, endPoint.Y + 0.0980849562860868, 0)
         );
       }
-      else {
+      else
+      {
         CreateAndPositionText(
           tr,
           "SUB-TOTAL",
@@ -2415,7 +2838,8 @@ namespace ElectricalCommands {
       }
     }
 
-    private double GetEndOfDataY(List<string> list, Point3d startPoint) {
+    private double GetEndOfDataY(List<string> list, Point3d startPoint)
+    {
       var rowHeight = 0.1872;
       var headerHeight = 0.7488;
       return startPoint.Y - (headerHeight + (rowHeight * ((list.Count + 1) / 2)));
@@ -2428,7 +2852,8 @@ namespace ElectricalCommands {
       Point3d startPoint,
       Point3d endPoint,
       string layerName
-    ) {
+    )
+    {
       // Create the rectangle
       var rect = new Autodesk.AutoCAD.DatabaseServices.Polyline(4);
       rect.AddVertexAt(0, new Point2d(startPoint.X, startPoint.Y), 0, 0, 0);
@@ -2456,14 +2881,17 @@ namespace ElectricalCommands {
       double widthFactor,
       Autodesk.AutoCAD.Colors.Color color,
       string layer
-    ) {
+    )
+    {
       var (doc, db, _) = PanelCommands.GetGlobals();
 
       // Check if the layer exists
-      using (var tr = db.TransactionManager.StartTransaction()) {
+      using (var tr = db.TransactionManager.StartTransaction())
+      {
         var layerTable = (LayerTable)tr.GetObject(db.LayerTableId, OpenMode.ForRead);
 
-        if (!layerTable.Has(layer)) {
+        if (!layerTable.Has(layer))
+        {
           // Layer doesn't exist, create it
           var newLayer = new LayerTableRecord();
           newLayer.Name = layer;
@@ -2476,11 +2904,13 @@ namespace ElectricalCommands {
         tr.Commit();
       }
 
-      using (var tr = doc.TransactionManager.StartTransaction()) {
+      using (var tr = doc.TransactionManager.StartTransaction())
+      {
         var textStyleId = GetTextStyleId(style);
         var textStyle = (TextStyleTableRecord)tr.GetObject(textStyleId, OpenMode.ForRead);
 
-        var text = new DBText {
+        var text = new DBText
+        {
           TextString = content,
           Height = height,
           WidthFactor = widthFactor,
@@ -2489,7 +2919,7 @@ namespace ElectricalCommands {
           TextStyleId = textStyleId,
           HorizontalMode = horizontalMode,
           VerticalMode = verticalMode,
-          Justify = AttachmentPoint.BaseLeft
+          Justify = AttachmentPoint.BaseLeft,
         };
 
         var currentSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
@@ -2513,7 +2943,8 @@ namespace ElectricalCommands {
       Point3d position,
       TextHorizontalMode horizontalMode = TextHorizontalMode.TextLeft,
       TextVerticalMode verticalMode = TextVerticalMode.TextBase
-    ) {
+    )
+    {
       var color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(
         Autodesk.AutoCAD.Colors.ColorMethod.ByLayer,
         (short)colorIndex
@@ -2544,7 +2975,8 @@ namespace ElectricalCommands {
       double length,
       TextHorizontalMode horizontalMode = TextHorizontalMode.TextLeft,
       TextVerticalMode verticalMode = TextVerticalMode.TextBase
-    ) {
+    )
+    {
       var color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(
         Autodesk.AutoCAD.Colors.ColorMethod.ByLayer,
         (short)colorIndex
@@ -2577,7 +3009,8 @@ namespace ElectricalCommands {
       Point3d position,
       TextHorizontalMode horizontalMode = TextHorizontalMode.TextLeft,
       TextVerticalMode verticalMode = TextVerticalMode.TextBase
-    ) {
+    )
+    {
       var color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(
         Autodesk.AutoCAD.Colors.ColorMethod.ByLayer,
         (short)colorIndex
@@ -2609,7 +3042,8 @@ namespace ElectricalCommands {
       Point3d position,
       TextHorizontalMode horizontalMode = TextHorizontalMode.TextLeft,
       TextVerticalMode verticalMode = TextVerticalMode.TextBase
-    ) {
+    )
+    {
       var color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(
         Autodesk.AutoCAD.Colors.ColorMethod.ByLayer,
         (short)colorIndex
@@ -2638,8 +3072,10 @@ namespace ElectricalCommands {
       double startY,
       double endY,
       string layer
-    ) {
-      foreach (double distance in distances) {
+    )
+    {
+      foreach (double distance in distances)
+      {
         var lineStart = new Point3d(startPoint.X + distance, startY, 0);
         var lineEnd = new Point3d(startPoint.X + distance, endY, 0);
         var line = new Line(lineStart, lineEnd);
@@ -2654,13 +3090,15 @@ namespace ElectricalCommands {
       Transaction tr,
       BlockTableRecord btr,
       IEnumerable<(double startX, double startY, double endX, double endY, string layer)> lines
-    ) {
-      foreach (var (startX, startY, endX, endY, layer) in lines) {
+    )
+    {
+      foreach (var (startX, startY, endX, endY, layer) in lines)
+      {
         CreateLine(tr, btr, startX, startY, endX, endY, layer);
       }
     }
 
-    private void CreateLine(
+    public static void CreateLine(
       Transaction tr,
       BlockTableRecord btr,
       double startX,
@@ -2668,7 +3106,8 @@ namespace ElectricalCommands {
       double endX,
       double endY,
       string layer
-    ) {
+    )
+    {
       var lineStart = new Point3d(startX, startY, 0);
       var lineEnd = new Point3d(endX, endY, 0);
       var line = new Line(lineStart, lineEnd);
@@ -2684,17 +3123,20 @@ namespace ElectricalCommands {
       Point3d startPoint,
       Dictionary<string, object> panelData,
       bool is2Pole
-    ) {
+    )
+    {
       List<bool> leftBreakersHighlight = (List<bool>)panelData["breaker_left_highlights"];
       List<bool> rightBreakersHighlight = (List<bool>)panelData["breaker_right_highlights"];
 
       var largest_level = 0;
 
-      if (!is2Pole) {
+      if (!is2Pole)
+      {
         ProcessSideData(tr, btr, startPoint, panelData, true, false);
         ProcessSideData(tr, btr, startPoint, panelData, false, false);
       }
-      else {
+      else
+      {
         ProcessSideData2P(tr, btr, startPoint, panelData, true, true);
         ProcessSideData2P(tr, btr, startPoint, panelData, false, true);
       }
@@ -2703,7 +3145,8 @@ namespace ElectricalCommands {
       InsertKeepBreakers(startPoint, rightBreakersHighlight, false);
 
       // if the key "description_left_tags" exists in panelStorage, return null
-      if (panelData.ContainsKey("description_left_tags")) {
+      if (panelData.ContainsKey("description_left_tags"))
+      {
         List<string> descriptionLeftTags = (List<string>)panelData["description_left_tags"];
         List<string> descriptionRightTags = (List<string>)panelData["description_right_tags"];
 
@@ -2735,20 +3178,25 @@ namespace ElectricalCommands {
       List<string> tags,
       List<string> notes,
       List<string> descriptions
-    ) {
+    )
+    {
       Dictionary<string, List<bool>> notesWithBools = new Dictionary<string, List<bool>>();
 
-      foreach (string note in notes) {
+      foreach (string note in notes)
+      {
         List<bool> bools = new List<bool>();
-        foreach (string tag in tags) {
+        foreach (string tag in tags)
+        {
           var i = tags.IndexOf(tag);
           if (
             descriptions[i * 2] == "SPACE"
             && note == "DENOTES EXISTING CIRCUIT BREAKER TO REMAIN; ALL OTHERS ARE NEW."
-          ) {
+          )
+          {
             bools.Add(false);
           }
-          else {
+          else
+          {
             bools.Add(tag.Split('|').Contains(note));
           }
         }
@@ -2757,10 +3205,13 @@ namespace ElectricalCommands {
       return notesWithBools;
     }
 
-    private List<string> RemoveNotAddedAsNotes(List<string> notes) {
+    private List<string> RemoveNotAddedAsNotes(List<string> notes)
+    {
       List<string> newNotes = new List<string>();
-      foreach (string note in notes) {
-        if (!note.Contains("NOT ADDED AS NOTE")) {
+      foreach (string note in notes)
+      {
+        if (!note.Contains("NOT ADDED AS NOTE"))
+        {
           newNotes.Add(note);
         }
       }
@@ -2769,20 +3220,25 @@ namespace ElectricalCommands {
 
     private Dictionary<string, List<int>> ConvertBooleansToLevels(
       Dictionary<string, List<bool>> notesWithBools
-    ) {
+    )
+    {
       Dictionary<string, List<int>> notesWithLevels = new Dictionary<string, List<int>>();
       List<int> maxLevelsSoFar = Enumerable.Repeat(0, notesWithBools.First().Value.Count).ToList();
 
-      foreach (var pair in notesWithBools) {
+      foreach (var pair in notesWithBools)
+      {
         List<int> currentLevels = new List<int>();
 
-        for (int i = 0; i < pair.Value.Count; i++) {
-          if (pair.Value[i]) {
+        for (int i = 0; i < pair.Value.Count; i++)
+        {
+          if (pair.Value[i])
+          {
             int level = maxLevelsSoFar[i] + 1;
             currentLevels.Add(level);
             maxLevelsSoFar[i] = level;
           }
-          else {
+          else
+          {
             currentLevels.Add(0);
           }
         }
@@ -2797,8 +3253,10 @@ namespace ElectricalCommands {
       Point3d startPoint,
       Dictionary<string, List<bool>> notesWithBools,
       bool left
-    ) {
-      if (notesWithBools.Count == 0) {
+    )
+    {
+      if (notesWithBools.Count == 0)
+      {
         return 0;
       }
 
@@ -2816,13 +3274,17 @@ namespace ElectricalCommands {
 
       var notesWithLevels = ConvertBooleansToLevels(notesWithBools);
 
-      foreach (var item in notesWithLevels) {
+      foreach (var item in notesWithLevels)
+      {
         int currentLevel = 0;
         int previousLevel = 0;
-        for (int i = 0; i < item.Value.Count; i += 1) {
+        for (int i = 0; i < item.Value.Count; i += 1)
+        {
           currentLevel = item.Value[i];
-          if (currentLevel > 0) {
-            if (currentLevel != previousLevel && previousLevel > 0) {
+          if (currentLevel > 0)
+          {
+            if (currentLevel != previousLevel && previousLevel > 0)
+            {
               botPoint = new Point3d(
                 start_x + ((item.Value[i] - 1) * (left ? -1 : 1) * 0.2),
                 start_y - (row_height * (i)),
@@ -2840,7 +3302,8 @@ namespace ElectricalCommands {
                 0
               );
             }
-            if (!currentlyKeeping) {
+            if (!currentlyKeeping)
+            {
               topPoint = new Point3d(
                 start_x + ((item.Value[i] - 1) * (left ? -1 : 1) * 0.2),
                 start_y - (row_height * (i)),
@@ -2848,7 +3311,8 @@ namespace ElectricalCommands {
               );
               currentlyKeeping = true;
             }
-            if (i >= item.Value.Count - 1) {
+            if (i >= item.Value.Count - 1)
+            {
               botPoint = new Point3d(
                 start_x + ((item.Value[i] - 1) * (left ? -1 : 1) * 0.2),
                 start_y - (row_height * (i + 1)),
@@ -2862,7 +3326,8 @@ namespace ElectricalCommands {
               );
             }
           }
-          else if (currentlyKeeping) {
+          else if (currentlyKeeping)
+          {
             botPoint = new Point3d(
               start_x + ((item.Value[i] - 1) * (left ? -1 : 1) * 0.2),
               start_y - (row_height * i),
@@ -2884,11 +3349,15 @@ namespace ElectricalCommands {
       return GetLargestLevel(notesWithLevels);
     }
 
-    private int GetLargestLevel(Dictionary<string, List<int>> notesWithLevels) {
+    private int GetLargestLevel(Dictionary<string, List<int>> notesWithLevels)
+    {
       int largestLevel = 0;
-      foreach (var item in notesWithLevels) {
-        foreach (int level in item.Value) {
-          if (level > largestLevel) {
+      foreach (var item in notesWithLevels)
+      {
+        foreach (int level in item.Value)
+        {
+          if (level > largestLevel)
+          {
             largestLevel = level;
           }
         }
@@ -2896,7 +3365,8 @@ namespace ElectricalCommands {
       return largestLevel;
     }
 
-    private void InsertKeepBreakers(Point3d startPoint, List<bool> breakersHighlight, bool left) {
+    private void InsertKeepBreakers(Point3d startPoint, List<bool> breakersHighlight, bool left)
+    {
       Point3d botPoint = new Point3d(0, 0, 0);
       Point3d topPoint = new Point3d(0, 0, 0);
 
@@ -2909,13 +3379,17 @@ namespace ElectricalCommands {
 
       bool currentlyKeeping = false;
 
-      for (int i = 0; i < breakersHighlight.Count; i += 2) {
-        if (breakersHighlight[i]) {
-          if (!currentlyKeeping) {
+      for (int i = 0; i < breakersHighlight.Count; i += 2)
+      {
+        if (breakersHighlight[i])
+        {
+          if (!currentlyKeeping)
+          {
             topPoint = new Point3d(start_x, start_y - (row_height * (i / 2)), 0);
             currentlyKeeping = true;
           }
-          if (i >= breakersHighlight.Count - 2) {
+          if (i >= breakersHighlight.Count - 2)
+          {
             botPoint = new Point3d(start_x, start_y - (row_height * ((i + 2) / 2)), 0);
             KeepBreakersGivenPoints(
               topPoint,
@@ -2925,7 +3399,8 @@ namespace ElectricalCommands {
             );
           }
         }
-        else if (currentlyKeeping) {
+        else if (currentlyKeeping)
+        {
           botPoint = new Point3d(start_x, start_y - (row_height * (i / 2)), 0);
           currentlyKeeping = false;
           KeepBreakersGivenPoints(
@@ -2947,7 +3422,8 @@ namespace ElectricalCommands {
       List<string>,
       List<bool>,
       List<string>
-    ) GetCorrectBreakerData(Dictionary<string, object> panelData, bool left, bool is2Pole) {
+    ) GetCorrectBreakerData(Dictionary<string, object> panelData, bool left, bool is2Pole)
+    {
       var descriptions = new List<string>();
       var breakers = new List<string>();
       var circuits = new List<string>();
@@ -2957,31 +3433,37 @@ namespace ElectricalCommands {
       var descriptionHighlights = new List<bool>();
       var descriptionTags = new List<string>();
 
-      if (left) {
+      if (left)
+      {
         descriptions = panelData["description_left"] as List<string>;
         breakers = panelData["breaker_left"] as List<string>;
         circuits = panelData["circuit_left"] as List<string>;
         phaseA = panelData["phase_a_left"] as List<string>;
         phaseB = panelData["phase_b_left"] as List<string>;
-        if (!is2Pole) {
+        if (!is2Pole)
+        {
           phaseC = panelData["phase_c_left"] as List<string>;
         }
         descriptionHighlights = panelData["description_left_highlights"] as List<bool>;
-        if (panelData.ContainsKey("description_left_tags")) {
+        if (panelData.ContainsKey("description_left_tags"))
+        {
           descriptionTags = panelData["description_left_tags"] as List<string>;
         }
       }
-      else {
+      else
+      {
         descriptions = panelData["description_right"] as List<string>;
         breakers = panelData["breaker_right"] as List<string>;
         circuits = panelData["circuit_right"] as List<string>;
         phaseA = panelData["phase_a_right"] as List<string>;
         phaseB = panelData["phase_b_right"] as List<string>;
-        if (!is2Pole) {
+        if (!is2Pole)
+        {
           phaseC = panelData["phase_c_right"] as List<string>;
         }
         descriptionHighlights = panelData["description_right_highlights"] as List<bool>;
-        if (panelData.ContainsKey("description_right_tags")) {
+        if (panelData.ContainsKey("description_right_tags"))
+        {
           descriptionTags = panelData["description_right_tags"] as List<string>;
         }
       }
@@ -3005,7 +3487,8 @@ namespace ElectricalCommands {
       Dictionary<string, object> panelData,
       bool left,
       bool is2Pole
-    ) {
+    )
+    {
       var (descriptions, breakers, circuits, _, _, _, _, _) = GetCorrectBreakerData(
         panelData,
         left,
@@ -3020,25 +3503,31 @@ namespace ElectricalCommands {
       data.Add("header height", 0.7488);
 
       int i = 0;
-      while (i < descriptions.Count) {
+      while (i < descriptions.Count)
+      {
         BreakerType breakerType = GetBreakerType(breakers, circuits, i);
-        if (breakerType == BreakerType.SplitMini) {
+        if (breakerType == BreakerType.SplitMini)
+        {
           CreateHalfSplit2PoleBreakers(tr, btr, startPoint, panelData, data, left, is2Pole, i);
           i += 4;
         }
-        else if (breakerType == BreakerType.Mini) {
+        else if (breakerType == BreakerType.Mini)
+        {
           CreateHalfBreaker(tr, btr, startPoint, panelData, data, left, is2Pole, i);
           i += 2;
         }
-        else if (breakerType == BreakerType.SinglePole) {
+        else if (breakerType == BreakerType.SinglePole)
+        {
           Create1PoleBreaker(tr, btr, startPoint, panelData, data, left, is2Pole, i);
           i += 2;
         }
-        else if (breakerType == BreakerType.TwoPole) {
+        else if (breakerType == BreakerType.TwoPole)
+        {
           Create2PoleBreaker(tr, btr, startPoint, panelData, data, left, is2Pole, i);
           i += 4;
         }
-        else {
+        else
+        {
           Create3PoleBreaker(tr, btr, startPoint, panelData, data, left, is2Pole, i);
           i += 6;
         }
@@ -3052,7 +3541,8 @@ namespace ElectricalCommands {
       Dictionary<string, object> panelData,
       bool left,
       bool is2Pole
-    ) {
+    )
+    {
       var (descriptions, breakers, circuits, _, _, _, _, _) = GetCorrectBreakerData(
         panelData,
         left,
@@ -3064,24 +3554,29 @@ namespace ElectricalCommands {
         { "row height y", 0.1872 },
         { "half row height y", 0.0936 },
         { "initial half breaker text y", -0.816333638994546 },
-        { "header height", 0.7488 }
+        { "header height", 0.7488 },
       };
       int i = 0;
-      while (i < descriptions.Count) {
+      while (i < descriptions.Count)
+      {
         BreakerType breakerType = GetBreakerType(breakers, circuits, i);
-        if (breakerType == BreakerType.SplitMini) {
+        if (breakerType == BreakerType.SplitMini)
+        {
           CreateHalfSplit2PoleBreakers2Ph(tr, btr, startPoint, panelData, data, left, is2Pole, i);
           i += 4;
         }
-        else if (breakerType == BreakerType.Mini) {
+        else if (breakerType == BreakerType.Mini)
+        {
           CreateHalfBreaker2P(tr, btr, startPoint, panelData, data, left, is2Pole, i);
           i += 2;
         }
-        else if (breakerType == BreakerType.SinglePole) {
+        else if (breakerType == BreakerType.SinglePole)
+        {
           Create1PoleBreaker2P(tr, btr, startPoint, panelData, data, left, is2Pole, i);
           i += 2;
         }
-        else {
+        else
+        {
           Create2PoleBreaker2P(tr, btr, startPoint, panelData, data, left, is2Pole, i);
           i += 4;
         }
@@ -3097,7 +3592,8 @@ namespace ElectricalCommands {
       bool left,
       bool is2Pole,
       int i
-    ) {
+    )
+    {
       var (
         descriptions,
         breakers,
@@ -3119,11 +3615,15 @@ namespace ElectricalCommands {
 
       string circuit = circuits[i];
 
-      for (var j = i; j <= i + 1; j++) {
-        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+      for (var j = i; j <= i + 1; j++)
+      {
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$"))
+        {
           List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
-          foreach (Dictionary<string, object> panel in panelStorage) {
-            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+          foreach (Dictionary<string, object> panel in panelStorage)
+          {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower())
+            {
               descriptions[j] = "PANEL " + panel["panel"] as string;
             }
           }
@@ -3192,7 +3692,8 @@ namespace ElectricalCommands {
       bool left,
       bool is2Pole,
       int i
-    ) {
+    )
+    {
       var (
         descriptions,
         breakers,
@@ -3214,11 +3715,15 @@ namespace ElectricalCommands {
 
       string circuit = circuits[i];
 
-      for (var j = i; j <= i + 1; j++) {
-        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+      for (var j = i; j <= i + 1; j++)
+      {
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$"))
+        {
           List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
-          foreach (Dictionary<string, object> panel in panelStorage) {
-            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+          foreach (Dictionary<string, object> panel in panelStorage)
+          {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower())
+            {
               descriptions[j] = "PANEL " + panel["panel"] as string;
             }
           }
@@ -3287,15 +3792,19 @@ namespace ElectricalCommands {
       bool left,
       bool is2Pole,
       int i
-    ) {
+    )
+    {
       var (descriptions, breakers, circuits, phaseA, phaseB, phaseC, descriptionHighlights, _) =
         GetCorrectBreakerData(panelData, left, is2Pole);
 
       List<string> phaseList = GetPhaseList(i, phaseA, phaseB, phaseC);
-      if (Regex.IsMatch(descriptions[i], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+      if (Regex.IsMatch(descriptions[i], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$"))
+      {
         List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
-        foreach (Dictionary<string, object> panel in panelStorage) {
-          if ((panel["id"] as string).ToLower() == descriptions[i].ToLower()) {
+        foreach (Dictionary<string, object> panel in panelStorage)
+        {
+          if ((panel["id"] as string).ToLower() == descriptions[i].ToLower())
+          {
             descriptions[i] = "PANEL " + panel["panel"] as string;
           }
         }
@@ -3369,7 +3878,8 @@ namespace ElectricalCommands {
       bool left,
       bool is2Pole,
       int i
-    ) {
+    )
+    {
       var (
         descriptions,
         breakers,
@@ -3382,10 +3892,13 @@ namespace ElectricalCommands {
       ) = GetCorrectBreakerData(panelData, left, is2Pole);
 
       List<string> phaseList = GetPhaseList2P(i, phaseA, phaseB);
-      if (Regex.IsMatch(descriptions[i], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+      if (Regex.IsMatch(descriptions[i], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$"))
+      {
         List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
-        foreach (Dictionary<string, object> panel in panelStorage) {
-          if ((panel["id"] as string).ToLower() == descriptions[i].ToLower()) {
+        foreach (Dictionary<string, object> panel in panelStorage)
+        {
+          if ((panel["id"] as string).ToLower() == descriptions[i].ToLower())
+          {
             descriptions[i] = "PANEL " + panel["panel"] as string;
           }
         }
@@ -3459,7 +3972,8 @@ namespace ElectricalCommands {
       bool left,
       bool is2Pole,
       int i
-    ) {
+    )
+    {
       var (
         descriptions,
         breakers,
@@ -3476,12 +3990,16 @@ namespace ElectricalCommands {
       double circuitX = GetCircuitX(startPoint, left);
       double length = 0.14;
 
-      for (var j = i; j <= i + 2; j += 2) {
+      for (var j = i; j <= i + 2; j += 2)
+      {
         List<string> phaseList = GetPhaseList(j, phaseA, phaseB, phaseC);
-        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$"))
+        {
           List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
-          foreach (Dictionary<string, object> panel in panelStorage) {
-            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+          foreach (Dictionary<string, object> panel in panelStorage)
+          {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower())
+            {
               descriptions[j] = "PANEL " + panel["panel"] as string;
             }
           }
@@ -3496,7 +4014,8 @@ namespace ElectricalCommands {
         double height = startPoint.Y + (-0.890211813771344 - ((j / 2) * 0.1872));
         double phaseX = GetPhaseX(j, startPoint, left);
 
-        if (j == i + 2) {
+        if (j == i + 2)
+        {
           description = "---";
           breakerX += 0.16;
           length = 0.07;
@@ -3560,7 +4079,8 @@ namespace ElectricalCommands {
       bool left,
       bool is2Pole,
       int i
-    ) {
+    )
+    {
       var (
         descriptions,
         breakers,
@@ -3578,12 +4098,16 @@ namespace ElectricalCommands {
       double textHeight = 0.0725;
       double length = 0.14;
 
-      for (var j = i; j <= i + 3; j ++) {
+      for (var j = i; j <= i + 3; j++)
+      {
         List<string> phaseList = GetPhaseList(j, phaseA, phaseB, phaseC);
-        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$"))
+        {
           List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
-          foreach (Dictionary<string, object> panel in panelStorage) {
-            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+          foreach (Dictionary<string, object> panel in panelStorage)
+          {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower())
+            {
               descriptions[j] = "PANEL " + panel["panel"] as string;
             }
           }
@@ -3598,31 +4122,38 @@ namespace ElectricalCommands {
         double height = startPoint.Y + (-0.890211813771344 - ((j / 2) * 0.1872));
         double phaseX = GetPhaseX(j, startPoint, left);
 
-        if (j == i + 2) {
+        if (j == i + 2)
+        {
           description = "---";
           breakerX += 0.16;
         }
-        if (j == i + 3) {
+        if (j == i + 3)
+        {
           breakerX -= 0.16 + 0.045;
         }
 
         double yShift = 0;
-        if ((j - i) % 2 == 0) {
+        if ((j - i) % 2 == 0)
+        {
           yShift = 0.0575;
         }
-        else {
+        else
+        {
           yShift = -0.0378;
         }
         height = height + yShift;
 
-        if ((j - i) == 0 || (j - i) == 3) {
+        if ((j - i) == 0 || (j - i) == 3)
+        {
           breaker = breaker + "-1";
           length = 0.23;
         }
-        else if ((j - i) == 1) {
+        else if ((j - i) == 1)
+        {
           length = 0.105;
         }
-        else {
+        else
+        {
           length = 0.045;
           breakerX += 0.045;
         }
@@ -3648,7 +4179,8 @@ namespace ElectricalCommands {
             "0",
             new Point3d(phaseX, height, 0)
           );
-        if (breaker != "") {
+        if (breaker != "")
+        {
           CreateAndPositionFittedText(
             tr,
             breaker,
@@ -3685,7 +4217,8 @@ namespace ElectricalCommands {
       bool left,
       bool is2Pole,
       int i
-    ) {
+    )
+    {
       var (
         descriptions,
         breakers,
@@ -3703,12 +4236,16 @@ namespace ElectricalCommands {
       double textHeight = 0.0725;
       double length = 0.14;
 
-      for (var j = i; j <= i + 3; j++) {
+      for (var j = i; j <= i + 3; j++)
+      {
         List<string> phaseList = GetPhaseList2P(j, phaseA, phaseB);
-        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$"))
+        {
           List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
-          foreach (Dictionary<string, object> panel in panelStorage) {
-            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+          foreach (Dictionary<string, object> panel in panelStorage)
+          {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower())
+            {
               descriptions[j] = "PANEL " + panel["panel"] as string;
             }
           }
@@ -3723,31 +4260,38 @@ namespace ElectricalCommands {
         double height = startPoint.Y + (-0.890211813771344 - ((j / 2) * 0.1872));
         double phaseX = GetPhaseX2P(j, startPoint, left);
 
-        if (j == i + 2) {
+        if (j == i + 2)
+        {
           description = "---";
           breakerX += 0.16;
         }
-        if (j == i + 3) {
+        if (j == i + 3)
+        {
           breakerX -= 0.16 + 0.045;
         }
 
         double yShift = 0;
-        if ((j - i) % 2 == 0) {
+        if ((j - i) % 2 == 0)
+        {
           yShift = 0.0575;
         }
-        else {
+        else
+        {
           yShift = -0.0378;
         }
         height = height + yShift;
 
-        if ((j - i) == 0 || (j - i) == 3) {
+        if ((j - i) == 0 || (j - i) == 3)
+        {
           breaker = breaker + "-1";
           length = 0.23;
         }
-        else if ((j - i) == 1) {
+        else if ((j - i) == 1)
+        {
           length = 0.105;
         }
-        else {
+        else
+        {
           length = 0.045;
           breakerX += 0.045;
         }
@@ -3762,7 +4306,8 @@ namespace ElectricalCommands {
           "0",
           new Point3d(descriptionX, height, 0)
         );
-        if (phase != "0") {
+        if (phase != "0")
+        {
           CreateAndPositionCenteredText(
             tr,
             phase,
@@ -3774,7 +4319,8 @@ namespace ElectricalCommands {
             new Point3d(phaseX, height, 0)
           );
         }
-        if (breaker != "") {
+        if (breaker != "")
+        {
           CreateAndPositionFittedText(
             tr,
             breaker,
@@ -3811,7 +4357,8 @@ namespace ElectricalCommands {
       bool left,
       bool is2Pole,
       int i
-    ) {
+    )
+    {
       var (
         descriptions,
         breakers,
@@ -3829,12 +4376,16 @@ namespace ElectricalCommands {
       double circuitX = GetCircuitX(startPoint, left);
       double length = 0.14;
 
-      for (var j = i; j <= i + 2; j += 2) {
+      for (var j = i; j <= i + 2; j += 2)
+      {
         List<string> phaseList = GetPhaseList2P(j, phaseA, phaseB);
-        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$"))
+        {
           List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
-          foreach (Dictionary<string, object> panel in panelStorage) {
-            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+          foreach (Dictionary<string, object> panel in panelStorage)
+          {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower())
+            {
               descriptions[j] = "PANEL " + panel["panel"] as string;
             }
           }
@@ -3849,7 +4400,8 @@ namespace ElectricalCommands {
         double height = startPoint.Y + (-0.890211813771344 - ((j / 2) * 0.1872));
         double phaseX = GetPhaseX2P(j, startPoint, left);
 
-        if (j == i + 2) {
+        if (j == i + 2)
+        {
           description = "---";
           breakerX += 0.16;
           length = 0.07;
@@ -3913,7 +4465,8 @@ namespace ElectricalCommands {
       bool left,
       bool is2Pole,
       int i
-    ) {
+    )
+    {
       var (
         descriptions,
         breakers,
@@ -3930,12 +4483,16 @@ namespace ElectricalCommands {
       double circuitX = GetCircuitX(startPoint, left);
       double length = 0.14;
 
-      for (var j = i; j <= i + 4; j += 2) {
+      for (var j = i; j <= i + 4; j += 2)
+      {
         List<string> phaseList = GetPhaseList(j, phaseA, phaseB, phaseC);
-        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$")) {
+        if (Regex.IsMatch(descriptions[j], @"^[a-fA-F0-9]{8}(-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}$"))
+        {
           List<Dictionary<string, object>> panelStorage = myForm.RetrieveSavedPanelData();
-          foreach (Dictionary<string, object> panel in panelStorage) {
-            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower()) {
+          foreach (Dictionary<string, object> panel in panelStorage)
+          {
+            if ((panel["id"] as string).ToLower() == descriptions[j].ToLower())
+            {
               descriptions[j] = "PANEL " + panel["panel"] as string;
             }
           }
@@ -3950,10 +4507,12 @@ namespace ElectricalCommands {
         double height = startPoint.Y + (-0.890211813771344 - ((j / 2) * 0.1872));
         double phaseX = GetPhaseX(j, startPoint, left);
 
-        if (j == i + 2) {
+        if (j == i + 2)
+        {
           description = "---";
         }
-        else if (j == i + 4) {
+        else if (j == i + 4)
+        {
           description = "---";
           breakerX += 0.16;
           length = 0.07;
@@ -4015,18 +4574,21 @@ namespace ElectricalCommands {
       Transaction tr,
       BlockTableRecord btr,
       int span
-    ) {
+    )
+    {
       double x1,
         x2;
       double height = startPoint.Y + (-0.7488 - (((i + span) / 2) * 0.1872));
       double y1 = height;
       double y2 = height + (span / 2) * 0.1872;
 
-      if (left) {
+      if (left)
+      {
         x1 = startPoint.X + 3.588;
         x2 = startPoint.X + 3.9;
       }
-      else {
+      else
+      {
         x1 = startPoint.X + 5.0856;
         x2 = startPoint.X + 5.3976;
       }
@@ -4041,81 +4603,109 @@ namespace ElectricalCommands {
       tr.AddNewlyCreatedDBObject(line, true);
     }
 
-    private double GetCircuitX(Point3d startPoint, bool left) {
-      if (left) {
+    private double GetCircuitX(Point3d startPoint, bool left)
+    {
+      if (left)
+      {
         return startPoint.X + 3.93681721750636;
       }
-      else {
+      else
+      {
         return startPoint.X + 4.87281721750651;
       }
     }
 
-    private double GetBreakerX(Point3d startPoint, bool left) {
-      if (left) {
+    private double GetBreakerX(Point3d startPoint, bool left)
+    {
+      if (left)
+      {
         return startPoint.X + 3.60379818231218;
       }
-      else {
+      else
+      {
         return startPoint.X + 5.10947444486385;
       }
     }
 
-    private double GetDescriptionX(Point3d startPoint, bool left) {
-      if (left) {
+    private double GetDescriptionX(Point3d startPoint, bool left)
+    {
+      if (left)
+      {
         return startPoint.X + 0.063560431161136;
       }
-      else {
+      else
+      {
         return startPoint.X + 7.43528640590171;
       }
     }
 
-    private double GetDescriptionX2P(Point3d startPoint, bool left) {
-      if (left) {
+    private double GetDescriptionX2P(Point3d startPoint, bool left)
+    {
+      if (left)
+      {
         return startPoint.X + 0.0536663060360638;
       }
-      else {
+      else
+      {
         return startPoint.X + 7.40509162108179;
       }
     }
 
-    public double GetPhaseX(int i, Point3d startPoint, bool left) {
-      if (left) {
-        if (i % 6 == 0 || i % 6 == 1) {
+    public double GetPhaseX(int i, Point3d startPoint, bool left)
+    {
+      if (left)
+      {
+        if (i % 6 == 0 || i % 6 == 1)
+        {
           return startPoint.X + 1.64526228334811;
         }
-        else if (i % 6 == 2 || i % 6 == 3) {
+        else if (i % 6 == 2 || i % 6 == 3)
+        {
           return startPoint.X + 2.0792421731542;
         }
-        else {
+        else
+        {
           return startPoint.X + 2.50445478897294;
         }
       }
-      else {
-        if (i % 6 == 0 || i % 6 == 1) {
+      else
+      {
+        if (i % 6 == 0 || i % 6 == 1)
+        {
           return startPoint.X + 6.11211889838299;
         }
-        else if (i % 6 == 2 || i % 6 == 3) {
+        else if (i % 6 == 2 || i % 6 == 3)
+        {
           return startPoint.X + 6.53328984899773;
         }
-        else {
+        else
+        {
           return startPoint.X + 6.96804695722213;
         }
       }
     }
 
-    public double GetPhaseX2P(int i, Point3d startPoint, bool left) {
-      if (left) {
-        if (i % 4 == 0 || i % 4 == 1) {
+    public double GetPhaseX2P(int i, Point3d startPoint, bool left)
+    {
+      if (left)
+      {
+        if (i % 4 == 0 || i % 4 == 1)
+        {
           return startPoint.X + 1.8390082793234;
         }
-        else {
+        else
+        {
           return startPoint.X + 2.39546408826883;
         }
       }
-      else {
-        if (i % 4 == 0 || i % 4 == 1) {
+      else
+      {
+        if (i % 4 == 0 || i % 4 == 1)
+        {
           return startPoint.X + 6.21960728338948;
         }
-        else {
+        else
+        {
           return startPoint.X + 6.83021158846114;
         }
       }
@@ -4126,58 +4716,74 @@ namespace ElectricalCommands {
       List<string> phaseA,
       List<string> phaseB,
       List<string> phaseC
-    ) {
-      if (i % 6 == 0 || i % 6 == 1) {
+    )
+    {
+      if (i % 6 == 0 || i % 6 == 1)
+      {
         return phaseA;
       }
-      else if (i % 6 == 2 || i % 3 == 3) {
+      else if (i % 6 == 2 || i % 3 == 3)
+      {
         return phaseB;
       }
-      else {
+      else
+      {
         return phaseC;
       }
     }
 
-    public List<string> GetPhaseList2P(int i, List<string> phaseA, List<string> phaseB) {
-      if (i % 4 == 0 || i % 4 == 1) {
+    public List<string> GetPhaseList2P(int i, List<string> phaseA, List<string> phaseB)
+    {
+      if (i % 4 == 0 || i % 4 == 1)
+      {
         return phaseA;
       }
-      else {
+      else
+      {
         return phaseB;
       }
     }
 
-    private enum BreakerType {
+    private enum BreakerType
+    {
       OutOfRange,
       SplitMini,
       Mini,
       ThreePole,
       TwoPole,
-      SinglePole
+      SinglePole,
     }
 
-    private BreakerType GetBreakerType(List<string> breakers, List<string> circuits, int i) {
+    private BreakerType GetBreakerType(List<string> breakers, List<string> circuits, int i)
+    {
       // If index i is out of range for the circuits list, return 0.0
       if (i >= circuits.Count)
         return BreakerType.OutOfRange;
 
-      if ((i + 2) < breakers.Count && breakers[i + 2] == "2" && (circuits[i].Contains('A') || circuits[i].Contains('B'))) {
+      if (
+        (i + 2) < breakers.Count
+        && breakers[i + 2] == "2"
+        && (circuits[i].Contains('A') || circuits[i].Contains('B'))
+      )
+      {
         return BreakerType.SplitMini;
       }
       // Check if circuit at index i contains 'A' or 'B'
-      if (circuits[i].Contains('A') || circuits[i].Contains('B')) {
+      if (circuits[i].Contains('A') || circuits[i].Contains('B'))
+      {
         return BreakerType.Mini;
       }
       // Check if breakers has a value at [i+2] and if it is '3'
-      if ((i + 4) < breakers.Count && breakers[i + 4] == "3") {
+      if ((i + 4) < breakers.Count && breakers[i + 4] == "3")
+      {
         return BreakerType.ThreePole;
       }
       // Check if breakers has a value at [i+1] and if it is '2'
-      if ((i + 2) < breakers.Count && breakers[i + 2] == "2") {
+      if ((i + 2) < breakers.Count && breakers[i + 2] == "2")
+      {
         return BreakerType.TwoPole;
       }
       return BreakerType.SinglePole;
-     
     }
 
     private void ProcessLineData(
@@ -4187,7 +4793,8 @@ namespace ElectricalCommands {
       Point3d endPoint,
       double endOfDataY,
       bool is2Pole
-    ) {
+    )
+    {
       string layerName = "0";
       double left1,
         left2,
@@ -4196,7 +4803,8 @@ namespace ElectricalCommands {
         right2,
         right3;
 
-      if (is2Pole) {
+      if (is2Pole)
+      {
         left1 = 1.7549;
         left2 = 2.3023;
         left3 = 0;
@@ -4258,7 +4866,8 @@ namespace ElectricalCommands {
           "0"
         );
       }
-      else {
+      else
+      {
         left1 = 1.6224;
         left2 = 2.0488;
         left3 = 2.4752;
@@ -4367,7 +4976,7 @@ namespace ElectricalCommands {
             5.6264,
             5.8552,
             6.0840,
-            right3
+            right3,
           },
           startPoint.Y - 0.3744,
           endOfDataY,
@@ -4378,10 +4987,11 @@ namespace ElectricalCommands {
           startPoint.Y - 0.3744 - (0.3744 / 2),
           endOfDataY,
           layerName
-        )
+        ),
       };
 
-      foreach (var lineData in linesData) {
+      foreach (var lineData in linesData)
+      {
         CreateVerticalLines(
           tr,
           btr,
@@ -4431,20 +5041,23 @@ namespace ElectricalCommands {
           startPoint.X + 8.37682368466574,
           startPoint.Y + -0.0461231951291552,
           "0"
-        )
+        ),
       };
 
       CreateLines(tr, btr, linesData2);
     }
 
-    private static ObjectId GetTextStyleId(string styleName) {
+    private static ObjectId GetTextStyleId(string styleName)
+    {
       var (doc, db, _) = PanelCommands.GetGlobals();
       var textStyleTable = (TextStyleTable)db.TextStyleTableId.GetObject(OpenMode.ForRead);
 
-      if (textStyleTable.Has(styleName)) {
+      if (textStyleTable.Has(styleName))
+      {
         return textStyleTable[styleName];
       }
-      else {
+      else
+      {
         // Return the ObjectId of the "Standard" style
         return textStyleTable["Standard"];
       }
@@ -4457,35 +5070,43 @@ namespace ElectricalCommands {
       bool left,
       Transaction tr,
       BlockTableRecord btr
-    ) {
+    )
+    {
       int circuitNumReducer;
       double lineStartX;
       double lineStartX2;
       int circuitNumInt;
       double deltaY = 0.187200000000021; // Change this value if needed
 
-      if (left) {
+      if (left)
+      {
         circuitNumReducer = 1;
         lineStartX = startPointX;
         lineStartX2 = startPointX + 4.14960000000019;
       }
-      else {
+      else
+      {
         circuitNumReducer = 2;
         lineStartX = startPointX + 4.8360;
         lineStartX2 = startPointX + 8.9856;
       }
 
-      if (circuitNumber.Contains('A') || circuitNumber.Contains('B')) {
+      if (circuitNumber.Contains('A') || circuitNumber.Contains('B'))
+      {
         // Remove 'A' or 'B' from the string
-        if (left) {
+        if (left)
+        {
           circuitNumInt = circuitNumLeft;
-          if (circuitNumber.Contains('B')) {
+          if (circuitNumber.Contains('B'))
+          {
             circuitNumLeft += 2;
           }
         }
-        else {
+        else
+        {
           circuitNumInt = circuitNumRight;
-          if (circuitNumber.Contains('B')) {
+          if (circuitNumber.Contains('B'))
+          {
             circuitNumRight += 2;
           }
         }
@@ -4501,12 +5122,15 @@ namespace ElectricalCommands {
           true
         );
       }
-      else {
-        if (left) {
+      else
+      {
+        if (left)
+        {
           circuitNumInt = circuitNumLeft;
           circuitNumLeft += 2;
         }
-        else {
+        else
+        {
           circuitNumInt = circuitNumRight;
           circuitNumRight += 2;
         }
@@ -4534,7 +5158,8 @@ namespace ElectricalCommands {
       Transaction tr,
       BlockTableRecord btr,
       bool half = false
-    ) {
+    )
+    {
       circuitNumInt = (circuitNumInt - circuitNumReducer) / 2;
       double lineStartY = startPointY - (0.935999999999979 + (deltaY * circuitNumInt));
       if (half)
@@ -4551,14 +5176,18 @@ namespace ElectricalCommands {
       return line.StartPoint.Y;
     }
 
-    private double GetDescriptionWidthFactor(string description) {
-      if (description.Length <= 20) {
+    private double GetDescriptionWidthFactor(string description)
+    {
+      if (description.Length <= 20)
+      {
         return 0.8;
       }
-      if (description.Length <= 24) {
+      if (description.Length <= 24)
+      {
         return 0.75;
       }
-      if (description.Length <= 28) {
+      if (description.Length <= 28)
+      {
         return 0.65;
       }
       return 0.6;
