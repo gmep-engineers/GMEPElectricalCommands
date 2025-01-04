@@ -5047,7 +5047,7 @@ namespace ElectricalCommands
       CreateLines(tr, btr, linesData2);
     }
 
-    private static ObjectId GetTextStyleId(string styleName)
+    public static ObjectId GetTextStyleId(string styleName)
     {
       var (doc, db, _) = PanelCommands.GetGlobals();
       var textStyleTable = (TextStyleTable)db.TextStyleTableId.GetObject(OpenMode.ForRead);

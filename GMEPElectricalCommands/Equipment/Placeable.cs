@@ -18,6 +18,7 @@ namespace ElectricalCommands.Equipment
     public string description,
       category;
     public int voltage;
+    public double fla;
     public bool is3Phase;
 
     public Equipment(
@@ -28,6 +29,7 @@ namespace ElectricalCommands.Equipment
       string desc = "",
       string cat = "",
       int volts = 0,
+      double amps = 0,
       bool is3Ph = false,
       int pDist = -1,
       double xLoc = 0,
@@ -41,6 +43,7 @@ namespace ElectricalCommands.Equipment
       description = desc;
       category = cat;
       voltage = volts;
+      fla = amps;
       is3Phase = is3Ph;
       loc = new Point3d(xLoc, yLoc, 0);
       parentDistance = pDist;
