@@ -173,7 +173,11 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_equipment.is_three_phase,
         electrical_equipment.parent_distance,
         electrical_equipment.loc_x,
-        electrical_equipment.loc_y
+        electrical_equipment.loc_y,
+        electrical_equipment.mca_id,
+        electrical_equipment_mca_ratings.mca_rating,
+        electrical_equipment.hp,
+        electrical_equipment.mounting_height
         FROM electrical_equipment
         LEFT JOIN electrical_panels
         ON electrical_panels.id = electrical_equipment.parent_id
@@ -181,6 +185,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         ON electrical_equipment.category_id = electrical_equipment_categories.id
         LEFT JOIN electrical_equipment_voltages
         ON electrical_equipment_voltages.id = electrical_equipment.voltage_id
+        LEFT JOIN electrical_equipment_mca_ratings
+        ON electrical_equipment_mca_ratings.id = electrical_equipment.mca_id
         WHERE electrical_equipment.project_id = @projectId
         ORDER BY electrical_equipment.equip_no ASC";
       this.OpenConnection();
@@ -190,6 +196,12 @@ namespace GMEPElectricalCommands.GmepDatabase
       while (reader.Read())
       {
         bool is3Phase = reader.GetInt32("is_three_phase") == 1;
+        int mcaId = reader.GetInt32("mca_id");
+        int mca = -1;
+        if (mcaId != 0)
+        {
+          mca = reader.GetInt32("mca_rating");
+        }
         equip.Add(
           new Equipment(
             reader.GetString("id"),
@@ -203,7 +215,10 @@ namespace GMEPElectricalCommands.GmepDatabase
             is3Phase,
             reader.GetInt32("parent_distance"),
             reader.GetFloat("loc_x"),
-            reader.GetFloat("loc_y")
+            reader.GetFloat("loc_y"),
+            mca,
+            reader.GetString("hp"),
+            reader.GetInt32("mounting_height")
           )
         );
       }

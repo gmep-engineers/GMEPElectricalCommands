@@ -1352,7 +1352,7 @@ namespace ElectricalCommands.Equipment
         tb.TableStyle = db.Tablestyle;
         tb.Position = startPoint;
         int tableRows = equipmentList.Count + 3;
-        int tableCols = 10;
+        int tableCols = 12;
         tb.SetSize(tableRows, tableCols);
         tb.SetRowHeight(0.25);
         tb.Cells[0, 0].TextString = "ELECTRICAL EQUIPMENT SCHEDULE";
@@ -1362,7 +1362,7 @@ namespace ElectricalCommands.Equipment
         tb.MergeCells(range);
         range = CellRange.Create(tb, 1, 2, 1, 6);
         tb.MergeCells(range);
-        range = CellRange.Create(tb, 1, 7, 1, 9);
+        range = CellRange.Create(tb, 1, 7, 1, 11);
         tb.MergeCells(range);
         var textStyleId = PanelCommands.GetTextStyleId("gmep");
         tb.Layer = "E-TXT1";
@@ -1383,11 +1383,15 @@ namespace ElectricalCommands.Equipment
         tb.Columns[6].Width = 0.5;
         tb.Columns[7].Width = 1.3;
         tb.Columns[8].Width = 0.7;
-        tb.Columns[8].Width = 1.3;
+        tb.Columns[9].Width = 0.7;
+        tb.Columns[10].Width = 0.7;
+        tb.Columns[11].Width = 0.7;
         tb.Cells[1, 7].TextString = "ROUGH-IN";
         tb.Cells[2, 7].TextString = "CONNECTION";
         tb.Cells[2, 8].TextString = "HEIGHT";
-        tb.Cells[2, 9].TextString = "WIRE SIZE";
+        tb.Cells[2, 9].TextString = "CND. SIZE";
+        tb.Cells[2, 10].TextString = "WIRE SIZE";
+        tb.Cells[2, 11].TextString = "GND. SIZE";
         for (int i = 0; i < tableRows; i++)
         {
           for (int j = 0; j < tableCols; j++)
@@ -1405,6 +1409,38 @@ namespace ElectricalCommands.Equipment
           tb.Cells[row, 2].TextString = equipmentList[i].voltage.ToString();
           tb.Cells[row, 3].TextString =
             equipmentList[i].fla > 0 ? Math.Round(equipmentList[i].fla, 1).ToString() : "-";
+          tb.Cells[row, 4].TextString = equipmentList[i].hp == "0" ? "-" : equipmentList[i].hp;
+          int mca = (equipmentList[i].mca);
+          if (mca <= 0)
+          {
+            mca = CADObjectCommands.GetMcaFromFla(equipmentList[i].fla);
+          }
+          if (mca <= 0)
+          {
+            tb.Cells[row, 9].TextString = "V.I.F.";
+            tb.Cells[row, 10].TextString = "V.I.F.";
+          }
+          else
+          {
+            (string firstLine, string secondLine, string _, string _, string _, string _) =
+              CADObjectCommands.GetWireAndConduitSizeText(
+                equipmentList[i].fla,
+                mca,
+                equipmentList[i].parentDistance + 10,
+                equipmentList[i].voltage,
+                3,
+                equipmentList[i].is3Phase ? 3 : 1
+              );
+            tb.Cells[row, 5].TextString = mca.ToString();
+            tb.Cells[row, 7].TextString = CADObjectCommands.GetConnectionTypeFromFlaVoltage(
+              equipmentList[i].fla,
+              equipmentList[i].voltage
+            );
+            tb.Cells[row, 8].TextString = equipmentList[i].mountingHeight.ToString() + "\"";
+            tb.Cells[row, 9].TextString = firstLine.Substring(0, firstLine.IndexOf(" "));
+            tb.Cells[row, 10].TextString = firstLine.Substring(firstLine.IndexOf(";") + 2);
+            tb.Cells[row, 11].TextString = secondLine.Replace("PLUS ", "").Replace(" GND.", "");
+          }
 
           tb.Cells[row, 6].TextString = equipmentList[i].is3Phase ? "3" : "1";
         }
