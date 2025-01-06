@@ -819,7 +819,9 @@ namespace ElectricalCommands.Equipment
             if (index == 0)
             {
               child.startChildRight = true;
-              child.SetChildEndingPoint(new Point3d(endingPoint.X + 2, endingPoint.Y - 3.25, 0));
+              child.SetChildEndingPoint(
+                new Point3d(endingPoint.X + 2 + (child.children.Count / 2), endingPoint.Y - 3.25, 0)
+              );
               child.SetChildStartingPoints(
                 new Point3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (7.0 / 8.0), 0)
               );
@@ -827,7 +829,9 @@ namespace ElectricalCommands.Equipment
             if (index == 1)
             {
               child.startChildRight = false;
-              child.SetChildEndingPoint(new Point3d(endingPoint.X - 2, endingPoint.Y - 3.25, 0));
+              child.SetChildEndingPoint(
+                new Point3d(endingPoint.X - 2 - (child.children.Count / 2), endingPoint.Y - 3.25, 0)
+              );
               child.SetChildStartingPoints(
                 new Point3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (7.0 / 8.0), 0)
               );
@@ -838,7 +842,7 @@ namespace ElectricalCommands.Equipment
               child.SetChildEndingPoint(
                 new Point3d(
                   endingPoint.X
-                    + Math.Floor(0.5 * child.children.Count)
+                    + (child.children.Count / 2)
                     + (2 * children[i - 2].children.Count)
                     + 4,
                   endingPoint.Y - 3.25,
@@ -855,7 +859,7 @@ namespace ElectricalCommands.Equipment
               child.SetChildEndingPoint(
                 new Point3d(
                   endingPoint.X
-                    - Math.Floor(0.5 * child.children.Count)
+                    - (child.children.Count / 2)
                     - (2 * children[i - 2].children.Count)
                     - 4,
                   endingPoint.Y - 3.25,
@@ -891,7 +895,7 @@ namespace ElectricalCommands.Equipment
               child.SetChildEndingPoint(
                 new Point3d(
                   endingPoint.X
-                    + Math.Floor(0.5 * child.children.Count)
+                    + (child.children.Count / 2)
                     + (2 * children[i - 2].children.Count)
                     + 4,
                   endingPoint.Y - 3.25,
@@ -908,7 +912,7 @@ namespace ElectricalCommands.Equipment
               child.SetChildEndingPoint(
                 new Point3d(
                   endingPoint.X
-                    - Math.Floor(0.5 * child.children.Count)
+                    - (child.children.Count / 2)
                     - (2 * children[i - 2].children.Count)
                     - 4,
                   endingPoint.Y - 3.25,

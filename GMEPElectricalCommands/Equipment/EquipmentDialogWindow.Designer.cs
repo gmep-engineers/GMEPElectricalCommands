@@ -45,6 +45,7 @@
       this.transformerGroupBox = new System.Windows.Forms.GroupBox();
       this.transformerListView = new System.Windows.Forms.ListView();
       this.makeSingleLineButton = new System.Windows.Forms.Button();
+      this.createEquipmentScheduleButton = new System.Windows.Forms.Button();
       this.filtersGroupBox.SuspendLayout();
       this.equipmentGroupBox.SuspendLayout();
       this.panelsGroupBox.SuspendLayout();
@@ -302,11 +303,23 @@
       this.makeSingleLineButton.UseVisualStyleBackColor = true;
       this.makeSingleLineButton.Click += new System.EventHandler(this.MakeSingleLineButton_Click);
       // 
+      // createEquipmentScheduleButton
+      // 
+      this.createEquipmentScheduleButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
+      this.createEquipmentScheduleButton.Location = new System.Drawing.Point(391, 826);
+      this.createEquipmentScheduleButton.Name = "createEquipmentScheduleButton";
+      this.createEquipmentScheduleButton.Size = new System.Drawing.Size(170, 23);
+      this.createEquipmentScheduleButton.TabIndex = 8;
+      this.createEquipmentScheduleButton.Text = "Create Equipment Schedule";
+      this.createEquipmentScheduleButton.UseVisualStyleBackColor = true;
+      this.createEquipmentScheduleButton.Click += new System.EventHandler(this.CreateEquipmentSchedule_Click);
+      // 
       // EquipmentDialogWindow
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.ClientSize = new System.Drawing.Size(884, 861);
+      this.Controls.Add(this.createEquipmentScheduleButton);
       this.Controls.Add(this.makeSingleLineButton);
       this.Controls.Add(this.transformerGroupBox);
       this.Controls.Add(this.recalculateDistancesButton);
@@ -352,5 +365,6 @@
     private System.Windows.Forms.GroupBox transformerGroupBox;
     private System.Windows.Forms.ListView transformerListView;
     private System.Windows.Forms.Button makeSingleLineButton;
+    private System.Windows.Forms.Button createEquipmentScheduleButton;
   }
 }

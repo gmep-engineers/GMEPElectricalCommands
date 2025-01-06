@@ -16,34 +16,46 @@ namespace ElectricalCommands.Equipment
   public class Equipment : Placeable
   {
     public string description,
-      category;
-    public int voltage;
+      category,
+      hp;
+    public int voltage,
+      mca,
+      mountingHeight;
+    public double fla;
     public bool is3Phase;
 
     public Equipment(
-      string _id = "",
-      string pId = "",
-      string pName = "",
-      string eqNo = "",
-      string desc = "",
-      string cat = "",
-      int volts = 0,
-      bool is3Ph = false,
-      int pDist = -1,
+      string id = "",
+      string parentId = "",
+      string parentName = "",
+      string name = "",
+      string description = "",
+      string category = "",
+      int voltage = 0,
+      double fla = 0,
+      bool is3Phase = false,
+      int parentDistance = -1,
       double xLoc = 0,
-      double yLoc = 0
+      double yLoc = 0,
+      int mca = -1,
+      string hp = "",
+      int mountingHeight = 18
     )
     {
-      id = _id;
-      parentId = pId;
-      parentName = pName;
-      name = eqNo.ToUpper();
-      description = desc;
-      category = cat;
-      voltage = volts;
-      is3Phase = is3Ph;
+      this.id = id;
+      this.parentId = parentId;
+      this.parentName = parentName;
+      this.name = name.ToUpper();
+      this.description = description;
+      this.category = category;
+      this.voltage = voltage;
+      this.fla = fla;
+      this.is3Phase = is3Phase;
       loc = new Point3d(xLoc, yLoc, 0);
-      parentDistance = pDist;
+      this.parentDistance = parentDistance;
+      this.mca = mca;
+      this.hp = hp;
+      this.mountingHeight = mountingHeight;
     }
   }
 

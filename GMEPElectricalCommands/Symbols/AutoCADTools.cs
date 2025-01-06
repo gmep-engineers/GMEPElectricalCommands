@@ -1210,6 +1210,109 @@ namespace ElectricalCommands
       }
     }
 
+    public static int GetMcaFromFla(double fla)
+    {
+      double mocp = fla / 0.8;
+      switch (fla)
+      {
+        case var _ when mocp <= 20:
+          return 20;
+        case var _ when mocp <= 25:
+          return 25;
+        case var _ when mocp <= 30:
+          return 30;
+        case var _ when mocp <= 35:
+          return 35;
+        case var _ when mocp <= 40:
+          return 40;
+        case var _ when mocp <= 45:
+          return 45;
+        case var _ when mocp <= 50:
+          return 50;
+        case var _ when mocp <= 60:
+          return 60;
+        case var _ when mocp <= 70:
+          return 70;
+        case var _ when mocp <= 80:
+          return 80;
+        case var _ when mocp <= 90:
+          return 90;
+        case var _ when mocp <= 100:
+          return 100;
+        case var _ when mocp <= 110:
+          return 110;
+        case var _ when mocp <= 125:
+          return 125;
+        case var _ when mocp <= 150:
+          return 150;
+        case var _ when mocp <= 175:
+          return 175;
+        case var _ when mocp <= 200:
+          return 200;
+        case var _ when mocp <= 225:
+          return 225;
+        case var _ when mocp <= 250:
+          return 250;
+        default:
+          return -1;
+      }
+    }
+
+    public static string GetConnectionTypeFromFlaVoltage(double fla, int voltage)
+    {
+      int mca = GetMcaFromFla(fla);
+      switch (fla)
+      {
+        case var _ when fla / 0.8 <= 15:
+          if (voltage <= 120)
+          {
+            return "NEMA 5-15";
+          }
+          else
+          {
+            return "NEMA 6-15";
+          }
+        case var _ when mca <= 20:
+          if (voltage <= 120)
+          {
+            return "NEMA 5-20";
+          }
+          else
+          {
+            return "NEMA 6-20";
+          }
+        case var _ when mca <= 30:
+          if (voltage <= 120)
+          {
+            return "NEMA 5-30";
+          }
+          else
+          {
+            return "NEMA 6-30";
+          }
+        case var _ when mca <= 50:
+          if (voltage <= 120)
+          {
+            return "NEMA 5-50";
+          }
+          else
+          {
+            return "NEMA 6-50";
+          }
+        case var _ when mca <= 60:
+          return "60AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
+        case var _ when mca <= 100:
+          return "100AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
+        case var _ when mca <= 200:
+          return "200AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
+        case var _ when mca <= 400:
+          return "400AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
+        case var _ when mca <= 600:
+          return "600AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
+      }
+      return "V.I.F";
+    }
+
     public static (string, string, string, string, string, string) GetWireAndConduitSizeText(
       double loadAmperage,
       double mocp,
@@ -1232,7 +1335,7 @@ namespace ElectricalCommands
       {
         numWires = 4;
       }
-      if (voltage == 120)
+      if (voltage <= 120)
       {
         numWires = 2;
       }
