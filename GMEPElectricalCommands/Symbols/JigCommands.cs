@@ -12,20 +12,25 @@ using Autodesk.AutoCAD.Runtime;
 
 namespace ElectricalCommands
 {
-  public class SpoonShapeCommands {
-    
+  public class SpoonShapeCommands
+  {
     [CommandMethod("SP")]
-    public void SP() {
+    public void SP()
+    {
       double scale = 12;
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
-      if (CADObjectCommands.Scale <= 0 && (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport()))
+      if (
+        CADObjectCommands.Scale <= 0
+        && (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
+      )
       {
         CADObjectCommands.SetScale();
         if (CADObjectCommands.Scale <= 0)
           return;
       }
-      if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport()) {
+      if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
+      {
         scale = CADObjectCommands.Scale;
       }
 
@@ -35,12 +40,12 @@ namespace ElectricalCommands
         return;
 
       Point3d firstClickPoint = ppr.Value;
-
       SpoonJig jig = new SpoonJig(firstClickPoint, scale);
+
       PromptResult res = ed.Drag(jig);
+      Console.WriteLine(res.ToString());
       if (res.Status != PromptStatus.OK)
         return;
-
       Vector3d direction = jig.endPoint - firstClickPoint;
       double angle = direction.GetAngleTo(Vector3d.XAxis, Vector3d.ZAxis);
 
@@ -333,5 +338,81 @@ namespace ElectricalCommands
     }
 
     public Point3d InsertionPoint => _insertionPoint;
+  }
+
+  public class LabelJig : DrawJig
+  {
+    private Point3d firstClickPoint;
+    private Point3d startPoint;
+    public Point3d endPoint { get; private set; }
+    private Point3d rotationPoint;
+    private double scale;
+    public Line line;
+
+    public LabelJig(Point3d firstClick, double scale)
+    {
+      firstClickPoint = firstClick;
+      rotationPoint = firstClickPoint;
+      this.scale = scale;
+      startPoint = rotationPoint + new Vector3d(-3 * (0.25 / scale), 0, 0);
+      endPoint = startPoint;
+      line = new Line(startPoint, startPoint);
+      line.Layer = "E-TXT1";
+    }
+
+    public PromptStatus DragMe()
+    {
+      Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+      PromptResult res;
+      do
+      {
+        res = ed.Drag(this);
+      } while (res.Status == PromptStatus.Other);
+      return res.Status;
+    }
+
+    protected override bool WorldDraw(WorldDraw draw)
+    {
+      if (line != null)
+      {
+        draw.Geometry.Draw(line);
+      }
+      return true;
+    }
+
+    protected override SamplerStatus Sampler(JigPrompts prompts)
+    {
+      JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect end point:");
+      opts.BasePoint = rotationPoint;
+      opts.UseBasePoint = true;
+      opts.Cursor = CursorType.RubberBand;
+
+      PromptPointResult res = prompts.AcquirePoint(opts);
+      if (res.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+
+      if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+        return SamplerStatus.NoChange;
+
+      endPoint = res.Value;
+
+      Vector3d direction = (endPoint - rotationPoint).GetNormal();
+      startPoint = rotationPoint + direction * -3 * (0.25 / scale);
+
+      UpdateGeometry();
+      return SamplerStatus.OK;
+    }
+
+    private void UpdateGeometry()
+    {
+      line.StartPoint = startPoint;
+      line.EndPoint = endPoint;
+
+      Vector3d direction = (endPoint - startPoint).GetNormal();
+      Vector3d perpendicular = new Vector3d(-direction.Y, direction.X, 0);
+      Point3d secondPoint =
+        startPoint + direction * 2 * (0.25 / scale) + perpendicular * 4 * (0.25 / scale);
+      Point3d thirdPoint = startPoint + direction * 6 * (0.25 / scale);
+    }
   }
 }
