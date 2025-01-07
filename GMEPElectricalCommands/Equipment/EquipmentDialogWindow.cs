@@ -699,6 +699,45 @@ namespace ElectricalCommands.Equipment
         try
         {
           BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+          ObjectId blockId = bt["EQUIPMENT LOCATOR"];
+          using (BlockReference acBlkRef = new BlockReference(firstClickPoint, blockId))
+          {
+            BlockTableRecord acCurSpaceBlkTblRec;
+            acCurSpaceBlkTblRec =
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+            acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+            DynamicBlockReferencePropertyCollection pc =
+              acBlkRef.DynamicBlockReferencePropertyCollection;
+            foreach (DynamicBlockReferenceProperty prop in pc)
+            {
+              if (prop.PropertyName == "gmep_equip_id")
+              {
+                prop.Value = equipId;
+              }
+              if (prop.PropertyName == "gmep_equip_parent_id")
+              {
+                prop.Value = parentId;
+              }
+              if (prop.PropertyName == "gmep_equip_no")
+              {
+                prop.Value = equipNo;
+              }
+            }
+            acBlkRef.Layer = "E-TXT1";
+            tr.AddNewlyCreatedDBObject(acBlkRef, true);
+          }
+          tr.Commit();
+        }
+        catch (Autodesk.AutoCAD.Runtime.Exception ex)
+        {
+          tr.Commit();
+        }
+      }
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        try
+        {
+          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
           ObjectId blockId = bt["EQUIP_MARKER"];
           using (BlockReference acBlkRef = new BlockReference(labelInsertionPoint, blockId))
           {
@@ -706,11 +745,8 @@ namespace ElectricalCommands.Equipment
             acCurSpaceBlkTblRec =
               tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
             acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-            //tr.AddNewlyCreatedDBObject(acBlkRef, true);
-
             DynamicBlockReferencePropertyCollection pc =
               acBlkRef.DynamicBlockReferencePropertyCollection;
-            Equipment eq = new Equipment();
             foreach (DynamicBlockReferenceProperty prop in pc)
             {
               if (prop.PropertyName == "gmep_equip_id")
@@ -727,11 +763,11 @@ namespace ElectricalCommands.Equipment
             ObjectId gmepTextStyleId;
             if (textStyleTable.Has("gmep"))
             {
-              gmepTextStyleId = textStyleTable["rpm"];
+              gmepTextStyleId = textStyleTable["gmep"];
             }
             else
             {
-              ed.WriteMessage("\nText style 'rpm' not found. Using default text style.");
+              ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
               gmepTextStyleId = doc.Database.Textstyle;
             }
             AttributeDefinition attrDef = new AttributeDefinition();
@@ -797,9 +833,12 @@ namespace ElectricalCommands.Equipment
               Placeable eq = new Placeable();
               foreach (DynamicBlockReferenceProperty prop in pc)
               {
-                if (prop.PropertyName == "gmep_equip_id" && prop.Value as string != "0")
+                if (prop.PropertyName == "gmep_equip_locator" && prop.Value as string == "true")
                 {
                   addEquip = true;
+                }
+                if (prop.PropertyName == "gmep_equip_id" && prop.Value as string != "0")
+                {
                   eq.id = prop.Value as string;
                 }
                 if (prop.PropertyName == "gmep_equip_parent_id" && prop.Value as string != "0")

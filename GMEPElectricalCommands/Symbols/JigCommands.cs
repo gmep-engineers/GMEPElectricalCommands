@@ -43,7 +43,6 @@ namespace ElectricalCommands
       SpoonJig jig = new SpoonJig(firstClickPoint, scale);
 
       PromptResult res = ed.Drag(jig);
-      Console.WriteLine(res.ToString());
       if (res.Status != PromptStatus.OK)
         return;
       Vector3d direction = jig.endPoint - firstClickPoint;
@@ -354,7 +353,7 @@ namespace ElectricalCommands
       firstClickPoint = firstClick;
       rotationPoint = firstClickPoint;
       this.scale = scale;
-      startPoint = rotationPoint + new Vector3d(-3 * (0.25 / scale), 0, 0);
+      startPoint = rotationPoint;
       endPoint = startPoint;
       line = new Line(startPoint, startPoint);
       line.Layer = "E-TXT1";
@@ -396,8 +395,7 @@ namespace ElectricalCommands
 
       endPoint = res.Value;
 
-      Vector3d direction = (endPoint - rotationPoint).GetNormal();
-      startPoint = rotationPoint + direction * -3 * (0.25 / scale);
+      startPoint = rotationPoint;
 
       UpdateGeometry();
       return SamplerStatus.OK;
