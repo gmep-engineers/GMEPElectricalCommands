@@ -413,4 +413,104 @@ namespace ElectricalCommands
       Point3d thirdPoint = startPoint + direction * 6 * (0.25 / scale);
     }
   }
+
+  public class BlockJig : EntityJig
+  {
+    private Point3d _insertionPoint;
+    private Point3d _rotationPoint;
+    private Vector3d _direction;
+    private bool inserted;
+
+    public BlockJig(BlockReference blockRef)
+      : base(blockRef)
+    {
+      _insertionPoint = Point3d.Origin;
+      _rotationPoint = Point3d.Origin;
+      inserted = false;
+    }
+
+    protected override SamplerStatus Sampler(JigPrompts prompts)
+    {
+      string prompt;
+      if (!inserted)
+      {
+        prompt = "\nSpecify insertion point: ";
+      }
+      else
+      {
+        prompt = "\nSpecify rotation: ";
+      }
+      JigPromptPointOptions pointOptions = new JigPromptPointOptions(prompt);
+      PromptPointResult pointResult = prompts.AcquirePoint(pointOptions);
+
+      if (pointResult.Status == PromptStatus.OK)
+      {
+        if (!inserted)
+        {
+          if (pointResult.Status == PromptStatus.OK)
+          {
+            if (_insertionPoint == pointResult.Value)
+            {
+              return SamplerStatus.NoChange;
+            }
+            _insertionPoint = pointResult.Value;
+            inserted = true;
+            return SamplerStatus.OK;
+          }
+        }
+        else
+        {
+          if (pointResult.Status == PromptStatus.OK)
+          {
+            if (_rotationPoint == pointResult.Value)
+            {
+              return SamplerStatus.NoChange;
+            }
+            _direction = _insertionPoint - pointResult.Value;
+            _rotationPoint = pointResult.Value;
+            return SamplerStatus.OK;
+          }
+        }
+      }
+      return SamplerStatus.Cancel;
+    }
+
+    protected override bool Update()
+    {
+      ((BlockReference)Entity).Position = _insertionPoint;
+      double rotation = Math.Atan2(_direction.Y, _direction.X) - Math.PI / 2;
+      if (rotation >= -4.71239 && rotation < -3.14159)
+      {
+        rotation = -3.14159;
+      }
+      else if (rotation >= -3.14159 && rotation < -1.5708)
+      {
+        rotation = -1.5708;
+      }
+      else if (rotation >= -3.14159 && rotation < -1.5708)
+      {
+        rotation = -1.5708;
+      }
+      else if (rotation >= -1.5708 && rotation < 0)
+      {
+        rotation = 0;
+      }
+      else if (rotation >= 0 && rotation < 1.5708)
+      {
+        rotation = 1.5708;
+      }
+      else if (rotation >= 1.5708 && rotation < 3.14159)
+      {
+        rotation = 3.14159;
+      }
+      else if (rotation >= 3.14159 && rotation < 4.71239)
+      {
+        rotation = 4.71239;
+      }
+      ((BlockReference)Entity).Rotation = rotation;
+      return true;
+    }
+
+    public Point3d InsertionPoint => _insertionPoint;
+  }
 }

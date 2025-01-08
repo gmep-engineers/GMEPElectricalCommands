@@ -6,7 +6,6 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
-using Autodesk.AutoCAD.Runtime;
 using GMEPElectricalCommands.GmepDatabase;
 
 namespace ElectricalCommands.Equipment
@@ -31,7 +30,10 @@ namespace ElectricalCommands.Equipment
 
   public enum EquipmentType
   {
-    Equipment,
+    Receptacle120V,
+    Receptacle240V,
+    JBox,
+    Disconnect,
     Panel,
     Transformer,
   }
@@ -634,6 +636,43 @@ namespace ElectricalCommands.Equipment
       {
         firstClickPoint = new Point3d(0.01, 0, 0);
       }
+      // insert block here
+      switch (equipType)
+      {
+        case EquipmentType.Receptacle120V:
+          break;
+        case EquipmentType.Panel:
+          using (Transaction acTrans = db.TransactionManager.StartTransaction())
+          {
+            BlockTable acBlkTbl =
+              acTrans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+            BlockTableRecord acBlkTblRec =
+              acTrans.GetObject(acBlkTbl[$"A$C26441056"], OpenMode.ForRead) as BlockTableRecord;
+
+            using (
+              BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId)
+            )
+            {
+              BlockJig blockJig = new BlockJig(acBlkRef);
+              PromptResult blockPromptResult = ed.Drag(blockJig);
+
+              if (promptResult.Status == PromptStatus.OK)
+              {
+                BlockTableRecord currentSpace =
+                  acTrans.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                currentSpace.AppendEntity(acBlkRef);
+                acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
+
+                // Set block reference layer
+                acBlkRef.Layer = "E-CND1";
+
+                acTrans.Commit();
+              }
+            }
+          }
+          break;
+        // TODO check for remaining connection types
+      }
 
       LabelJig jig = new LabelJig(firstClickPoint, scale);
       PromptResult res = ed.Drag(jig);
@@ -962,12 +1001,13 @@ namespace ElectricalCommands.Equipment
           .State
           .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
+
         int numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
         Point3d p = PlaceEquipment(
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
           equipmentListView.SelectedItems[0].Text,
-          EquipmentType.Equipment
+          EquipmentType.Receptacle120V // TODO set this based on connection
         );
         for (int i = 0; i < equipmentList.Count; i++)
         {
@@ -1106,7 +1146,7 @@ namespace ElectricalCommands.Equipment
                 item.SubItems[numSubItems - 2].Text,
                 item.SubItems[numSubItems - 1].Text,
                 item.Text,
-                EquipmentType.Equipment
+                EquipmentType.Receptacle120V
               );
               if (p.X == 0 & p.Y == 0 & p.Z == 0)
               {
@@ -1182,7 +1222,7 @@ namespace ElectricalCommands.Equipment
                 item.SubItems[numSubItems - 2].Text,
                 item.SubItems[numSubItems - 1].Text,
                 item.Text,
-                EquipmentType.Equipment
+                EquipmentType.Receptacle120V
               );
               if (p.X == 0 & p.Y == 0 & p.Z == 0)
               {
