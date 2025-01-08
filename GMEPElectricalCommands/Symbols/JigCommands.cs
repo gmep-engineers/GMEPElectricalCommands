@@ -479,31 +479,31 @@ namespace ElectricalCommands
     {
       ((BlockReference)Entity).Position = _insertionPoint;
       double rotation = Math.Atan2(_direction.Y, _direction.X) - Math.PI / 2;
-      if (rotation >= -4.71239 && rotation < -3.14159)
+      if (rotation >= -3.927745 && rotation < -2.356945)
       {
         rotation = -3.14159;
       }
-      else if (rotation >= -3.14159 && rotation < -1.5708)
+      else if (rotation >= -2.356945 && rotation < -0.786145)
       {
         rotation = -1.5708;
       }
-      else if (rotation >= -3.14159 && rotation < -1.5708)
-      {
-        rotation = -1.5708;
-      }
-      else if (rotation >= -1.5708 && rotation < 0)
+      else if (rotation >= -0.786145 && rotation < 0.786145)
       {
         rotation = 0;
       }
-      else if (rotation >= 0 && rotation < 1.5708)
+      else if (rotation >= 0.786145 && rotation < 2.356945)
       {
         rotation = 1.5708;
       }
-      else if (rotation >= 1.5708 && rotation < 3.14159)
+      else if (rotation >= 2.356945 && rotation < 3.927745)
       {
         rotation = 3.14159;
       }
-      else if (rotation >= 3.14159 && rotation < 4.71239)
+      else if (rotation >= 3.927745 || rotation < -3.927745)
+      {
+        rotation = -4.71239;
+      }
+      else if (rotation <= -3.927745 || rotation > 3.927745)
       {
         rotation = 4.71239;
       }
