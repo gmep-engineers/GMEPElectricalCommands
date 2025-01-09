@@ -30,6 +30,12 @@ namespace ElectricalCommands
 
     public static string Address = "";
 
+    public static string equipId,
+      parentId,
+      equipNo;
+
+    public static Point3d firstClickPoint;
+
     public static bool HorizontalConduit = false;
 
     public static Point3d PanelLocation { get; set; } = new Point3d(0, 0, 0);

@@ -12,20 +12,25 @@ using Autodesk.AutoCAD.Runtime;
 
 namespace ElectricalCommands
 {
-  public class SpoonShapeCommands {
-    
+  public class SpoonShapeCommands
+  {
     [CommandMethod("SP")]
-    public void SP() {
+    public void SP()
+    {
       double scale = 12;
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
-      if (CADObjectCommands.Scale <= 0 && (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport()))
+      if (
+        CADObjectCommands.Scale <= 0
+        && (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
+      )
       {
         CADObjectCommands.SetScale();
         if (CADObjectCommands.Scale <= 0)
           return;
       }
-      if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport()) {
+      if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
+      {
         scale = CADObjectCommands.Scale;
       }
 
@@ -35,12 +40,11 @@ namespace ElectricalCommands
         return;
 
       Point3d firstClickPoint = ppr.Value;
-
       SpoonJig jig = new SpoonJig(firstClickPoint, scale);
+
       PromptResult res = ed.Drag(jig);
       if (res.Status != PromptStatus.OK)
         return;
-
       Vector3d direction = jig.endPoint - firstClickPoint;
       double angle = direction.GetAngleTo(Vector3d.XAxis, Vector3d.ZAxis);
 
@@ -329,6 +333,141 @@ namespace ElectricalCommands
     {
       ((BlockReference)Entity).Position = _insertionPoint;
       ((BlockReference)Entity).Rotation = Math.Atan2(_direction.Y, _direction.X) - Math.PI / 2;
+      return true;
+    }
+
+    public Point3d InsertionPoint => _insertionPoint;
+  }
+
+  public class LabelJig : DrawJig
+  {
+    private Point3d startPoint;
+    public Point3d endPoint { get; private set; }
+    public Line line;
+
+    public LabelJig(Point3d firstClick)
+    {
+      startPoint = firstClick;
+      endPoint = startPoint;
+      line = new Line(startPoint, startPoint);
+      line.Layer = "E-TXT1";
+    }
+
+    protected override bool WorldDraw(WorldDraw draw)
+    {
+      if (line != null)
+      {
+        draw.Geometry.Draw(line);
+      }
+      return true;
+    }
+
+    protected override SamplerStatus Sampler(JigPrompts prompts)
+    {
+      JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect end point:");
+      opts.BasePoint = startPoint;
+      opts.UseBasePoint = true;
+      opts.Cursor = CursorType.RubberBand;
+
+      PromptPointResult res = prompts.AcquirePoint(opts);
+      if (res.Status != PromptStatus.OK)
+      {
+        return SamplerStatus.Cancel;
+      }
+
+      if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+      {
+        return SamplerStatus.NoChange;
+      }
+
+      endPoint = res.Value;
+
+      UpdateGeometry();
+      return SamplerStatus.OK;
+    }
+
+    private void UpdateGeometry()
+    {
+      line.StartPoint = startPoint;
+      line.EndPoint = endPoint;
+    }
+  }
+
+  public class BlockJig : EntityJig
+  {
+    private Point3d _insertionPoint;
+    private Point3d _rotationPoint;
+    private Vector3d _direction;
+    private bool _inserted;
+
+    public BlockJig(BlockReference blockRef)
+      : base(blockRef)
+    {
+      _insertionPoint = Point3d.Origin;
+      _rotationPoint = Point3d.Origin;
+      _inserted = false;
+    }
+
+    protected override SamplerStatus Sampler(JigPrompts prompts)
+    {
+      string prompt;
+      if (!_inserted)
+      {
+        prompt = "\nSpecify insertion point: ";
+      }
+      else
+      {
+        prompt = "\nSpecify rotation: ";
+      }
+      JigPromptPointOptions pointOptions = new JigPromptPointOptions(prompt);
+      PromptPointResult pointResult = prompts.AcquirePoint(pointOptions);
+
+      if (pointResult.Status == PromptStatus.OK)
+      {
+        if (!_inserted)
+        {
+          if (pointResult.Status == PromptStatus.OK)
+          {
+            if (_insertionPoint == pointResult.Value)
+            {
+              return SamplerStatus.NoChange;
+            }
+            _insertionPoint = pointResult.Value;
+            _inserted = true;
+            return SamplerStatus.OK;
+          }
+        }
+        else
+        {
+          if (pointResult.Status == PromptStatus.OK)
+          {
+            if (_rotationPoint == pointResult.Value)
+            {
+              return SamplerStatus.NoChange;
+            }
+            _direction = _insertionPoint - pointResult.Value;
+            _rotationPoint = pointResult.Value;
+            return SamplerStatus.OK;
+          }
+        }
+      }
+      return SamplerStatus.Cancel;
+    }
+
+    protected override bool Update()
+    {
+      ((BlockReference)Entity).Position = _insertionPoint;
+      double rotation = Math.Atan2(_direction.Y, _direction.X) - Math.PI / 2;
+
+      for (int i = -12; i < 12; i += 2)
+      {
+        if (rotation >= 0.3926991 * (i - 1) && rotation < 0.3926991 * (i + 1))
+        {
+          rotation = ((0.3926991 * i) + 0.3926991 * (i + 2)) / 2 - 0.3926991;
+          break;
+        }
+      }
+      ((BlockReference)Entity).Rotation = rotation;
       return true;
     }
 
