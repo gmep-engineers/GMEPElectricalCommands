@@ -559,7 +559,7 @@ namespace ElectricalCommands.Equipment
       }
     }
 
-    private Point3d PlaceEquipment(
+    private Point3d? PlaceEquipment(
       string equipId,
       string parentId,
       string equipNo,
@@ -619,7 +619,7 @@ namespace ElectricalCommands.Equipment
       {
         CADObjectCommands.SetScale();
         if (CADObjectCommands.Scale <= 0)
-          return new Point3d(0, 0, 0);
+          return null;
       }
       if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
       {
@@ -630,12 +630,8 @@ namespace ElectricalCommands.Equipment
       );
       PromptPointResult promptResult = ed.GetPoint(promptOptions);
       if (promptResult.Status != PromptStatus.OK)
-        return new Point3d(0, 0, 0);
+        return null;
       Point3d firstClickPoint = promptResult.Value;
-      if (firstClickPoint.X == 0 && firstClickPoint.Y == 0 && firstClickPoint.Z == 0)
-      {
-        firstClickPoint = new Point3d(0.01, 0, 0);
-      }
       // insert block here
       switch (equipType)
       {
@@ -662,10 +658,7 @@ namespace ElectricalCommands.Equipment
                   acTrans.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
                 currentSpace.AppendEntity(acBlkRef);
                 acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
-
-                // Set block reference layer
-                acBlkRef.Layer = "E-CND1";
-
+                acBlkRef.Layer = "E-SYM1";
                 acTrans.Commit();
               }
             }
@@ -674,10 +667,10 @@ namespace ElectricalCommands.Equipment
         // TODO check for remaining connection types
       }
 
-      LabelJig jig = new LabelJig(firstClickPoint, scale);
+      LabelJig jig = new LabelJig(firstClickPoint);
       PromptResult res = ed.Drag(jig);
       if (res.Status != PromptStatus.OK)
-        return new Point3d(0, 0, 0);
+        return null;
 
       Vector3d direction = jig.endPoint - firstClickPoint;
       double angle = direction.GetAngleTo(Vector3d.XAxis, Vector3d.ZAxis);
@@ -720,7 +713,7 @@ namespace ElectricalCommands.Equipment
       if (textAlignmentReferencePoint.X > comparisonPoint.X)
       {
         labelInsertionPoint = new Point3d(
-          textAlignmentReferencePoint.X + 14.1197 * 4 * scale,
+          textAlignmentReferencePoint.X + 14.1197 * 0.25 / scale,
           textAlignmentReferencePoint.Y,
           0
         );
@@ -728,7 +721,7 @@ namespace ElectricalCommands.Equipment
       else
       {
         labelInsertionPoint = new Point3d(
-          textAlignmentReferencePoint.X - 14.1197 * 4 * scale,
+          textAlignmentReferencePoint.X - 14.1197 * 0.25 / scale,
           textAlignmentReferencePoint.Y,
           0
         );
@@ -819,16 +812,16 @@ namespace ElectricalCommands.Equipment
             attrDef.Visible = true;
             attrDef.Invisible = false;
             attrDef.Constant = false;
-            attrDef.Height = 4.5;
+            attrDef.Height = 4.5 * 0.25 / scale;
             attrDef.WidthFactor = 0.85;
             attrDef.TextStyleId = gmepTextStyleId;
             attrDef.Layer = "0";
 
             AttributeReference attrRef = new AttributeReference();
-
             attrRef.SetAttributeFromBlock(attrDef, acBlkRef.BlockTransform);
             acBlkRef.AttributeCollection.AppendAttribute(attrRef);
             acBlkRef.Layer = "E-TXT1";
+            acBlkRef.ScaleFactors = new Scale3d(0.25 / scale);
             tr.AddNewlyCreatedDBObject(acBlkRef, true);
           }
           tr.Commit();
@@ -1003,12 +996,16 @@ namespace ElectricalCommands.Equipment
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
 
         int numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
-        Point3d p = PlaceEquipment(
+        Point3d? p = PlaceEquipment(
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
           equipmentListView.SelectedItems[0].Text,
           EquipmentType.Receptacle120V // TODO set this based on connection
         );
+        if (p == null)
+        {
+          return;
+        }
         for (int i = 0; i < equipmentList.Count; i++)
         {
           Equipment equipment = equipmentList[i];
@@ -1016,7 +1013,7 @@ namespace ElectricalCommands.Equipment
             equipmentList[i].id == equipmentListView.SelectedItems[0].SubItems[numSubItems - 2].Text
           )
           {
-            equipment.loc = p;
+            equipment.loc = (Point3d)p;
             equipmentList[i] = equipment;
           }
         }
@@ -1039,12 +1036,16 @@ namespace ElectricalCommands.Equipment
           .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
         int numSubItems = panelListView.SelectedItems[0].SubItems.Count;
-        Point3d p = PlaceEquipment(
+        Point3d? p = PlaceEquipment(
           panelListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
           panelListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
           panelListView.SelectedItems[0].Text,
           EquipmentType.Panel
         );
+        if (p == null)
+        {
+          return;
+        }
       }
       CreatePanelListView(true);
       CalculateDistances();
@@ -1065,12 +1066,16 @@ namespace ElectricalCommands.Equipment
           .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
         int numSubItems = transformerListView.SelectedItems[0].SubItems.Count;
-        Point3d p = PlaceEquipment(
+        Point3d? p = PlaceEquipment(
           transformerListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
           transformerListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
           transformerListView.SelectedItems[0].Text,
           EquipmentType.Transformer
         );
+        if (p == null)
+        {
+          return;
+        }
       }
       CreateTransformerListView(true);
       CalculateDistances();
@@ -1099,18 +1104,18 @@ namespace ElectricalCommands.Equipment
         bool brk = false;
         foreach (ListViewItem item in panelListView.SelectedItems)
         {
-          Point3d p = PlaceEquipment(
+          Point3d? p = PlaceEquipment(
             item.SubItems[numSubItems - 2].Text,
             item.SubItems[numSubItems - 1].Text,
             item.Text,
             EquipmentType.Panel
           );
-          if (p.X == 0 & p.Y == 0 & p.Z == 0)
+          if (p == null)
           {
             brk = true;
             break;
           }
-          panelLocs[item.SubItems[numSubItems - 2].Text] = p;
+          panelLocs[item.SubItems[numSubItems - 2].Text] = (Point3d)p;
         }
         if (
           !brk
@@ -1124,13 +1129,17 @@ namespace ElectricalCommands.Equipment
             numSubItems = transformerListView.SelectedItems[0].SubItems.Count;
             foreach (ListViewItem item in transformerListView.SelectedItems)
             {
-              Point3d p = PlaceEquipment(
+              Point3d? p = PlaceEquipment(
                 item.SubItems[numSubItems - 2].Text,
                 item.SubItems[numSubItems - 1].Text,
                 item.Text,
                 EquipmentType.Transformer
               );
-              if (p.X == 0 & p.Y == 0 & p.Z == 0)
+              if (p == null)
+              {
+                return;
+              }
+              if (p == null)
               {
                 brk = true;
                 break;
@@ -1142,13 +1151,13 @@ namespace ElectricalCommands.Equipment
             numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
             foreach (ListViewItem item in equipmentListView.SelectedItems)
             {
-              Point3d p = PlaceEquipment(
+              Point3d? p = PlaceEquipment(
                 item.SubItems[numSubItems - 2].Text,
                 item.SubItems[numSubItems - 1].Text,
                 item.Text,
                 EquipmentType.Receptacle120V
               );
-              if (p.X == 0 & p.Y == 0 & p.Z == 0)
+              if (p == null)
               {
                 break;
               }
@@ -1181,13 +1190,13 @@ namespace ElectricalCommands.Equipment
         bool brk = false;
         foreach (ListViewItem item in panelListView.Items)
         {
-          Point3d p = PlaceEquipment(
+          Point3d? p = PlaceEquipment(
             item.SubItems[numSubItems - 2].Text,
             item.SubItems[numSubItems - 1].Text,
             item.Text,
             EquipmentType.Panel
           );
-          if (p.X == 0 & p.Y == 0 & p.Z == 0)
+          if (p == null)
           {
             brk = true;
             break;
@@ -1200,13 +1209,13 @@ namespace ElectricalCommands.Equipment
             numSubItems = transformerListView.Items[0].SubItems.Count;
             foreach (ListViewItem item in transformerListView.Items)
             {
-              Point3d p = PlaceEquipment(
+              Point3d? p = PlaceEquipment(
                 item.SubItems[numSubItems - 2].Text,
                 item.SubItems[numSubItems - 1].Text,
                 item.Text,
                 EquipmentType.Transformer
               );
-              if (p.X == 0 & p.Y == 0 & p.Z == 0)
+              if (p == null)
               {
                 brk = true;
                 break;
@@ -1218,13 +1227,13 @@ namespace ElectricalCommands.Equipment
             numSubItems = equipmentListView.Items[0].SubItems.Count;
             foreach (ListViewItem item in equipmentListView.Items)
             {
-              Point3d p = PlaceEquipment(
+              Point3d? p = PlaceEquipment(
                 item.SubItems[numSubItems - 2].Text,
                 item.SubItems[numSubItems - 1].Text,
                 item.Text,
                 EquipmentType.Receptacle120V
               );
-              if (p.X == 0 & p.Y == 0 & p.Z == 0)
+              if (p == null)
               {
                 break;
               }

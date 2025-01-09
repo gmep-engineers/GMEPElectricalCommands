@@ -341,33 +341,16 @@ namespace ElectricalCommands
 
   public class LabelJig : DrawJig
   {
-    private Point3d firstClickPoint;
     private Point3d startPoint;
     public Point3d endPoint { get; private set; }
-    private Point3d rotationPoint;
-    private double scale;
     public Line line;
 
-    public LabelJig(Point3d firstClick, double scale)
+    public LabelJig(Point3d firstClick)
     {
-      firstClickPoint = firstClick;
-      rotationPoint = firstClickPoint;
-      this.scale = scale;
-      startPoint = rotationPoint;
+      startPoint = firstClick;
       endPoint = startPoint;
       line = new Line(startPoint, startPoint);
       line.Layer = "E-TXT1";
-    }
-
-    public PromptStatus DragMe()
-    {
-      Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
-      PromptResult res;
-      do
-      {
-        res = ed.Drag(this);
-      } while (res.Status == PromptStatus.Other);
-      return res.Status;
     }
 
     protected override bool WorldDraw(WorldDraw draw)
@@ -382,20 +365,22 @@ namespace ElectricalCommands
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
       JigPromptPointOptions opts = new JigPromptPointOptions("\nSelect end point:");
-      opts.BasePoint = rotationPoint;
+      opts.BasePoint = startPoint;
       opts.UseBasePoint = true;
       opts.Cursor = CursorType.RubberBand;
 
       PromptPointResult res = prompts.AcquirePoint(opts);
       if (res.Status != PromptStatus.OK)
+      {
         return SamplerStatus.Cancel;
+      }
 
       if (endPoint.DistanceTo(res.Value) < Tolerance.Global.EqualPoint)
+      {
         return SamplerStatus.NoChange;
+      }
 
       endPoint = res.Value;
-
-      startPoint = rotationPoint;
 
       UpdateGeometry();
       return SamplerStatus.OK;
@@ -405,12 +390,6 @@ namespace ElectricalCommands
     {
       line.StartPoint = startPoint;
       line.EndPoint = endPoint;
-
-      Vector3d direction = (endPoint - startPoint).GetNormal();
-      Vector3d perpendicular = new Vector3d(-direction.Y, direction.X, 0);
-      Point3d secondPoint =
-        startPoint + direction * 2 * (0.25 / scale) + perpendicular * 4 * (0.25 / scale);
-      Point3d thirdPoint = startPoint + direction * 6 * (0.25 / scale);
     }
   }
 
@@ -479,33 +458,14 @@ namespace ElectricalCommands
     {
       ((BlockReference)Entity).Position = _insertionPoint;
       double rotation = Math.Atan2(_direction.Y, _direction.X) - Math.PI / 2;
-      if (rotation >= -3.927745 && rotation < -2.356945)
+
+      for (int i = -12; i < 12; i += 2)
       {
-        rotation = -3.14159;
-      }
-      else if (rotation >= -2.356945 && rotation < -0.786145)
-      {
-        rotation = -1.5708;
-      }
-      else if (rotation >= -0.786145 && rotation < 0.786145)
-      {
-        rotation = 0;
-      }
-      else if (rotation >= 0.786145 && rotation < 2.356945)
-      {
-        rotation = 1.5708;
-      }
-      else if (rotation >= 2.356945 && rotation < 3.927745)
-      {
-        rotation = 3.14159;
-      }
-      else if (rotation >= 3.927745 || rotation < -3.927745)
-      {
-        rotation = -4.71239;
-      }
-      else if (rotation <= -3.927745 || rotation > 3.927745)
-      {
-        rotation = 4.71239;
+        if (rotation >= 0.3926991 * (i - 1) && rotation < 0.3926991 * (i + 1))
+        {
+          rotation = ((0.3926991 * i) + 0.3926991 * (i + 2)) / 2 - 0.3926991;
+          break;
+        }
       }
       ((BlockReference)Entity).Rotation = rotation;
       return true;
