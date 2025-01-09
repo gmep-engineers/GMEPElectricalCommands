@@ -30,8 +30,7 @@ namespace ElectricalCommands.Equipment
 
   public enum EquipmentType
   {
-    Receptacle120V,
-    Receptacle240V,
+    Duplex,
     JBox,
     Disconnect,
     Panel,
@@ -633,40 +632,73 @@ namespace ElectricalCommands.Equipment
         return null;
       Point3d firstClickPoint = promptResult.Value;
       // insert block here
+      string blockName = $"A$C3D4728D6";
+      double offsetX = 0;
+      double offsetY = 0;
+      double rotation = 0;
       switch (equipType)
       {
-        case EquipmentType.Receptacle120V:
+        case EquipmentType.Duplex:
+          blockName = $"A$C3D4728D6";
           break;
         case EquipmentType.Panel:
-          using (Transaction acTrans = db.TransactionManager.StartTransaction())
-          {
-            BlockTable acBlkTbl =
-              acTrans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-            BlockTableRecord acBlkTblRec =
-              acTrans.GetObject(acBlkTbl[$"A$C26441056"], OpenMode.ForRead) as BlockTableRecord;
-
-            using (
-              BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId)
-            )
-            {
-              BlockJig blockJig = new BlockJig(acBlkRef);
-              PromptResult blockPromptResult = ed.Drag(blockJig);
-
-              if (promptResult.Status == PromptStatus.OK)
-              {
-                BlockTableRecord currentSpace =
-                  acTrans.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-                currentSpace.AppendEntity(acBlkRef);
-                acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
-                acBlkRef.Layer = "E-SYM1";
-                acTrans.Commit();
-              }
-            }
-          }
+          blockName = $"A$C26441056";
           break;
         // TODO check for remaining connection types
       }
+      using (Transaction acTrans = db.TransactionManager.StartTransaction())
+      {
+        BlockTable acBlkTbl = acTrans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord acBlkTblRec =
+          acTrans.GetObject(acBlkTbl[blockName], OpenMode.ForRead) as BlockTableRecord;
 
+        using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId))
+        {
+          BlockJig blockJig = new BlockJig(acBlkRef);
+          PromptResult blockPromptResult = ed.Drag(blockJig);
+
+          if (promptResult.Status == PromptStatus.OK)
+          {
+            BlockTableRecord currentSpace =
+              acTrans.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+            currentSpace.AppendEntity(acBlkRef);
+            acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
+            acBlkRef.Layer = "E-SYM1";
+            acTrans.Commit();
+            rotation = acBlkRef.Rotation;
+          }
+        }
+      }
+      Console.WriteLine(rotation);
+      switch (equipType)
+      {
+        case EquipmentType.Duplex:
+          switch (rotation)
+          {
+            case var _ when rotation > 5.49:
+              offsetY = -9.125;
+              break;
+            case var _ when rotation > 4.71:
+              offsetX = -9.125;
+              break;
+            case var _ when rotation > 2.35:
+              offsetY = 9.125;
+              break;
+            case var _ when rotation > 1.57:
+              offsetX = 9.125;
+              break;
+            default:
+              offsetY = -9.125;
+              break;
+          }
+          break;
+        case EquipmentType.Panel:
+          break;
+        // TODO check for remaining connection types
+      }
+      offsetY = offsetY * 0.25 / scale;
+      offsetX = offsetX * 0.25 / scale;
+      firstClickPoint = new Point3d(firstClickPoint.X + offsetX, firstClickPoint.Y + offsetY, 0);
       LabelJig jig = new LabelJig(firstClickPoint);
       PromptResult res = ed.Drag(jig);
       if (res.Status != PromptStatus.OK)
@@ -1000,7 +1032,7 @@ namespace ElectricalCommands.Equipment
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
           equipmentListView.SelectedItems[0].Text,
-          EquipmentType.Receptacle120V // TODO set this based on connection
+          EquipmentType.Duplex // TODO set this based on connection
         );
         if (p == null)
         {
@@ -1155,7 +1187,7 @@ namespace ElectricalCommands.Equipment
                 item.SubItems[numSubItems - 2].Text,
                 item.SubItems[numSubItems - 1].Text,
                 item.Text,
-                EquipmentType.Receptacle120V
+                EquipmentType.Duplex
               );
               if (p == null)
               {
@@ -1231,7 +1263,7 @@ namespace ElectricalCommands.Equipment
                 item.SubItems[numSubItems - 2].Text,
                 item.SubItems[numSubItems - 1].Text,
                 item.Text,
-                EquipmentType.Receptacle120V
+                EquipmentType.Duplex
               );
               if (p == null)
               {

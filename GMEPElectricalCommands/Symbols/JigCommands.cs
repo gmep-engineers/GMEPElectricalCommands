@@ -398,20 +398,20 @@ namespace ElectricalCommands
     private Point3d _insertionPoint;
     private Point3d _rotationPoint;
     private Vector3d _direction;
-    private bool inserted;
+    private bool _inserted;
 
     public BlockJig(BlockReference blockRef)
       : base(blockRef)
     {
       _insertionPoint = Point3d.Origin;
       _rotationPoint = Point3d.Origin;
-      inserted = false;
+      _inserted = false;
     }
 
     protected override SamplerStatus Sampler(JigPrompts prompts)
     {
       string prompt;
-      if (!inserted)
+      if (!_inserted)
       {
         prompt = "\nSpecify insertion point: ";
       }
@@ -424,7 +424,7 @@ namespace ElectricalCommands
 
       if (pointResult.Status == PromptStatus.OK)
       {
-        if (!inserted)
+        if (!_inserted)
         {
           if (pointResult.Status == PromptStatus.OK)
           {
@@ -433,7 +433,7 @@ namespace ElectricalCommands
               return SamplerStatus.NoChange;
             }
             _insertionPoint = pointResult.Value;
-            inserted = true;
+            _inserted = true;
             return SamplerStatus.OK;
           }
         }
