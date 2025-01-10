@@ -226,6 +226,53 @@ namespace GMEPElectricalCommands.GmepDatabase
       return equip;
     }
 
+    public List<LightingFixture> GetLightingFixtures(string projectId)
+    {
+      List<LightingFixture> ltg = new List<LightingFixture>();
+      string query =
+        @"
+        SELECT
+        electrical_lighting.id,
+        electrical_lighting.parent_id,
+        electrical_lighting.control_id,
+        electrical_lighting.description,
+        electrical_equipment_voltages.voltage,
+        electrical_lighting.wattage,
+        electrical_lighting.em_capable,
+        electrical_lighting.model_no,
+        electrical_lighting.tag,
+        FROM electrical_lighting
+        LEFT JOIN electrical_panels
+        ON electrical_panels.id = electrical_equipment.parent_id
+        LEFT JOIN electrical_equipment_voltages
+        ON electrical_equipment_voltages.id = electrical_lighting.voltage_id
+        WHERE electrical_equipment.project_id = @projectId
+        ORDER BY electrical_equipment.equip_no ASC";
+      this.OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read())
+      {
+        ltg.Add(
+          new LightingFixture(
+            reader.GetString("id"),
+            reader.GetString("parent_id"),
+            reader.GetString("name"),
+            reader.GetString("tag"),
+            reader.GetString("control_id"),
+            reader.GetString("block_name"),
+            reader.GetInt32("voltage"),
+            reader.GetFloat("wattage"),
+            reader.GetString("description"),
+            reader.GetInt32("qty")
+          )
+        );
+      }
+      reader.Close();
+      return ltg;
+    }
+
     public string GetProjectId(string projectNo)
     {
       string query = @"SELECT id FROM projects WHERE gmep_project_no = @projectNo";

@@ -121,7 +121,7 @@
       this.MaximumSize = new System.Drawing.Size(900, 1200);
       this.MinimumSize = new System.Drawing.Size(900, 500);
       this.Name = "LightingDialogWindow";
-      this.Text = "LightingDialogWindow";
+      this.Text = "Lighting";
       this.ControlAreasGroupBox.ResumeLayout(false);
       this.ControlsGroupBox.ResumeLayout(false);
       this.LightingFixturesGroupBox.ResumeLayout(false);
