@@ -234,6 +234,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         SELECT
         electrical_lighting.id,
         electrical_lighting.parent_id,
+        electrical_panels.name,
         electrical_lighting.control_id,
         electrical_lighting.description,
         electrical_equipment_voltages.voltage,
@@ -241,13 +242,28 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_lighting.em_capable,
         electrical_lighting.model_no,
         electrical_lighting.tag,
+        electrical_lighting.qty,
+        symbols.block_name,
+        symbols.rotate,
+        symbols.paper_space_scale,
+        companies.name as company_name,
+        electrical_lighting.notes,
+        electrical_lighting_mounting_types.mounting
         FROM electrical_lighting
         LEFT JOIN electrical_panels
-        ON electrical_panels.id = electrical_equipment.parent_id
+        ON electrical_panels.id = electrical_lighting.parent_id
         LEFT JOIN electrical_equipment_voltages
         ON electrical_equipment_voltages.id = electrical_lighting.voltage_id
-        WHERE electrical_equipment.project_id = @projectId
-        ORDER BY electrical_equipment.equip_no ASC";
+        LEFT JOIN symbols
+        ON symbols.id = electrical_lighting.symbol_id
+        LEFT JOIN electrical_lighting_mounting_types
+        ON electrical_lighting_mounting_types.id = electrical_lighting.mounting_type_id
+        LEFT JOIN manufacturers
+        ON manufacturers.id = electrical_lighting.manufacturer_id
+        LEFT JOIN companies
+        ON companies.entity_id = manufacturers.entity_id
+        WHERE electrical_lighting.project_id = @projectId
+        ORDER BY electrical_lighting.tag ASC";
       this.OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("projectId", projectId);
@@ -265,7 +281,14 @@ namespace GMEPElectricalCommands.GmepDatabase
             reader.GetInt32("voltage"),
             reader.GetFloat("wattage"),
             reader.GetString("description"),
-            reader.GetInt32("qty")
+            reader.GetInt32("qty"),
+            reader.GetString("mounting"),
+            reader.GetString("company_name"),
+            reader.GetString("model_no"),
+            reader.GetString("notes"),
+            reader.GetInt32("rotate"),
+            reader.GetFloat("paper_space_scale"),
+            reader.GetInt32("em_capable")
           )
         );
       }

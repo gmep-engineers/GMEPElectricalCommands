@@ -18,9 +18,14 @@ namespace ElectricalCommands.Equipment
     public string blockName;
     public int voltage,
       qty;
-    public double wattage;
+    public double wattage,
+      paperSpaceScale;
     public string controlId;
-    public string description;
+    public string description,
+      mounting,
+      manufacturer,
+      modelNo,
+      notes;
     public bool rotate,
       emCapable;
 
@@ -34,7 +39,14 @@ namespace ElectricalCommands.Equipment
       int voltage,
       double wattage,
       string description,
-      int qty
+      int qty,
+      string mounting,
+      string manufacturer,
+      string modelNo,
+      string notes,
+      int rotate,
+      double paperSpaceScale,
+      int emCapable
     )
     {
       this.id = id;
@@ -47,6 +59,13 @@ namespace ElectricalCommands.Equipment
       this.controlId = controlId;
       this.description = description;
       this.qty = qty;
+      this.mounting = mounting;
+      this.manufacturer = manufacturer;
+      this.modelNo = modelNo;
+      this.notes = notes;
+      this.rotate = rotate != 0;
+      this.paperSpaceScale = paperSpaceScale;
+      this.emCapable = emCapable != 0;
     }
   }
 

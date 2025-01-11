@@ -24,12 +24,12 @@
     /// </summary>
     private void InitializeComponent() {
       this.ControlAreasGroupBox = new System.Windows.Forms.GroupBox();
-      this.ControlsGroupBox = new System.Windows.Forms.GroupBox();
-      this.LightingFixturesGroupBox = new System.Windows.Forms.GroupBox();
       this.ControlAreasListView = new System.Windows.Forms.ListView();
+      this.ControlsGroupBox = new System.Windows.Forms.GroupBox();
       this.ControlsListView = new System.Windows.Forms.ListView();
+      this.LightingFixturesGroupBox = new System.Windows.Forms.GroupBox();
       this.LightingFixturesListView = new System.Windows.Forms.ListView();
-      this.CreateLightingFixtureDiagramButton = new System.Windows.Forms.Button();
+      this.CreateLightingFixtureScheduleButton = new System.Windows.Forms.Button();
       this.ControlAreasGroupBox.SuspendLayout();
       this.ControlsGroupBox.SuspendLayout();
       this.LightingFixturesGroupBox.SuspendLayout();
@@ -45,6 +45,15 @@
       this.ControlAreasGroupBox.TabStop = false;
       this.ControlAreasGroupBox.Text = "Control Areas";
       // 
+      // ControlAreasListView
+      // 
+      this.ControlAreasListView.HideSelection = false;
+      this.ControlAreasListView.Location = new System.Drawing.Point(7, 20);
+      this.ControlAreasListView.Name = "ControlAreasListView";
+      this.ControlAreasListView.Size = new System.Drawing.Size(495, 199);
+      this.ControlAreasListView.TabIndex = 0;
+      this.ControlAreasListView.UseCompatibleStateImageBehavior = false;
+      // 
       // ControlsGroupBox
       // 
       this.ControlsGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
@@ -55,6 +64,15 @@
       this.ControlsGroupBox.TabIndex = 1;
       this.ControlsGroupBox.TabStop = false;
       this.ControlsGroupBox.Text = "Controls";
+      // 
+      // ControlsListView
+      // 
+      this.ControlsListView.HideSelection = false;
+      this.ControlsListView.Location = new System.Drawing.Point(7, 20);
+      this.ControlsListView.Name = "ControlsListView";
+      this.ControlsListView.Size = new System.Drawing.Size(333, 199);
+      this.ControlsListView.TabIndex = 0;
+      this.ControlsListView.UseCompatibleStateImageBehavior = false;
       // 
       // LightingFixturesGroupBox
       // 
@@ -69,24 +87,6 @@
       this.LightingFixturesGroupBox.TabStop = false;
       this.LightingFixturesGroupBox.Text = "Lighting Fixtures";
       // 
-      // ControlAreasListView
-      // 
-      this.ControlAreasListView.HideSelection = false;
-      this.ControlAreasListView.Location = new System.Drawing.Point(7, 20);
-      this.ControlAreasListView.Name = "ControlAreasListView";
-      this.ControlAreasListView.Size = new System.Drawing.Size(495, 199);
-      this.ControlAreasListView.TabIndex = 0;
-      this.ControlAreasListView.UseCompatibleStateImageBehavior = false;
-      // 
-      // ControlsListView
-      // 
-      this.ControlsListView.HideSelection = false;
-      this.ControlsListView.Location = new System.Drawing.Point(7, 20);
-      this.ControlsListView.Name = "ControlsListView";
-      this.ControlsListView.Size = new System.Drawing.Size(333, 199);
-      this.ControlsListView.TabIndex = 0;
-      this.ControlsListView.UseCompatibleStateImageBehavior = false;
-      // 
       // LightingFixturesListView
       // 
       this.LightingFixturesListView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -99,22 +99,23 @@
       this.LightingFixturesListView.TabIndex = 0;
       this.LightingFixturesListView.UseCompatibleStateImageBehavior = false;
       // 
-      // CreateLightingFixtureDiagramButton
+      // CreateLightingFixtureScheduleButton
       // 
-      this.CreateLightingFixtureDiagramButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-      this.CreateLightingFixtureDiagramButton.Location = new System.Drawing.Point(19, 426);
-      this.CreateLightingFixtureDiagramButton.Name = "CreateLightingFixtureDiagramButton";
-      this.CreateLightingFixtureDiagramButton.Size = new System.Drawing.Size(189, 23);
-      this.CreateLightingFixtureDiagramButton.TabIndex = 3;
-      this.CreateLightingFixtureDiagramButton.Text = "Create Lighting Fixture Diagram";
-      this.CreateLightingFixtureDiagramButton.UseVisualStyleBackColor = true;
+      this.CreateLightingFixtureScheduleButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+      this.CreateLightingFixtureScheduleButton.Location = new System.Drawing.Point(19, 426);
+      this.CreateLightingFixtureScheduleButton.Name = "CreateLightingFixtureScheduleButton";
+      this.CreateLightingFixtureScheduleButton.Size = new System.Drawing.Size(189, 23);
+      this.CreateLightingFixtureScheduleButton.TabIndex = 3;
+      this.CreateLightingFixtureScheduleButton.Text = "Create Lighting Fixture Schedule";
+      this.CreateLightingFixtureScheduleButton.UseVisualStyleBackColor = true;
+      this.CreateLightingFixtureScheduleButton.Click += new System.EventHandler(this.CreateLightingFixtureScheduleButton_Click);
       // 
       // LightingDialogWindow
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.ClientSize = new System.Drawing.Size(884, 461);
-      this.Controls.Add(this.CreateLightingFixtureDiagramButton);
+      this.Controls.Add(this.CreateLightingFixtureScheduleButton);
       this.Controls.Add(this.LightingFixturesGroupBox);
       this.Controls.Add(this.ControlsGroupBox);
       this.Controls.Add(this.ControlAreasGroupBox);
@@ -137,6 +138,6 @@
     private System.Windows.Forms.ListView ControlAreasListView;
     private System.Windows.Forms.ListView ControlsListView;
     private System.Windows.Forms.ListView LightingFixturesListView;
-    private System.Windows.Forms.Button CreateLightingFixtureDiagramButton;
+    private System.Windows.Forms.Button CreateLightingFixtureScheduleButton;
   }
 }

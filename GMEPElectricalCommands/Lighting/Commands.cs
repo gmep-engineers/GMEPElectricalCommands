@@ -12,6 +12,7 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using Dreambuild.AutoCAD;
+using ElectricalCommands.Equipment;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -290,6 +291,7 @@ namespace ElectricalCommands.Lighting
       //var lightingForm = new INITIALIZE_LIGHTING_FORM();
       //lightingForm.Show();
       var lightingDialogWindow = new LightingDialogWindow();
+      lightingDialogWindow.InitializeModal();
       lightingDialogWindow.Show();
     }
 
@@ -304,7 +306,7 @@ namespace ElectricalCommands.Lighting
       //string projectNo = Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
       string projectNo = "24-123";
       string projectId = gmepDb.GetProjectId(projectNo);
-      //List<LightingFixture> lightingList = gmepDb.GetLightingFixtures(projectId);
+      List<Equipment.LightingFixture> lightingList = gmepDb.GetLightingFixtures(projectId);
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
         LayerTable acLyrTbl;
@@ -318,55 +320,62 @@ namespace ElectricalCommands.Lighting
           tr.Commit();
         }
       }
-      int total = 5;
-      string fixtureId = Guid.NewGuid().ToString();
-      bool rotate = true;
-      string blockName = "GMEP LTG 2X4";
-      for (int i = 0; i < total; i++)
+      foreach (Equipment.LightingFixture fixture in lightingList)
       {
-        ed.WriteMessage("\nPlace " + (i + 1).ToString() + "/" + total.ToString() + " for 'A'");
-        if (rotate)
+        for (int i = 0; i < fixture.qty; i++)
         {
-          ed.Command("-INSERT", blockName, "S", "1");
-        }
-        else
-        {
-          ed.Command("-INSERT", blockName, "S", "1", "R", "0");
-        }
-
-        using (Transaction tr = db.TransactionManager.StartTransaction())
-        {
-          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
-          var modelSpace = (BlockTableRecord)
-            tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-          foreach (ObjectId id in modelSpace)
+          ed.WriteMessage(
+            "\nPlace "
+              + (i + 1).ToString()
+              + "/"
+              + fixture.qty.ToString()
+              + " for '"
+              + fixture.name
+              + "'"
+          );
+          if (fixture.rotate)
           {
-            try
+            ed.Command("-INSERT", fixture.blockName, "S", "1");
+          }
+          else
+          {
+            ed.Command("-INSERT", fixture.blockName, "S", "1", "R", "0");
+          }
+
+          using (Transaction tr = db.TransactionManager.StartTransaction())
+          {
+            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+            var modelSpace = (BlockTableRecord)
+              tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+            foreach (ObjectId id in modelSpace)
             {
-              BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForWrite);
-              if (br != null && br.IsDynamicBlock)
+              try
               {
-                DynamicBlockReferencePropertyCollection pc =
-                  br.DynamicBlockReferencePropertyCollection;
-                foreach (DynamicBlockReferenceProperty prop in pc)
+                BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForWrite);
+                if (br != null && br.IsDynamicBlock)
                 {
-                  if (prop.PropertyName == "gmep_lighting_id" && prop.Value as string == "0")
+                  DynamicBlockReferencePropertyCollection pc =
+                    br.DynamicBlockReferencePropertyCollection;
+                  foreach (DynamicBlockReferenceProperty prop in pc)
                   {
-                    prop.Value = Guid.NewGuid().ToString();
-                  }
-                  if (
-                    prop.PropertyName == "gmep_lighting_fixture_id"
-                    && prop.Value as string == "0"
-                  )
-                  {
-                    prop.Value = fixtureId;
+                    if (prop.PropertyName == "gmep_lighting_id" && prop.Value as string == "0")
+                    {
+                      prop.Value = Guid.NewGuid().ToString();
+                    }
+                    if (
+                      prop.PropertyName == "gmep_lighting_fixture_id"
+                      && prop.Value as string == "0"
+                    )
+                    {
+                      prop.Value = fixture.id;
+                    }
                   }
                 }
               }
+              catch { }
             }
-            catch { }
+            tr.Commit();
           }
-          tr.Commit();
         }
       }
       using (Transaction tr = db.TransactionManager.StartTransaction())
