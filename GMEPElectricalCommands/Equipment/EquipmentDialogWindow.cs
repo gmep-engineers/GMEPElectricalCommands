@@ -7,6 +7,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using GMEPElectricalCommands.GmepDatabase;
+using System.Text.RegularExpressions;
 
 namespace ElectricalCommands.Equipment
 {
@@ -70,8 +71,8 @@ namespace ElectricalCommands.Equipment
         .DocumentManager
         .MdiActiveDocument;
       string fileName = Path.GetFileName(doc.Name);
-      //string projectNo = Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
-      string projectNo = "24-123";
+      string projectNo = Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
+      //string projectNo = "24-123";
       projectId = gmepDb.GetProjectId(projectNo);
       panelList = gmepDb.GetPanels(projectId);
       equipmentList = gmepDb.GetEquipment(projectId);

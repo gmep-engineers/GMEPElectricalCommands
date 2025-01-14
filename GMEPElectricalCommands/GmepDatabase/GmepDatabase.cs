@@ -206,7 +206,8 @@ namespace GMEPElectricalCommands.GmepDatabase
           new Equipment(
             reader.GetString("id"),
             reader.GetString("parent_id"),
-            reader.GetString("name"),
+            //reader.GetString("name"),
+            "",
             reader.GetString("equip_no"),
             reader.GetString("description"),
             reader.GetString("category"),

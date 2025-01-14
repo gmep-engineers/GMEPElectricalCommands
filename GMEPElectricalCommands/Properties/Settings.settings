@@ -1,9 +1,9 @@
 ﻿<?xml version='1.0' encoding='utf-8'?>
-<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="GMEPDesignTool.Properties" GeneratedClassName="Settings">
+<SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="ElectricalCommands.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
     <Setting Name="ConnectionString" Type="System.String" Scope="User">
-      <Value Profile="(Default)">Server=127.0.0.1;Database=gmep_design_tool;User Id=root;Password='';</Value>
+      <Value Profile="(Default)">Server=127.0.0.1;Database=gmep_design_tool_new_2;User Id=root;Password='';</Value>
     </Setting>
   </Settings>
 </SettingsFile>

@@ -25,7 +25,7 @@ namespace GMEPElectricalCommands.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("Server=127.0.0.1;Database=gmep_design_tool;User Id=root;Password=\'\';")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Server=127.0.0.1;Database=gmep_design_tool_new_2;User Id=root;Password=\'\';")]
         public string ConnectionString {
             get {
                 return ((string)(this["ConnectionString"]));
