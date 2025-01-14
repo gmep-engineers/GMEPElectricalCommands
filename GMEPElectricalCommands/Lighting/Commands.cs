@@ -333,48 +333,78 @@ namespace ElectricalCommands.Lighting
               + fixture.name
               + "'"
           );
-          if (fixture.rotate)
+          ObjectId blockId;
+          try
           {
-            ed.Command("-INSERT", fixture.blockName, "S", "1");
-          }
-          else
-          {
-            ed.Command("-INSERT", fixture.blockName, "S", "1", "R", "0");
-          }
-
-          using (Transaction tr = db.TransactionManager.StartTransaction())
-          {
-            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
-            var modelSpace = (BlockTableRecord)
-              tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-            foreach (ObjectId id in modelSpace)
+            using (Transaction tr = db.TransactionManager.StartTransaction())
             {
-              try
+              BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+              BlockTableRecord block = (BlockTableRecord)
+                tr.GetObject(bt[fixture.blockName], OpenMode.ForRead);
+              BlockJig blockJig = new BlockJig();
+
+              Point3d point;
+
+              PromptResult res = blockJig.DragMe(block.ObjectId, out point);
+
+              if (res.Status == PromptStatus.OK)
               {
-                BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForWrite);
-                if (br != null && br.IsDynamicBlock)
+                BlockTableRecord curSpace = (BlockTableRecord)
+                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+                BlockReference br = new BlockReference(point, block.ObjectId);
+
+                if (fixture.rotate)
                 {
-                  DynamicBlockReferencePropertyCollection pc =
-                    br.DynamicBlockReferencePropertyCollection;
-                  foreach (DynamicBlockReferenceProperty prop in pc)
+                  RotateJig rotateJig = new RotateJig(br);
+                  PromptResult rotatePromptResult = ed.Drag(rotateJig);
+
+                  if (rotatePromptResult.Status != PromptStatus.OK)
                   {
-                    if (prop.PropertyName == "gmep_lighting_id" && prop.Value as string == "0")
-                    {
-                      prop.Value = Guid.NewGuid().ToString();
-                    }
-                    if (
-                      prop.PropertyName == "gmep_lighting_fixture_id"
-                      && prop.Value as string == "0"
-                    )
-                    {
-                      prop.Value = fixture.id;
-                    }
+                    return;
                   }
                 }
+
+                curSpace.AppendEntity(br);
+
+                tr.AddNewlyCreatedDBObject(br, true);
+                blockId = br.Id;
               }
-              catch { }
+              else
+              {
+                return;
+              }
+
+              tr.Commit();
             }
-            tr.Commit();
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+              BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+              var modelSpace = (BlockTableRecord)
+                tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+              BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+              DynamicBlockReferencePropertyCollection pc =
+                br.DynamicBlockReferencePropertyCollection;
+              foreach (DynamicBlockReferenceProperty prop in pc)
+              {
+                Console.WriteLine(prop.PropertyName + " " + (prop.Value as string));
+                if (prop.PropertyName == "gmep_lighting_id" && prop.Value as string == "0")
+                {
+                  Console.WriteLine(11);
+                  prop.Value = Guid.NewGuid().ToString();
+                }
+                if (prop.PropertyName == "gmep_lighting_fixture_id" && prop.Value as string == "0")
+                {
+                  prop.Value = fixture.id;
+                }
+              }
+              tr.Commit();
+            }
+          }
+          catch (System.Exception ex)
+          {
+            ed.WriteMessage(ex.ToString());
           }
         }
       }

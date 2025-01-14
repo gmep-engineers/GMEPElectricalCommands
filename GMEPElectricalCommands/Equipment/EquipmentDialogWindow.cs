@@ -654,7 +654,7 @@ namespace ElectricalCommands.Equipment
 
         using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId))
         {
-          BlockJig blockJig = new BlockJig(acBlkRef);
+          RotateJig blockJig = new RotateJig(acBlkRef);
           PromptResult blockPromptResult = ed.Drag(blockJig);
 
           if (promptResult.Status == PromptStatus.OK)

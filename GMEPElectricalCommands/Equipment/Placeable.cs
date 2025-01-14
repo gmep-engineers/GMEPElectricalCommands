@@ -15,13 +15,13 @@ namespace ElectricalCommands.Equipment
 
   public class LightingFixture : Placeable
   {
-    public string blockName;
     public int voltage,
       qty;
     public double wattage,
       paperSpaceScale;
-    public string controlId;
-    public string description,
+    public string blockName,
+      controlId,
+      description,
       mounting,
       manufacturer,
       modelNo,
