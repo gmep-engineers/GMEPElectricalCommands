@@ -181,7 +181,6 @@ namespace ElectricalCommands.Lighting
         for (int i = 0; i < lightingFixtureList.Count; i++)
         {
           int row = i + 2;
-          tb.Cells[row, 0].TextString = "tag";
           tb.Cells[row, 2].TextString = lightingFixtureList[i].voltage.ToString();
           tb.Cells[row, 3].TextString = lightingFixtureList[i].qty.ToString();
           tb.Cells[row, 4].TextString = lightingFixtureList[i].mounting.ToUpper();
@@ -273,6 +272,87 @@ namespace ElectricalCommands.Lighting
                 acBlkRef.ScaleFactors = new Scale3d(fixture.paperSpaceScale);
                 tr.AddNewlyCreatedDBObject(acBlkRef, true);
               }
+            }
+            ObjectId tagBlockId = bt["4CFM"];
+            using (
+              BlockReference acBlkRef = new BlockReference(
+                new Point3d(startPoint.X + 0.1415, startPoint.Y - (1.58 + (0.8911 * r)), 0),
+                tagBlockId
+              )
+            )
+            {
+              BlockTableRecord acCurSpaceBlkTblRec;
+              acCurSpaceBlkTblRec =
+                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+              acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+
+              acBlkRef.Layer = "E-TXT1";
+              tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              TextStyleTable textStyleTable = (TextStyleTable)
+                tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+              ObjectId gmepTextStyleId;
+              if (textStyleTable.Has("gmep"))
+              {
+                gmepTextStyleId = textStyleTable["gmep"];
+              }
+              else
+              {
+                ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+                gmepTextStyleId = doc.Database.Textstyle;
+              }
+              AttributeDefinition attrDef = new AttributeDefinition();
+              attrDef.Position = new Point3d(
+                startPoint.X + 0.4025,
+                startPoint.Y - (1.47 + (0.8911 * r)),
+                0
+              );
+              attrDef.LockPositionInBlock = false;
+              attrDef.Tag = "tag";
+              attrDef.IsMTextAttributeDefinition = false;
+              attrDef.TextString = fixture.name;
+              attrDef.Justify = AttachmentPoint.MiddleCenter;
+              attrDef.Visible = true;
+              attrDef.Invisible = false;
+              attrDef.Constant = false;
+              attrDef.Height = 0.0938;
+              attrDef.WidthFactor = 0.85;
+              attrDef.TextStyleId = gmepTextStyleId;
+              attrDef.Layer = "0";
+
+              AttributeReference attrRef = new AttributeReference();
+              attrRef.SetAttributeFromBlock(
+                attrDef,
+                Matrix3d.Displacement(new Vector3d(attrDef.Position.X, attrDef.Position.Y, 0))
+              );
+              acBlkRef.AttributeCollection.AppendAttribute(attrRef);
+
+              AttributeDefinition attrDef2 = new AttributeDefinition();
+              attrDef2.Position = new Point3d(
+                startPoint.X + 0.4025,
+                startPoint.Y - (1.70 + (0.8911 * r)),
+                0
+              );
+              attrDef2.LockPositionInBlock = false;
+              attrDef2.Tag = "wattage";
+              attrDef2.IsMTextAttributeDefinition = false;
+              attrDef2.TextString = fixture.wattage.ToString();
+              attrDef2.Justify = AttachmentPoint.MiddleCenter;
+              attrDef2.Visible = true;
+              attrDef2.Invisible = false;
+              attrDef2.Constant = false;
+              attrDef2.Height = 0.0938;
+              attrDef2.WidthFactor = 0.85;
+              attrDef2.TextStyleId = gmepTextStyleId;
+              attrDef2.Layer = "0";
+
+              AttributeReference attrRef2 = new AttributeReference();
+              attrRef2.SetAttributeFromBlock(
+                attrDef2,
+                Matrix3d.Displacement(new Vector3d(attrDef2.Position.X, attrDef2.Position.Y, 0))
+              );
+              acBlkRef.AttributeCollection.AppendAttribute(attrRef2);
+              acBlkRef.Layer = "E-TXT1";
+              tr.AddNewlyCreatedDBObject(acBlkRef, true);
             }
           }
           catch (Autodesk.AutoCAD.Runtime.Exception ex) { }
