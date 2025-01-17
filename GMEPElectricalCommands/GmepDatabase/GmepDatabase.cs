@@ -243,10 +243,10 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_lighting.model_no,
         electrical_lighting.tag,
         electrical_lighting.qty,
+        electrical_lighting.manufacturer,
         symbols.block_name,
         symbols.rotate,
         symbols.paper_space_scale,
-        companies.name as company_name,
         electrical_lighting.notes,
         electrical_lighting_mounting_types.mounting
         FROM electrical_lighting
@@ -258,10 +258,6 @@ namespace GMEPElectricalCommands.GmepDatabase
         ON symbols.id = electrical_lighting.symbol_id
         LEFT JOIN electrical_lighting_mounting_types
         ON electrical_lighting_mounting_types.id = electrical_lighting.mounting_type_id
-        LEFT JOIN manufacturers
-        ON manufacturers.id = electrical_lighting.manufacturer_id
-        LEFT JOIN companies
-        ON companies.entity_id = manufacturers.entity_id
         WHERE electrical_lighting.project_id = @projectId
         ORDER BY electrical_lighting.tag ASC";
       this.OpenConnection();
@@ -283,7 +279,7 @@ namespace GMEPElectricalCommands.GmepDatabase
             reader.GetString("description"),
             reader.GetInt32("qty"),
             reader.GetString("mounting"),
-            reader.GetString("company_name"),
+            reader.GetString("manufacturer"),
             reader.GetString("model_no"),
             reader.GetString("notes"),
             reader.GetInt32("rotate"),
@@ -294,6 +290,40 @@ namespace GMEPElectricalCommands.GmepDatabase
       }
       reader.Close();
       return ltg;
+    }
+
+    public List<LightingControl> GetLightingControls(string projectId)
+    {
+      List<LightingControl> ltgCtrl = new List<LightingControl>();
+      string query =
+        @"
+        SELECT
+        electrical_lighting_controls.id,
+        electrical_lighting_controls.name,
+        electrical_lighting_control_types.control,
+        electrical_lighting_controls.occupancy
+        FROM electrical_lighting_controls
+        LEFT JOIN electrical_lighting_control_types
+        ON electrical_lighting_control_types.id = electrical_lighting_controls.control_type_id
+        WHERE project_id = @projectId
+        ORDER BY name ASC";
+      this.OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read())
+      {
+        ltgCtrl.Add(
+          new LightingControl(
+            reader.GetString("id"),
+            reader.GetString("name"),
+            reader.GetString("control_type"),
+            reader.GetInt32("occupancy")
+          )
+        );
+      }
+      reader.Close();
+      return ltgCtrl;
     }
 
     public string GetProjectId(string projectNo)

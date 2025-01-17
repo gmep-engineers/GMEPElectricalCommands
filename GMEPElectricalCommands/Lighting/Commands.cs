@@ -295,6 +295,153 @@ namespace ElectricalCommands.Lighting
       lightingDialogWindow.Show();
     }
 
+    [CommandMethod("PlaceControls")]
+    public static void PlaceControls()
+    {
+      double scale = 12;
+
+      if (
+        CADObjectCommands.Scale <= 0
+        && (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
+      )
+      {
+        CADObjectCommands.SetScale();
+        if (CADObjectCommands.Scale <= 0)
+          return;
+      }
+      if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
+      {
+        scale = CADObjectCommands.Scale;
+      }
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Editor ed = doc.Editor;
+      Database db = doc.Database;
+      GmepDatabase gmepDb = new GmepDatabase();
+      string fileName = Path.GetFileName(doc.Name);
+      //string projectNo = Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
+      string projectNo = "24-123";
+      string projectId = gmepDb.GetProjectId(projectNo);
+      List<Equipment.LightingControl> lightingList = gmepDb.GetLightingControls(projectId);
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        LayerTable acLyrTbl;
+        acLyrTbl = tr.GetObject(db.LayerTableId, OpenMode.ForRead) as LayerTable;
+
+        string sLayerName = "E-LITE-CTRL";
+
+        if (acLyrTbl.Has(sLayerName) == true)
+        {
+          db.Clayer = acLyrTbl[sLayerName];
+          tr.Commit();
+        }
+      }
+      int i = 0;
+      foreach (Equipment.LightingControl control in lightingList)
+      {
+        ed.WriteMessage(
+          "\nPlace "
+            + (i + 1).ToString()
+            + "/"
+            + lightingList.Count.ToString()
+            + " for '"
+            + control.name
+            + "'"
+        );
+        string blockName = "GMEP LTG CTRL DIMMER";
+        bool dimmerOccupancy = false;
+        if (control.controlType == "SWITCH")
+        {
+          blockName = "GMEP LTG CTRL SWITCH";
+          if (control.occupancy)
+          {
+            blockName = "GMEP LTG CTRL OCCUPANCY";
+          }
+        }
+        else if (control.occupancy)
+        {
+          dimmerOccupancy = true;
+        }
+
+        ObjectId blockId;
+        try
+        {
+          using (Transaction tr = db.TransactionManager.StartTransaction())
+          {
+            BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+            BlockTableRecord block = (BlockTableRecord)
+              tr.GetObject(bt[blockName], OpenMode.ForRead);
+            BlockJig blockJig = new BlockJig();
+
+            Point3d point;
+
+            PromptResult res = blockJig.DragMe(block.ObjectId, out point);
+
+            if (res.Status == PromptStatus.OK)
+            {
+              BlockTableRecord curSpace = (BlockTableRecord)
+                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+              BlockReference br = new BlockReference(point, block.ObjectId);
+
+              RotateJig rotateJig = new RotateJig(br);
+              PromptResult rotatePromptResult = ed.Drag(rotateJig);
+
+              if (rotatePromptResult.Status != PromptStatus.OK)
+              {
+                return;
+              }
+              br.ScaleFactors = new Scale3d(0.25 / scale);
+              curSpace.AppendEntity(br);
+
+              tr.AddNewlyCreatedDBObject(br, true);
+              blockId = br.Id;
+            }
+            else
+            {
+              return;
+            }
+
+            tr.Commit();
+          }
+          using (Transaction tr = db.TransactionManager.StartTransaction())
+          {
+            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+            var modelSpace = (BlockTableRecord)
+              tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+            BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+            DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+            foreach (DynamicBlockReferenceProperty prop in pc)
+            {
+              Console.WriteLine(prop.PropertyName + " " + (prop.Value as string));
+              if (prop.PropertyName == "gmep_lighting_control_id" && prop.Value as string == "0")
+              {
+                prop.Value = control.id;
+              }
+            }
+            tr.Commit();
+          }
+        }
+        catch (System.Exception ex)
+        {
+          ed.WriteMessage(ex.ToString());
+        }
+      }
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        LayerTable acLyrTbl;
+        acLyrTbl = tr.GetObject(db.LayerTableId, OpenMode.ForRead) as LayerTable;
+
+        string sLayerName = "E-CND1";
+
+        if (acLyrTbl.Has(sLayerName) == true)
+        {
+          db.Clayer = acLyrTbl[sLayerName];
+          tr.Commit();
+        }
+      }
+    }
+
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
     {
@@ -391,7 +538,6 @@ namespace ElectricalCommands.Lighting
                 Console.WriteLine(prop.PropertyName + " " + (prop.Value as string));
                 if (prop.PropertyName == "gmep_lighting_id" && prop.Value as string == "0")
                 {
-                  Console.WriteLine(11);
                   prop.Value = Guid.NewGuid().ToString();
                 }
                 if (prop.PropertyName == "gmep_lighting_fixture_id" && prop.Value as string == "0")

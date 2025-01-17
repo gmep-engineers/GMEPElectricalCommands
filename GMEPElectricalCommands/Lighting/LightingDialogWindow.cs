@@ -192,7 +192,7 @@ namespace ElectricalCommands.Lighting
           tb.Cells[row, 10].TextString = lightingFixtureList[i].notes.ToUpper();
         }
         tb.Cells[tableRows - 1, 0].TextString =
-          "NOTES:\n  1) VERIFY WITH OWNER OR ARCHITECHT BEFORE PURCHASING THE LIGHTING FIXTURES.\n 2) LIGHTING ABOVE FOOD OR UTENSILS SHALL BE SHATTERPROOF.";
+          "NOTES:\n  1) VERIFY WITH OWNER OR ARCHITECT BEFORE PURCHASING THE LIGHTING FIXTURES.\n 2) LIGHTING ABOVE FOOD OR UTENSILS SHALL BE SHATTERPROOF.";
         BlockTable bt = (BlockTable)tr.GetObject(doc.Database.BlockTableId, OpenMode.ForRead);
         btr.AppendEntity(tb);
         tr.AddNewlyCreatedDBObject(tb, true);

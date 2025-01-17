@@ -13,6 +13,20 @@ namespace ElectricalCommands.Equipment
     public Point3d loc;
   }
 
+  public class LightingControl : Placeable
+  {
+    public string controlType;
+    public bool occupancy;
+
+    public LightingControl(string id, string name, string controlType, int occupancy)
+    {
+      this.id = id;
+      this.name = name;
+      this.controlType = controlType;
+      this.occupancy = occupancy != 0;
+    }
+  }
+
   public class LightingFixture : Placeable
   {
     public int voltage,
