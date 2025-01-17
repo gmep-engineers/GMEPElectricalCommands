@@ -245,6 +245,12 @@
     <Compile Include="Lighting\Initialize Lighting Form.Designer.cs">
       <DependentUpon>Initialize Lighting Form.cs</DependentUpon>
     </Compile>
+    <Compile Include="Lighting\LightingDialogWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Lighting\LightingDialogWindow.Designer.cs">
+      <DependentUpon>LightingDialogWindow.cs</DependentUpon>
+    </Compile>
     <Compile Include="Lighting\Polyline Lighting Form.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -302,6 +308,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Lighting\Initialize Lighting Form.resx">
       <DependentUpon>Initialize Lighting Form.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Lighting\LightingDialogWindow.resx">
+      <DependentUpon>LightingDialogWindow.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Lighting\Polyline Lighting Form.resx">
       <DependentUpon>Polyline Lighting Form.cs</DependentUpon>

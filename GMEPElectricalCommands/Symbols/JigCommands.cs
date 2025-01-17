@@ -9,6 +9,7 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.GraphicsInterface;
 using Autodesk.AutoCAD.Runtime;
+using DocumentFormat.OpenXml.Drawing.Wordprocessing;
 
 namespace ElectricalCommands
 {
@@ -393,14 +394,70 @@ namespace ElectricalCommands
     }
   }
 
-  public class BlockJig : EntityJig
+  public class BlockJig : DrawJig
+  {
+    public Point3d _point;
+
+    private ObjectId _blockId = ObjectId.Null;
+
+    public PromptResult DragMe(ObjectId i_blockId, out Point3d o_pnt)
+    {
+      _blockId = i_blockId;
+
+      Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+
+      PromptResult jigRes = ed.Drag(this);
+
+      o_pnt = _point;
+
+      return jigRes;
+    }
+
+    protected override SamplerStatus Sampler(JigPrompts prompts)
+    {
+      JigPromptPointOptions jigOpts = new JigPromptPointOptions();
+
+      jigOpts.UserInputControls = (
+        UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted
+      );
+
+      jigOpts.Message = "Select a point:";
+
+      PromptPointResult jigRes = prompts.AcquirePoint(jigOpts);
+
+      Point3d pt = jigRes.Value;
+
+      if (pt == _point)
+        return SamplerStatus.NoChange;
+
+      _point = pt;
+
+      if (jigRes.Status == PromptStatus.OK)
+        return SamplerStatus.OK;
+
+      return SamplerStatus.Cancel;
+    }
+
+    protected override bool WorldDraw(Autodesk.AutoCAD.GraphicsInterface.WorldDraw draw)
+    {
+      BlockReference inMemoryBlockInsert = new BlockReference(_point, _blockId);
+
+      draw.Geometry.Draw(inMemoryBlockInsert);
+
+      inMemoryBlockInsert.Dispose();
+
+      return true;
+    }
+  }
+
+  public class RotateJig : EntityJig
   {
     private Point3d _insertionPoint;
     private Point3d _rotationPoint;
     private Vector3d _direction;
     private bool _inserted;
 
-    public BlockJig(BlockReference blockRef)
+    public RotateJig(BlockReference blockRef)
       : base(blockRef)
     {
       _insertionPoint = Point3d.Origin;
@@ -421,7 +478,6 @@ namespace ElectricalCommands
       }
       JigPromptPointOptions pointOptions = new JigPromptPointOptions(prompt);
       PromptPointResult pointResult = prompts.AcquirePoint(pointOptions);
-
       if (pointResult.Status == PromptStatus.OK)
       {
         if (!_inserted)
@@ -457,16 +513,27 @@ namespace ElectricalCommands
     protected override bool Update()
     {
       ((BlockReference)Entity).Position = _insertionPoint;
-      double rotation = Math.Atan2(_direction.Y, _direction.X) - Math.PI / 2;
-
-      for (int i = -12; i < 12; i += 2)
+      double rotation = 0;
+      if (
+        (_insertionPoint - _rotationPoint).Length > 12
+        && (_insertionPoint - _rotationPoint).Length < 72
+      )
       {
-        if (rotation >= 0.3926991 * (i - 1) && rotation < 0.3926991 * (i + 1))
+        rotation = Math.Atan2(_direction.Y, _direction.X) - Math.PI / 2;
+        for (int i = -12; i < 12; i += 2)
         {
-          rotation = ((0.3926991 * i) + 0.3926991 * (i + 2)) / 2 - 0.3926991;
-          break;
+          if (rotation >= 0.3926991 * (i - 1) && rotation < 0.3926991 * (i + 1))
+          {
+            rotation = ((0.3926991 * i) + 0.3926991 * (i + 2)) / 2 - 0.3926991;
+            break;
+          }
         }
       }
+      if ((_insertionPoint - _rotationPoint).Length >= 96)
+      {
+        rotation = Math.Atan2(_direction.Y, _direction.X) - Math.PI / 2;
+      }
+
       ((BlockReference)Entity).Rotation = rotation;
       return true;
     }

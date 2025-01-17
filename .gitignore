@@ -364,3 +364,9 @@ FodyWeavers.xsd
 
 #load file
 load_dll.lsp
+
+#Settings file
+Settings.Designer.cs
+app.config
+/GMEPElectricalCommands/Properties/Settings.Designer.cs
+/GMEPElectricalCommands/app.config

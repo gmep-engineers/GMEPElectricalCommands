@@ -13,6 +13,76 @@ namespace ElectricalCommands.Equipment
     public Point3d loc;
   }
 
+  public class LightingControl : Placeable
+  {
+    public string controlType;
+    public bool occupancy;
+
+    public LightingControl(string id, string name, string controlType, int occupancy)
+    {
+      this.id = id;
+      this.name = name;
+      this.controlType = controlType;
+      this.occupancy = occupancy != 0;
+    }
+  }
+
+  public class LightingFixture : Placeable
+  {
+    public int voltage,
+      qty;
+    public double wattage,
+      paperSpaceScale;
+    public string blockName,
+      controlId,
+      description,
+      mounting,
+      manufacturer,
+      modelNo,
+      notes;
+    public bool rotate,
+      emCapable;
+
+    public LightingFixture(
+      string id,
+      string parentId,
+      string parentName,
+      string name,
+      string controlId,
+      string blockName,
+      int voltage,
+      double wattage,
+      string description,
+      int qty,
+      string mounting,
+      string manufacturer,
+      string modelNo,
+      string notes,
+      int rotate,
+      double paperSpaceScale,
+      int emCapable
+    )
+    {
+      this.id = id;
+      this.parentId = parentId;
+      this.parentName = parentName;
+      this.name = name;
+      this.blockName = blockName;
+      this.voltage = voltage;
+      this.wattage = wattage;
+      this.controlId = controlId;
+      this.description = description;
+      this.qty = qty;
+      this.mounting = mounting;
+      this.manufacturer = manufacturer;
+      this.modelNo = modelNo;
+      this.notes = notes;
+      this.rotate = rotate != 0;
+      this.paperSpaceScale = paperSpaceScale;
+      this.emCapable = emCapable != 0;
+    }
+  }
+
   public class Equipment : Placeable
   {
     public string description,
