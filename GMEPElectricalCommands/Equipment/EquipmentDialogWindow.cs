@@ -17,14 +17,23 @@ namespace ElectricalCommands.Equipment
     public bool isMultiMeter;
     public int amp;
     public string voltage;
+    public double aicRating;
 
-    public Service(string id, string name, string meterConfig, int amp, string voltage)
+    public Service(
+      string id,
+      string name,
+      string meterConfig,
+      int amp,
+      string voltage,
+      double aicRating
+    )
     {
       this.id = id;
       this.name = name;
       isMultiMeter = meterConfig == "MULTIMETER";
       this.amp = amp;
       this.voltage = voltage;
+      this.aicRating = aicRating;
     }
   }
 
@@ -669,7 +678,6 @@ namespace ElectricalCommands.Equipment
           }
         }
       }
-      Console.WriteLine(rotation);
       switch (equipType)
       {
         case EquipmentType.Duplex:
@@ -1365,6 +1373,7 @@ namespace ElectricalCommands.Equipment
           {
             childPanel.is3Phase = true;
           }
+          childPanel.parentAicRating = panel.aicRating;
           MakeSingleLineNodeTreeFromPanel(childPanel);
           panel.children.Add(childPanel);
         }
@@ -1457,6 +1466,8 @@ namespace ElectricalCommands.Equipment
           childXfmr.is3Phase = panel.is3Phase;
           childXfmr.mainBreakerSize = mainBreakerSize;
           childXfmr.grounding = grounding;
+          childXfmr.kva = t.kva;
+          childXfmr.parentAicRating = panel.aicRating;
           disc.children.Add(childXfmr);
           MakeSingleLineNodeTreeFromTransformer(childXfmr);
           panel.children.Add(disc);
@@ -1498,9 +1509,10 @@ namespace ElectricalCommands.Equipment
             p.hasGfp = true;
           }
           p.distributionBreakerSize = sf.amp;
-          p.voltageSpec = sf.voltage;
+          p.voltageSpec = sf.voltageSpec;
           p.is3Phase = false;
-          if (sf.voltage.Contains("3"))
+          p.aicRating = sf.aicRating;
+          if (sf.voltageSpec.Contains("3"))
           {
             p.is3Phase = true;
           }
@@ -1522,6 +1534,7 @@ namespace ElectricalCommands.Equipment
           service.amp,
           service.voltage
         );
+        sf.aicRating = service.aicRating;
         MakeSingleLineNodeTreeFromService(sf);
         singleLine.children.Add(sf);
       }
