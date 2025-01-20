@@ -1,4 +1,5 @@
-﻿using System.Windows.Forms;
+﻿using System;
+using System.Windows.Forms;
 using Autodesk.AutoCAD.Geometry;
 
 namespace ElectricalCommands.Equipment
@@ -10,6 +11,7 @@ namespace ElectricalCommands.Equipment
       parentId,
       parentName;
     public int parentDistance;
+    public double aicRating;
     public Point3d loc;
   }
 
@@ -146,7 +148,8 @@ namespace ElectricalCommands.Equipment
       int isDistrib = 0,
       int isMm = 0,
       int bus = 0,
-      string volt = ""
+      string volt = "",
+      double aicRating = 0
     )
     {
       id = _id;
@@ -158,6 +161,7 @@ namespace ElectricalCommands.Equipment
       isMultiMeter = isMm == 1;
       busSize = bus;
       voltage = volt;
+      this.aicRating = aicRating;
     }
   }
 
@@ -174,7 +178,8 @@ namespace ElectricalCommands.Equipment
       double xLoc = 0,
       double yLoc = 0,
       double kva = 0,
-      string volt = ""
+      string volt = "",
+      double aicRating = 0
     )
     {
       id = _id;
@@ -184,6 +189,7 @@ namespace ElectricalCommands.Equipment
       loc = new Point3d(xLoc, yLoc, 0);
       this.kva = kva;
       voltageSpec = volt;
+      this.aicRating = aicRating;
     }
   }
 }

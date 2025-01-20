@@ -413,7 +413,6 @@ namespace ElectricalCommands.Lighting
             DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
             foreach (DynamicBlockReferenceProperty prop in pc)
             {
-              Console.WriteLine(prop.PropertyName + " " + (prop.Value as string));
               if (prop.PropertyName == "gmep_lighting_control_id" && prop.Value as string == "0")
               {
                 prop.Value = control.id;
@@ -535,7 +534,6 @@ namespace ElectricalCommands.Lighting
                 br.DynamicBlockReferencePropertyCollection;
               foreach (DynamicBlockReferenceProperty prop in pc)
               {
-                Console.WriteLine(prop.PropertyName + " " + (prop.Value as string));
                 if (prop.PropertyName == "gmep_lighting_id" && prop.Value as string == "0")
                 {
                   prop.Value = Guid.NewGuid().ToString();

@@ -702,18 +702,15 @@ namespace ElectricalCommands
             .StringResult.ToUpper()
             .Replace("panel", "")
             .Replace(" ", "");
-          Console.WriteLine(panelName);
           List<Dictionary<string, object>> panelData = GetPanelJsonData();
           string panelId = "";
           foreach (Dictionary<string, object> data in panelData)
           {
             string n = data["panel"] as string;
-            Console.WriteLine(n);
             if (n.Replace(" ", "").Replace("'", "") == panelName)
             {
               panelId = data["id"] as string;
               panelId = panelId.Replace("-", "");
-              Console.WriteLine(panelId);
             }
           }
           if (String.IsNullOrEmpty(panelId))
@@ -1527,6 +1524,113 @@ namespace ElectricalCommands
         }
         acTrans.Commit();
       }
+    }
+
+    public static double GetPhaseConductorConstant(string wireSize)
+    {
+      switch (wireSize)
+      {
+        case "12":
+          return 617;
+        case "10":
+          return 982;
+        case "8":
+          return 1559;
+        case "6":
+          return 2425;
+        case "4":
+          return 3806;
+        case "3":
+          return 4633;
+        case "2":
+          return 5907;
+        case "1":
+          return 7293;
+        case "1/0":
+          return 8925;
+        case "2/0":
+          return 10755;
+        case "3/0":
+          return 12844;
+        case "4/0":
+          return 15082;
+        case "250 KCMIL":
+          return 16483;
+        case "300 KCMIL":
+          return 18177;
+        case "350 KCMIL":
+          return 19704;
+        case "400 KCMIL":
+          return 20566;
+        case "500 KCMIL":
+          return 22185;
+      }
+      return 0;
+    }
+
+    public static double GetAicRatingFromTransformer(
+      double kva,
+      double powerFactor,
+      double zValue,
+      int length,
+      int numPhaseConductors,
+      double lineVoltage,
+      string wireSize,
+      bool is3Phase
+    )
+    {
+      double yFactor = 2;
+      if (is3Phase)
+      {
+        yFactor = 1.732;
+      }
+      double phaseConductorConstant = GetPhaseConductorConstant(wireSize);
+      if (phaseConductorConstant == 0)
+      {
+        return 0;
+      }
+      double i = kva * 1000 / lineVoltage / (is3Phase ? yFactor : 1);
+      double iSca = i * powerFactor / zValue;
+      double fFactor =
+        yFactor
+        * Convert.ToDouble(length)
+        * iSca
+        / Convert.ToDouble(numPhaseConductors)
+        / phaseConductorConstant
+        / lineVoltage;
+      double multiplier = 1.0 / (1.0 + fFactor);
+      return iSca * multiplier;
+    }
+
+    public static double GetAicRating(
+      double utilityFaultCurrent,
+      int length,
+      int numPhaseConductors,
+      double lineVoltage,
+      string wireSize,
+      bool is3Phase
+    )
+    {
+      double yFactor = 2;
+      if (is3Phase)
+      {
+        yFactor = 1.732;
+      }
+      double phaseConductorConstant = GetPhaseConductorConstant(wireSize);
+      if (phaseConductorConstant == 0)
+      {
+        return 0;
+      }
+      double fFactor =
+        yFactor
+        * Convert.ToDouble(length)
+        * utilityFaultCurrent
+        / Convert.ToDouble(numPhaseConductors)
+        / phaseConductorConstant
+        / lineVoltage;
+      double multiplier = 1.0 / (1.0 + fFactor);
+
+      return utilityFaultCurrent * multiplier;
     }
 
     [CommandMethod("HCND")]
@@ -2542,7 +2646,6 @@ namespace ElectricalCommands
         basePoint.Y + circleData.Center.Y * scaleFactor,
         basePoint.Z + circleData.Center.Z * scaleFactor
       );
-      Console.WriteLine("Radius " + circleData.Radius);
       circle.Radius = circleData.Radius * scaleFactor;
 
       acBlkTblRec.AppendEntity(circle);

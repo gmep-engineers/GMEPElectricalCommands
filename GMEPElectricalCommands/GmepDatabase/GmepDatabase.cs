@@ -45,7 +45,8 @@ namespace GMEPElectricalCommands.GmepDatabase
           electrical_services.name,
           electrical_service_meter_configs.meter_config,
           electrical_service_amp_ratings.amp_rating,
-          electrical_service_voltages.voltage
+          electrical_service_voltages.voltage,
+          electrical_services.aic_rating
           FROM `electrical_services`
           LEFT JOIN electrical_service_meter_configs
           ON electrical_services.electrical_service_meter_config_id = electrical_service_meter_configs.id
@@ -66,7 +67,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             reader.GetString("name"),
             reader.GetString("meter_config"),
             reader.GetInt32("amp_rating"),
-            reader.GetString("voltage")
+            reader.GetString("voltage"),
+            reader.GetFloat("aic_rating")
           )
         );
       }
@@ -88,7 +90,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_panels.loc_y,
         electrical_panels.is_distribution,
         electrical_panel_bus_amp_ratings.amp_rating,
-        electrical_service_voltages.voltage
+        electrical_service_voltages.voltage,
+        electrical_panels.aic_rating
         FROM electrical_panels
         LEFT JOIN electrical_panel_bus_amp_ratings
         ON electrical_panel_bus_amp_ratings.id = electrical_panels.bus_amp_rating_id
@@ -113,7 +116,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             reader.GetInt32("is_distribution"),
             0,
             reader.GetInt32("amp_rating"),
-            reader.GetString("voltage")
+            reader.GetString("voltage"),
+            reader.GetFloat("aic_rating")
           )
         );
       }
@@ -148,7 +152,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             reader.GetFloat("loc_x"),
             reader.GetFloat("loc_y"),
             reader.GetFloat("kva_rating"),
-            reader.GetString("voltage")
+            reader.GetString("voltage"),
+            reader.GetFloat("aic_rating")
           )
         );
       }
@@ -379,6 +384,38 @@ namespace GMEPElectricalCommands.GmepDatabase
       command.Parameters.AddWithValue("@yLoc", panel.loc.Y);
       command.Parameters.AddWithValue("@parentDistance", panel.parentDistance);
       command.Parameters.AddWithValue("@equipId", panel.id);
+      command.ExecuteNonQuery();
+    }
+
+    public void UpdatePanelAic(string id, double aicRating)
+    {
+      string query =
+        @"
+          UPDATE electrical_panels
+          SET
+          aic_rating = @aicRating
+          WHERE id = @equipId
+          ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@aicRating", aicRating);
+      command.Parameters.AddWithValue("@equipId", id);
+      command.ExecuteNonQuery();
+    }
+
+    public void UpdateTransformerAic(string id, double aicRating)
+    {
+      string query =
+        @"
+          UPDATE electrical_transformers
+          SET
+          aic_rating = @aicRating
+          WHERE id = @equipId
+          ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@aicRating", aicRating);
+      command.Parameters.AddWithValue("@equipId", id);
       command.ExecuteNonQuery();
     }
 

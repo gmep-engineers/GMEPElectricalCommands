@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
+using GMEPElectricalCommands.GmepDatabase;
 
 namespace ElectricalCommands.Equipment
 {
@@ -11,16 +13,25 @@ namespace ElectricalCommands.Equipment
   {
     public double width;
     public string type;
+    public string parentType;
     public string name;
     public string id;
     public List<SingleLine> children;
     public Point3d startingPoint;
     public Point3d endingPoint;
     public bool startChildRight;
+    public int parentDistance;
+    public double aicRating;
+    public double parentAicRating;
+    public double voltage;
+    public string feederWireSize;
+    public int feederWireCount;
+    public double transformerKva;
 
     public SingleLine()
     {
       children = new List<SingleLine>();
+      parentDistance = 0;
     }
 
     public virtual double AggregateWidths(bool fromDistribution = false)
@@ -41,6 +52,7 @@ namespace ElectricalCommands.Equipment
       foreach (SingleLine child in children)
       {
         child.SetChildStartingPoints(startingPoint);
+        child.parentType = type;
       }
     }
 
@@ -55,6 +67,40 @@ namespace ElectricalCommands.Equipment
       {
         child.Make();
       }
+    }
+
+    public void MakeAicRating(
+      Transaction tr,
+      BlockTableRecord btr,
+      BlockTable bt,
+      Database db,
+      Point3d endingPoint
+    )
+    {
+      ObjectId aicMarker = bt["AIC MARKER (AUTO SINGLE LINE)"];
+      using (
+        BlockReference acBlkRef = new BlockReference(
+          new Point3d(endingPoint.X, endingPoint.Y + 0.125, 0),
+          aicMarker
+        )
+      )
+      {
+        BlockTableRecord acCurSpaceBlkTblRec;
+        acCurSpaceBlkTblRec =
+          tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+        acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+        tr.AddNewlyCreatedDBObject(acBlkRef, true);
+      }
+      GeneralCommands.CreateAndPositionText(
+        tr,
+        "~" + Math.Round(aicRating, 0).ToString() + " AIC",
+        "gmep",
+        0.0938,
+        0.85,
+        2,
+        "E-TXT1",
+        new Point3d(endingPoint.X + 0.0678, endingPoint.Y + 0.08, 0)
+      );
     }
 
     public void MakeDistributionCtsMeter(
@@ -100,6 +146,17 @@ namespace ElectricalCommands.Equipment
         acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
         tr.AddNewlyCreatedDBObject(acBlkRef, true);
       }
+    }
+
+    public void SetFeederWireSizeAndCount(string feederSpec)
+    {
+      int wireCount = 1;
+      if (feederSpec.StartsWith("["))
+      {
+        wireCount = Int32.Parse(feederSpec[1].ToString());
+      }
+      feederWireCount = wireCount;
+      feederWireSize = Regex.Match(feederSpec, @"(?<=#)([0-9]+(\/0)?( KCMIL)?)").Groups[0].Value;
     }
 
     public void MakeDistributionMeter(
@@ -209,15 +266,32 @@ namespace ElectricalCommands.Equipment
         tr.AddNewlyCreatedDBObject(acBlkRef, true);
       }
     }
+
+    public void SaveAicRatings()
+    {
+      GmepDatabase gmepDb = new GmepDatabase();
+      if (type == "panel")
+      {
+        gmepDb.UpdatePanelAic(id, aicRating);
+      }
+      if (type == "transformer")
+      {
+        gmepDb.UpdateTransformerAic(id, aicRating);
+      }
+      foreach (var child in children)
+      {
+        child.SaveAicRatings();
+      }
+    }
   }
 
   public class SLServiceFeeder : SingleLine
   {
     public bool isMultiMeter;
+    public string voltageSpec;
     public int amp;
-    public string voltage;
 
-    public SLServiceFeeder(string id, string name, bool isMultiMeter, int amp, string voltage)
+    public SLServiceFeeder(string id, string name, bool isMultiMeter, int amp, string voltageSpec)
     {
       type = "service feeder";
       width = 2.5;
@@ -225,7 +299,7 @@ namespace ElectricalCommands.Equipment
       this.id = id;
       this.isMultiMeter = isMultiMeter;
       this.amp = amp;
-      this.voltage = voltage;
+      this.voltageSpec = voltageSpec;
     }
 
     public override void SetChildStartingPoints(Point3d startingPoint)
@@ -238,6 +312,7 @@ namespace ElectricalCommands.Equipment
           new Point3d(startingPoint.X + 2.5 + offset, startingPoint.Y, startingPoint.Z)
         );
         offset += width + 1;
+        child.parentType = type;
       }
     }
 
@@ -653,7 +728,6 @@ namespace ElectricalCommands.Equipment
     public bool hasGfp;
     public int distributionBreakerSize;
     public int mainBreakerSize;
-    public int parentDistance;
     public string conduitSize;
     public string wireSize;
     public string voltageDrop;
@@ -806,6 +880,7 @@ namespace ElectricalCommands.Equipment
             )
           );
           offset += child.width;
+          child.parentType = type;
         }
       }
       else
@@ -814,6 +889,7 @@ namespace ElectricalCommands.Equipment
         for (int i = 0; i < children.Count; i++)
         {
           SingleLine child = children[i];
+          child.parentType = type;
           if (startChildRight)
           {
             if (index == 0)
@@ -1448,6 +1524,32 @@ namespace ElectricalCommands.Equipment
             supplemental3,
             false
           );
+          SetFeederWireSizeAndCount(firstLine);
+          if (parentType == "transformer")
+          {
+            aicRating = CADObjectCommands.GetAicRatingFromTransformer(
+              transformerKva,
+              1,
+              0.03,
+              parentDistance + 10,
+              feederWireCount,
+              voltage,
+              feederWireSize,
+              is3Phase
+            );
+          }
+          else
+          {
+            aicRating = CADObjectCommands.GetAicRating(
+              parentAicRating,
+              parentDistance + 10,
+              feederWireCount,
+              voltage,
+              feederWireSize,
+              is3Phase
+            );
+          }
+          MakeAicRating(tr, btr, bt, db, endingPoint);
         }
         else
         {
@@ -1473,29 +1575,32 @@ namespace ElectricalCommands.Equipment
 
           if (endingPoint.X > startingPoint.X)
           {
-            // right panel breaker
-            ArcData arcData1 = new ArcData();
-            arcData1.Layer = "E-CND1";
-            arcData1.Center = new SimpleVector3d();
-            arcData1.Radius = 0.1038;
-            arcData1.Center.X = startingPoint.X - 0.1015;
-            arcData1.Center.Y = startingPoint.Y - 0.0216;
-            arcData1.StartAngle = 0.20944;
-            arcData1.EndAngle = 2.89725;
-            CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData1, 1);
-            ObjectId breakerLeader = bt["BREAKER LEADER LEFT (AUTO SINGLE LINE)"];
-            using (
-              BlockReference acBlkRef = new BlockReference(
-                new Point3d(startingPoint.X, startingPoint.Y, 0),
-                breakerLeader
-              )
-            )
+            if (parentType == "panel")
             {
-              BlockTableRecord acCurSpaceBlkTblRec;
-              acCurSpaceBlkTblRec =
-                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-              acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-              tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              // right panel breaker
+              ArcData arcData1 = new ArcData();
+              arcData1.Layer = "E-CND1";
+              arcData1.Center = new SimpleVector3d();
+              arcData1.Radius = 0.1038;
+              arcData1.Center.X = startingPoint.X - 0.1015;
+              arcData1.Center.Y = startingPoint.Y - 0.0216;
+              arcData1.StartAngle = 0.20944;
+              arcData1.EndAngle = 2.89725;
+              CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData1, 1);
+              ObjectId breakerLeader = bt["BREAKER LEADER LEFT (AUTO SINGLE LINE)"];
+              using (
+                BlockReference acBlkRef = new BlockReference(
+                  new Point3d(startingPoint.X, startingPoint.Y, 0),
+                  breakerLeader
+                )
+              )
+              {
+                BlockTableRecord acCurSpaceBlkTblRec;
+                acCurSpaceBlkTblRec =
+                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              }
             }
             GeneralCommands.CreateAndPositionText(
               tr,
@@ -1513,30 +1618,34 @@ namespace ElectricalCommands.Equipment
           }
           else
           {
-            // left panel breaker
-            ArcData arcData1 = new ArcData();
-            arcData1.Layer = "E-CND1";
-            arcData1.Center = new SimpleVector3d();
-            arcData1.Radius = 0.1038;
-            arcData1.Center.X = startingPoint.X + 0.1015;
-            arcData1.Center.Y = startingPoint.Y - 0.0216;
-            arcData1.StartAngle = 0.20944;
-            arcData1.EndAngle = 2.89725;
-            CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData1, 1);
-            ObjectId breakerLeader = bt["BREAKER LEADER RIGHT (AUTO SINGLE LINE)"];
-            using (
-              BlockReference acBlkRef = new BlockReference(
-                new Point3d(startingPoint.X, startingPoint.Y, 0),
-                breakerLeader
-              )
-            )
+            if (parentType == "panel")
             {
-              BlockTableRecord acCurSpaceBlkTblRec;
-              acCurSpaceBlkTblRec =
-                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-              acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-              tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              // left panel breaker
+              ArcData arcData1 = new ArcData();
+              arcData1.Layer = "E-CND1";
+              arcData1.Center = new SimpleVector3d();
+              arcData1.Radius = 0.1038;
+              arcData1.Center.X = startingPoint.X + 0.1015;
+              arcData1.Center.Y = startingPoint.Y - 0.0216;
+              arcData1.StartAngle = 0.20944;
+              arcData1.EndAngle = 2.89725;
+              CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData1, 1);
+              ObjectId breakerLeader = bt["BREAKER LEADER RIGHT (AUTO SINGLE LINE)"];
+              using (
+                BlockReference acBlkRef = new BlockReference(
+                  new Point3d(startingPoint.X, startingPoint.Y, 0),
+                  breakerLeader
+                )
+              )
+              {
+                BlockTableRecord acCurSpaceBlkTblRec;
+                acCurSpaceBlkTblRec =
+                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              }
             }
+
             GeneralCommands.CreateAndPositionText(
               tr,
               "(N)" + mainBreakerSize + "A/" + (is3Phase ? "3P" : "2P"),
@@ -1551,7 +1660,7 @@ namespace ElectricalCommands.Equipment
               AttachmentPoint.BaseRight
             );
           }
-          if (parentDistance >= 25)
+          if (parentDistance >= 25 || parentType == "transformer")
           {
             // main breaker arc
             MakeMainBreakerArc(tr, btr, bt, db, endingPoint, mainBreakerSize, is3Phase);
@@ -1591,12 +1700,39 @@ namespace ElectricalCommands.Equipment
             supplemental3,
             false
           );
+          SetFeederWireSizeAndCount(firstLine);
+          if (parentType == "transformer")
+          {
+            aicRating = CADObjectCommands.GetAicRatingFromTransformer(
+              transformerKva,
+              1,
+              0.03,
+              parentDistance + 10,
+              feederWireCount,
+              voltage,
+              feederWireSize,
+              is3Phase
+            );
+          }
+          else
+          {
+            aicRating = CADObjectCommands.GetAicRating(
+              parentAicRating,
+              parentDistance + 10,
+              feederWireCount,
+              voltage,
+              feederWireSize,
+              is3Phase
+            );
+          }
           MakePanel(tr, btr, bt, db, endingPoint, name);
+          MakeAicRating(tr, btr, bt, db, endingPoint);
         }
         tr.Commit();
       }
       foreach (var child in children)
       {
+        child.parentAicRating = aicRating;
         child.Make();
       }
     }
@@ -1610,9 +1746,8 @@ namespace ElectricalCommands.Equipment
     public bool is3Phase;
     public string voltageSpec;
     public int mainBreakerSize;
-    public int parentDistance;
-    public double voltage;
     public string grounding;
+    public double kva;
 
     public SLTransformer(string id, string name)
     {
@@ -1630,6 +1765,8 @@ namespace ElectricalCommands.Equipment
         children[0]
           .SetChildEndingPoint(new Point3d(endingPoint.X, endingPoint.Y - 0.3739 - 2.5, 0));
         children[0].SetChildStartingPoints(new Point3d(endingPoint.X, endingPoint.Y - 0.3739, 0));
+        children[0].parentType = type;
+        children[0].transformerKva = kva;
       }
     }
 
@@ -1680,32 +1817,6 @@ namespace ElectricalCommands.Equipment
         TextHorizontalMode.TextCenter,
         TextVerticalMode.TextBase,
         AttachmentPoint.BaseRight
-      );
-      (
-        string firstLine,
-        string secondLine,
-        string thirdLine,
-        string supplemental1,
-        string supplemental2,
-        string supplemental3
-      ) = CADObjectCommands.GetWireAndConduitSizeText(
-        mainBreakerSize,
-        mainBreakerSize,
-        parentDistance + 10,
-        voltage,
-        1,
-        is3Phase ? 3 : 1
-      );
-      CADObjectCommands.AddWireAndConduitTextToPlan(
-        db,
-        new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
-        firstLine,
-        secondLine,
-        thirdLine,
-        supplemental1,
-        supplemental2,
-        supplemental3,
-        false
       );
     }
 
@@ -1775,8 +1886,49 @@ namespace ElectricalCommands.Equipment
           lineData1.EndPoint.Y = endingPoint.Y;
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
         }
+        (
+          string firstLine,
+          string secondLine,
+          string thirdLine,
+          string supplemental1,
+          string supplemental2,
+          string supplemental3
+        ) = CADObjectCommands.GetWireAndConduitSizeText(
+          mainBreakerSize,
+          mainBreakerSize,
+          parentDistance + 10,
+          voltage,
+          1,
+          is3Phase ? 3 : 1
+        );
+        CADObjectCommands.AddWireAndConduitTextToPlan(
+          db,
+          new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
+          firstLine,
+          secondLine,
+          thirdLine,
+          supplemental1,
+          supplemental2,
+          supplemental3,
+          false
+        );
+        SetFeederWireSizeAndCount(firstLine);
         MakeTransformer(tr, btr, bt, db, endingPoint);
+        aicRating = CADObjectCommands.GetAicRating(
+          parentAicRating,
+          parentDistance + 10,
+          feederWireCount,
+          voltage,
+          feederWireSize,
+          is3Phase
+        );
+        MakeAicRating(tr, btr, bt, db, endingPoint);
         tr.Commit();
+      }
+      foreach (var child in children)
+      {
+        child.parentAicRating = aicRating;
+        child.Make();
       }
     }
   }
@@ -1789,7 +1941,6 @@ namespace ElectricalCommands.Equipment
     public int mainBreakerSize;
     public bool is3Phase;
     public double voltage;
-    public int parentDistance;
 
     public SLDisconnect(string name)
     {
@@ -1803,6 +1954,7 @@ namespace ElectricalCommands.Equipment
       this.startingPoint = startingPoint;
       children[0].SetChildEndingPoint(new Point3d(endingPoint.X, endingPoint.Y - 0.1201 - 2.5, 0));
       children[0].SetChildStartingPoints(new Point3d(endingPoint.X, endingPoint.Y - 0.1201, 0));
+      children[0].parentType = type;
     }
 
     public void MakeDisconnect(
@@ -1827,32 +1979,7 @@ namespace ElectricalCommands.Equipment
         acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
         tr.AddNewlyCreatedDBObject(acBlkRef, true);
       }
-      (
-        string firstLine,
-        string secondLine,
-        string thirdLine,
-        string supplemental1,
-        string supplemental2,
-        string supplemental3
-      ) = CADObjectCommands.GetWireAndConduitSizeText(
-        mainBreakerSize,
-        mainBreakerSize,
-        parentDistance + 10,
-        voltage,
-        1,
-        is3Phase ? 3 : 1
-      );
-      CADObjectCommands.AddWireAndConduitTextToPlan(
-        db,
-        new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
-        firstLine,
-        secondLine,
-        thirdLine,
-        supplemental1,
-        supplemental2,
-        supplemental3,
-        false
-      );
+
       ObjectId arrowSymbol = bt["RIGHT ARROW (AUTO SINGLE LINE)"];
       using (
         BlockReference acBlkRef = new BlockReference(
@@ -1992,12 +2119,49 @@ namespace ElectricalCommands.Equipment
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData4, 1, "HIDDEN");
         }
         else { }
+        (
+          string firstLine,
+          string secondLine,
+          string thirdLine,
+          string supplemental1,
+          string supplemental2,
+          string supplemental3
+        ) = CADObjectCommands.GetWireAndConduitSizeText(
+          mainBreakerSize,
+          mainBreakerSize,
+          parentDistance + 10,
+          voltage,
+          1,
+          is3Phase ? 3 : 1
+        );
+        CADObjectCommands.AddWireAndConduitTextToPlan(
+          db,
+          new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
+          firstLine,
+          secondLine,
+          thirdLine,
+          supplemental1,
+          supplemental2,
+          supplemental3,
+          false
+        );
+        SetFeederWireSizeAndCount(firstLine);
+        aicRating = CADObjectCommands.GetAicRating(
+          parentAicRating,
+          parentDistance + 10,
+          feederWireCount,
+          voltage,
+          feederWireSize,
+          is3Phase
+        );
+        MakeAicRating(tr, btr, bt, db, endingPoint);
         MakeDisconnect(tr, btr, bt, db, endingPoint);
         tr.Commit();
       }
-      if (children.Count > 0)
+      foreach (var child in children)
       {
-        children[0].Make();
+        child.parentAicRating = aicRating;
+        child.Make();
       }
     }
   }
