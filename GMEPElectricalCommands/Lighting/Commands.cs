@@ -12,7 +12,6 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using Dreambuild.AutoCAD;
-using ElectricalCommands.Equipment;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -444,6 +443,10 @@ namespace ElectricalCommands.Lighting
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
     {
+      if (CADObjectCommands.Scale == -1.0)
+      {
+        CADObjectCommands.SetScale();
+      }
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
@@ -482,6 +485,8 @@ namespace ElectricalCommands.Lighting
           ObjectId blockId;
           try
           {
+            Point3d point;
+            double rotation = 0;
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
               BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -489,8 +494,6 @@ namespace ElectricalCommands.Lighting
               BlockTableRecord block = (BlockTableRecord)
                 tr.GetObject(bt[fixture.blockName], OpenMode.ForRead);
               BlockJig blockJig = new BlockJig();
-
-              Point3d point;
 
               PromptResult res = blockJig.DragMe(block.ObjectId, out point);
 
@@ -508,6 +511,7 @@ namespace ElectricalCommands.Lighting
 
                   if (rotatePromptResult.Status != PromptStatus.OK)
                   {
+                    rotation = Double.Parse(rotatePromptResult.StringResult);
                     return;
                   }
                 }
@@ -544,6 +548,48 @@ namespace ElectricalCommands.Lighting
                 }
               }
               tr.Commit();
+            }
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+              TextStyleTable textStyleTable = (TextStyleTable)
+                tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+              ObjectId gmepTextStyleId;
+              if (textStyleTable.Has("gmep"))
+              {
+                gmepTextStyleId = textStyleTable["gmep"];
+              }
+              else
+              {
+                ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+                gmepTextStyleId = doc.Database.Textstyle;
+              }
+              Console.WriteLine(rotation);
+              var text = new DBText
+              {
+                TextString = fixture.name,
+                Position = new Point3d(
+                  point.X + fixture.labelTransformVX,
+                  point.Y + fixture.labelTransformVY,
+                  0
+                ),
+                Height = 0.0938 / CADObjectCommands.Scale * 12,
+                WidthFactor = 0.85,
+                Layer = "E-TEXT",
+                TextStyleId = gmepTextStyleId,
+                HorizontalMode = TextHorizontalMode.TextLeft,
+                VerticalMode = TextVerticalMode.TextVerticalMid,
+                Justify = AttachmentPoint.BaseLeft,
+                Rotation = 0,
+              };
+              var currentSpace = (BlockTableRecord)
+                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+              currentSpace.AppendEntity(text);
+              tr.AddNewlyCreatedDBObject(text, true);
+              tr.Commit();
+              // label_transform_h_x
+              // label_transform_h_y
+              // label_transform_v_x
+              // label_transform_v_y
             }
           }
           catch (System.Exception ex)

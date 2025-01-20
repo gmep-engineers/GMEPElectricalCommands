@@ -252,6 +252,10 @@ namespace GMEPElectricalCommands.GmepDatabase
         symbols.block_name,
         symbols.rotate,
         symbols.paper_space_scale,
+        symbols.label_transform_h_x,
+        symbols.label_transform_h_y,
+        symbols.label_transform_v_x,
+        symbols.label_transform_v_y,
         electrical_lighting.notes,
         electrical_lighting_mounting_types.mounting
         FROM electrical_lighting
@@ -289,7 +293,11 @@ namespace GMEPElectricalCommands.GmepDatabase
             reader.GetString("notes"),
             reader.GetInt32("rotate"),
             reader.GetFloat("paper_space_scale"),
-            reader.GetInt32("em_capable")
+            reader.GetInt32("em_capable"),
+            reader.GetFloat("label_transform_h_x"),
+            reader.GetFloat("label_transform_h_y"),
+            reader.GetFloat("label_transform_v_x"),
+            reader.GetFloat("label_transform_v_y")
           )
         );
       }
