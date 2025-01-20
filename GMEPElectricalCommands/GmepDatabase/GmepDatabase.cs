@@ -403,6 +403,22 @@ namespace GMEPElectricalCommands.GmepDatabase
       command.ExecuteNonQuery();
     }
 
+    public void UpdateTransformerAic(string id, double aicRating)
+    {
+      string query =
+        @"
+          UPDATE electrical_transformers
+          SET
+          aic_rating = @aicRating
+          WHERE id = @equipId
+          ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@aicRating", aicRating);
+      command.Parameters.AddWithValue("@equipId", id);
+      command.ExecuteNonQuery();
+    }
+
     public void UpdateTransformer(Transformer xfmr)
     {
       string query =

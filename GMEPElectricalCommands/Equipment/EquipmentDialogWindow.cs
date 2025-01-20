@@ -1511,7 +1511,7 @@ namespace ElectricalCommands.Equipment
           {
             p.hasCts = true;
           }
-          if (sf.amp >= 1200)
+          if (sf.amp >= 1200 && sf.voltageSpec.Contains("480"))
           {
             p.hasGfp = true;
           }
@@ -1550,6 +1550,7 @@ namespace ElectricalCommands.Equipment
 
     private void MakeSingleLineButton_Click(object sender, EventArgs e)
     {
+      SingleLine singleLineNodeTree;
       using (
         DocumentLock docLock =
           Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
@@ -1582,11 +1583,12 @@ namespace ElectricalCommands.Equipment
             return;
           }
         }
-        SingleLine singleLineNodeTree = MakeSingleLineNodeTree();
+        singleLineNodeTree = MakeSingleLineNodeTree();
         singleLineNodeTree.AggregateWidths();
         singleLineNodeTree.SetChildStartingPoints(startingPoint);
         singleLineNodeTree.Make();
       }
+      singleLineNodeTree.SaveAicRatings();
     }
 
     private void CreateEquipmentSchedule(Document doc, Database db, Editor ed, Point3d startPoint)

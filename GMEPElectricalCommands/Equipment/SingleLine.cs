@@ -5,7 +5,6 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
-using DocumentFormat.OpenXml.Presentation;
 using GMEPElectricalCommands.GmepDatabase;
 
 namespace ElectricalCommands.Equipment
@@ -265,6 +264,23 @@ namespace ElectricalCommands.Equipment
           tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
         acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
         tr.AddNewlyCreatedDBObject(acBlkRef, true);
+      }
+    }
+
+    public void SaveAicRatings()
+    {
+      GmepDatabase gmepDb = new GmepDatabase();
+      if (type == "panel")
+      {
+        gmepDb.UpdatePanelAic(id, aicRating);
+      }
+      if (type == "transformer")
+      {
+        gmepDb.UpdateTransformerAic(id, aicRating);
+      }
+      foreach (var child in children)
+      {
+        child.SaveAicRatings();
       }
     }
   }
@@ -1559,29 +1575,32 @@ namespace ElectricalCommands.Equipment
 
           if (endingPoint.X > startingPoint.X)
           {
-            // right panel breaker
-            ArcData arcData1 = new ArcData();
-            arcData1.Layer = "E-CND1";
-            arcData1.Center = new SimpleVector3d();
-            arcData1.Radius = 0.1038;
-            arcData1.Center.X = startingPoint.X - 0.1015;
-            arcData1.Center.Y = startingPoint.Y - 0.0216;
-            arcData1.StartAngle = 0.20944;
-            arcData1.EndAngle = 2.89725;
-            CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData1, 1);
-            ObjectId breakerLeader = bt["BREAKER LEADER LEFT (AUTO SINGLE LINE)"];
-            using (
-              BlockReference acBlkRef = new BlockReference(
-                new Point3d(startingPoint.X, startingPoint.Y, 0),
-                breakerLeader
-              )
-            )
+            if (parentType == "panel")
             {
-              BlockTableRecord acCurSpaceBlkTblRec;
-              acCurSpaceBlkTblRec =
-                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-              acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-              tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              // right panel breaker
+              ArcData arcData1 = new ArcData();
+              arcData1.Layer = "E-CND1";
+              arcData1.Center = new SimpleVector3d();
+              arcData1.Radius = 0.1038;
+              arcData1.Center.X = startingPoint.X - 0.1015;
+              arcData1.Center.Y = startingPoint.Y - 0.0216;
+              arcData1.StartAngle = 0.20944;
+              arcData1.EndAngle = 2.89725;
+              CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData1, 1);
+              ObjectId breakerLeader = bt["BREAKER LEADER LEFT (AUTO SINGLE LINE)"];
+              using (
+                BlockReference acBlkRef = new BlockReference(
+                  new Point3d(startingPoint.X, startingPoint.Y, 0),
+                  breakerLeader
+                )
+              )
+              {
+                BlockTableRecord acCurSpaceBlkTblRec;
+                acCurSpaceBlkTblRec =
+                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              }
             }
             GeneralCommands.CreateAndPositionText(
               tr,
@@ -1599,30 +1618,34 @@ namespace ElectricalCommands.Equipment
           }
           else
           {
-            // left panel breaker
-            ArcData arcData1 = new ArcData();
-            arcData1.Layer = "E-CND1";
-            arcData1.Center = new SimpleVector3d();
-            arcData1.Radius = 0.1038;
-            arcData1.Center.X = startingPoint.X + 0.1015;
-            arcData1.Center.Y = startingPoint.Y - 0.0216;
-            arcData1.StartAngle = 0.20944;
-            arcData1.EndAngle = 2.89725;
-            CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData1, 1);
-            ObjectId breakerLeader = bt["BREAKER LEADER RIGHT (AUTO SINGLE LINE)"];
-            using (
-              BlockReference acBlkRef = new BlockReference(
-                new Point3d(startingPoint.X, startingPoint.Y, 0),
-                breakerLeader
-              )
-            )
+            if (parentType == "panel")
             {
-              BlockTableRecord acCurSpaceBlkTblRec;
-              acCurSpaceBlkTblRec =
-                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-              acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-              tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              // left panel breaker
+              ArcData arcData1 = new ArcData();
+              arcData1.Layer = "E-CND1";
+              arcData1.Center = new SimpleVector3d();
+              arcData1.Radius = 0.1038;
+              arcData1.Center.X = startingPoint.X + 0.1015;
+              arcData1.Center.Y = startingPoint.Y - 0.0216;
+              arcData1.StartAngle = 0.20944;
+              arcData1.EndAngle = 2.89725;
+              CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData1, 1);
+              ObjectId breakerLeader = bt["BREAKER LEADER RIGHT (AUTO SINGLE LINE)"];
+              using (
+                BlockReference acBlkRef = new BlockReference(
+                  new Point3d(startingPoint.X, startingPoint.Y, 0),
+                  breakerLeader
+                )
+              )
+              {
+                BlockTableRecord acCurSpaceBlkTblRec;
+                acCurSpaceBlkTblRec =
+                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              }
             }
+
             GeneralCommands.CreateAndPositionText(
               tr,
               "(N)" + mainBreakerSize + "A/" + (is3Phase ? "3P" : "2P"),
@@ -1637,7 +1660,7 @@ namespace ElectricalCommands.Equipment
               AttachmentPoint.BaseRight
             );
           }
-          if (parentDistance >= 25)
+          if (parentDistance >= 25 || parentType == "transformer")
           {
             // main breaker arc
             MakeMainBreakerArc(tr, btr, bt, db, endingPoint, mainBreakerSize, is3Phase);
