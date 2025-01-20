@@ -1482,6 +1482,13 @@ namespace ElectricalCommands.Equipment
         if (p.parentId == transformer.id)
         {
           SLPanel childPanel = new SLPanel(p.id, p.name, false, false, p.parentDistance);
+          childPanel.mainBreakerSize = p.busSize;
+          childPanel.voltageSpec = p.voltage;
+          if (p.voltage.Contains("3"))
+          {
+            childPanel.is3Phase = true;
+          }
+          childPanel.parentAicRating = transformer.aicRating;
           MakeSingleLineNodeTreeFromPanel(childPanel);
           transformer.children.Add(childPanel);
         }

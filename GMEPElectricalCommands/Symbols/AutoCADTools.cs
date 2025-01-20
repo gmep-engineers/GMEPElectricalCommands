@@ -1590,9 +1590,14 @@ namespace ElectricalCommands
         return 0;
       }
       double i = kva * 1000 / lineVoltage / (is3Phase ? yFactor : 1);
-      double iSca = i * 100 * powerFactor / zValue;
+      double iSca = i * powerFactor / zValue;
       double fFactor =
-        yFactor * length * i / (numPhaseConductors * phaseConductorConstant * lineVoltage);
+        yFactor
+        * Convert.ToDouble(length)
+        * iSca
+        / Convert.ToDouble(numPhaseConductors)
+        / phaseConductorConstant
+        / lineVoltage;
       double multiplier = 1.0 / (1.0 + fFactor);
       return iSca * multiplier;
     }

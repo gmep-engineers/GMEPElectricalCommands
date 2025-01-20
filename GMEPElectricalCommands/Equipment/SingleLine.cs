@@ -70,6 +70,40 @@ namespace ElectricalCommands.Equipment
       }
     }
 
+    public void MakeAicRating(
+      Transaction tr,
+      BlockTableRecord btr,
+      BlockTable bt,
+      Database db,
+      Point3d endingPoint
+    )
+    {
+      ObjectId aicMarker = bt["AIC MARKER (AUTO SINGLE LINE)"];
+      using (
+        BlockReference acBlkRef = new BlockReference(
+          new Point3d(endingPoint.X, endingPoint.Y + 0.125, 0),
+          aicMarker
+        )
+      )
+      {
+        BlockTableRecord acCurSpaceBlkTblRec;
+        acCurSpaceBlkTblRec =
+          tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+        acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+        tr.AddNewlyCreatedDBObject(acBlkRef, true);
+      }
+      GeneralCommands.CreateAndPositionText(
+        tr,
+        "~" + Math.Round(aicRating, 0).ToString() + " AIC",
+        "gmep",
+        0.0938,
+        0.85,
+        2,
+        "E-TXT1",
+        new Point3d(endingPoint.X + 0.0678, endingPoint.Y + 0.08, 0)
+      );
+    }
+
     public void MakeDistributionCtsMeter(
       Transaction tr,
       BlockTableRecord btr,
@@ -804,40 +838,6 @@ namespace ElectricalCommands.Equipment
         TextHorizontalMode.TextCenter,
         TextVerticalMode.TextBase,
         AttachmentPoint.BaseRight
-      );
-    }
-
-    public void MakeAicRating(
-      Transaction tr,
-      BlockTableRecord btr,
-      BlockTable bt,
-      Database db,
-      Point3d endingPoint
-    )
-    {
-      ObjectId aicMarker = bt["AIC MARKER (AUTO SINGLE LINE)"];
-      using (
-        BlockReference acBlkRef = new BlockReference(
-          new Point3d(endingPoint.X, endingPoint.Y + 0.125, 0),
-          aicMarker
-        )
-      )
-      {
-        BlockTableRecord acCurSpaceBlkTblRec;
-        acCurSpaceBlkTblRec =
-          tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-        acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-        tr.AddNewlyCreatedDBObject(acBlkRef, true);
-      }
-      GeneralCommands.CreateAndPositionText(
-        tr,
-        "~" + Math.Round(aicRating, 0).ToString() + " AIC",
-        "gmep",
-        0.0938,
-        0.85,
-        2,
-        "E-TXT1",
-        new Point3d(endingPoint.X + 0.0678, endingPoint.Y + 0.08, 0)
       );
     }
 
@@ -1795,32 +1795,6 @@ namespace ElectricalCommands.Equipment
         TextVerticalMode.TextBase,
         AttachmentPoint.BaseRight
       );
-      (
-        string firstLine,
-        string secondLine,
-        string thirdLine,
-        string supplemental1,
-        string supplemental2,
-        string supplemental3
-      ) = CADObjectCommands.GetWireAndConduitSizeText(
-        mainBreakerSize,
-        mainBreakerSize,
-        parentDistance + 10,
-        voltage,
-        1,
-        is3Phase ? 3 : 1
-      );
-      CADObjectCommands.AddWireAndConduitTextToPlan(
-        db,
-        new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
-        firstLine,
-        secondLine,
-        thirdLine,
-        supplemental1,
-        supplemental2,
-        supplemental3,
-        false
-      );
     }
 
     public override void Make()
@@ -1889,8 +1863,49 @@ namespace ElectricalCommands.Equipment
           lineData1.EndPoint.Y = endingPoint.Y;
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
         }
+        (
+          string firstLine,
+          string secondLine,
+          string thirdLine,
+          string supplemental1,
+          string supplemental2,
+          string supplemental3
+        ) = CADObjectCommands.GetWireAndConduitSizeText(
+          mainBreakerSize,
+          mainBreakerSize,
+          parentDistance + 10,
+          voltage,
+          1,
+          is3Phase ? 3 : 1
+        );
+        CADObjectCommands.AddWireAndConduitTextToPlan(
+          db,
+          new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
+          firstLine,
+          secondLine,
+          thirdLine,
+          supplemental1,
+          supplemental2,
+          supplemental3,
+          false
+        );
+        SetFeederWireSizeAndCount(firstLine);
         MakeTransformer(tr, btr, bt, db, endingPoint);
+        aicRating = CADObjectCommands.GetAicRating(
+          parentAicRating,
+          parentDistance + 10,
+          feederWireCount,
+          voltage,
+          feederWireSize,
+          is3Phase
+        );
+        MakeAicRating(tr, btr, bt, db, endingPoint);
         tr.Commit();
+      }
+      foreach (var child in children)
+      {
+        child.parentAicRating = aicRating;
+        child.Make();
       }
     }
   }
@@ -1941,32 +1956,7 @@ namespace ElectricalCommands.Equipment
         acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
         tr.AddNewlyCreatedDBObject(acBlkRef, true);
       }
-      (
-        string firstLine,
-        string secondLine,
-        string thirdLine,
-        string supplemental1,
-        string supplemental2,
-        string supplemental3
-      ) = CADObjectCommands.GetWireAndConduitSizeText(
-        mainBreakerSize,
-        mainBreakerSize,
-        parentDistance + 10,
-        voltage,
-        1,
-        is3Phase ? 3 : 1
-      );
-      CADObjectCommands.AddWireAndConduitTextToPlan(
-        db,
-        new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
-        firstLine,
-        secondLine,
-        thirdLine,
-        supplemental1,
-        supplemental2,
-        supplemental3,
-        false
-      );
+
       ObjectId arrowSymbol = bt["RIGHT ARROW (AUTO SINGLE LINE)"];
       using (
         BlockReference acBlkRef = new BlockReference(
@@ -2106,12 +2096,49 @@ namespace ElectricalCommands.Equipment
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData4, 1, "HIDDEN");
         }
         else { }
+        (
+          string firstLine,
+          string secondLine,
+          string thirdLine,
+          string supplemental1,
+          string supplemental2,
+          string supplemental3
+        ) = CADObjectCommands.GetWireAndConduitSizeText(
+          mainBreakerSize,
+          mainBreakerSize,
+          parentDistance + 10,
+          voltage,
+          1,
+          is3Phase ? 3 : 1
+        );
+        CADObjectCommands.AddWireAndConduitTextToPlan(
+          db,
+          new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
+          firstLine,
+          secondLine,
+          thirdLine,
+          supplemental1,
+          supplemental2,
+          supplemental3,
+          false
+        );
+        SetFeederWireSizeAndCount(firstLine);
+        aicRating = CADObjectCommands.GetAicRating(
+          parentAicRating,
+          parentDistance + 10,
+          feederWireCount,
+          voltage,
+          feederWireSize,
+          is3Phase
+        );
+        MakeAicRating(tr, btr, bt, db, endingPoint);
         MakeDisconnect(tr, btr, bt, db, endingPoint);
         tr.Commit();
       }
-      if (children.Count > 0)
+      foreach (var child in children)
       {
-        children[0].Make();
+        child.parentAicRating = aicRating;
+        child.Make();
       }
     }
   }
