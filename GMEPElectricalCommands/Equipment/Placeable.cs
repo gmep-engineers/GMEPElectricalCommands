@@ -34,7 +34,11 @@ namespace ElectricalCommands.Equipment
     public int voltage,
       qty;
     public double wattage,
-      paperSpaceScale;
+      paperSpaceScale,
+      labelTransformHX,
+      labelTransformHY,
+      labelTransformVX,
+      labelTransformVY;
     public string blockName,
       controlId,
       description,
@@ -62,7 +66,11 @@ namespace ElectricalCommands.Equipment
       string notes,
       int rotate,
       double paperSpaceScale,
-      int emCapable
+      int emCapable,
+      double labelTransformHX,
+      double labelTransformHY,
+      double labelTransformVX,
+      double labelTransformVY
     )
     {
       this.id = id;
@@ -82,6 +90,10 @@ namespace ElectricalCommands.Equipment
       this.rotate = rotate != 0;
       this.paperSpaceScale = paperSpaceScale;
       this.emCapable = emCapable != 0;
+      this.labelTransformHX = labelTransformHX;
+      this.labelTransformHY = labelTransformHY;
+      this.labelTransformVX = labelTransformVX;
+      this.labelTransformVY = labelTransformVY;
     }
   }
 

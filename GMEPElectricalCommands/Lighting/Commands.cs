@@ -5,6 +5,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Accord.MachineLearning;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -12,7 +13,6 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using Dreambuild.AutoCAD;
-using ElectricalCommands.Equipment;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -317,10 +317,7 @@ namespace ElectricalCommands.Lighting
       Editor ed = doc.Editor;
       Database db = doc.Database;
       GmepDatabase gmepDb = new GmepDatabase();
-      string fileName = Path.GetFileName(doc.Name);
-      //string projectNo = Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
-      string projectNo = "24-123";
-      string projectId = gmepDb.GetProjectId(projectNo);
+      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
       List<Equipment.LightingControl> lightingList = gmepDb.GetLightingControls(projectId);
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
@@ -444,14 +441,15 @@ namespace ElectricalCommands.Lighting
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
     {
+      if (CADObjectCommands.Scale == -1.0)
+      {
+        CADObjectCommands.SetScale();
+      }
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Editor ed = doc.Editor;
       Database db = doc.Database;
       GmepDatabase gmepDb = new GmepDatabase();
-      string fileName = Path.GetFileName(doc.Name);
-      //string projectNo = Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
-      string projectNo = "24-123";
-      string projectId = gmepDb.GetProjectId(projectNo);
+      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
       List<Equipment.LightingFixture> lightingList = gmepDb.GetLightingFixtures(projectId);
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
@@ -482,6 +480,8 @@ namespace ElectricalCommands.Lighting
           ObjectId blockId;
           try
           {
+            Point3d point;
+            double rotation = 0;
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
               BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
@@ -489,8 +489,6 @@ namespace ElectricalCommands.Lighting
               BlockTableRecord block = (BlockTableRecord)
                 tr.GetObject(bt[fixture.blockName], OpenMode.ForRead);
               BlockJig blockJig = new BlockJig();
-
-              Point3d point;
 
               PromptResult res = blockJig.DragMe(block.ObjectId, out point);
 
@@ -510,6 +508,7 @@ namespace ElectricalCommands.Lighting
                   {
                     return;
                   }
+                  rotation = br.Rotation;
                 }
 
                 curSpace.AppendEntity(br);
@@ -543,6 +542,64 @@ namespace ElectricalCommands.Lighting
                   prop.Value = fixture.id;
                 }
               }
+              tr.Commit();
+            }
+            using (Transaction tr = db.TransactionManager.StartTransaction())
+            {
+              TextStyleTable textStyleTable = (TextStyleTable)
+                tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+              ObjectId gmepTextStyleId;
+              if (textStyleTable.Has("gmep"))
+              {
+                gmepTextStyleId = textStyleTable["gmep"];
+              }
+              else
+              {
+                ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+                gmepTextStyleId = doc.Database.Textstyle;
+              }
+              Point3d position = new Point3d(
+                point.X + fixture.labelTransformVX,
+                point.Y
+                  + fixture.labelTransformVY
+                  + (
+                    (CADObjectCommands.Scale - 0.25)
+                    * 12
+                    * Math.Pow(0.25 / CADObjectCommands.Scale, 1.5)
+                  ),
+                0
+              );
+              if (Math.Round(rotation, 1) == 1.6 || Math.Round(rotation, 1) == 4.7)
+              {
+                position = new Point3d(
+                  point.X + fixture.labelTransformHX,
+                  point.Y
+                    + fixture.labelTransformHY
+                    + (
+                      (CADObjectCommands.Scale - 0.25)
+                      * 12
+                      * Math.Pow(0.25 / CADObjectCommands.Scale, 1.5)
+                    ),
+                  0
+                );
+              }
+              var text = new DBText
+              {
+                TextString = fixture.name,
+                Position = position,
+                Height = 0.0938 / CADObjectCommands.Scale * 12,
+                WidthFactor = 0.85,
+                Layer = "E-TEXT",
+                TextStyleId = gmepTextStyleId,
+                HorizontalMode = TextHorizontalMode.TextLeft,
+                VerticalMode = TextVerticalMode.TextVerticalMid,
+                Justify = AttachmentPoint.BaseLeft,
+                Rotation = 0,
+              };
+              var currentSpace = (BlockTableRecord)
+                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+              currentSpace.AppendEntity(text);
+              tr.AddNewlyCreatedDBObject(text, true);
               tr.Commit();
             }
           }
