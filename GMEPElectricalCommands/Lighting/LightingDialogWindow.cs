@@ -6,6 +6,7 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Autodesk.AutoCAD.ApplicationServices;
@@ -41,10 +42,7 @@ namespace ElectricalCommands.Lighting
         .Application
         .DocumentManager
         .MdiActiveDocument;
-      string fileName = Path.GetFileName(doc.Name);
-      //string projectNo = Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
-      string projectNo = "24-123";
-      projectId = gmepDb.GetProjectId(projectNo);
+      projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
       panelList = gmepDb.GetPanels(projectId);
       lightingFixtureList = gmepDb.GetLightingFixtures(projectId);
       CreateLightingFixtureListView();

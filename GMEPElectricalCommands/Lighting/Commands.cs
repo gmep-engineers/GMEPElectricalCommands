@@ -5,6 +5,7 @@ using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using Accord.MachineLearning;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -316,10 +317,7 @@ namespace ElectricalCommands.Lighting
       Editor ed = doc.Editor;
       Database db = doc.Database;
       GmepDatabase gmepDb = new GmepDatabase();
-      string fileName = Path.GetFileName(doc.Name);
-      //string projectNo = Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
-      string projectNo = "24-123";
-      string projectId = gmepDb.GetProjectId(projectNo);
+      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
       List<Equipment.LightingControl> lightingList = gmepDb.GetLightingControls(projectId);
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
@@ -451,10 +449,7 @@ namespace ElectricalCommands.Lighting
       Editor ed = doc.Editor;
       Database db = doc.Database;
       GmepDatabase gmepDb = new GmepDatabase();
-      string fileName = Path.GetFileName(doc.Name);
-      //string projectNo = Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
-      string projectNo = "24-123";
-      string projectId = gmepDb.GetProjectId(projectNo);
+      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
       List<Equipment.LightingFixture> lightingList = gmepDb.GetLightingFixtures(projectId);
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
@@ -511,9 +506,9 @@ namespace ElectricalCommands.Lighting
 
                   if (rotatePromptResult.Status != PromptStatus.OK)
                   {
-                    rotation = Double.Parse(rotatePromptResult.StringResult);
                     return;
                   }
+                  rotation = br.Rotation;
                 }
 
                 curSpace.AppendEntity(br);
@@ -563,15 +558,35 @@ namespace ElectricalCommands.Lighting
                 ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
                 gmepTextStyleId = doc.Database.Textstyle;
               }
-              Console.WriteLine(rotation);
+              Point3d position = new Point3d(
+                point.X + fixture.labelTransformVX,
+                point.Y
+                  + fixture.labelTransformVY
+                  + (
+                    (CADObjectCommands.Scale - 0.25)
+                    * 12
+                    * Math.Pow(0.25 / CADObjectCommands.Scale, 1.5)
+                  ),
+                0
+              );
+              if (Math.Round(rotation, 1) == 1.6 || Math.Round(rotation, 1) == 4.7)
+              {
+                position = new Point3d(
+                  point.X + fixture.labelTransformHX,
+                  point.Y
+                    + fixture.labelTransformHY
+                    + (
+                      (CADObjectCommands.Scale - 0.25)
+                      * 12
+                      * Math.Pow(0.25 / CADObjectCommands.Scale, 1.5)
+                    ),
+                  0
+                );
+              }
               var text = new DBText
               {
                 TextString = fixture.name,
-                Position = new Point3d(
-                  point.X + fixture.labelTransformVX,
-                  point.Y + fixture.labelTransformVY,
-                  0
-                ),
+                Position = position,
                 Height = 0.0938 / CADObjectCommands.Scale * 12,
                 WidthFactor = 0.85,
                 Layer = "E-TEXT",
@@ -586,10 +601,6 @@ namespace ElectricalCommands.Lighting
               currentSpace.AppendEntity(text);
               tr.AddNewlyCreatedDBObject(text, true);
               tr.Commit();
-              // label_transform_h_x
-              // label_transform_h_y
-              // label_transform_v_x
-              // label_transform_v_y
             }
           }
           catch (System.Exception ex)

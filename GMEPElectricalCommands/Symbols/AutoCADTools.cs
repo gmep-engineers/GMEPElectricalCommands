@@ -40,6 +40,19 @@ namespace ElectricalCommands
 
     public static Point3d PanelLocation { get; set; } = new Point3d(0, 0, 0);
 
+    public static string GetProjectNoFromFileName()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Core
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      string fileName = Path.GetFileName(doc.Name);
+      return Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
+    }
+
     public static bool IsInModel()
     {
       if (Application.DocumentManager.MdiActiveDocument.Database.TileMode)
