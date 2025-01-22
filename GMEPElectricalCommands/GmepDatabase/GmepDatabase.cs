@@ -105,21 +105,25 @@ namespace GMEPElectricalCommands.GmepDatabase
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
-        panels.Add(
-          new Panel(
-            reader.GetString("id"),
-            reader.GetString("parent_id"),
-            reader.GetString("name"),
-            reader.GetInt32("parent_distance"),
-            reader.GetFloat("loc_x"),
-            reader.GetFloat("loc_y"),
-            reader.GetInt32("is_distribution"),
-            0,
-            reader.GetInt32("amp_rating"),
-            reader.GetString("voltage"),
-            reader.GetFloat("aic_rating")
-          )
-        );
+        try
+        {
+          panels.Add(
+            new Panel(
+              reader.GetString("id"),
+              reader.GetString("parent_id"),
+              reader.GetString("name"),
+              reader.GetInt32("parent_distance"),
+              reader.GetFloat("loc_x"),
+              reader.GetFloat("loc_y"),
+              reader.GetInt32("is_distribution"),
+              0,
+              reader.GetInt32("amp_rating"),
+              reader.GetString("voltage"),
+              reader.GetFloat("aic_rating")
+            )
+          );
+        }
+        catch { }
       }
       reader.Close();
       return panels;
@@ -143,19 +147,23 @@ namespace GMEPElectricalCommands.GmepDatabase
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
-        xfmrs.Add(
-          new Transformer(
-            reader.GetString("id"),
-            reader.GetString("parent_id"),
-            reader.GetString("name"),
-            reader.GetInt32("parent_distance"),
-            reader.GetFloat("loc_x"),
-            reader.GetFloat("loc_y"),
-            reader.GetFloat("kva_rating"),
-            reader.GetString("voltage"),
-            reader.GetFloat("aic_rating")
-          )
-        );
+        try
+        {
+          xfmrs.Add(
+            new Transformer(
+              reader.GetString("id"),
+              reader.GetString("parent_id"),
+              reader.GetString("name"),
+              reader.GetInt32("parent_distance"),
+              reader.GetFloat("loc_x"),
+              reader.GetFloat("loc_y"),
+              reader.GetFloat("kva_rating"),
+              reader.GetString("voltage"),
+              reader.GetFloat("aic_rating")
+            )
+          );
+        }
+        catch { }
       }
       reader.Close();
       return xfmrs;
@@ -208,26 +216,30 @@ namespace GMEPElectricalCommands.GmepDatabase
         {
           mca = reader.GetInt32("mca_rating");
         }
-        equip.Add(
-          new Equipment(
-            reader.GetString("id"),
-            reader.GetString("parent_id"),
-            reader.GetString("name"),
-            reader.GetString("equip_no"),
-            reader.GetString("description"),
-            reader.GetString("category"),
-            reader.GetInt32("voltage"),
-            reader.GetFloat("fla"),
-            is3Phase,
-            reader.GetInt32("parent_distance"),
-            reader.GetFloat("loc_x"),
-            reader.GetFloat("loc_y"),
-            mca,
-            reader.GetString("hp"),
-            reader.GetInt32("mounting_height"),
-            reader.GetInt32("circuit_no")
-          )
-        );
+        try
+        {
+          equip.Add(
+            new Equipment(
+              reader.GetString("id"),
+              reader.GetString("parent_id"),
+              reader.GetString("name"),
+              reader.GetString("equip_no"),
+              reader.GetString("description"),
+              reader.GetString("category"),
+              reader.GetInt32("voltage"),
+              reader.GetFloat("fla"),
+              is3Phase,
+              reader.GetInt32("parent_distance"),
+              reader.GetFloat("loc_x"),
+              reader.GetFloat("loc_y"),
+              mca,
+              reader.GetString("hp"),
+              reader.GetInt32("mounting_height"),
+              reader.GetInt32("circuit_no")
+            )
+          );
+        }
+        catch { }
       }
       reader.Close();
       return equip;
