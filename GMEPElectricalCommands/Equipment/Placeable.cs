@@ -104,7 +104,8 @@ namespace ElectricalCommands.Equipment
       hp;
     public int voltage,
       mca,
-      mountingHeight;
+      mountingHeight,
+      circuit;
     public double fla;
     public bool is3Phase;
 
@@ -123,7 +124,8 @@ namespace ElectricalCommands.Equipment
       double yLoc = 0,
       int mca = -1,
       string hp = "",
-      int mountingHeight = 18
+      int mountingHeight = 18,
+      int circuit = 0
     )
     {
       this.id = id;
@@ -140,6 +142,7 @@ namespace ElectricalCommands.Equipment
       this.mca = mca;
       this.hp = hp;
       this.mountingHeight = mountingHeight;
+      this.circuit = circuit;
     }
   }
 

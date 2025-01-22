@@ -7,6 +7,7 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using GMEPElectricalCommands.GmepDatabase;
 
 namespace ElectricalCommands.Equipment
@@ -196,6 +197,7 @@ namespace ElectricalCommands.Equipment
         item.SubItems.Add(equipment.description);
         item.SubItems.Add(equipment.category);
         item.SubItems.Add(equipment.parentName);
+        item.SubItems.Add(equipment.circuit.ToString());
         if (equipment.parentDistance == -1)
         {
           item.SubItems.Add("Not Set");
@@ -228,6 +230,7 @@ namespace ElectricalCommands.Equipment
         equipmentListView.Columns.Add("Description", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Category", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Panel", -2, HorizontalAlignment.Left);
+        equipmentListView.Columns.Add("Circuit", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Panel Distance", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Voltage", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Phase", -2, HorizontalAlignment.Left);
@@ -562,7 +565,8 @@ namespace ElectricalCommands.Equipment
       string equipId,
       string parentId,
       string equipNo,
-      EquipmentType equipType
+      EquipmentType equipType,
+      string circuitNo = ""
     )
     {
       Document doc = Autodesk
@@ -633,13 +637,11 @@ namespace ElectricalCommands.Equipment
       Point3d firstClickPoint = promptResult.Value;
       // insert block here
       string blockName = $"A$C3D4728D6";
-      double offsetX = 0;
-      double offsetY = 0;
       double rotation = 0;
       switch (equipType)
       {
         case EquipmentType.Duplex:
-          blockName = $"A$C3D4728D6";
+          blockName = $"GMEP DUPLEX";
           break;
         case EquipmentType.Panel:
           blockName = $"A$C26441056";
@@ -656,38 +658,45 @@ namespace ElectricalCommands.Equipment
         {
           RotateJig blockJig = new RotateJig(acBlkRef);
           PromptResult blockPromptResult = ed.Drag(blockJig);
-
+          double scaleFactor = 1;
+          if (equipType != EquipmentType.Panel && equipType != EquipmentType.Transformer)
+          {
+            scaleFactor = scale;
+          }
           if (promptResult.Status == PromptStatus.OK)
           {
             BlockTableRecord currentSpace =
               acTrans.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
             currentSpace.AppendEntity(acBlkRef);
             acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
+            acBlkRef.ScaleFactors = new Scale3d(0.25 / scaleFactor);
             acBlkRef.Layer = "E-SYM1";
             acTrans.Commit();
             rotation = acBlkRef.Rotation;
           }
         }
       }
+      double labelOffsetX = 0;
+      double labelOffsetY = 0;
       switch (equipType)
       {
         case EquipmentType.Duplex:
           switch (rotation)
           {
             case var _ when rotation > 5.49:
-              offsetY = -9.125;
+              labelOffsetY = -4.5;
               break;
             case var _ when rotation > 4.71:
-              offsetX = -9.125;
+              labelOffsetX = -4.5;
               break;
             case var _ when rotation > 2.35:
-              offsetY = 9.125;
+              labelOffsetY = 4.5;
               break;
             case var _ when rotation > 1.57:
-              offsetX = 9.125;
+              labelOffsetX = 4.5;
               break;
             default:
-              offsetY = -9.125;
+              labelOffsetY = -4.5;
               break;
           }
           break;
@@ -695,9 +704,62 @@ namespace ElectricalCommands.Equipment
           break;
         // TODO check for remaining connection types
       }
-      offsetY = offsetY * 0.25 / scale;
-      offsetX = offsetX * 0.25 / scale;
-      firstClickPoint = new Point3d(firstClickPoint.X + offsetX, firstClickPoint.Y + offsetY, 0);
+      labelOffsetY = labelOffsetY * 0.25 / scale;
+      labelOffsetX = labelOffsetX * 0.25 / scale;
+      firstClickPoint = new Point3d(
+        firstClickPoint.X + labelOffsetX,
+        firstClickPoint.Y + labelOffsetY,
+        0
+      );
+
+      if (equipType != EquipmentType.Panel && equipType != EquipmentType.Transformer)
+      {
+        double circuitOffsetX = 0;
+        double circuitOffsetY = 0;
+        switch (rotation)
+        {
+          case var _ when rotation > 5.49:
+            circuitOffsetY = -9;
+            circuitOffsetX = 4.5;
+            break;
+          case var _ when rotation > 4.71:
+            circuitOffsetY = -4.5;
+            break;
+          case var _ when rotation > 2.35:
+            circuitOffsetY = 4.5;
+            circuitOffsetX = -4.5;
+            break;
+          case var _ when rotation > 1.57:
+            circuitOffsetX = 9;
+            circuitOffsetY = -4.5;
+            break;
+          default:
+            circuitOffsetY = -9;
+            circuitOffsetX = 4.5;
+            break;
+        }
+        circuitOffsetY = circuitOffsetY * 0.25 / scale;
+        circuitOffsetX = circuitOffsetX * 0.25 / scale;
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            circuitNo,
+            "gmep",
+            0.0938 * 12.0 / CADObjectCommands.Scale,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(
+              firstClickPoint.X - (circuitOffsetX),
+              firstClickPoint.Y - (circuitOffsetY),
+              0
+            )
+          );
+          tr.Commit();
+        }
+      }
+
       LabelJig jig = new LabelJig(firstClickPoint);
       PromptResult res = ed.Drag(jig);
       if (res.Status != PromptStatus.OK)
@@ -1031,7 +1093,8 @@ namespace ElectricalCommands.Equipment
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
           equipmentListView.SelectedItems[0].Text,
-          EquipmentType.Duplex // TODO set this based on connection
+          EquipmentType.Duplex, // TODO set this based on connection
+          equipmentListView.SelectedItems[0].SubItems[4].Text
         );
         if (p == null)
         {
@@ -1186,7 +1249,8 @@ namespace ElectricalCommands.Equipment
                 item.SubItems[numSubItems - 2].Text,
                 item.SubItems[numSubItems - 1].Text,
                 item.Text,
-                EquipmentType.Duplex
+                EquipmentType.Duplex,
+                equipmentListView.SelectedItems[0].SubItems[4].Text
               );
               if (p == null)
               {
@@ -1262,7 +1326,8 @@ namespace ElectricalCommands.Equipment
                 item.SubItems[numSubItems - 2].Text,
                 item.SubItems[numSubItems - 1].Text,
                 item.Text,
-                EquipmentType.Duplex
+                EquipmentType.Duplex,
+                equipmentListView.SelectedItems[0].SubItems[4].Text
               );
               if (p == null)
               {

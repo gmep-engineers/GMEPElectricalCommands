@@ -2481,6 +2481,7 @@ namespace ElectricalCommands
         Autodesk.AutoCAD.Colors.ColorMethod.ByLayer,
         (short)colorIndex
       );
+      Console.WriteLine(content);
       var textId = CreateText(
         content,
         style,
