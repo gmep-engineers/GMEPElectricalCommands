@@ -658,7 +658,7 @@ namespace ElectricalCommands.Equipment
         {
           RotateJig blockJig = new RotateJig(acBlkRef);
           PromptResult blockPromptResult = ed.Drag(blockJig);
-          double scaleFactor = 1;
+          double scaleFactor = 0.25;
           if (equipType != EquipmentType.Panel && equipType != EquipmentType.Transformer)
           {
             scaleFactor = scale;
@@ -1073,6 +1073,30 @@ namespace ElectricalCommands.Equipment
       CreateEquipmentListView(true);
     }
 
+    private string GetCircuitNo(ListViewItem item)
+    {
+      string circuitNo = item.SubItems[4].Text;
+      string voltage = item.SubItems[6].Text;
+      string phase = item.SubItems[7].Text;
+      if (phase == "3")
+      {
+        int c = Int32.Parse(circuitNo);
+        return circuitNo + "&" + (c + 2).ToString() + "&" + (c + 4).ToString();
+      }
+      else if (
+        voltage == "208"
+        || voltage == "230"
+        || voltage == "240"
+        || voltage == "460"
+        || voltage == "480"
+      )
+      {
+        int c = Int32.Parse(circuitNo);
+        return circuitNo + "&" + (c + 2).ToString();
+      }
+      return circuitNo;
+    }
+
     private void EquipmentListView_MouseDoubleClick(object sender, MouseEventArgs e)
     {
       using (
@@ -1089,12 +1113,13 @@ namespace ElectricalCommands.Equipment
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
 
         int numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
+        string circuitNo = GetCircuitNo(equipmentListView.SelectedItems[0]);
         Point3d? p = PlaceEquipment(
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
           equipmentListView.SelectedItems[0].Text,
           EquipmentType.Duplex, // TODO set this based on connection
-          equipmentListView.SelectedItems[0].SubItems[4].Text
+          circuitNo
         );
         if (p == null)
         {
@@ -1245,12 +1270,13 @@ namespace ElectricalCommands.Equipment
             numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
             foreach (ListViewItem item in equipmentListView.SelectedItems)
             {
+              string circuitNo = GetCircuitNo(item);
               Point3d? p = PlaceEquipment(
                 item.SubItems[numSubItems - 2].Text,
                 item.SubItems[numSubItems - 1].Text,
                 item.Text,
                 EquipmentType.Duplex,
-                equipmentListView.SelectedItems[0].SubItems[4].Text
+                circuitNo
               );
               if (p == null)
               {
@@ -1322,12 +1348,13 @@ namespace ElectricalCommands.Equipment
             numSubItems = equipmentListView.Items[0].SubItems.Count;
             foreach (ListViewItem item in equipmentListView.Items)
             {
+              string circuitNo = GetCircuitNo(item);
               Point3d? p = PlaceEquipment(
                 item.SubItems[numSubItems - 2].Text,
                 item.SubItems[numSubItems - 1].Text,
                 item.Text,
                 EquipmentType.Duplex,
-                equipmentListView.SelectedItems[0].SubItems[4].Text
+                circuitNo
               );
               if (p == null)
               {
