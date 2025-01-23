@@ -1274,57 +1274,137 @@ namespace ElectricalCommands
       }
     }
 
-    public static string GetConnectionTypeFromFlaVoltage(double fla, int voltage)
+    public static string GetConnectionTypeFromFlaVoltage(
+      double fla,
+      int voltage,
+      bool hasPlug,
+      bool is3Phase
+    )
     {
-      int mca = GetMcaFromFla(fla);
-      switch (fla)
+      if (hasPlug)
       {
-        case var _ when fla / 0.8 <= 15:
-          if (voltage <= 120)
+        int mca = GetMcaFromFla(fla);
+        switch (fla)
+        {
+          case var _ when fla / 0.8 <= 15:
+            if (voltage <= 120)
+            {
+              return "NEMA 5-15";
+            }
+            else
+            {
+              return "NEMA 6-15";
+            }
+          case var _ when mca <= 20:
+            if (voltage <= 120)
+            {
+              return "NEMA 5-20";
+            }
+            else
+            {
+              return "NEMA 6-20";
+            }
+          case var _ when mca <= 30:
+            if (voltage <= 120)
+            {
+              return "NEMA 5-30";
+            }
+            else
+            {
+              return "NEMA 6-30";
+            }
+          case var _ when mca <= 50:
+            if (voltage <= 120)
+            {
+              return "NEMA 5-50";
+            }
+            else
+            {
+              return "NEMA 6-50";
+            }
+          case var _ when mca <= 60:
+            return "60AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
+          case var _ when mca <= 100:
+            return "100AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
+          case var _ when mca <= 200:
+            return "200AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
+          case var _ when mca <= 400:
+            return "400AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
+          case var _ when mca <= 600:
+            return "600AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
+        }
+      }
+      else
+      {
+        if (!is3Phase)
+        {
+          switch (fla)
           {
-            return "NEMA 5-15";
+            case var _ when fla / 0.8 <= 20:
+              return "20A/" + (voltage > 120 ? "2P" : "1P");
+            case var _ when fla / 0.8 <= 25:
+              return "25A/" + (voltage > 120 ? "2P" : "1P");
+            case var _ when fla / 0.8 <= 30:
+              return "30A/" + (voltage > 120 ? "2P" : "1P");
+            case var _ when fla / 0.8 <= 35:
+              return "35A/" + (voltage > 120 ? "2P" : "1P");
+            case var _ when fla / 0.8 <= 40:
+              return "40A/" + (voltage > 120 ? "2P" : "1P");
+            case var _ when fla / 0.8 <= 45:
+              return "45A/" + (voltage > 120 ? "2P" : "1P");
+            case var _ when fla / 0.8 <= 50:
+              return "50A/" + (voltage > 120 ? "2P" : "1P");
+            case var _ when fla / 0.8 <= 60:
+              return "60A/" + (voltage > 120 ? "2P" : "1P");
           }
-          else
-          {
-            return "NEMA 6-15";
-          }
-        case var _ when mca <= 20:
-          if (voltage <= 120)
-          {
-            return "NEMA 5-20";
-          }
-          else
-          {
-            return "NEMA 6-20";
-          }
-        case var _ when mca <= 30:
-          if (voltage <= 120)
-          {
-            return "NEMA 5-30";
-          }
-          else
-          {
-            return "NEMA 6-30";
-          }
-        case var _ when mca <= 50:
-          if (voltage <= 120)
-          {
-            return "NEMA 5-50";
-          }
-          else
-          {
-            return "NEMA 6-50";
-          }
-        case var _ when mca <= 60:
-          return "60AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
-        case var _ when mca <= 100:
-          return "100AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
-        case var _ when mca <= 200:
-          return "200AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
-        case var _ when mca <= 400:
-          return "400AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
-        case var _ when mca <= 600:
-          return "600AS/" + mca + "AF/" + (voltage <= 120 ? "2P" : "3P");
+        }
+        switch (fla)
+        {
+          case var _ when fla / 0.8 <= 30:
+            return "30AS/30AF/3P";
+          case var _ when fla / 0.8 <= 35:
+            return "35A/60AF/3P";
+          case var _ when fla / 0.8 <= 40:
+            return "40A/60AF/3P";
+          case var _ when fla / 0.8 <= 45:
+            return "45A/60AF/3P";
+          case var _ when fla / 0.8 <= 50:
+            return "50/60AF/3P";
+          case var _ when fla / 0.8 <= 55:
+            return "55/60AF/3P";
+          case var _ when fla / 0.8 <= 60:
+            return "60A/60AF/3P";
+          case var _ when fla / 0.8 <= 70:
+            return "70A/100AF/3P";
+          case var _ when fla / 0.8 <= 80:
+            return "80A/100AF/3P";
+          case var _ when fla / 0.8 <= 90:
+            return "90A/100AF/3P";
+          case var _ when fla / 0.8 <= 100:
+            return "100A/100AF/3P";
+          case var _ when fla / 0.8 <= 110:
+            return "110A/200AF/3P";
+          case var _ when fla / 0.8 <= 125:
+            return "125A/200AF/3P";
+          case var _ when fla / 0.8 <= 150:
+            return "150A/200AF/3P";
+          case var _ when fla / 0.8 <= 175:
+            return "175A/200AF/3P";
+          case var _ when fla / 0.8 <= 200:
+            return "200A/200AF/3P";
+          case var _ when fla / 0.8 <= 300:
+            return "300A/400AF/3P";
+          case var _ when fla / 0.8 <= 350:
+            return "350A/400AF/3P";
+          case var _ when fla / 0.8 <= 400:
+            return "400A/400AF/3P";
+          case var _ when fla / 0.8 <= 450:
+            return "450A/600AF/3P";
+          case var _ when fla / 0.8 <= 500:
+            return "500A/600AF/3P";
+          case var _ when fla / 0.8 <= 600:
+            return "600A/600AF/3P";
+        }
       }
       return "V.I.F";
     }

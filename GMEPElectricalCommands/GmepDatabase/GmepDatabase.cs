@@ -191,7 +191,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_equipment_mca_ratings.mca_rating,
         electrical_equipment.hp,
         electrical_equipment.mounting_height,
-        electrical_equipment.circuit_no
+        electrical_equipment.circuit_no,
+        electrical_equipment.has_plug
         FROM electrical_equipment
         LEFT JOIN electrical_panels
         ON electrical_panels.id = electrical_equipment.parent_id
@@ -235,7 +236,8 @@ namespace GMEPElectricalCommands.GmepDatabase
               mca,
               reader.GetString("hp"),
               reader.GetInt32("mounting_height"),
-              reader.GetInt32("circuit_no")
+              reader.GetInt32("circuit_no"),
+              reader.GetInt32("has_plug")
             )
           );
         }

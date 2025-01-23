@@ -107,7 +107,8 @@ namespace ElectricalCommands.Equipment
       mountingHeight,
       circuit;
     public double fla;
-    public bool is3Phase;
+    public bool is3Phase,
+      hasPlug;
 
     public Equipment(
       string id = "",
@@ -125,7 +126,8 @@ namespace ElectricalCommands.Equipment
       int mca = -1,
       string hp = "",
       int mountingHeight = 18,
-      int circuit = 0
+      int circuit = 0,
+      int hasPlug = 1
     )
     {
       this.id = id;
@@ -143,6 +145,7 @@ namespace ElectricalCommands.Equipment
       this.hp = hp;
       this.mountingHeight = mountingHeight;
       this.circuit = circuit;
+      this.hasPlug = hasPlug != 0;
     }
   }
 

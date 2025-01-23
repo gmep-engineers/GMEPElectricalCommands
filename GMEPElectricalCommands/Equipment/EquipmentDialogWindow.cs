@@ -1769,7 +1769,9 @@ namespace ElectricalCommands.Equipment
             tb.Cells[row, 5].TextString = mca.ToString();
             tb.Cells[row, 7].TextString = CADObjectCommands.GetConnectionTypeFromFlaVoltage(
               equipmentList[i].fla,
-              equipmentList[i].voltage
+              equipmentList[i].voltage,
+              equipmentList[i].hasPlug,
+              equipmentList[i].is3Phase
             );
             tb.Cells[row, 8].TextString = equipmentList[i].mountingHeight.ToString() + "\"";
             tb.Cells[row, 9].TextString = firstLine.Substring(0, firstLine.IndexOf(" "));
