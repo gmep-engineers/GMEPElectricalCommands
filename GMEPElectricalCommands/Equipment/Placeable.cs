@@ -13,6 +13,7 @@ namespace ElectricalCommands.Equipment
     public int parentDistance;
     public double aicRating;
     public Point3d loc;
+    public bool hidden;
   }
 
   public class LightingControl : Placeable
@@ -127,7 +128,8 @@ namespace ElectricalCommands.Equipment
       string hp = "",
       int mountingHeight = 18,
       int circuit = 0,
-      int hasPlug = 1
+      int hasPlug = 1,
+      int hidden = 0
     )
     {
       this.id = id;
@@ -146,6 +148,7 @@ namespace ElectricalCommands.Equipment
       this.mountingHeight = mountingHeight;
       this.circuit = circuit;
       this.hasPlug = hasPlug != 0;
+      this.hidden = hidden == 1;
     }
   }
 
@@ -167,7 +170,8 @@ namespace ElectricalCommands.Equipment
       int isMm = 0,
       int bus = 0,
       string volt = "",
-      double aicRating = 0
+      double aicRating = 0,
+      int hidden = 0
     )
     {
       id = _id;
@@ -180,6 +184,7 @@ namespace ElectricalCommands.Equipment
       busSize = bus;
       voltage = volt;
       this.aicRating = aicRating;
+      this.hidden = hidden == 1;
     }
   }
 
@@ -197,7 +202,8 @@ namespace ElectricalCommands.Equipment
       double yLoc = 0,
       double kva = 0,
       string volt = "",
-      double aicRating = 0
+      double aicRating = 0,
+      int hidden = 0
     )
     {
       id = _id;
@@ -208,6 +214,7 @@ namespace ElectricalCommands.Equipment
       this.kva = kva;
       voltageSpec = volt;
       this.aicRating = aicRating;
+      this.hidden = hidden == 1;
     }
   }
 }
