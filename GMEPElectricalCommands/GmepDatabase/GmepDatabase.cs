@@ -91,7 +91,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_panels.is_distribution,
         electrical_panel_bus_amp_ratings.amp_rating,
         electrical_service_voltages.voltage,
-        electrical_panels.aic_rating
+        electrical_panels.aic_rating,
+        electrical_panels.is_hidden_on_plan
         FROM electrical_panels
         LEFT JOIN electrical_panel_bus_amp_ratings
         ON electrical_panel_bus_amp_ratings.id = electrical_panels.bus_amp_rating_id
@@ -119,7 +120,8 @@ namespace GMEPElectricalCommands.GmepDatabase
               0,
               reader.GetInt32("amp_rating"),
               reader.GetString("voltage"),
-              reader.GetFloat("aic_rating")
+              reader.GetFloat("aic_rating"),
+              reader.GetInt32("is_hidden_on_plan")
             )
           );
         }
@@ -159,7 +161,8 @@ namespace GMEPElectricalCommands.GmepDatabase
               reader.GetFloat("loc_y"),
               reader.GetFloat("kva_rating"),
               reader.GetString("voltage"),
-              reader.GetFloat("aic_rating")
+              reader.GetFloat("aic_rating"),
+              reader.GetInt32("is_hidden_on_plan")
             )
           );
         }
@@ -192,7 +195,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_equipment.hp,
         electrical_equipment.mounting_height,
         electrical_equipment.circuit_no,
-        electrical_equipment.has_plug
+        electrical_equipment.has_plug,
+        electrical_equipment.is_hidden_on_plan
         FROM electrical_equipment
         LEFT JOIN electrical_panels
         ON electrical_panels.id = electrical_equipment.parent_id
@@ -237,7 +241,8 @@ namespace GMEPElectricalCommands.GmepDatabase
               reader.GetString("hp"),
               reader.GetInt32("mounting_height"),
               reader.GetInt32("circuit_no"),
-              reader.GetInt32("has_plug")
+              reader.GetInt32("has_plug"),
+              reader.GetInt32("is_hidden_on_plan")
             )
           );
         }
