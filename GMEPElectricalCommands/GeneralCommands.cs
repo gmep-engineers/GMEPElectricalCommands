@@ -14,8 +14,8 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Internal;
 using Autodesk.AutoCAD.Runtime;
 using DocumentFormat.OpenXml.Packaging;
-using DocumentFormat.OpenXml.Wordprocessing;
 using ElectricalCommands.Lighting;
+using GMEPElectricalCommands.GmepDatabase;
 using Newtonsoft.Json;
 
 namespace ElectricalCommands
@@ -1809,6 +1809,50 @@ namespace ElectricalCommands
 
       // Clear the PickFirst selection set
       ed.SetImpliedSelection(new ObjectId[0]);
+    }
+
+    [CommandMethod("LOADSUMMARY")]
+    public void LoadSummary()
+    {
+      var (doc, db, ed) = PanelCommands.GetGlobals();
+      var promptOptions = new PromptPointOptions("\nSelect top left corner point: ");
+      var promptResult = ed.GetPoint(promptOptions);
+      var topRightCorner = promptResult.Value;
+      var spaceId =
+        (db.TileMode == true)
+          ? SymbolUtilityServices.GetBlockModelSpaceId(db)
+          : SymbolUtilityServices.GetBlockPaperSpaceId(db);
+      GmepDatabase gmepDb = new GmepDatabase();
+      // get all distribution section breakers for project
+      // make a list of all ds
+      Dictionary<string, Dictionary<string, int>> distributionSections =
+        new Dictionary<string, Dictionary<string, int>>();
+      Dictionary<string, int> ds1 = new Dictionary<string, int>();
+      ds1["A"] = 22356;
+      ds1["B"] = 34532;
+      ds1["C"] = 93464;
+      distributionSections["DS-1"] = ds1;
+      // make new table for each ds
+      foreach (KeyValuePair<string, Dictionary<string, int>> ds in distributionSections)
+      {
+        Table tb = new Table();
+        tb.TableStyle = db.Tablestyle;
+        using (var tr = db.TransactionManager.StartTransaction())
+        {
+          var btr = (BlockTableRecord)tr.GetObject(spaceId, OpenMode.ForWrite);
+
+          var startPoint = new Point3d(topRightCorner.X, topRightCorner.Y, 0);
+          tb.TableStyle = db.Tablestyle;
+          tb.Position = startPoint;
+          tb.SetSize(ds.Value.Count + 5, 3);
+          tb.SetRowHeight(0.5);
+          tb.Cells[0, 0].TextHeight = (0.125);
+          tb.Cells[0, 0].TextString = $"{ds.Key} LOAD SUMMARY";
+          int tableRowIndex = 1;
+          int increment = 2;
+          tb.SetColumnWidth(2);
+        }
+      }
     }
 
     private static Wipeout CreateWipeoutForText(Entity textEntity, double paddingFactor)
