@@ -1611,8 +1611,22 @@ namespace ElectricalCommands
               PANEL_GRID.Rows[i].Cells["phase_c_right"].Style.ForeColor = foreColor1;
             }
           }
-          PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = backColor1;
-          PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = backColor1;
+          if (PANEL_GRID.Rows[i].Cells["description_left"].Tag == null)
+          {
+            PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = backColor1;
+          }
+          else
+          {
+            PANEL_GRID.Rows[i].Cells["description_left"].Style.BackColor = Color.Yellow;
+          }
+          if (PANEL_GRID.Rows[i].Cells["description_right"].Tag == null)
+          {
+            PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = backColor1;
+          }
+          else
+          {
+            PANEL_GRID.Rows[i].Cells["description_right"].Style.BackColor = Color.Yellow;
+          }
           PANEL_GRID.Rows[i].Cells["description_left"].Style.ForeColor = foreColor1;
           PANEL_GRID.Rows[i].Cells["description_right"].Style.ForeColor = foreColor1;
           PANEL_GRID.Rows[i].Cells["circuit_left"].Style.BackColor = backColor1;
@@ -3454,22 +3468,6 @@ namespace ElectricalCommands
       {
         safetyFactor = Convert.ToDouble(SAFETY_FACTOR_TEXTBOX.Text);
       }
-      if (lineVoltage == 240 && phaseVoltage == 120 && this.is3Ph)
-      {
-        // perform high leg calculation
-        double singlePhaseLoads = AggregateSinglePhaseLoads();
-        double threePhaseLoads = AggregateThreePhaseLoads();
-        sum = singlePhaseLoads + threePhaseLoads;
-        double singlePhaseAmperage = singlePhaseLoads / 240;
-        double threePhaseAmperage = threePhaseLoads / 240 / 1.732;
-        feederAmps = singlePhaseAmperage + threePhaseAmperage;
-        FEEDER_AMP_GRID.Rows[0].Cells[0].Value = Math.Round(feederAmps, 1);
-        totalKva = CalculatePanelLoad(sum) * safetyFactor;
-        PANEL_LOAD_GRID.Rows[0].Cells[0].Value = Math.Round(totalKva, 1);
-        ColorFeederAmpsBox(feederAmps, busRating);
-        SetPanelLoadLispVars(totalKva, feederAmps);
-        return;
-      }
       double phA = Convert.ToDouble(PHASE_SUM_GRID.Rows[0].Cells[0].Value ?? 0);
       double phB = Convert.ToDouble(PHASE_SUM_GRID.Rows[0].Cells[1].Value ?? 0);
       double phC = 0;
@@ -3485,6 +3483,9 @@ namespace ElectricalCommands
 
       TOTAL_VA_GRID.Rows[0].Cells[0].Value = CalculateTotalVA(sum);
 
+      double lcl = Convert.ToDouble(LCL.Text);
+      double lml = Convert.ToDouble(LML.Text);
+
       // Handle LCL
       if (!string.IsNullOrEmpty(LCL.Text) && LCL.Text != "0")
       {
@@ -3496,6 +3497,46 @@ namespace ElectricalCommands
       {
         sum += Math.Round(Convert.ToDouble(LML.Text) * 0.25, 0);
       }
+
+      if (lineVoltage == 240 && phaseVoltage == 120 && this.is3Ph)
+      {
+        double l1 = phB;
+        double l2 = phA;
+        double l3 = phC;
+        if (highLegPhase == 0)
+        {
+          l1 = phA;
+          l2 = phC;
+          l3 = phB;
+        }
+        if (highLegPhase == 2)
+        {
+          l1 = phC;
+          l2 = phB;
+          l3 = phA;
+        }
+        double fA = Math.Abs(l3 - l1);
+        double fB = Math.Abs(l1 - l2);
+        double fC = Math.Abs(l2 - l3);
+        double l3N = l3;
+        double l2N = l2;
+        double iFa = (fA + (0.25 * lml)) / 240;
+        double iFb = (fB + (0.25 * lml)) / 240;
+        double iFc = (fC + (0.25 * lml)) / 240;
+        double iL2N = (l2N + (0.25 * lcl) + (0.25 * lml)) / 120;
+        double iL3N = (l3N + (0.25 * lcl) + (0.25 * lml)) / 120;
+        double iL1 = Math.Sqrt(Math.Pow(iFa, 2) + Math.Pow(iFb, 2) + (iFa * iFb));
+        double iL2 = Math.Sqrt(Math.Pow(iFb, 2) + Math.Pow((iL2N + iFc), 2) + (iFb * (iL2N + iFc)));
+        double iL3 = Math.Sqrt(Math.Pow(iFa, 2) + Math.Pow((iL3N + iFc), 2) + (iFa * (iL3N + iFc)));
+        feederAmps = Math.Max(Math.Max(iL3, iL1), iL2);
+        FEEDER_AMP_GRID.Rows[0].Cells[0].Value = Math.Round(feederAmps, 1);
+        totalKva = CalculatePanelLoad(sum) * safetyFactor;
+        PANEL_LOAD_GRID.Rows[0].Cells[0].Value = Math.Round(totalKva, 1);
+        ColorFeederAmpsBox(feederAmps, busRating);
+        SetPanelLoadLispVars(totalKva, feederAmps);
+        return;
+      }
+
       totalKva = CalculatePanelLoad(sum) * safetyFactor;
       PANEL_LOAD_GRID.Rows[0].Cells[0].Value = Math.Round(totalKva, 1);
       if (phaseVoltageObj != null)
@@ -3522,7 +3563,8 @@ namespace ElectricalCommands
           }
           else
           {
-            feederAmps = Math.Round(sum / (phaseVoltage * poles), 1);
+            double maxPhaseVa = Math.Max(phA, Math.Max(phB, phC));
+            feederAmps = safetyFactor * (maxPhaseVa + (0.25 * lcl) + (0.25 * lml)) / phaseVoltage;
             FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
           }
           ColorFeederAmpsBox(feederAmps, busRating);
