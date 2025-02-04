@@ -3565,6 +3565,7 @@ namespace ElectricalCommands
           {
             double maxPhaseVa = Math.Max(phA, Math.Max(phB, phC));
             feederAmps = safetyFactor * (maxPhaseVa + (0.25 * lcl) + (0.25 * lml)) / phaseVoltage;
+            feederAmps = Math.Round(feederAmps, 1);
             FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
           }
           ColorFeederAmpsBox(feederAmps, busRating);
