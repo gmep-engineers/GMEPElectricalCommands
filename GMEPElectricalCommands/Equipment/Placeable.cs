@@ -104,10 +104,10 @@ namespace ElectricalCommands.Equipment
       category,
       hp;
     public int voltage,
-      mca,
       mountingHeight,
       circuit;
-    public double fla;
+    public double fla,
+      mca;
     public bool is3Phase,
       hasPlug;
 
@@ -124,7 +124,7 @@ namespace ElectricalCommands.Equipment
       int parentDistance = -1,
       double xLoc = 0,
       double yLoc = 0,
-      int mca = -1,
+      float mca = -1,
       string hp = "",
       int mountingHeight = 18,
       int circuit = 0,

@@ -1853,7 +1853,7 @@ namespace ElectricalCommands.Equipment
           tb.Cells[row, 3].TextString =
             equipmentList[i].fla > 0 ? Math.Round(equipmentList[i].fla, 1).ToString() : "-";
           tb.Cells[row, 4].TextString = equipmentList[i].hp == "0" ? "-" : equipmentList[i].hp;
-          int mca = (equipmentList[i].mca);
+          double mca = (equipmentList[i].mca);
           if (mca <= 0)
           {
             mca = CADObjectCommands.GetMcaFromFla(equipmentList[i].fla);

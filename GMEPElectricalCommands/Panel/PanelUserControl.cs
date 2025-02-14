@@ -3598,20 +3598,20 @@ namespace ElectricalCommands
       }
     }
 
-    private void SaveLCLLMLObjectAsJson(object LCLLMLObject)
+    private void SaveLclLmlObjectAsJson(object LclLmlObj)
     {
       string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-      string filePath = Path.Combine(desktopPath, "LCLLMLObject.json");
+      string filePath = Path.Combine(desktopPath, "LclLmlObject.json");
 
       try
       {
-        string jsonString = JsonConvert.SerializeObject(LCLLMLObject, Formatting.Indented);
+        string jsonString = JsonConvert.SerializeObject(LclLmlObj, Formatting.Indented);
         File.WriteAllText(filePath, jsonString);
-        Console.WriteLine("LCLLMLObject saved successfully.");
+        Console.WriteLine("LclLmlObject saved successfully.");
       }
       catch (Exception ex)
       {
-        Console.WriteLine($"Error saving LCLLMLObject: {ex.Message}");
+        Console.WriteLine($"Error saving LclLmlObject: {ex.Message}");
       }
     }
 
