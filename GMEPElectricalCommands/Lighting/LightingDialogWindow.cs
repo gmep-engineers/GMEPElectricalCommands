@@ -14,7 +14,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using DocumentFormat.OpenXml.Drawing.Charts;
-using ElectricalCommands.Equipment;
+using ElectricalCommands.ElectricalEntity;
 using GMEPElectricalCommands.GmepDatabase;
 
 namespace ElectricalCommands.Lighting
@@ -25,7 +25,7 @@ namespace ElectricalCommands.Lighting
     private List<ListViewItem> lightingFixtureListViewList;
     private string projectId;
     public GmepDatabase gmepDb = new GmepDatabase();
-    private List<Equipment.Panel> panelList;
+    private List<ElectricalEntity.Panel> panelList;
     private bool isLoading;
 
     public LightingDialogWindow()
@@ -60,17 +60,17 @@ namespace ElectricalCommands.Lighting
       LightingFixturesListView.FullRowSelect = true;
       foreach (LightingFixture fixture in lightingFixtureList)
       {
-        ListViewItem item = new ListViewItem(fixture.name, 0);
-        item.SubItems.Add(fixture.blockName);
-        item.SubItems.Add(fixture.voltage.ToString());
-        item.SubItems.Add(fixture.qty.ToString());
-        item.SubItems.Add(fixture.mounting);
-        item.SubItems.Add(fixture.description);
-        item.SubItems.Add(fixture.manufacturer);
-        item.SubItems.Add(fixture.modelNo);
+        ListViewItem item = new ListViewItem(fixture.Name, 0);
+        item.SubItems.Add(fixture.BlockName);
+        item.SubItems.Add(fixture.Voltage.ToString());
+        item.SubItems.Add(fixture.Qty.ToString());
+        item.SubItems.Add(fixture.Mounting);
+        item.SubItems.Add(fixture.Description);
+        item.SubItems.Add(fixture.Manufacturer);
+        item.SubItems.Add(fixture.ModelNo);
         item.SubItems.Add("LED");
-        item.SubItems.Add(Math.Round(fixture.wattage, 1).ToString());
-        item.SubItems.Add(fixture.notes);
+        item.SubItems.Add(Math.Round(fixture.Wattage, 1).ToString());
+        item.SubItems.Add(fixture.Notes);
         LightingFixturesListView.Items.Add(item);
       }
       if (!updateOnly)
@@ -179,15 +179,15 @@ namespace ElectricalCommands.Lighting
         for (int i = 0; i < lightingFixtureList.Count; i++)
         {
           int row = i + 2;
-          tb.Cells[row, 2].TextString = lightingFixtureList[i].voltage.ToString();
-          tb.Cells[row, 3].TextString = lightingFixtureList[i].qty.ToString();
-          tb.Cells[row, 4].TextString = lightingFixtureList[i].mounting.ToUpper();
-          tb.Cells[row, 5].TextString = lightingFixtureList[i].description.ToUpper();
-          tb.Cells[row, 6].TextString = lightingFixtureList[i].manufacturer.ToUpper();
-          tb.Cells[row, 7].TextString = lightingFixtureList[i].modelNo.ToUpper();
+          tb.Cells[row, 2].TextString = lightingFixtureList[i].Voltage.ToString();
+          tb.Cells[row, 3].TextString = lightingFixtureList[i].Qty.ToString();
+          tb.Cells[row, 4].TextString = lightingFixtureList[i].Mounting.ToUpper();
+          tb.Cells[row, 5].TextString = lightingFixtureList[i].Description.ToUpper();
+          tb.Cells[row, 6].TextString = lightingFixtureList[i].Manufacturer.ToUpper();
+          tb.Cells[row, 7].TextString = lightingFixtureList[i].ModelNo.ToUpper();
           tb.Cells[row, 8].TextString = "LED";
-          tb.Cells[row, 9].TextString = lightingFixtureList[i].wattage.ToString();
-          tb.Cells[row, 10].TextString = lightingFixtureList[i].notes.ToUpper();
+          tb.Cells[row, 9].TextString = lightingFixtureList[i].Wattage.ToString();
+          tb.Cells[row, 10].TextString = lightingFixtureList[i].Notes.ToUpper();
         }
         tb.Cells[tableRows - 1, 0].TextString =
           "NOTES:\n  1) VERIFY WITH OWNER OR ARCHITECT BEFORE PURCHASING THE LIGHTING FIXTURES.\n 2) LIGHTING ABOVE FOOD OR UTENSILS SHALL BE SHATTERPROOF.";
@@ -199,8 +199,8 @@ namespace ElectricalCommands.Lighting
         {
           try
           {
-            ObjectId blockId = bt[fixture.blockName];
-            if (fixture.emCapable)
+            ObjectId blockId = bt[fixture.BlockName];
+            if (fixture.EmCapable)
             {
               using (
                 BlockReference acBlkRef = new BlockReference(
@@ -215,7 +215,7 @@ namespace ElectricalCommands.Lighting
                 acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
 
                 acBlkRef.Layer = "E-SYM1";
-                acBlkRef.ScaleFactors = new Scale3d(fixture.paperSpaceScale);
+                acBlkRef.ScaleFactors = new Scale3d(fixture.PaperSpaceScale);
                 tr.AddNewlyCreatedDBObject(acBlkRef, true);
               }
               using (
@@ -231,10 +231,10 @@ namespace ElectricalCommands.Lighting
                 acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
 
                 acBlkRef.Layer = "E-SYM1";
-                acBlkRef.ScaleFactors = new Scale3d(fixture.paperSpaceScale);
+                acBlkRef.ScaleFactors = new Scale3d(fixture.PaperSpaceScale);
                 tr.AddNewlyCreatedDBObject(acBlkRef, true);
               }
-              ObjectId emBlockId = bt[fixture.blockName + " EM"];
+              ObjectId emBlockId = bt[fixture.BlockName + " EM"];
               using (
                 BlockReference acBlkRef = new BlockReference(
                   new Point3d(startPoint.X + 1.3892, startPoint.Y - (1.58 + (0.8911 * r)), 0),
@@ -248,7 +248,7 @@ namespace ElectricalCommands.Lighting
                 acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
 
                 acBlkRef.Layer = "E-SYM1";
-                acBlkRef.ScaleFactors = new Scale3d(fixture.paperSpaceScale);
+                acBlkRef.ScaleFactors = new Scale3d(fixture.PaperSpaceScale);
                 tr.AddNewlyCreatedDBObject(acBlkRef, true);
               }
             }
@@ -267,7 +267,7 @@ namespace ElectricalCommands.Lighting
                 acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
 
                 acBlkRef.Layer = "E-SYM1";
-                acBlkRef.ScaleFactors = new Scale3d(fixture.paperSpaceScale);
+                acBlkRef.ScaleFactors = new Scale3d(fixture.PaperSpaceScale);
                 tr.AddNewlyCreatedDBObject(acBlkRef, true);
               }
             }
@@ -307,7 +307,7 @@ namespace ElectricalCommands.Lighting
               attrDef.LockPositionInBlock = false;
               attrDef.Tag = "tag";
               attrDef.IsMTextAttributeDefinition = false;
-              attrDef.TextString = fixture.name;
+              attrDef.TextString = fixture.Name;
               attrDef.Justify = AttachmentPoint.MiddleCenter;
               attrDef.Visible = true;
               attrDef.Invisible = false;
@@ -333,7 +333,7 @@ namespace ElectricalCommands.Lighting
               attrDef2.LockPositionInBlock = false;
               attrDef2.Tag = "wattage";
               attrDef2.IsMTextAttributeDefinition = false;
-              attrDef2.TextString = fixture.wattage.ToString();
+              attrDef2.TextString = fixture.Wattage.ToString();
               attrDef2.Justify = AttachmentPoint.MiddleCenter;
               attrDef2.Visible = true;
               attrDef2.Invisible = false;

@@ -3,15 +3,16 @@ using System.Text.RegularExpressions;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
+using ElectricalCommands.SingleLine;
 
-namespace ElectricalCommands.Equipment
+namespace ElectricalCommands.SingleLine
 {
-  public class EquipmentCommands
+  public class SingleLineCommands
   {
-    private EquipmentDialogWindow EquipWindow;
+    private SingleLineDialogWindow SingleLineWindow;
 
-    [CommandMethod("EQUIP")]
-    public void EQUIP()
+    [CommandMethod("SINGLELINE")]
+    public void SINGLELINE()
     {
       Document doc = Autodesk
         .AutoCAD
@@ -28,15 +29,15 @@ namespace ElectricalCommands.Equipment
       }
       try
       {
-        if (this.EquipWindow != null && !this.EquipWindow.IsDisposed)
+        if (this.SingleLineWindow != null && !this.SingleLineWindow.IsDisposed)
         {
-          this.EquipWindow.BringToFront();
+          this.SingleLineWindow.BringToFront();
         }
         else
         {
-          this.EquipWindow = new EquipmentDialogWindow(this);
-          this.EquipWindow.InitializeModal();
-          this.EquipWindow.Show();
+          this.SingleLineWindow = new SingleLineDialogWindow(this);
+          this.SingleLineWindow.InitializeModal();
+          this.SingleLineWindow.Show();
         }
       }
       catch (System.Exception ex)

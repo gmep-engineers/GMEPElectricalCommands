@@ -7,63 +7,89 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using GMEPElectricalCommands.GmepDatabase;
 
-namespace ElectricalCommands.Equipment
+namespace ElectricalCommands.SingleLine
 {
+  public enum Status
+  {
+    New,
+    Existing,
+    Relocated,
+  }
+
+  public enum NodeType
+  {
+    Undefined,
+    Service,
+    Meter,
+    MainBreaker,
+    DistributionBus,
+    DistributionBreaker,
+    Panel,
+    PanelBreaker,
+    Transformer,
+    Disconnect,
+  }
+
   public class SingleLine
   {
-    public double width;
-    public string type;
-    public string parentType;
-    public string name;
-    public string id;
-    public List<SingleLine> children;
-    public Point3d startingPoint;
-    public Point3d endingPoint;
-    public bool startChildRight;
-    public int parentDistance;
-    public double aicRating;
-    public double parentAicRating;
-    public double voltage;
-    public string feederWireSize;
-    public int feederWireCount;
-    public double transformerKva;
+    public double Width;
+    public NodeType Type;
+    public NodeType ParentType;
+    public string Name;
+    public string Id;
+    public string NodeId;
+    public List<SingleLine> Children;
+    public Point3d StartingPoint;
+    public Point3d EndingPoint;
+    public bool StartChildRight;
+    public int ParentDistance;
+    public double AicRating;
+    public double ParentAicRating;
+    public bool Is3Phase;
+    public int FeederWireCount;
+    public string FeederWireSize;
+
+    public string InputConnectorId;
+    public string OutputConnectorId;
+    public int StatusId;
+    public double Kva;
 
     public SingleLine()
     {
-      children = new List<SingleLine>();
-      parentDistance = 0;
+      Children = new List<SingleLine>();
+      ParentDistance = 0;
     }
 
     public virtual double AggregateWidths(bool fromDistribution = false)
     {
-      double sum = width;
-      foreach (SingleLine child in children)
+      double sum = Width;
+      foreach (SingleLine child in Children)
       {
         sum += child.AggregateWidths();
       }
-      width = sum;
+      Width = sum;
       return sum;
     }
 
-    public virtual void SetChildStartingPoints(Point3d startingPoint)
+    public virtual void SetChildStartingPoints(Point3d StartingPoint)
     {
-      this.startingPoint = startingPoint;
+      this.StartingPoint = StartingPoint;
 
-      foreach (SingleLine child in children)
+      foreach (SingleLine child in Children)
       {
-        child.SetChildStartingPoints(startingPoint);
-        child.parentType = type;
+        child.SetChildStartingPoints(StartingPoint);
+        child.ParentType = Type;
       }
     }
 
-    public void SetChildEndingPoint(Point3d endingPoint)
+    public void SetChildEndingPoint(Point3d EndingPoint)
     {
-      this.endingPoint = endingPoint;
+      this.EndingPoint = EndingPoint;
     }
 
     public virtual void Make()
     {
-      foreach (var child in children)
+      foreach (var child in Children)
       {
         child.Make();
       }
@@ -74,13 +100,13 @@ namespace ElectricalCommands.Equipment
       BlockTableRecord btr,
       BlockTable bt,
       Database db,
-      Point3d endingPoint
+      Point3d EndingPoint
     )
     {
       ObjectId aicMarker = bt["AIC MARKER (AUTO SINGLE LINE)"];
       using (
         BlockReference acBlkRef = new BlockReference(
-          new Point3d(endingPoint.X, endingPoint.Y + 0.125, 0),
+          new Point3d(EndingPoint.X, EndingPoint.Y + 0.125, 0),
           aicMarker
         )
       )
@@ -93,13 +119,13 @@ namespace ElectricalCommands.Equipment
       }
       GeneralCommands.CreateAndPositionText(
         tr,
-        "~" + Math.Round(aicRating, 0).ToString() + " AIC",
+        "~" + Math.Round(AicRating, 0).ToString() + " AIC",
         "gmep",
         0.0938,
         0.85,
         2,
         "E-TXT1",
-        new Point3d(endingPoint.X + 0.0678, endingPoint.Y + 0.08, 0)
+        new Point3d(EndingPoint.X + 0.0678, EndingPoint.Y + 0.08, 0)
       );
     }
 
@@ -108,7 +134,7 @@ namespace ElectricalCommands.Equipment
       BlockTableRecord btr,
       BlockTable bt,
       Database db,
-      Point3d startingPoint
+      Point3d StartingPoint
     )
     {
       GeneralCommands.CreateAndPositionText(
@@ -119,23 +145,23 @@ namespace ElectricalCommands.Equipment
         0.85,
         2,
         "E-TXT1",
-        new Point3d(startingPoint.X + 0.36, startingPoint.Y - 0.4, 0)
+        new Point3d(StartingPoint.X + 0.36, StartingPoint.Y - 0.4, 0)
       );
       // line to breaker
       LineData lineData1 = new LineData();
       lineData1.Layer = "E-CND1";
       lineData1.StartPoint = new SimpleVector3d();
       lineData1.EndPoint = new SimpleVector3d();
-      lineData1.StartPoint.X = startingPoint.X;
-      lineData1.StartPoint.Y = startingPoint.Y;
-      lineData1.EndPoint.X = startingPoint.X;
-      lineData1.EndPoint.Y = startingPoint.Y - (9.0 / 8.0);
+      lineData1.StartPoint.X = StartingPoint.X;
+      lineData1.StartPoint.Y = StartingPoint.Y;
+      lineData1.EndPoint.X = StartingPoint.X;
+      lineData1.EndPoint.Y = StartingPoint.Y - (9.0 / 8.0);
       CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
 
       ObjectId meterSymbol = bt["METER CTS (AUTO SINGLE LINE)"];
       using (
         BlockReference acBlkRef = new BlockReference(
-          new Point3d(startingPoint.X, startingPoint.Y - 0.5, 0),
+          new Point3d(StartingPoint.X, StartingPoint.Y - 0.5, 0),
           meterSymbol
         )
       )
@@ -155,8 +181,8 @@ namespace ElectricalCommands.Equipment
       {
         wireCount = Int32.Parse(feederSpec[1].ToString());
       }
-      feederWireCount = wireCount;
-      feederWireSize = Regex.Match(feederSpec, @"(?<=#)([0-9]+(\/0)?( KCMIL)?)").Groups[0].Value;
+      FeederWireCount = wireCount;
+      FeederWireSize = Regex.Match(feederSpec, @"(?<=#)([0-9]+(\/0)?( KCMIL)?)").Groups[0].Value;
     }
 
     public void MakeDistributionMeter(
@@ -164,7 +190,7 @@ namespace ElectricalCommands.Equipment
       BlockTableRecord btr,
       BlockTable bt,
       Database db,
-      Point3d startingPoint
+      Point3d StartingPoint
     )
     {
       GeneralCommands.CreateAndPositionText(
@@ -175,21 +201,21 @@ namespace ElectricalCommands.Equipment
         0.85,
         2,
         "E-TXT1",
-        new Point3d(startingPoint.X + 0.13, startingPoint.Y - 0.4, 0)
+        new Point3d(StartingPoint.X + 0.13, StartingPoint.Y - 0.4, 0)
       );
       LineData lineData1 = new LineData();
       lineData1.Layer = "E-CND1";
       lineData1.StartPoint = new SimpleVector3d();
       lineData1.EndPoint = new SimpleVector3d();
-      lineData1.StartPoint.X = startingPoint.X;
-      lineData1.StartPoint.Y = startingPoint.Y;
-      lineData1.EndPoint.X = startingPoint.X;
-      lineData1.EndPoint.Y = startingPoint.Y - 0.3980;
+      lineData1.StartPoint.X = StartingPoint.X;
+      lineData1.StartPoint.Y = StartingPoint.Y;
+      lineData1.EndPoint.X = StartingPoint.X;
+      lineData1.EndPoint.Y = StartingPoint.Y - 0.3980;
       CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
       ObjectId meterSymbol = bt["METER (AUTO SINGLE LINE)"];
       using (
         BlockReference acBlkRef = new BlockReference(
-          new Point3d(startingPoint.X, startingPoint.Y - 0.5230, 0),
+          new Point3d(StartingPoint.X, StartingPoint.Y - 0.5230, 0),
           meterSymbol
         )
       )
@@ -204,10 +230,10 @@ namespace ElectricalCommands.Equipment
       lineData2.Layer = "E-CND1";
       lineData2.StartPoint = new SimpleVector3d();
       lineData2.EndPoint = new SimpleVector3d();
-      lineData2.StartPoint.X = startingPoint.X;
-      lineData2.StartPoint.Y = startingPoint.Y - 0.6480;
-      lineData2.EndPoint.X = endingPoint.X;
-      lineData2.EndPoint.Y = startingPoint.Y - (9.0 / 8.0);
+      lineData2.StartPoint.X = StartingPoint.X;
+      lineData2.StartPoint.Y = StartingPoint.Y - 0.6480;
+      lineData2.EndPoint.X = EndingPoint.X;
+      lineData2.EndPoint.Y = StartingPoint.Y - (9.0 / 8.0);
       CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData2, 1);
     }
 
@@ -216,7 +242,7 @@ namespace ElectricalCommands.Equipment
       BlockTableRecord btr,
       BlockTable bt,
       Database db,
-      Point3d startingPoint,
+      Point3d StartingPoint,
       int mainBreakerSize,
       bool is3Phase
     )
@@ -229,7 +255,7 @@ namespace ElectricalCommands.Equipment
         0.85,
         2,
         "E-TXT1",
-        new Point3d(startingPoint.X + 0.15, startingPoint.Y - 1.19, 0)
+        new Point3d(StartingPoint.X + 0.15, StartingPoint.Y - 1.19, 0)
       );
       GeneralCommands.CreateAndPositionText(
         tr,
@@ -239,7 +265,7 @@ namespace ElectricalCommands.Equipment
         0.85,
         2,
         "E-TXT1",
-        new Point3d(startingPoint.X + 0.15, startingPoint.Y - 1.32, 0)
+        new Point3d(StartingPoint.X + 0.15, StartingPoint.Y - 1.32, 0)
       );
       GeneralCommands.CreateAndPositionText(
         tr,
@@ -249,12 +275,12 @@ namespace ElectricalCommands.Equipment
         0.85,
         2,
         "E-TXT1",
-        new Point3d(startingPoint.X + 0.15, startingPoint.Y - 1.45, 0)
+        new Point3d(StartingPoint.X + 0.15, StartingPoint.Y - 1.45, 0)
       );
       ObjectId breakerSymbol = bt["DS BREAKER (AUTO SINGLE LINE)"];
       using (
         BlockReference acBlkRef = new BlockReference(
-          new Point3d(startingPoint.X, startingPoint.Y - 1.125, 0),
+          new Point3d(StartingPoint.X, StartingPoint.Y - 1.125, 0),
           breakerSymbol
         )
       )
@@ -270,19 +296,75 @@ namespace ElectricalCommands.Equipment
     public void SaveAicRatings()
     {
       GmepDatabase gmepDb = new GmepDatabase();
-      if (type == "panel")
+      if (Type == NodeType.Panel)
       {
-        gmepDb.UpdatePanelAic(id, aicRating);
+        gmepDb.UpdatePanelAic(Id, AicRating);
       }
-      if (type == "transformer")
+      if (Type == NodeType.Transformer)
       {
-        gmepDb.UpdateTransformerAic(id, aicRating);
+        gmepDb.UpdateTransformerAic(Id, AicRating);
       }
-      foreach (var child in children)
+      foreach (var child in Children)
       {
         child.SaveAicRatings();
       }
     }
+  }
+
+  public class SLLink
+  {
+    public string Id;
+    public string InputConnectorNodeId;
+    public string OutputConnectorNodeId;
+
+    public SLLink(string Id, string InputConnectorNodeId, string OutputConnectorNodeId)
+    {
+      this.Id = Id;
+      this.InputConnectorNodeId = InputConnectorNodeId;
+      this.OutputConnectorNodeId = OutputConnectorNodeId;
+    }
+  }
+
+  public class SLConduit
+  {
+    public string LinkGuid;
+    public int ConduitSizeId;
+    public int WireSizeId;
+    public int GroundSizeId;
+    public int Length;
+  }
+
+  public class SLDistributionBreaker : SingleLine
+  {
+    public int NumPoles;
+    public bool IsFuseOnly;
+    public int PanelAmpRatingId;
+
+    public override void Make() { }
+  }
+
+  public class SLDistributionBus : SingleLine
+  {
+    public int BusAmpRatingId;
+  }
+
+  public class SLMeter : SingleLine
+  {
+    public bool HasCts;
+  }
+
+  public class SLPanelBreaker : SingleLine
+  {
+    public int NumPoles;
+    public int AmpRatingId;
+  }
+
+  public class SLMainBreaker : SingleLine
+  {
+    public int NumPoles;
+    public bool HasGroundFaultProtection;
+    public bool HasSurgeProtection;
+    public int AmpRatingId;
   }
 
   public class SLServiceFeeder : SingleLine
@@ -291,28 +373,31 @@ namespace ElectricalCommands.Equipment
     public string voltageSpec;
     public int amp;
 
+    public int VoltageId;
+    public int AmpRatingId;
+
     public SLServiceFeeder(string id, string name, bool isMultiMeter, int amp, string voltageSpec)
     {
-      type = "service feeder";
-      width = 2.5;
-      this.name = name;
-      this.id = id;
+      Type = NodeType.Service;
+      Width = 2.5;
+      this.Name = name;
+      this.Id = id;
       this.isMultiMeter = isMultiMeter;
       this.amp = amp;
       this.voltageSpec = voltageSpec;
     }
 
-    public override void SetChildStartingPoints(Point3d startingPoint)
+    public override void SetChildStartingPoints(Point3d StartingPoint)
     {
       double offset = 0;
-      this.startingPoint = startingPoint;
-      foreach (SingleLine child in children)
+      this.StartingPoint = StartingPoint;
+      foreach (SingleLine child in Children)
       {
         child.SetChildStartingPoints(
-          new Point3d(startingPoint.X + 2.5 + offset, startingPoint.Y, startingPoint.Z)
+          new Point3d(StartingPoint.X + 2.5 + offset, StartingPoint.Y, StartingPoint.Z)
         );
-        offset += width + 1;
-        child.parentType = type;
+        offset += Width + 1;
+        child.ParentType = Type;
       }
     }
 
@@ -335,105 +420,105 @@ namespace ElectricalCommands.Equipment
         boxLine1.Layer = "E-SYM1";
         boxLine1.StartPoint = new SimpleVector3d();
         boxLine1.EndPoint = new SimpleVector3d();
-        boxLine1.StartPoint.X = startingPoint.X;
-        boxLine1.StartPoint.Y = startingPoint.Y;
-        boxLine1.EndPoint.X = startingPoint.X + 2.5;
-        boxLine1.EndPoint.Y = startingPoint.Y;
+        boxLine1.StartPoint.X = StartingPoint.X;
+        boxLine1.StartPoint.Y = StartingPoint.Y;
+        boxLine1.EndPoint.X = StartingPoint.X + 2.5;
+        boxLine1.EndPoint.Y = StartingPoint.Y;
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine1, 1, "HIDDEN");
 
         LineData boxLine2 = new LineData();
         boxLine2.Layer = "E-SYM1";
         boxLine2.StartPoint = new SimpleVector3d();
         boxLine2.EndPoint = new SimpleVector3d();
-        boxLine2.StartPoint.X = startingPoint.X;
-        boxLine2.StartPoint.Y = startingPoint.Y;
-        boxLine2.EndPoint.X = startingPoint.X;
-        boxLine2.EndPoint.Y = startingPoint.Y - 2;
+        boxLine2.StartPoint.X = StartingPoint.X;
+        boxLine2.StartPoint.Y = StartingPoint.Y;
+        boxLine2.EndPoint.X = StartingPoint.X;
+        boxLine2.EndPoint.Y = StartingPoint.Y - 2;
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine2, 1, "HIDDEN");
 
         LineData boxLine3 = new LineData();
         boxLine3.Layer = "E-SYM1";
         boxLine3.StartPoint = new SimpleVector3d();
         boxLine3.EndPoint = new SimpleVector3d();
-        boxLine3.StartPoint.X = startingPoint.X;
-        boxLine3.StartPoint.Y = startingPoint.Y - 2;
-        boxLine3.EndPoint.X = startingPoint.X + 2.5;
-        boxLine3.EndPoint.Y = startingPoint.Y - 2;
+        boxLine3.StartPoint.X = StartingPoint.X;
+        boxLine3.StartPoint.Y = StartingPoint.Y - 2;
+        boxLine3.EndPoint.X = StartingPoint.X + 2.5;
+        boxLine3.EndPoint.Y = StartingPoint.Y - 2;
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine3, 1, "HIDDEN");
 
         LineData boxLine4 = new LineData();
         boxLine4.Layer = "E-SYM1";
         boxLine4.StartPoint = new SimpleVector3d();
         boxLine4.EndPoint = new SimpleVector3d();
-        boxLine4.StartPoint.X = startingPoint.X + 0.75;
-        boxLine4.StartPoint.Y = startingPoint.Y;
-        boxLine4.EndPoint.X = startingPoint.X + 0.75;
-        boxLine4.EndPoint.Y = startingPoint.Y - 2;
+        boxLine4.StartPoint.X = StartingPoint.X + 0.75;
+        boxLine4.StartPoint.Y = StartingPoint.Y;
+        boxLine4.EndPoint.X = StartingPoint.X + 0.75;
+        boxLine4.EndPoint.Y = StartingPoint.Y - 2;
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine4, 1, "HIDDEN");
 
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
-        conduitLine1.StartPoint.X = startingPoint.X + 0.375;
-        conduitLine1.StartPoint.Y = startingPoint.Y - 0.2188;
-        conduitLine1.EndPoint.X = startingPoint.X + 0.375;
-        conduitLine1.EndPoint.Y = startingPoint.Y - 2;
+        conduitLine1.StartPoint.X = StartingPoint.X + 0.375;
+        conduitLine1.StartPoint.Y = StartingPoint.Y - 0.2188;
+        conduitLine1.EndPoint.X = StartingPoint.X + 0.375;
+        conduitLine1.EndPoint.Y = StartingPoint.Y - 2;
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
 
         LineData conduitLine2 = new LineData();
         conduitLine2.Layer = "E-CND1";
         conduitLine2.StartPoint = new SimpleVector3d();
         conduitLine2.EndPoint = new SimpleVector3d();
-        conduitLine2.StartPoint.X = startingPoint.X + 0.375;
-        conduitLine2.StartPoint.Y = startingPoint.Y - 0.2188;
-        conduitLine2.EndPoint.X = startingPoint.X + 1.25;
-        conduitLine2.EndPoint.Y = startingPoint.Y - 0.2188;
+        conduitLine2.StartPoint.X = StartingPoint.X + 0.375;
+        conduitLine2.StartPoint.Y = StartingPoint.Y - 0.2188;
+        conduitLine2.EndPoint.X = StartingPoint.X + 1.25;
+        conduitLine2.EndPoint.Y = StartingPoint.Y - 0.2188;
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine2, 1);
 
         LineData conduitLine3 = new LineData();
         conduitLine3.Layer = "E-CND1";
         conduitLine3.StartPoint = new SimpleVector3d();
         conduitLine3.EndPoint = new SimpleVector3d();
-        conduitLine3.StartPoint.X = startingPoint.X + 1.25;
-        conduitLine3.StartPoint.Y = startingPoint.Y - 1.5;
-        conduitLine3.EndPoint.X = startingPoint.X + 2;
-        conduitLine3.EndPoint.Y = startingPoint.Y - 1.5;
+        conduitLine3.StartPoint.X = StartingPoint.X + 1.25;
+        conduitLine3.StartPoint.Y = StartingPoint.Y - 1.5;
+        conduitLine3.EndPoint.X = StartingPoint.X + 2;
+        conduitLine3.EndPoint.Y = StartingPoint.Y - 1.5;
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine3, 1);
 
         LineData conduitLine4 = new LineData();
         conduitLine4.Layer = "E-CND1";
         conduitLine4.StartPoint = new SimpleVector3d();
         conduitLine4.EndPoint = new SimpleVector3d();
-        conduitLine4.StartPoint.X = startingPoint.X + 2;
-        conduitLine4.StartPoint.Y = startingPoint.Y - 1.5;
-        conduitLine4.EndPoint.X = startingPoint.X + 2;
-        conduitLine4.EndPoint.Y = startingPoint.Y - 0.2188;
+        conduitLine4.StartPoint.X = StartingPoint.X + 2;
+        conduitLine4.StartPoint.Y = StartingPoint.Y - 1.5;
+        conduitLine4.EndPoint.X = StartingPoint.X + 2;
+        conduitLine4.EndPoint.Y = StartingPoint.Y - 0.2188;
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine4, 1);
 
         LineData conduitLine5 = new LineData();
         conduitLine5.Layer = "E-CND1";
         conduitLine5.StartPoint = new SimpleVector3d();
         conduitLine5.EndPoint = new SimpleVector3d();
-        conduitLine5.StartPoint.X = startingPoint.X + 2;
-        conduitLine5.StartPoint.Y = startingPoint.Y - 0.2188;
-        conduitLine5.EndPoint.X = startingPoint.X + 2.25;
-        conduitLine5.EndPoint.Y = startingPoint.Y - 0.2188;
+        conduitLine5.StartPoint.X = StartingPoint.X + 2;
+        conduitLine5.StartPoint.Y = StartingPoint.Y - 0.2188;
+        conduitLine5.EndPoint.X = StartingPoint.X + 2.25;
+        conduitLine5.EndPoint.Y = StartingPoint.Y - 0.2188;
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine5, 1);
 
         LineData feederLine = new LineData();
         feederLine.Layer = "E-CND1";
         feederLine.StartPoint = new SimpleVector3d();
         feederLine.EndPoint = new SimpleVector3d();
-        feederLine.StartPoint.X = startingPoint.X + 0.375;
-        feederLine.StartPoint.Y = startingPoint.Y - 2;
-        feederLine.EndPoint.X = startingPoint.X + 0.375;
-        feederLine.EndPoint.Y = startingPoint.Y - 2.875;
+        feederLine.StartPoint.X = StartingPoint.X + 0.375;
+        feederLine.StartPoint.Y = StartingPoint.Y - 2;
+        feederLine.EndPoint.X = StartingPoint.X + 0.375;
+        feederLine.EndPoint.Y = StartingPoint.Y - 2.875;
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, feederLine, 1, "HIDDEN2");
         ObjectId arrowSymbol = bt["DOWN ARROW (AUTO SINGLE LINE)"];
         using (
           BlockReference acBlkRef = new BlockReference(
-            new Point3d(startingPoint.X + 0.375, startingPoint.Y - 2.875, 0),
+            new Point3d(StartingPoint.X + 0.375, StartingPoint.Y - 2.875, 0),
             arrowSymbol
           )
         )
@@ -447,7 +532,7 @@ namespace ElectricalCommands.Equipment
         ObjectId dash1 = bt["SERVICE FEEDER DASH (AUTO SINGLE LINE)"];
         using (
           BlockReference acBlkRef = new BlockReference(
-            new Point3d(startingPoint.X + 0.375, startingPoint.Y - 0.5, 0),
+            new Point3d(StartingPoint.X + 0.375, StartingPoint.Y - 0.5, 0),
             dash1
           )
         )
@@ -461,7 +546,7 @@ namespace ElectricalCommands.Equipment
         ObjectId dash2 = bt["SERVICE FEEDER DASH (AUTO SINGLE LINE)"];
         using (
           BlockReference acBlkRef = new BlockReference(
-            new Point3d(startingPoint.X + 0.375, startingPoint.Y - 1.5, 0),
+            new Point3d(StartingPoint.X + 0.375, StartingPoint.Y - 1.5, 0),
             dash2
           )
         )
@@ -476,7 +561,7 @@ namespace ElectricalCommands.Equipment
         ObjectId gndBus = bt["GND BUS (AUTO SINGLE LINE)"];
         using (
           BlockReference acBlkRef = new BlockReference(
-            new Point3d(startingPoint.X + 1.125, startingPoint.Y - 1.85, 0),
+            new Point3d(StartingPoint.X + 1.125, StartingPoint.Y - 1.85, 0),
             gndBus
           )
         )
@@ -495,7 +580,7 @@ namespace ElectricalCommands.Equipment
           0.85,
           2,
           "E-TXT1",
-          new Point3d(startingPoint.X + 1, startingPoint.Y - 1.75, 0)
+          new Point3d(StartingPoint.X + 1, StartingPoint.Y - 1.75, 0)
         );
         GeneralCommands.CreateAndPositionText(
           tr,
@@ -505,7 +590,7 @@ namespace ElectricalCommands.Equipment
           0.85,
           2,
           "E-TXT1",
-          new Point3d(startingPoint.X + 1.6, startingPoint.Y - 2.2, 0)
+          new Point3d(StartingPoint.X + 1.6, StartingPoint.Y - 2.2, 0)
         );
         GeneralCommands.CreateAndPositionText(
           tr,
@@ -515,7 +600,7 @@ namespace ElectricalCommands.Equipment
           0.85,
           2,
           "E-TXT1",
-          new Point3d(startingPoint.X + 1.6, startingPoint.Y - 2.33, 0)
+          new Point3d(StartingPoint.X + 1.6, StartingPoint.Y - 2.33, 0)
         );
         GeneralCommands.CreateAndPositionText(
           tr,
@@ -525,7 +610,7 @@ namespace ElectricalCommands.Equipment
           0.85,
           2,
           "E-TXT1",
-          new Point3d(startingPoint.X + 1.37, startingPoint.Y - 2.6, 0)
+          new Point3d(StartingPoint.X + 1.37, StartingPoint.Y - 2.6, 0)
         );
         GeneralCommands.CreateAndPositionText(
           tr,
@@ -535,12 +620,12 @@ namespace ElectricalCommands.Equipment
           0.85,
           2,
           "E-TXT1",
-          new Point3d(startingPoint.X + 1.37, startingPoint.Y - 2.73, 0)
+          new Point3d(StartingPoint.X + 1.37, StartingPoint.Y - 2.73, 0)
         );
         ObjectId spoon1 = bt["SPOON SMALL LEFT (AUTO SINGLE LINE)"];
         using (
           BlockReference acBlkRef = new BlockReference(
-            new Point3d(startingPoint.X + 1.35, startingPoint.Y - 2.15, 0),
+            new Point3d(StartingPoint.X + 1.35, StartingPoint.Y - 2.15, 0),
             spoon1
           )
         )
@@ -554,7 +639,7 @@ namespace ElectricalCommands.Equipment
         ObjectId spoon2 = bt["SPOON SMALL LEFT (AUTO SINGLE LINE)"];
         using (
           BlockReference acBlkRef = new BlockReference(
-            new Point3d(startingPoint.X + 1.125, startingPoint.Y - 2.55, 0),
+            new Point3d(StartingPoint.X + 1.125, StartingPoint.Y - 2.55, 0),
             spoon2
           )
         )
@@ -568,7 +653,7 @@ namespace ElectricalCommands.Equipment
         ObjectId labelLeader1 = bt["SECTION LABEL LEADER (AUTO SINGLE LINE)"];
         using (
           BlockReference acBlkRef = new BlockReference(
-            new Point3d(startingPoint.X + 0.25, startingPoint.Y, 0),
+            new Point3d(StartingPoint.X + 0.25, StartingPoint.Y, 0),
             labelLeader1
           )
         )
@@ -587,7 +672,7 @@ namespace ElectricalCommands.Equipment
           0.85,
           2,
           "E-TXT1",
-          new Point3d(startingPoint.X + 0.35, startingPoint.Y + 0.53, 0)
+          new Point3d(StartingPoint.X + 0.35, StartingPoint.Y + 0.53, 0)
         );
         GeneralCommands.CreateAndPositionText(
           tr,
@@ -597,7 +682,7 @@ namespace ElectricalCommands.Equipment
           0.85,
           2,
           "E-TXT1",
-          new Point3d(startingPoint.X + 0.35, startingPoint.Y + 0.38, 0)
+          new Point3d(StartingPoint.X + 0.35, StartingPoint.Y + 0.38, 0)
         );
         GeneralCommands.CreateAndPositionText(
           tr,
@@ -607,14 +692,14 @@ namespace ElectricalCommands.Equipment
           0.85,
           2,
           "E-TXT1",
-          new Point3d(startingPoint.X + 0.35, startingPoint.Y + 0.25, 0)
+          new Point3d(StartingPoint.X + 0.35, StartingPoint.Y + 0.25, 0)
         );
         if (isMultiMeter)
         {
           ObjectId labelLeader2 = bt["SECTION LABEL LEADER SMALL (AUTO SINGLE LINE)"];
           using (
             BlockReference acBlkRef = new BlockReference(
-              new Point3d(startingPoint.X + 1.625, startingPoint.Y, 0),
+              new Point3d(StartingPoint.X + 1.625, StartingPoint.Y, 0),
               labelLeader2
             )
           )
@@ -631,7 +716,7 @@ namespace ElectricalCommands.Equipment
           ObjectId labelLeader2 = bt["SECTION LABEL LEADER (AUTO SINGLE LINE)"];
           using (
             BlockReference acBlkRef = new BlockReference(
-              new Point3d(startingPoint.X + 1.625, startingPoint.Y, 0),
+              new Point3d(StartingPoint.X + 1.625, StartingPoint.Y, 0),
               labelLeader2
             )
           )
@@ -646,7 +731,7 @@ namespace ElectricalCommands.Equipment
         ObjectId spoon3 = bt["SPOON SMALL RIGHT (AUTO SINGLE LINE)"];
         using (
           BlockReference acBlkRef = new BlockReference(
-            new Point3d(startingPoint.X + 0.375, startingPoint.Y - 2.25, 0),
+            new Point3d(StartingPoint.X + 0.375, StartingPoint.Y - 2.25, 0),
             spoon3
           )
         )
@@ -665,7 +750,7 @@ namespace ElectricalCommands.Equipment
           0.85,
           2,
           "E-TXT1",
-          new Point3d(startingPoint.X - 0.25, startingPoint.Y - 2.3, 0)
+          new Point3d(StartingPoint.X - 0.25, StartingPoint.Y - 2.3, 0)
         );
         GeneralCommands.CreateAndPositionText(
           tr,
@@ -675,7 +760,7 @@ namespace ElectricalCommands.Equipment
           0.85,
           2,
           "E-TXT1",
-          new Point3d(startingPoint.X - 0.25, startingPoint.Y - 2.43, 0)
+          new Point3d(StartingPoint.X - 0.25, StartingPoint.Y - 2.43, 0)
         );
         GeneralCommands.CreateAndPositionText(
           tr,
@@ -685,11 +770,11 @@ namespace ElectricalCommands.Equipment
           0.85,
           2,
           "E-TXT1",
-          new Point3d(startingPoint.X - 0.25, startingPoint.Y - 2.56, 0)
+          new Point3d(StartingPoint.X - 0.25, StartingPoint.Y - 2.56, 0)
         );
         tr.Commit();
       }
-      foreach (var child in children)
+      foreach (var child in Children)
       {
         child.Make();
       }
@@ -702,21 +787,10 @@ namespace ElectricalCommands.Equipment
 
     public SLMainBreakerSection(string id, string name)
     {
-      type = "main breaker section";
-      width = 1;
-      this.name = name;
-      this.id = id;
-    }
-  }
-
-  public class SLDistributionSection : SingleLine
-  {
-    public SLDistributionSection(string id, string name)
-    {
-      type = "distribution section";
-      width = 1;
-      this.name = name;
-      this.id = id;
+      Type = NodeType.MainBreaker;
+      Width = 1;
+      this.Name = name;
+      this.Id = id;
     }
   }
 
@@ -734,16 +808,22 @@ namespace ElectricalCommands.Equipment
     public string voltageSpec;
     public bool is3Phase;
 
-    public SLPanel(string id, string name, bool isDistribution, bool hasMeter, int parentDistance)
+    public string Voltage;
+    public bool IsMlo;
+    public int PanelAmpRatingId;
+    public int MaintAmpRatingId;
+    public double TransformerKva;
+
+    public SLPanel(string id, string name, bool isDistribution, bool hasMeter, int ParentDistance)
     {
-      type = "panel";
-      width = 2;
-      this.name = name;
-      this.id = id;
+      Type = NodeType.Panel;
+      Width = 2;
+      this.Name = name;
+      this.Id = id;
       this.isDistribution = isDistribution;
       this.hasMeter = hasMeter;
-      this.parentDistance = parentDistance;
-      startChildRight = true;
+      this.ParentDistance = ParentDistance;
+      StartChildRight = true;
     }
 
     public void MakePanel(
@@ -751,7 +831,7 @@ namespace ElectricalCommands.Equipment
       BlockTableRecord btr,
       BlockTable bt,
       Database db,
-      Point3d endingPoint,
+      Point3d EndingPoint,
       string name
     )
     {
@@ -763,7 +843,7 @@ namespace ElectricalCommands.Equipment
         0.85,
         2,
         "E-TXT1",
-        new Point3d(endingPoint.X, endingPoint.Y - 0.44, 0),
+        new Point3d(EndingPoint.X, EndingPoint.Y - 0.44, 0),
         TextHorizontalMode.TextCenter,
         TextVerticalMode.TextBase,
         AttachmentPoint.BaseCenter
@@ -776,7 +856,7 @@ namespace ElectricalCommands.Equipment
         0.85,
         2,
         "E-TXT1",
-        new Point3d(endingPoint.X, endingPoint.Y - 0.57, 0),
+        new Point3d(EndingPoint.X, EndingPoint.Y - 0.57, 0),
         TextHorizontalMode.TextCenter,
         TextVerticalMode.TextBase,
         AttachmentPoint.BaseCenter
@@ -789,22 +869,22 @@ namespace ElectricalCommands.Equipment
         0.85,
         2,
         "E-TXT1",
-        new Point3d(endingPoint.X, endingPoint.Y - 0.70, 0),
+        new Point3d(EndingPoint.X, EndingPoint.Y - 0.70, 0),
         TextHorizontalMode.TextCenter,
         TextVerticalMode.TextBase,
         AttachmentPoint.BaseCenter
       ); // panel rectangle
       Polyline2dData polyData = new Polyline2dData();
       polyData.Layer = "E-SYMBOL";
-      polyData.Vertices.Add(new SimpleVector3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y, 0));
+      polyData.Vertices.Add(new SimpleVector3d(EndingPoint.X - (5.0 / 16.0), EndingPoint.Y, 0));
       polyData.Vertices.Add(
-        new SimpleVector3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (17.0 / 16.0), 0)
+        new SimpleVector3d(EndingPoint.X - (5.0 / 16.0), EndingPoint.Y - (17.0 / 16.0), 0)
       );
       polyData.Vertices.Add(
-        new SimpleVector3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (17.0 / 16.0), 0)
+        new SimpleVector3d(EndingPoint.X + (5.0 / 16.0), EndingPoint.Y - (17.0 / 16.0), 0)
       );
-      polyData.Vertices.Add(new SimpleVector3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y, 0));
-      polyData.Vertices.Add(new SimpleVector3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y, 0));
+      polyData.Vertices.Add(new SimpleVector3d(EndingPoint.X + (5.0 / 16.0), EndingPoint.Y, 0));
+      polyData.Vertices.Add(new SimpleVector3d(EndingPoint.X - (5.0 / 16.0), EndingPoint.Y, 0));
       polyData.Closed = true;
       CADObjectCommands.CreatePolyline2d(new Point3d(), tr, btr, polyData, 1);
     }
@@ -814,7 +894,7 @@ namespace ElectricalCommands.Equipment
       BlockTableRecord btr,
       BlockTable bt,
       Database db,
-      Point3d endingPoint,
+      Point3d EndingPoint,
       int mainBreakerSize,
       bool is3Phase
     )
@@ -823,15 +903,15 @@ namespace ElectricalCommands.Equipment
       arcData2.Layer = "E-CND1";
       arcData2.Center = new SimpleVector3d();
       arcData2.Radius = 1.0 / 8.0;
-      arcData2.Center.X = endingPoint.X - 0.0302;
-      arcData2.Center.Y = endingPoint.Y - (1.0 / 8.0) + 0.0037;
+      arcData2.Center.X = EndingPoint.X - 0.0302;
+      arcData2.Center.Y = EndingPoint.Y - (1.0 / 8.0) + 0.0037;
       arcData2.StartAngle = 4.92183;
       arcData2.EndAngle = 1.32645;
       CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData2, 1);
       ObjectId breakerLeader = bt["BREAKER LEADER RIGHT (AUTO SINGLE LINE)"];
       using (
         BlockReference acBlkRef = new BlockReference(
-          new Point3d(endingPoint.X, endingPoint.Y, 0),
+          new Point3d(EndingPoint.X, EndingPoint.Y, 0),
           breakerLeader
         )
       )
@@ -850,100 +930,100 @@ namespace ElectricalCommands.Equipment
         0.85,
         2,
         "E-TXT1",
-        new Point3d(endingPoint.X - 0.42, endingPoint.Y + 0.165, 0),
+        new Point3d(EndingPoint.X - 0.42, EndingPoint.Y + 0.165, 0),
         TextHorizontalMode.TextCenter,
         TextVerticalMode.TextBase,
         AttachmentPoint.BaseRight
       );
     }
 
-    public override void SetChildStartingPoints(Point3d startingPoint)
+    public override void SetChildStartingPoints(Point3d StartingPoint)
     {
-      this.startingPoint = startingPoint;
+      this.StartingPoint = StartingPoint;
       if (isDistribution)
       {
         double offset = 0;
-        foreach (SingleLine child in children)
+        foreach (SingleLine child in Children)
         {
           child.SetChildEndingPoint(
             new Point3d(
-              startingPoint.X + (child.width / 2) + offset,
-              startingPoint.Y - 4.5,
-              startingPoint.Z
+              StartingPoint.X + (child.Width / 2) + offset,
+              StartingPoint.Y - 4.5,
+              StartingPoint.Z
             )
           );
           child.SetChildStartingPoints(
             new Point3d(
-              startingPoint.X + (child.width / 2) + offset,
-              startingPoint.Y - 0.25,
-              startingPoint.Z
+              StartingPoint.X + (child.Width / 2) + offset,
+              StartingPoint.Y - 0.25,
+              StartingPoint.Z
             )
           );
-          offset += child.width;
-          child.parentType = type;
+          offset += child.Width;
+          child.ParentType = Type;
         }
       }
       else
       {
         int index = 0;
-        for (int i = 0; i < children.Count; i++)
+        for (int i = 0; i < Children.Count; i++)
         {
-          SingleLine child = children[i];
-          child.parentType = type;
-          if (startChildRight)
+          SingleLine child = Children[i];
+          child.ParentType = Type;
+          if (StartChildRight)
           {
             if (index == 0)
             {
-              child.startChildRight = true;
+              child.StartChildRight = true;
               child.SetChildEndingPoint(
-                new Point3d(endingPoint.X + 2 + (child.children.Count / 2), endingPoint.Y - 3.25, 0)
+                new Point3d(EndingPoint.X + 2 + (child.Children.Count / 2), EndingPoint.Y - 3.25, 0)
               );
               child.SetChildStartingPoints(
-                new Point3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (7.0 / 8.0), 0)
+                new Point3d(EndingPoint.X + (5.0 / 16.0), EndingPoint.Y - (7.0 / 8.0), 0)
               );
             }
             if (index == 1)
             {
-              child.startChildRight = false;
+              child.StartChildRight = false;
               child.SetChildEndingPoint(
-                new Point3d(endingPoint.X - 2 - (child.children.Count / 2), endingPoint.Y - 3.25, 0)
+                new Point3d(EndingPoint.X - 2 - (child.Children.Count / 2), EndingPoint.Y - 3.25, 0)
               );
               child.SetChildStartingPoints(
-                new Point3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (7.0 / 8.0), 0)
+                new Point3d(EndingPoint.X - (5.0 / 16.0), EndingPoint.Y - (7.0 / 8.0), 0)
               );
             }
             if (index == 2)
             {
-              child.startChildRight = true;
+              child.StartChildRight = true;
               child.SetChildEndingPoint(
                 new Point3d(
-                  endingPoint.X
-                    + (child.children.Count / 2)
-                    + (2 * children[i - 2].children.Count)
+                  EndingPoint.X
+                    + (child.Children.Count / 2)
+                    + (2 * Children[i - 2].Children.Count)
                     + 4,
-                  endingPoint.Y - 3.25,
+                  EndingPoint.Y - 3.25,
                   0
                 )
               );
               child.SetChildStartingPoints(
-                new Point3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (2.0 / 8.0), 0)
+                new Point3d(EndingPoint.X + (5.0 / 16.0), EndingPoint.Y - (2.0 / 8.0), 0)
               );
             }
             if (index == 3)
             {
-              child.startChildRight = false;
+              child.StartChildRight = false;
               child.SetChildEndingPoint(
                 new Point3d(
-                  endingPoint.X
-                    - (child.children.Count / 2)
-                    - (2 * children[i - 2].children.Count)
+                  EndingPoint.X
+                    - (child.Children.Count / 2)
+                    - (2 * Children[i - 2].Children.Count)
                     - 4,
-                  endingPoint.Y - 3.25,
+                  EndingPoint.Y - 3.25,
                   0
                 )
               );
               child.SetChildStartingPoints(
-                new Point3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (2.0 / 8.0), 0)
+                new Point3d(EndingPoint.X - (5.0 / 16.0), EndingPoint.Y - (2.0 / 8.0), 0)
               );
             }
           }
@@ -951,52 +1031,52 @@ namespace ElectricalCommands.Equipment
           {
             if (index == 1)
             {
-              child.startChildRight = false;
-              child.SetChildEndingPoint(new Point3d(endingPoint.X + 2, endingPoint.Y - 3.25, 0));
+              child.StartChildRight = false;
+              child.SetChildEndingPoint(new Point3d(EndingPoint.X + 2, EndingPoint.Y - 3.25, 0));
               child.SetChildStartingPoints(
-                new Point3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (7.0 / 8.0), 0)
+                new Point3d(EndingPoint.X + (5.0 / 16.0), EndingPoint.Y - (7.0 / 8.0), 0)
               );
             }
             if (index == 0)
             {
-              child.startChildRight = true;
-              child.SetChildEndingPoint(new Point3d(endingPoint.X - 2, endingPoint.Y - 3.25, 0));
+              child.StartChildRight = true;
+              child.SetChildEndingPoint(new Point3d(EndingPoint.X - 2, EndingPoint.Y - 3.25, 0));
               child.SetChildStartingPoints(
-                new Point3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (7.0 / 8.0), 0)
+                new Point3d(EndingPoint.X - (5.0 / 16.0), EndingPoint.Y - (7.0 / 8.0), 0)
               );
             }
             if (index == 3)
             {
-              child.startChildRight = false;
+              child.StartChildRight = false;
               child.SetChildEndingPoint(
                 new Point3d(
-                  endingPoint.X
-                    + (child.children.Count / 2)
-                    + (2 * children[i - 2].children.Count)
+                  EndingPoint.X
+                    + (child.Children.Count / 2)
+                    + (2 * Children[i - 2].Children.Count)
                     + 4,
-                  endingPoint.Y - 3.25,
+                  EndingPoint.Y - 3.25,
                   0
                 )
               );
               child.SetChildStartingPoints(
-                new Point3d(endingPoint.X + (5.0 / 16.0), endingPoint.Y - (2.0 / 8.0), 0)
+                new Point3d(EndingPoint.X + (5.0 / 16.0), EndingPoint.Y - (2.0 / 8.0), 0)
               );
             }
             if (index == 2)
             {
-              child.startChildRight = true;
+              child.StartChildRight = true;
               child.SetChildEndingPoint(
                 new Point3d(
-                  endingPoint.X
-                    - (child.children.Count / 2)
-                    - (2 * children[i - 2].children.Count)
+                  EndingPoint.X
+                    - (child.Children.Count / 2)
+                    - (2 * Children[i - 2].Children.Count)
                     - 4,
-                  endingPoint.Y - 3.25,
+                  EndingPoint.Y - 3.25,
                   0
                 )
               );
               child.SetChildStartingPoints(
-                new Point3d(endingPoint.X - (5.0 / 16.0), endingPoint.Y - (2.0 / 8.0), 0)
+                new Point3d(EndingPoint.X - (5.0 / 16.0), EndingPoint.Y - (2.0 / 8.0), 0)
               );
             }
           }
@@ -1030,7 +1110,7 @@ namespace ElectricalCommands.Equipment
             0.85,
             2,
             "E-TXT1",
-            new Point3d(startingPoint.X + 0.1, startingPoint.Y - 0.145, 0)
+            new Point3d(StartingPoint.X + 0.1, StartingPoint.Y - 0.145, 0)
           );
           GeneralCommands.CreateAndPositionText(
             tr,
@@ -1040,7 +1120,7 @@ namespace ElectricalCommands.Equipment
             0.85,
             2,
             "E-TXT1",
-            new Point3d(startingPoint.X - 0.75, startingPoint.Y + 0.53, 0)
+            new Point3d(StartingPoint.X - 0.75, StartingPoint.Y + 0.53, 0)
           );
           GeneralCommands.CreateAndPositionText(
             tr,
@@ -1050,7 +1130,7 @@ namespace ElectricalCommands.Equipment
             0.85,
             2,
             "E-TXT1",
-            new Point3d(startingPoint.X - 0.75, startingPoint.Y + 0.38, 0)
+            new Point3d(StartingPoint.X - 0.75, StartingPoint.Y + 0.38, 0)
           );
           GeneralCommands.CreateAndPositionText(
             tr,
@@ -1060,7 +1140,7 @@ namespace ElectricalCommands.Equipment
             0.85,
             2,
             "E-TXT1",
-            new Point3d(startingPoint.X - 0.75, startingPoint.Y + 0.25, 0)
+            new Point3d(StartingPoint.X - 0.75, StartingPoint.Y + 0.25, 0)
           );
           GeneralCommands.CreateAndPositionText(
             tr,
@@ -1070,7 +1150,7 @@ namespace ElectricalCommands.Equipment
             0.85,
             2,
             "E-TXT1",
-            new Point3d(startingPoint.X + 0.6, startingPoint.Y + 0.53, 0)
+            new Point3d(StartingPoint.X + 0.6, StartingPoint.Y + 0.53, 0)
           );
           string voltageText = "";
           if (voltageSpec.StartsWith("120/208 3"))
@@ -1097,7 +1177,7 @@ namespace ElectricalCommands.Equipment
             0.85,
             2,
             "E-TXT1",
-            new Point3d(startingPoint.X + 0.6, startingPoint.Y + 0.38, 0)
+            new Point3d(StartingPoint.X + 0.6, StartingPoint.Y + 0.38, 0)
           );
           GeneralCommands.CreateAndPositionText(
             tr,
@@ -1107,61 +1187,61 @@ namespace ElectricalCommands.Equipment
             0.85,
             2,
             "E-TXT1",
-            new Point3d(startingPoint.X + 0.6, startingPoint.Y + 0.25, 0)
+            new Point3d(StartingPoint.X + 0.6, StartingPoint.Y + 0.25, 0)
           );
           LineData lineData1 = new LineData();
           lineData1.Layer = "E-SYM1";
           lineData1.StartPoint = new SimpleVector3d();
           lineData1.EndPoint = new SimpleVector3d();
-          lineData1.StartPoint.X = startingPoint.X;
-          lineData1.StartPoint.Y = startingPoint.Y;
-          lineData1.EndPoint.X = startingPoint.X + width - 2;
-          lineData1.EndPoint.Y = startingPoint.Y;
+          lineData1.StartPoint.X = StartingPoint.X;
+          lineData1.StartPoint.Y = StartingPoint.Y;
+          lineData1.EndPoint.X = StartingPoint.X + Width - 2;
+          lineData1.EndPoint.Y = StartingPoint.Y;
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1, "HIDDEN");
 
           LineData lineData2 = new LineData();
           lineData2.Layer = "E-SYM1";
           lineData2.StartPoint = new SimpleVector3d();
           lineData2.EndPoint = new SimpleVector3d();
-          lineData2.StartPoint.X = startingPoint.X;
-          lineData2.StartPoint.Y = startingPoint.Y;
-          lineData2.EndPoint.X = startingPoint.X;
-          lineData2.EndPoint.Y = startingPoint.Y - 2;
+          lineData2.StartPoint.X = StartingPoint.X;
+          lineData2.StartPoint.Y = StartingPoint.Y;
+          lineData2.EndPoint.X = StartingPoint.X;
+          lineData2.EndPoint.Y = StartingPoint.Y - 2;
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData2, 1, "HIDDEN");
 
           LineData lineData3 = new LineData();
           lineData3.Layer = "E-SYM1";
           lineData3.StartPoint = new SimpleVector3d();
           lineData3.EndPoint = new SimpleVector3d();
-          lineData3.StartPoint.X = startingPoint.X;
-          lineData3.StartPoint.Y = startingPoint.Y - 2;
-          lineData3.EndPoint.X = startingPoint.X + width - 2;
-          lineData3.EndPoint.Y = startingPoint.Y - 2;
+          lineData3.StartPoint.X = StartingPoint.X;
+          lineData3.StartPoint.Y = StartingPoint.Y - 2;
+          lineData3.EndPoint.X = StartingPoint.X + Width - 2;
+          lineData3.EndPoint.Y = StartingPoint.Y - 2;
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData3, 1, "HIDDEN");
           Polyline2dData polyData = new Polyline2dData();
 
           polyData.Layer = "E-CND1";
           polyData.Vertices.Add(
-            new SimpleVector3d(startingPoint.X - 0.25, startingPoint.Y - 0.1875, 0)
+            new SimpleVector3d(StartingPoint.X - 0.25, StartingPoint.Y - 0.1875, 0)
           );
           polyData.Vertices.Add(
-            new SimpleVector3d(startingPoint.X - 0.25, startingPoint.Y - 0.25, 0)
+            new SimpleVector3d(StartingPoint.X - 0.25, StartingPoint.Y - 0.25, 0)
           );
           polyData.Vertices.Add(
-            new SimpleVector3d(startingPoint.X + width - 2.25, startingPoint.Y - 0.25, 0)
+            new SimpleVector3d(StartingPoint.X + Width - 2.25, StartingPoint.Y - 0.25, 0)
           );
           polyData.Vertices.Add(
-            new SimpleVector3d(startingPoint.X + width - 2.25, startingPoint.Y - 0.1875, 0)
+            new SimpleVector3d(StartingPoint.X + Width - 2.25, StartingPoint.Y - 0.1875, 0)
           );
           polyData.Vertices.Add(
-            new SimpleVector3d(startingPoint.X - 0.25, startingPoint.Y - 0.1875, 0)
+            new SimpleVector3d(StartingPoint.X - 0.25, StartingPoint.Y - 0.1875, 0)
           );
           polyData.Closed = true;
           CADObjectCommands.CreatePolyline2d(new Point3d(), tr, btr, polyData, 1);
           ObjectId labelLeader = bt["SECTION LABEL LEADER LONG (AUTO SINGLE LINE)"];
           using (
             BlockReference acBlkRef = new BlockReference(
-              new Point3d(startingPoint.X + 0.5, startingPoint.Y, 0),
+              new Point3d(StartingPoint.X + 0.5, StartingPoint.Y, 0),
               labelLeader
             )
           )
@@ -1182,7 +1262,7 @@ namespace ElectricalCommands.Equipment
               0.85,
               2,
               "E-TXT1",
-              new Point3d(startingPoint.X - 1.0725, startingPoint.Y - 1.07, 0)
+              new Point3d(StartingPoint.X - 1.0725, StartingPoint.Y - 1.07, 0)
             );
             GeneralCommands.CreateAndPositionText(
               tr,
@@ -1192,7 +1272,7 @@ namespace ElectricalCommands.Equipment
               0.85,
               2,
               "E-TXT1",
-              new Point3d(startingPoint.X - 1.0725, startingPoint.Y - 1.20, 0)
+              new Point3d(StartingPoint.X - 1.0725, StartingPoint.Y - 1.20, 0)
             );
             GeneralCommands.CreateAndPositionText(
               tr,
@@ -1202,7 +1282,7 @@ namespace ElectricalCommands.Equipment
               0.85,
               2,
               "E-TXT1",
-              new Point3d(startingPoint.X - 1.0725, startingPoint.Y - 1.33, 0)
+              new Point3d(StartingPoint.X - 1.0725, StartingPoint.Y - 1.33, 0)
             );
             if (hasCts)
             {
@@ -1214,30 +1294,30 @@ namespace ElectricalCommands.Equipment
                 0.85,
                 2,
                 "E-TXT1",
-                new Point3d(startingPoint.X - 0.92, startingPoint.Y - 0.369, 0)
+                new Point3d(StartingPoint.X - 0.92, StartingPoint.Y - 0.369, 0)
               );
               LineData conduitLine1 = new LineData();
               conduitLine1.Layer = "E-CND1";
               conduitLine1.StartPoint = new SimpleVector3d();
               conduitLine1.EndPoint = new SimpleVector3d();
-              conduitLine1.StartPoint.X = startingPoint.X - 1.25;
-              conduitLine1.StartPoint.Y = startingPoint.Y - 0.2188;
-              conduitLine1.EndPoint.X = startingPoint.X - 1.25;
-              conduitLine1.EndPoint.Y = startingPoint.Y - 1;
+              conduitLine1.StartPoint.X = StartingPoint.X - 1.25;
+              conduitLine1.StartPoint.Y = StartingPoint.Y - 0.2188;
+              conduitLine1.EndPoint.X = StartingPoint.X - 1.25;
+              conduitLine1.EndPoint.Y = StartingPoint.Y - 1;
               CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
               LineData conduitLine2 = new LineData();
               conduitLine2.Layer = "E-CND1";
               conduitLine2.StartPoint = new SimpleVector3d();
               conduitLine2.EndPoint = new SimpleVector3d();
-              conduitLine2.StartPoint.X = startingPoint.X - 1.25;
-              conduitLine2.StartPoint.Y = startingPoint.Y - 1 - (5.0 / 16.0);
-              conduitLine2.EndPoint.X = startingPoint.X - 1.25;
-              conduitLine2.EndPoint.Y = startingPoint.Y - 1.5;
+              conduitLine2.StartPoint.X = StartingPoint.X - 1.25;
+              conduitLine2.StartPoint.Y = StartingPoint.Y - 1 - (5.0 / 16.0);
+              conduitLine2.EndPoint.X = StartingPoint.X - 1.25;
+              conduitLine2.EndPoint.Y = StartingPoint.Y - 1.5;
               CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine2, 1);
               ObjectId meterSymbol = bt["METER CTS (AUTO SINGLE LINE)"];
               using (
                 BlockReference acBlkRef = new BlockReference(
-                  new Point3d(startingPoint.X - 1.25, startingPoint.Y - 0.5, 0),
+                  new Point3d(StartingPoint.X - 1.25, StartingPoint.Y - 0.5, 0),
                   meterSymbol
                 )
               )
@@ -1251,7 +1331,7 @@ namespace ElectricalCommands.Equipment
               ObjectId breakerSymbol = bt["DS BREAKER (AUTO SINGLE LINE)"];
               using (
                 BlockReference acBlkRef = new BlockReference(
-                  new Point3d(startingPoint.X - 1.25, startingPoint.Y - 1, 0),
+                  new Point3d(StartingPoint.X - 1.25, StartingPoint.Y - 1, 0),
                   breakerSymbol
                 )
               )
@@ -1273,39 +1353,39 @@ namespace ElectricalCommands.Equipment
                 0.85,
                 2,
                 "E-TXT1",
-                new Point3d(startingPoint.X - 1.14, startingPoint.Y - 0.51, 0)
+                new Point3d(StartingPoint.X - 1.14, StartingPoint.Y - 0.51, 0)
               );
               LineData conduitLine1 = new LineData();
               conduitLine1.Layer = "E-CND1";
               conduitLine1.StartPoint = new SimpleVector3d();
               conduitLine1.EndPoint = new SimpleVector3d();
-              conduitLine1.StartPoint.X = startingPoint.X - 1.25;
-              conduitLine1.StartPoint.Y = startingPoint.Y - 0.2188;
-              conduitLine1.EndPoint.X = startingPoint.X - 1.25;
-              conduitLine1.EndPoint.Y = startingPoint.Y - 0.5;
+              conduitLine1.StartPoint.X = StartingPoint.X - 1.25;
+              conduitLine1.StartPoint.Y = StartingPoint.Y - 0.2188;
+              conduitLine1.EndPoint.X = StartingPoint.X - 1.25;
+              conduitLine1.EndPoint.Y = StartingPoint.Y - 0.5;
               CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
               LineData conduitLine2 = new LineData();
               conduitLine2.Layer = "E-CND1";
               conduitLine2.StartPoint = new SimpleVector3d();
               conduitLine2.EndPoint = new SimpleVector3d();
-              conduitLine2.StartPoint.X = startingPoint.X - 1.25;
-              conduitLine2.StartPoint.Y = startingPoint.Y - 0.75;
-              conduitLine2.EndPoint.X = startingPoint.X - 1.25;
-              conduitLine2.EndPoint.Y = startingPoint.Y - 1;
+              conduitLine2.StartPoint.X = StartingPoint.X - 1.25;
+              conduitLine2.StartPoint.Y = StartingPoint.Y - 0.75;
+              conduitLine2.EndPoint.X = StartingPoint.X - 1.25;
+              conduitLine2.EndPoint.Y = StartingPoint.Y - 1;
               CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine2, 1);
               LineData conduitLine3 = new LineData();
               conduitLine3.Layer = "E-CND1";
               conduitLine3.StartPoint = new SimpleVector3d();
               conduitLine3.EndPoint = new SimpleVector3d();
-              conduitLine3.StartPoint.X = startingPoint.X - 1.25;
-              conduitLine3.StartPoint.Y = startingPoint.Y - 1 - (5.0 / 16.0);
-              conduitLine3.EndPoint.X = startingPoint.X - 1.25;
-              conduitLine3.EndPoint.Y = startingPoint.Y - 1.5;
+              conduitLine3.StartPoint.X = StartingPoint.X - 1.25;
+              conduitLine3.StartPoint.Y = StartingPoint.Y - 1 - (5.0 / 16.0);
+              conduitLine3.EndPoint.X = StartingPoint.X - 1.25;
+              conduitLine3.EndPoint.Y = StartingPoint.Y - 1.5;
               CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine3, 1);
               ObjectId meterSymbol = bt["METER (AUTO SINGLE LINE)"];
               using (
                 BlockReference acBlkRef = new BlockReference(
-                  new Point3d(startingPoint.X - 1.25, startingPoint.Y - 0.625, 0),
+                  new Point3d(StartingPoint.X - 1.25, StartingPoint.Y - 0.625, 0),
                   meterSymbol
                 )
               )
@@ -1319,7 +1399,7 @@ namespace ElectricalCommands.Equipment
               ObjectId breakerSymbol = bt["DS BREAKER (AUTO SINGLE LINE)"];
               using (
                 BlockReference acBlkRef = new BlockReference(
-                  new Point3d(startingPoint.X - 1.25, startingPoint.Y - 1, 0),
+                  new Point3d(StartingPoint.X - 1.25, StartingPoint.Y - 1, 0),
                   breakerSymbol
                 )
               )
@@ -1336,7 +1416,7 @@ namespace ElectricalCommands.Equipment
               ObjectId gfpSymbol = bt["GFP (AUTO SINGLE LINE)"];
               using (
                 BlockReference acBlkRef = new BlockReference(
-                  new Point3d(startingPoint.X - 1.25, startingPoint.Y - 1.4375, 0),
+                  new Point3d(StartingPoint.X - 1.25, StartingPoint.Y - 1.4375, 0),
                   gfpSymbol
                 )
               )
@@ -1359,7 +1439,7 @@ namespace ElectricalCommands.Equipment
               0.85,
               2,
               "E-TXT1",
-              new Point3d(startingPoint.X - 1.0725, startingPoint.Y - 0.82, 0)
+              new Point3d(StartingPoint.X - 1.0725, StartingPoint.Y - 0.82, 0)
             );
             GeneralCommands.CreateAndPositionText(
               tr,
@@ -1369,7 +1449,7 @@ namespace ElectricalCommands.Equipment
               0.85,
               2,
               "E-TXT1",
-              new Point3d(startingPoint.X - 1.0725, startingPoint.Y - 0.95, 0)
+              new Point3d(StartingPoint.X - 1.0725, StartingPoint.Y - 0.95, 0)
             );
             GeneralCommands.CreateAndPositionText(
               tr,
@@ -1379,30 +1459,30 @@ namespace ElectricalCommands.Equipment
               0.85,
               2,
               "E-TXT1",
-              new Point3d(startingPoint.X - 1.0725, startingPoint.Y - 1.08, 0)
+              new Point3d(StartingPoint.X - 1.0725, StartingPoint.Y - 1.08, 0)
             );
             LineData conduitLine1 = new LineData();
             conduitLine1.Layer = "E-CND1";
             conduitLine1.StartPoint = new SimpleVector3d();
             conduitLine1.EndPoint = new SimpleVector3d();
-            conduitLine1.StartPoint.X = startingPoint.X - 1.25;
-            conduitLine1.StartPoint.Y = startingPoint.Y - 0.2188;
-            conduitLine1.EndPoint.X = startingPoint.X - 1.25;
-            conduitLine1.EndPoint.Y = startingPoint.Y - 0.75;
+            conduitLine1.StartPoint.X = StartingPoint.X - 1.25;
+            conduitLine1.StartPoint.Y = StartingPoint.Y - 0.2188;
+            conduitLine1.EndPoint.X = StartingPoint.X - 1.25;
+            conduitLine1.EndPoint.Y = StartingPoint.Y - 0.75;
             CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
             LineData conduitLine2 = new LineData();
             conduitLine2.Layer = "E-CND1";
             conduitLine2.StartPoint = new SimpleVector3d();
             conduitLine2.EndPoint = new SimpleVector3d();
-            conduitLine2.StartPoint.X = startingPoint.X - 1.25;
-            conduitLine2.StartPoint.Y = startingPoint.Y - 0.75 - (5.0 / 16.0);
-            conduitLine2.EndPoint.X = startingPoint.X - 1.25;
-            conduitLine2.EndPoint.Y = startingPoint.Y - 1.5;
+            conduitLine2.StartPoint.X = StartingPoint.X - 1.25;
+            conduitLine2.StartPoint.Y = StartingPoint.Y - 0.75 - (5.0 / 16.0);
+            conduitLine2.EndPoint.X = StartingPoint.X - 1.25;
+            conduitLine2.EndPoint.Y = StartingPoint.Y - 1.5;
             CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine2, 1);
             ObjectId breakerSymbol = bt["DS BREAKER (AUTO SINGLE LINE)"];
             using (
               BlockReference acBlkRef = new BlockReference(
-                new Point3d(startingPoint.X - 1.25, startingPoint.Y - 0.75, 0),
+                new Point3d(StartingPoint.X - 1.25, StartingPoint.Y - 0.75, 0),
                 breakerSymbol
               )
             )
@@ -1418,7 +1498,7 @@ namespace ElectricalCommands.Equipment
               ObjectId gfpSymbol = bt["GFP (AUTO SINGLE LINE)"];
               using (
                 BlockReference acBlkRef = new BlockReference(
-                  new Point3d(startingPoint.X - 1.25, startingPoint.Y - 1.1875, 0),
+                  new Point3d(StartingPoint.X - 1.25, StartingPoint.Y - 1.1875, 0),
                   gfpSymbol
                 )
               )
@@ -1439,11 +1519,11 @@ namespace ElectricalCommands.Equipment
           {
             if (hasCts)
             {
-              MakeDistributionCtsMeter(tr, btr, bt, db, startingPoint);
+              MakeDistributionCtsMeter(tr, btr, bt, db, StartingPoint);
             }
             else
             {
-              MakeDistributionMeter(tr, btr, bt, db, startingPoint);
+              MakeDistributionMeter(tr, btr, bt, db, StartingPoint);
             }
           }
           else
@@ -1452,42 +1532,42 @@ namespace ElectricalCommands.Equipment
             lineData1.Layer = "E-CND1";
             lineData1.StartPoint = new SimpleVector3d();
             lineData1.EndPoint = new SimpleVector3d();
-            lineData1.StartPoint.X = startingPoint.X;
-            lineData1.StartPoint.Y = startingPoint.Y;
-            lineData1.EndPoint.X = startingPoint.X;
-            lineData1.EndPoint.Y = startingPoint.Y - (9.0 / 8.0);
+            lineData1.StartPoint.X = StartingPoint.X;
+            lineData1.StartPoint.Y = StartingPoint.Y;
+            lineData1.EndPoint.X = StartingPoint.X;
+            lineData1.EndPoint.Y = StartingPoint.Y - (9.0 / 8.0);
             CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
           }
           if (voltageSpec.Contains("3"))
           {
             is3Phase = true;
           }
-          MakeDistributionBreaker(tr, btr, bt, db, startingPoint, mainBreakerSize, is3Phase);
-          MakePanel(tr, btr, bt, db, endingPoint, name);
+          MakeDistributionBreaker(tr, btr, bt, db, StartingPoint, mainBreakerSize, is3Phase);
+          MakePanel(tr, btr, bt, db, EndingPoint, Name);
           // line from breaker
           LineData lineData3 = new LineData();
           lineData3.Layer = "E-CND1";
           lineData3.StartPoint = new SimpleVector3d();
           lineData3.EndPoint = new SimpleVector3d();
-          lineData3.StartPoint.X = startingPoint.X;
-          lineData3.StartPoint.Y = startingPoint.Y - (9.0 / 8.0) - (5.0 / 16.0);
-          lineData3.EndPoint.X = endingPoint.X;
-          lineData3.EndPoint.Y = endingPoint.Y;
+          lineData3.StartPoint.X = StartingPoint.X;
+          lineData3.StartPoint.Y = StartingPoint.Y - (9.0 / 8.0) - (5.0 / 16.0);
+          lineData3.EndPoint.X = EndingPoint.X;
+          lineData3.EndPoint.Y = EndingPoint.Y;
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData3, 1);
 
           LineData lineData4 = new LineData();
           lineData4.Layer = "E-SYM1";
           lineData4.StartPoint = new SimpleVector3d();
           lineData4.EndPoint = new SimpleVector3d();
-          lineData4.StartPoint.X = startingPoint.X + (width / 2.0);
-          lineData4.StartPoint.Y = startingPoint.Y + 0.25;
-          lineData4.EndPoint.X = startingPoint.X + (width / 2.0);
-          lineData4.EndPoint.Y = startingPoint.Y + 0.25 - 2;
+          lineData4.StartPoint.X = StartingPoint.X + (Width / 2.0);
+          lineData4.StartPoint.Y = StartingPoint.Y + 0.25;
+          lineData4.EndPoint.X = StartingPoint.X + (Width / 2.0);
+          lineData4.EndPoint.Y = StartingPoint.Y + 0.25 - 2;
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData4, 1, "HIDDEN");
 
-          if (parentDistance >= 25)
+          if (ParentDistance >= 25)
           {
-            MakeMainBreakerArc(tr, btr, bt, db, endingPoint, mainBreakerSize, is3Phase);
+            MakeMainBreakerArc(tr, btr, bt, db, EndingPoint, mainBreakerSize, is3Phase);
           }
           double voltage = 208;
           if (voltageSpec.Contains("480"))
@@ -1508,14 +1588,14 @@ namespace ElectricalCommands.Equipment
           ) = CADObjectCommands.GetWireAndConduitSizeText(
             mainBreakerSize,
             mainBreakerSize,
-            parentDistance + 10,
+            ParentDistance + 10,
             voltage,
             1,
             is3Phase ? 3 : 1
           );
           CADObjectCommands.AddWireAndConduitTextToPlan(
             db,
-            new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
+            new Point3d(EndingPoint.X, EndingPoint.Y + 0.5, 0),
             firstLine,
             secondLine,
             thirdLine,
@@ -1525,31 +1605,31 @@ namespace ElectricalCommands.Equipment
             false
           );
           SetFeederWireSizeAndCount(firstLine);
-          if (parentType == "transformer")
+          if (ParentType == NodeType.Transformer)
           {
-            aicRating = CADObjectCommands.GetAicRatingFromTransformer(
-              transformerKva,
+            AicRating = CADObjectCommands.GetAicRatingFromTransformer(
+              TransformerKva,
               1,
               0.03,
-              parentDistance + 10,
-              feederWireCount,
+              ParentDistance + 10,
+              FeederWireCount,
               voltage,
-              feederWireSize,
+              FeederWireSize,
               is3Phase
             );
           }
           else
           {
-            aicRating = CADObjectCommands.GetAicRating(
-              parentAicRating,
-              parentDistance + 10,
-              feederWireCount,
+            AicRating = CADObjectCommands.GetAicRating(
+              ParentAicRating,
+              ParentDistance + 10,
+              FeederWireCount,
               voltage,
-              feederWireSize,
+              FeederWireSize,
               is3Phase
             );
           }
-          MakeAicRating(tr, btr, bt, db, endingPoint);
+          MakeAicRating(tr, btr, bt, db, EndingPoint);
         }
         else
         {
@@ -1558,39 +1638,39 @@ namespace ElectricalCommands.Equipment
           lineData1.Layer = "E-CND1";
           lineData1.StartPoint = new SimpleVector3d();
           lineData1.EndPoint = new SimpleVector3d();
-          lineData1.StartPoint.X = startingPoint.X;
-          lineData1.StartPoint.Y = startingPoint.Y;
-          lineData1.EndPoint.X = startingPoint.X + (endingPoint.X - startingPoint.X);
-          lineData1.EndPoint.Y = startingPoint.Y;
+          lineData1.StartPoint.X = StartingPoint.X;
+          lineData1.StartPoint.Y = StartingPoint.Y;
+          lineData1.EndPoint.X = StartingPoint.X + (EndingPoint.X - StartingPoint.X);
+          lineData1.EndPoint.Y = StartingPoint.Y;
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
           LineData lineData2 = new LineData();
           lineData2.Layer = "E-CND1";
           lineData2.StartPoint = new SimpleVector3d();
           lineData2.EndPoint = new SimpleVector3d();
-          lineData2.StartPoint.X = startingPoint.X + (endingPoint.X - startingPoint.X);
-          lineData2.StartPoint.Y = startingPoint.Y;
-          lineData2.EndPoint.X = endingPoint.X;
-          lineData2.EndPoint.Y = endingPoint.Y;
+          lineData2.StartPoint.X = StartingPoint.X + (EndingPoint.X - StartingPoint.X);
+          lineData2.StartPoint.Y = StartingPoint.Y;
+          lineData2.EndPoint.X = EndingPoint.X;
+          lineData2.EndPoint.Y = EndingPoint.Y;
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData2, 1);
 
-          if (endingPoint.X > startingPoint.X)
+          if (EndingPoint.X > StartingPoint.X)
           {
-            if (parentType == "panel")
+            if (ParentType == NodeType.Panel)
             {
               // right panel breaker
               ArcData arcData1 = new ArcData();
               arcData1.Layer = "E-CND1";
               arcData1.Center = new SimpleVector3d();
               arcData1.Radius = 0.1038;
-              arcData1.Center.X = startingPoint.X - 0.1015;
-              arcData1.Center.Y = startingPoint.Y - 0.0216;
+              arcData1.Center.X = StartingPoint.X - 0.1015;
+              arcData1.Center.Y = StartingPoint.Y - 0.0216;
               arcData1.StartAngle = 0.20944;
               arcData1.EndAngle = 2.89725;
               CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData1, 1);
               ObjectId breakerLeader = bt["BREAKER LEADER LEFT (AUTO SINGLE LINE)"];
               using (
                 BlockReference acBlkRef = new BlockReference(
-                  new Point3d(startingPoint.X, startingPoint.Y, 0),
+                  new Point3d(StartingPoint.X, StartingPoint.Y, 0),
                   breakerLeader
                 )
               )
@@ -1610,7 +1690,7 @@ namespace ElectricalCommands.Equipment
               0.85,
               2,
               "E-TXT1",
-              new Point3d(startingPoint.X + 0.42, startingPoint.Y + 0.165, 0),
+              new Point3d(StartingPoint.X + 0.42, StartingPoint.Y + 0.165, 0),
               TextHorizontalMode.TextCenter,
               TextVerticalMode.TextBase,
               AttachmentPoint.BaseLeft
@@ -1618,22 +1698,22 @@ namespace ElectricalCommands.Equipment
           }
           else
           {
-            if (parentType == "panel")
+            if (ParentType == NodeType.Panel)
             {
               // left panel breaker
               ArcData arcData1 = new ArcData();
               arcData1.Layer = "E-CND1";
               arcData1.Center = new SimpleVector3d();
               arcData1.Radius = 0.1038;
-              arcData1.Center.X = startingPoint.X + 0.1015;
-              arcData1.Center.Y = startingPoint.Y - 0.0216;
+              arcData1.Center.X = StartingPoint.X + 0.1015;
+              arcData1.Center.Y = StartingPoint.Y - 0.0216;
               arcData1.StartAngle = 0.20944;
               arcData1.EndAngle = 2.89725;
               CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData1, 1);
               ObjectId breakerLeader = bt["BREAKER LEADER RIGHT (AUTO SINGLE LINE)"];
               using (
                 BlockReference acBlkRef = new BlockReference(
-                  new Point3d(startingPoint.X, startingPoint.Y, 0),
+                  new Point3d(StartingPoint.X, StartingPoint.Y, 0),
                   breakerLeader
                 )
               )
@@ -1654,16 +1734,16 @@ namespace ElectricalCommands.Equipment
               0.85,
               2,
               "E-TXT1",
-              new Point3d(startingPoint.X - 0.42, startingPoint.Y + 0.165, 0),
+              new Point3d(StartingPoint.X - 0.42, StartingPoint.Y + 0.165, 0),
               TextHorizontalMode.TextCenter,
               TextVerticalMode.TextBase,
               AttachmentPoint.BaseRight
             );
           }
-          if (parentDistance >= 25 || parentType == "transformer")
+          if (ParentDistance >= 25 || ParentType == NodeType.Transformer)
           {
             // main breaker arc
-            MakeMainBreakerArc(tr, btr, bt, db, endingPoint, mainBreakerSize, is3Phase);
+            MakeMainBreakerArc(tr, btr, bt, db, EndingPoint, mainBreakerSize, is3Phase);
           }
           double voltage = 208;
           if (voltageSpec.Contains("480"))
@@ -1684,14 +1764,14 @@ namespace ElectricalCommands.Equipment
           ) = CADObjectCommands.GetWireAndConduitSizeText(
             mainBreakerSize,
             mainBreakerSize,
-            parentDistance + 10,
+            ParentDistance + 10,
             voltage,
             1,
             is3Phase ? 3 : 1
           );
           CADObjectCommands.AddWireAndConduitTextToPlan(
             db,
-            new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
+            new Point3d(EndingPoint.X, EndingPoint.Y + 0.5, 0),
             firstLine,
             secondLine,
             thirdLine,
@@ -1701,38 +1781,38 @@ namespace ElectricalCommands.Equipment
             false
           );
           SetFeederWireSizeAndCount(firstLine);
-          if (parentType == "transformer")
+          if (ParentType == NodeType.Transformer)
           {
-            aicRating = CADObjectCommands.GetAicRatingFromTransformer(
-              transformerKva,
+            AicRating = CADObjectCommands.GetAicRatingFromTransformer(
+              TransformerKva,
               1,
               0.03,
-              parentDistance + 10,
-              feederWireCount,
+              ParentDistance + 10,
+              FeederWireCount,
               voltage,
-              feederWireSize,
+              FeederWireSize,
               is3Phase
             );
           }
           else
           {
-            aicRating = CADObjectCommands.GetAicRating(
-              parentAicRating,
-              parentDistance + 10,
-              feederWireCount,
+            AicRating = CADObjectCommands.GetAicRating(
+              ParentAicRating,
+              ParentDistance + 10,
+              FeederWireCount,
               voltage,
-              feederWireSize,
+              FeederWireSize,
               is3Phase
             );
           }
-          MakePanel(tr, btr, bt, db, endingPoint, name);
-          MakeAicRating(tr, btr, bt, db, endingPoint);
+          MakePanel(tr, btr, bt, db, EndingPoint, Name);
+          MakeAicRating(tr, btr, bt, db, EndingPoint);
         }
         tr.Commit();
       }
-      foreach (var child in children)
+      foreach (var child in Children)
       {
-        child.parentAicRating = aicRating;
+        child.ParentAicRating = AicRating;
         child.Make();
       }
     }
@@ -1749,24 +1829,27 @@ namespace ElectricalCommands.Equipment
     public string grounding;
     public double kva;
 
+    public string Voltage;
+    public double Kva;
+
     public SLTransformer(string id, string name)
     {
-      type = "transformer";
-      width = 2;
-      this.name = name;
-      this.id = id;
+      Type = NodeType.Transformer;
+      Width = 2;
+      this.Name = name;
+      this.Id = id;
     }
 
-    public override void SetChildStartingPoints(Point3d startingPoint)
+    public override void SetChildStartingPoints(Point3d StartingPoint)
     {
-      this.startingPoint = startingPoint;
-      if (children.Count > 0)
+      this.StartingPoint = StartingPoint;
+      if (Children.Count > 0)
       {
-        children[0]
-          .SetChildEndingPoint(new Point3d(endingPoint.X, endingPoint.Y - 0.3739 - 2.5, 0));
-        children[0].SetChildStartingPoints(new Point3d(endingPoint.X, endingPoint.Y - 0.3739, 0));
-        children[0].parentType = type;
-        children[0].transformerKva = kva;
+        Children[0]
+          .SetChildEndingPoint(new Point3d(EndingPoint.X, EndingPoint.Y - 0.3739 - 2.5, 0));
+        Children[0].SetChildStartingPoints(new Point3d(EndingPoint.X, EndingPoint.Y - 0.3739, 0));
+        Children[0].ParentType = Type;
+        Children[0].Kva = kva;
       }
     }
 
@@ -1775,13 +1858,13 @@ namespace ElectricalCommands.Equipment
       BlockTableRecord btr,
       BlockTable bt,
       Database db,
-      Point3d endingPoint
+      Point3d EndingPoint
     )
     {
       ObjectId discSymbol = bt["TRANSFORMER (AUTO SINGLE LINE)"];
       using (
         BlockReference acBlkRef = new BlockReference(
-          new Point3d(endingPoint.X, endingPoint.Y, 0),
+          new Point3d(EndingPoint.X, EndingPoint.Y, 0),
           discSymbol
         )
       )
@@ -1800,7 +1883,7 @@ namespace ElectricalCommands.Equipment
         0.85,
         2,
         "E-TXT1",
-        new Point3d(endingPoint.X - 0.25, endingPoint.Y - 0.86, 0),
+        new Point3d(EndingPoint.X - 0.25, EndingPoint.Y - 0.86, 0),
         TextHorizontalMode.TextCenter,
         TextVerticalMode.TextBase,
         AttachmentPoint.BaseRight
@@ -1813,7 +1896,7 @@ namespace ElectricalCommands.Equipment
         0.85,
         2,
         "E-TXT1",
-        new Point3d(endingPoint.X - 0.25, endingPoint.Y - 1.0, 0),
+        new Point3d(EndingPoint.X - 0.25, EndingPoint.Y - 1.0, 0),
         TextHorizontalMode.TextCenter,
         TextVerticalMode.TextBase,
         AttachmentPoint.BaseRight
@@ -1822,116 +1905,118 @@ namespace ElectricalCommands.Equipment
 
     public override void Make()
     {
-      Document doc = Autodesk
-        .AutoCAD
-        .ApplicationServices
-        .Application
-        .DocumentManager
-        .MdiActiveDocument;
-      Database db = doc.Database;
-      Editor ed = doc.Editor;
-      using (Transaction tr = db.TransactionManager.StartTransaction())
-      {
-        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord btr = (BlockTableRecord)
-          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
-        if (distributionBreakerSize > 0)
-        {
-          if (hasMeter)
-          {
-            if (hasCts)
-            {
-              MakeDistributionCtsMeter(tr, btr, bt, db, startingPoint);
-            }
-            else
-            {
-              MakeDistributionMeter(tr, btr, bt, db, startingPoint);
-            }
-          }
-          else
-          {
-            LineData lineData1 = new LineData();
-            lineData1.Layer = "E-CND1";
-            lineData1.StartPoint = new SimpleVector3d();
-            lineData1.EndPoint = new SimpleVector3d();
-            lineData1.StartPoint.X = startingPoint.X;
-            lineData1.StartPoint.Y = startingPoint.Y;
-            lineData1.EndPoint.X = endingPoint.X;
-            lineData1.EndPoint.Y = endingPoint.Y;
-            CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
-          }
-          if (voltageSpec.Contains("3"))
-          {
-            is3Phase = true;
-          }
-          LineData lineData4 = new LineData();
-          lineData4.Layer = "E-SYM1";
-          lineData4.StartPoint = new SimpleVector3d();
-          lineData4.EndPoint = new SimpleVector3d();
-          lineData4.StartPoint.X = startingPoint.X + (width / 2.0);
-          lineData4.StartPoint.Y = startingPoint.Y + 0.25;
-          lineData4.EndPoint.X = startingPoint.X + (width / 2.0);
-          lineData4.EndPoint.Y = startingPoint.Y + 0.25 - 2;
-          CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData4, 1, "HIDDEN");
-        }
-        else
-        {
-          LineData lineData1 = new LineData();
-          lineData1.Layer = "E-CND1";
-          lineData1.StartPoint = new SimpleVector3d();
-          lineData1.EndPoint = new SimpleVector3d();
-          lineData1.StartPoint.X = startingPoint.X;
-          lineData1.StartPoint.Y = startingPoint.Y;
-          lineData1.EndPoint.X = endingPoint.X;
-          lineData1.EndPoint.Y = endingPoint.Y;
-          CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
-        }
-        (
-          string firstLine,
-          string secondLine,
-          string thirdLine,
-          string supplemental1,
-          string supplemental2,
-          string supplemental3
-        ) = CADObjectCommands.GetWireAndConduitSizeText(
-          mainBreakerSize,
-          mainBreakerSize,
-          parentDistance + 10,
-          voltage,
-          1,
-          is3Phase ? 3 : 1
-        );
-        CADObjectCommands.AddWireAndConduitTextToPlan(
-          db,
-          new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
-          firstLine,
-          secondLine,
-          thirdLine,
-          supplemental1,
-          supplemental2,
-          supplemental3,
-          false
-        );
-        SetFeederWireSizeAndCount(firstLine);
-        MakeTransformer(tr, btr, bt, db, endingPoint);
-        aicRating = CADObjectCommands.GetAicRating(
-          parentAicRating,
-          parentDistance + 10,
-          feederWireCount,
-          voltage,
-          feederWireSize,
-          is3Phase
-        );
-        MakeAicRating(tr, btr, bt, db, endingPoint);
-        tr.Commit();
-      }
-      foreach (var child in children)
-      {
-        child.parentAicRating = aicRating;
-        child.Make();
-      }
+      //Document doc = Autodesk
+      //  .AutoCAD
+      //  .ApplicationServices
+      //  .Application
+      //  .DocumentManager
+      //  .MdiActiveDocument;
+      //Database db = doc.Database;
+      //Editor ed = doc.Editor;
+      //using (Transaction tr = db.TransactionManager.StartTransaction())
+      //{
+      //  BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+      //  BlockTableRecord btr = (BlockTableRecord)
+      //    tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+      //  if (distributionBreakerSize > 0)
+      //  {
+      //    if (hasMeter)
+      //    {
+      //      if (hasCts)
+      //      {
+      //        MakeDistributionCtsMeter(tr, btr, bt, db, StartingPoint);
+      //      }
+      //      else
+      //      {
+      //        MakeDistributionMeter(tr, btr, bt, db, StartingPoint);
+      //      }
+      //    }
+      //    else
+      //    {
+      //      LineData lineData1 = new LineData();
+      //      lineData1.Layer = "E-CND1";
+      //      lineData1.StartPoint = new SimpleVector3d();
+      //      lineData1.EndPoint = new SimpleVector3d();
+      //      lineData1.StartPoint.X = StartingPoint.X;
+      //      lineData1.StartPoint.Y = StartingPoint.Y;
+      //      lineData1.EndPoint.X = EndingPoint.X;
+      //      lineData1.EndPoint.Y = EndingPoint.Y;
+      //      CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
+      //    }
+      //    if (voltageSpec.Contains("3"))
+      //    {
+      //      is3Phase = true;
+      //    }
+      //    LineData lineData4 = new LineData();
+      //    lineData4.Layer = "E-SYM1";
+      //    lineData4.StartPoint = new SimpleVector3d();
+      //    lineData4.EndPoint = new SimpleVector3d();
+      //    lineData4.StartPoint.X = StartingPoint.X + (Width / 2.0);
+      //    lineData4.StartPoint.Y = StartingPoint.Y + 0.25;
+      //    lineData4.EndPoint.X = StartingPoint.X + (Width / 2.0);
+      //    lineData4.EndPoint.Y = StartingPoint.Y + 0.25 - 2;
+      //    CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData4, 1, "HIDDEN");
+      //  }
+      //  else
+      //  {
+      //    LineData lineData1 = new LineData();
+      //    lineData1.Layer = "E-CND1";
+      //    lineData1.StartPoint = new SimpleVector3d();
+      //    lineData1.EndPoint = new SimpleVector3d();
+      //    lineData1.StartPoint.X = StartingPoint.X;
+      //    lineData1.StartPoint.Y = StartingPoint.Y;
+      //    lineData1.EndPoint.X = EndingPoint.X;
+      //    lineData1.EndPoint.Y = EndingPoint.Y;
+      //    CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData1, 1);
+      //  }
+      //  (
+      //    string firstLine,
+      //    string secondLine,
+      //    string thirdLine,
+      //    string supplemental1,
+      //    string supplemental2,
+      //    string supplemental3
+      //  ) = CADObjectCommands.GetWireAndConduitSizeText(
+      //    mainBreakerSize,
+      //    mainBreakerSize,
+      //    ParentDistance + 10,
+      //    Voltage,
+      //    1,
+      //    is3Phase ? 3 : 1
+      //  );
+      //  CADObjectCommands.AddWireAndConduitTextToPlan(
+      //    db,
+      //    new Point3d(EndingPoint.X, EndingPoint.Y + 0.5, 0),
+      //    firstLine,
+      //    secondLine,
+      //    thirdLine,
+      //    supplemental1,
+      //    supplemental2,
+      //    supplemental3,
+      //    false
+      //  );
+      //  SetFeederWireSizeAndCount(firstLine);
+      //  MakeTransformer(tr, btr, bt, db, EndingPoint);
+      //  AicRating = CADObjectCommands.GetAicRating(
+      //    ParentAicRating,
+      //    ParentDistance + 10,
+      //    FeederWireCount,
+      //    voltage,
+      //    FeederWireSize,
+      //    is3Phase
+      //  );
+      //  MakeAicRating(tr, btr, bt, db, EndingPoint);
+      //  tr.Commit();
+      //}
+      //foreach (var child in Children)
+      //{
+      //  child.ParentAicRating = AicRating;
+      //  child.Make();
+      //}
     }
   }
+
+  //public class SLDistributionBreaker : SingleLine { }
 
   public class SLDisconnect : SingleLine
   {
@@ -1942,19 +2027,23 @@ namespace ElectricalCommands.Equipment
     public bool is3Phase;
     public double voltage;
 
+    public int AsSizeId;
+    public int AfSizeId;
+    public int NumPoles;
+
     public SLDisconnect(string name)
     {
-      type = "disconnect";
-      width = 0;
-      this.name = name;
+      Type = NodeType.Disconnect;
+      Width = 0;
+      this.Name = name;
     }
 
-    public override void SetChildStartingPoints(Point3d startingPoint)
+    public override void SetChildStartingPoints(Point3d StartingPoint)
     {
-      this.startingPoint = startingPoint;
-      children[0].SetChildEndingPoint(new Point3d(endingPoint.X, endingPoint.Y - 0.1201 - 2.5, 0));
-      children[0].SetChildStartingPoints(new Point3d(endingPoint.X, endingPoint.Y - 0.1201, 0));
-      children[0].parentType = type;
+      this.StartingPoint = StartingPoint;
+      Children[0].SetChildEndingPoint(new Point3d(EndingPoint.X, EndingPoint.Y - 0.1201 - 2.5, 0));
+      Children[0].SetChildStartingPoints(new Point3d(EndingPoint.X, EndingPoint.Y - 0.1201, 0));
+      Children[0].ParentType = Type;
     }
 
     public void MakeDisconnect(
@@ -1962,13 +2051,13 @@ namespace ElectricalCommands.Equipment
       BlockTableRecord btr,
       BlockTable bt,
       Database db,
-      Point3d endingPoint
+      Point3d EndingPoint
     )
     {
       ObjectId discSymbol = bt["DISCONNECT (AUTO SINGLE LINE)"];
       using (
         BlockReference acBlkRef = new BlockReference(
-          new Point3d(endingPoint.X, endingPoint.Y, 0),
+          new Point3d(EndingPoint.X, EndingPoint.Y, 0),
           discSymbol
         )
       )
@@ -1983,7 +2072,7 @@ namespace ElectricalCommands.Equipment
       ObjectId arrowSymbol = bt["RIGHT ARROW (AUTO SINGLE LINE)"];
       using (
         BlockReference acBlkRef = new BlockReference(
-          new Point3d(endingPoint.X - 0.0601, endingPoint.Y - 0.0601, 0),
+          new Point3d(EndingPoint.X - 0.0601, EndingPoint.Y - 0.0601, 0),
           arrowSymbol
         )
       )
@@ -2025,7 +2114,7 @@ namespace ElectricalCommands.Equipment
         0.85,
         2,
         "E-TXT1",
-        new Point3d(endingPoint.X - 0.25, endingPoint.Y - 0.037, 0),
+        new Point3d(EndingPoint.X - 0.25, EndingPoint.Y - 0.037, 0),
         TextHorizontalMode.TextCenter,
         TextVerticalMode.TextBase,
         AttachmentPoint.BaseRight
@@ -2038,20 +2127,20 @@ namespace ElectricalCommands.Equipment
         0.85,
         2,
         "E-TXT1",
-        new Point3d(endingPoint.X - 0.25, endingPoint.Y - 0.18, 0),
+        new Point3d(EndingPoint.X - 0.25, EndingPoint.Y - 0.18, 0),
         TextHorizontalMode.TextCenter,
         TextVerticalMode.TextBase,
         AttachmentPoint.BaseRight
       );
       GeneralCommands.CreateAndPositionText(
         tr,
-        "FOR XFMR '" + name + "'",
+        "FOR XFMR '" + Name + "'",
         "gmep",
         0.0938,
         0.85,
         2,
         "E-TXT1",
-        new Point3d(endingPoint.X - 0.25, endingPoint.Y - 0.31, 0),
+        new Point3d(EndingPoint.X - 0.25, EndingPoint.Y - 0.31, 0),
         TextHorizontalMode.TextCenter,
         TextVerticalMode.TextBase,
         AttachmentPoint.BaseRight
@@ -2079,11 +2168,11 @@ namespace ElectricalCommands.Equipment
           {
             if (hasCts)
             {
-              MakeDistributionCtsMeter(tr, btr, bt, db, startingPoint);
+              MakeDistributionCtsMeter(tr, btr, bt, db, StartingPoint);
             }
             else
             {
-              MakeDistributionMeter(tr, btr, bt, db, startingPoint);
+              MakeDistributionMeter(tr, btr, bt, db, StartingPoint);
             }
           }
           else
@@ -2092,30 +2181,30 @@ namespace ElectricalCommands.Equipment
             lineData2.Layer = "E-CND1";
             lineData2.StartPoint = new SimpleVector3d();
             lineData2.EndPoint = new SimpleVector3d();
-            lineData2.StartPoint.X = startingPoint.X;
-            lineData2.StartPoint.Y = startingPoint.Y;
-            lineData2.EndPoint.X = endingPoint.X;
-            lineData2.EndPoint.Y = startingPoint.Y - (9.0 / 8.0);
+            lineData2.StartPoint.X = StartingPoint.X;
+            lineData2.StartPoint.Y = StartingPoint.Y;
+            lineData2.EndPoint.X = EndingPoint.X;
+            lineData2.EndPoint.Y = StartingPoint.Y - (9.0 / 8.0);
             CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData2, 1);
           }
-          MakeDistributionBreaker(tr, btr, bt, db, startingPoint, mainBreakerSize, is3Phase);
+          MakeDistributionBreaker(tr, btr, bt, db, StartingPoint, mainBreakerSize, is3Phase);
           LineData lineData3 = new LineData();
           lineData3.Layer = "E-CND1";
           lineData3.StartPoint = new SimpleVector3d();
           lineData3.EndPoint = new SimpleVector3d();
-          lineData3.StartPoint.X = startingPoint.X;
-          lineData3.StartPoint.Y = startingPoint.Y - (9.0 / 8.0) - (5.0 / 16.0);
-          lineData3.EndPoint.X = endingPoint.X;
-          lineData3.EndPoint.Y = endingPoint.Y;
+          lineData3.StartPoint.X = StartingPoint.X;
+          lineData3.StartPoint.Y = StartingPoint.Y - (9.0 / 8.0) - (5.0 / 16.0);
+          lineData3.EndPoint.X = EndingPoint.X;
+          lineData3.EndPoint.Y = EndingPoint.Y;
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData3, 1);
           LineData lineData4 = new LineData();
           lineData4.Layer = "E-SYM1";
           lineData4.StartPoint = new SimpleVector3d();
           lineData4.EndPoint = new SimpleVector3d();
-          lineData4.StartPoint.X = startingPoint.X + (width / 2.0);
-          lineData4.StartPoint.Y = startingPoint.Y + 0.25;
-          lineData4.EndPoint.X = startingPoint.X + (width / 2.0);
-          lineData4.EndPoint.Y = startingPoint.Y + 0.25 - 2;
+          lineData4.StartPoint.X = StartingPoint.X + (Width / 2.0);
+          lineData4.StartPoint.Y = StartingPoint.Y + 0.25;
+          lineData4.EndPoint.X = StartingPoint.X + (Width / 2.0);
+          lineData4.EndPoint.Y = StartingPoint.Y + 0.25 - 2;
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, lineData4, 1, "HIDDEN");
         }
         else { }
@@ -2129,14 +2218,14 @@ namespace ElectricalCommands.Equipment
         ) = CADObjectCommands.GetWireAndConduitSizeText(
           mainBreakerSize,
           mainBreakerSize,
-          parentDistance + 10,
+          ParentDistance + 10,
           voltage,
           1,
           is3Phase ? 3 : 1
         );
         CADObjectCommands.AddWireAndConduitTextToPlan(
           db,
-          new Point3d(endingPoint.X, endingPoint.Y + 0.5, 0),
+          new Point3d(EndingPoint.X, EndingPoint.Y + 0.5, 0),
           firstLine,
           secondLine,
           thirdLine,
@@ -2146,21 +2235,21 @@ namespace ElectricalCommands.Equipment
           false
         );
         SetFeederWireSizeAndCount(firstLine);
-        aicRating = CADObjectCommands.GetAicRating(
-          parentAicRating,
-          parentDistance + 10,
-          feederWireCount,
+        AicRating = CADObjectCommands.GetAicRating(
+          ParentAicRating,
+          ParentDistance + 10,
+          FeederWireCount,
           voltage,
-          feederWireSize,
+          FeederWireSize,
           is3Phase
         );
-        MakeAicRating(tr, btr, bt, db, endingPoint);
-        MakeDisconnect(tr, btr, bt, db, endingPoint);
+        MakeAicRating(tr, btr, bt, db, EndingPoint);
+        MakeDisconnect(tr, btr, bt, db, EndingPoint);
         tr.Commit();
       }
-      foreach (var child in children)
+      foreach (var child in Children)
       {
-        child.parentAicRating = aicRating;
+        child.ParentAicRating = AicRating;
         child.Make();
       }
     }

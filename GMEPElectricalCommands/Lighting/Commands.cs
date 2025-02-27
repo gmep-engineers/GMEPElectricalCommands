@@ -318,7 +318,7 @@ namespace ElectricalCommands.Lighting
       Database db = doc.Database;
       GmepDatabase gmepDb = new GmepDatabase();
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
-      List<Equipment.LightingControl> lightingList = gmepDb.GetLightingControls(projectId);
+      List<ElectricalEntity.LightingControl> lightingList = gmepDb.GetLightingControls(projectId);
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
         LayerTable acLyrTbl;
@@ -333,7 +333,7 @@ namespace ElectricalCommands.Lighting
         }
       }
       int i = 0;
-      foreach (Equipment.LightingControl control in lightingList)
+      foreach (ElectricalEntity.LightingControl control in lightingList)
       {
         ed.WriteMessage(
           "\nPlace "
@@ -341,20 +341,20 @@ namespace ElectricalCommands.Lighting
             + "/"
             + lightingList.Count.ToString()
             + " for '"
-            + control.name
+            + control.Name
             + "'"
         );
         string blockName = "GMEP LTG CTRL DIMMER";
         bool dimmerOccupancy = false;
-        if (control.controlType == "SWITCH")
+        if (control.ControlType == "SWITCH")
         {
           blockName = "GMEP LTG CTRL SWITCH";
-          if (control.occupancy)
+          if (control.HasOccupancy)
           {
             blockName = "GMEP LTG CTRL OCCUPANCY";
           }
         }
-        else if (control.occupancy)
+        else if (control.HasOccupancy)
         {
           dimmerOccupancy = true;
         }
@@ -412,7 +412,7 @@ namespace ElectricalCommands.Lighting
             {
               if (prop.PropertyName == "gmep_lighting_control_id" && prop.Value as string == "0")
               {
-                prop.Value = control.id;
+                prop.Value = control.Id;
               }
             }
             tr.Commit();
@@ -450,7 +450,7 @@ namespace ElectricalCommands.Lighting
       Database db = doc.Database;
       GmepDatabase gmepDb = new GmepDatabase();
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
-      List<Equipment.LightingFixture> lightingList = gmepDb.GetLightingFixtures(projectId);
+      List<ElectricalEntity.LightingFixture> lightingList = gmepDb.GetLightingFixtures(projectId);
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
         LayerTable acLyrTbl;
@@ -464,17 +464,17 @@ namespace ElectricalCommands.Lighting
           tr.Commit();
         }
       }
-      foreach (Equipment.LightingFixture fixture in lightingList)
+      foreach (ElectricalEntity.LightingFixture fixture in lightingList)
       {
-        for (int i = 0; i < fixture.qty; i++)
+        for (int i = 0; i < fixture.Qty; i++)
         {
           ed.WriteMessage(
             "\nPlace "
               + (i + 1).ToString()
               + "/"
-              + fixture.qty.ToString()
+              + fixture.Qty.ToString()
               + " for '"
-              + fixture.name
+              + fixture.Name
               + "'"
           );
           ObjectId blockId;
@@ -487,7 +487,7 @@ namespace ElectricalCommands.Lighting
               BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
               BlockTableRecord block = (BlockTableRecord)
-                tr.GetObject(bt[fixture.blockName], OpenMode.ForRead);
+                tr.GetObject(bt[fixture.BlockName], OpenMode.ForRead);
               BlockJig blockJig = new BlockJig();
 
               PromptResult res = blockJig.DragMe(block.ObjectId, out point);
@@ -499,7 +499,7 @@ namespace ElectricalCommands.Lighting
 
                 BlockReference br = new BlockReference(point, block.ObjectId);
 
-                if (fixture.rotate)
+                if (fixture.Rotate)
                 {
                   RotateJig rotateJig = new RotateJig(br);
                   PromptResult rotatePromptResult = ed.Drag(rotateJig);
@@ -539,7 +539,7 @@ namespace ElectricalCommands.Lighting
                 }
                 if (prop.PropertyName == "gmep_lighting_fixture_id" && prop.Value as string == "0")
                 {
-                  prop.Value = fixture.id;
+                  prop.Value = fixture.Id;
                 }
               }
               tr.Commit();
@@ -559,9 +559,9 @@ namespace ElectricalCommands.Lighting
                 gmepTextStyleId = doc.Database.Textstyle;
               }
               Point3d position = new Point3d(
-                point.X + fixture.labelTransformVX,
+                point.X + fixture.LabelTransformVX,
                 point.Y
-                  + fixture.labelTransformVY
+                  + fixture.LabelTransformVY
                   + (
                     (CADObjectCommands.Scale - 0.25)
                     * 12
@@ -572,9 +572,9 @@ namespace ElectricalCommands.Lighting
               if (Math.Round(rotation, 1) == 1.6 || Math.Round(rotation, 1) == 4.7)
               {
                 position = new Point3d(
-                  point.X + fixture.labelTransformHX,
+                  point.X + fixture.LabelTransformHX,
                   point.Y
-                    + fixture.labelTransformHY
+                    + fixture.LabelTransformHY
                     + (
                       (CADObjectCommands.Scale - 0.25)
                       * 12
@@ -585,7 +585,7 @@ namespace ElectricalCommands.Lighting
               }
               var text = new DBText
               {
-                TextString = fixture.name,
+                TextString = fixture.Name,
                 Position = position,
                 Height = 0.0938 / CADObjectCommands.Scale * 12,
                 WidthFactor = 0.85,
