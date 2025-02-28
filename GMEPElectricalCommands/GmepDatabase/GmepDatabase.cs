@@ -84,10 +84,12 @@ namespace GMEPElectricalCommands.GmepDatabase
       string query =
         @"SELECT 
           electrical_services.id,
-          electrical_services.name,
           electrical_service_amp_ratings.amp_rating,
           electrical_service_voltages.voltage,
           electrical_services.aic_rating,
+          electrical_services.node_id,
+          electrical_single_line_nodes.loc_x,
+          electrical_single_line_nodes.loc_y,
           statuses.status
           FROM `electrical_services`
           LEFT JOIN electrical_service_meter_configs
@@ -98,6 +100,8 @@ namespace GMEPElectricalCommands.GmepDatabase
           ON electrical_service_voltages.id = electrical_services.electrical_service_voltage_id
           LEFT JOIN statuses
           ON statuses.id = electrical_services.status_id
+          LEFT JOIN electrical_single_line_nodes 
+          ON electrical_single_line_nodes.id = electrical_services.node_id
           WHERE electrical_services.project_id = @projectId";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
@@ -108,11 +112,12 @@ namespace GMEPElectricalCommands.GmepDatabase
         services.Add(
           new Service(
             GetSafeString(reader, "id"),
-            GetSafeString(reader, "name"),
+            GetSafeString(reader, "node_id"),
             GetSafeString(reader, "status"),
             GetSafeInt(reader, "amp_rating"),
             GetSafeString(reader, "voltage"),
-            GetSafeFloat(reader, "aic_rating")
+            GetSafeFloat(reader, "aic_rating"),
+            new System.Drawing.Point(GetSafeInt(reader, "loc_x"), GetSafeInt(reader, "loc_y"))
           )
         );
       }
@@ -130,9 +135,13 @@ namespace GMEPElectricalCommands.GmepDatabase
           electrical_meters.has_cts,
           electrical_meters.node_id,
           electrical_meters.aic_rating,
+          electrical_single_line_nodes.loc_x,
+          electrical_single_line_nodes.loc_y,
           statuses.status
           FROM `electrical_meters`
           LEFT JOIN statuses ON statuses.id = electrical_meters.status_id
+          LEFT JOIN electrical_single_line_nodes 
+          ON electrical_single_line_nodes.id = electrical_meters.node_id
           WHERE electrical_meters.project_id = @projectId";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
@@ -146,7 +155,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeString(reader, "node_id"),
             GetSafeString(reader, "status"),
             GetSafeBoolean(reader, "has_cts"),
-            GetSafeFloat(reader, "aic_rating")
+            GetSafeFloat(reader, "aic_rating"),
+            new System.Drawing.Point(GetSafeInt(reader, "loc_x"), GetSafeInt(reader, "loc_y"))
           )
         );
       }
@@ -167,11 +177,15 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_main_breakers.has_surge_protection,
         electrical_main_breakers.num_poles,
         electrical_main_breakers.aic_rating,
+        electrical_single_line_nodes.loc_x,
+        electrical_single_line_nodes.loc_y,
         statuses.status,
         electrical_service_amp_ratings.amp_rating
         FROM electrical_main_breakers
         LEFT JOIN statuses ON statuses.id = electrical_main_breakers.status_id
         LEFT JOIN electrical_service_amp_ratings ON electrical_service_amp_ratings.id = electrical_main_breakers.amp_rating_id
+        LEFT JOIN electrical_single_line_nodes 
+        ON electrical_single_line_nodes.id = electrical_main_breakers.node_id
         WHERE electrical_main_breakers.project_id = @projectId
         ";
       OpenConnection();
@@ -189,7 +203,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeBoolean(reader, "has_ground_fault_protection"),
             GetSafeBoolean(reader, "has_surge_protection"),
             GetSafeInt(reader, "num_poles"),
-            GetSafeFloat(reader, "aic_rating")
+            GetSafeFloat(reader, "aic_rating"),
+            new System.Drawing.Point(GetSafeInt(reader, "loc_x"), GetSafeInt(reader, "loc_y"))
           )
         );
       }
@@ -204,9 +219,10 @@ namespace GMEPElectricalCommands.GmepDatabase
       string query =
         @"SELECT
         electrical_distribution_buses.id,
-        electrical_distribution_buses.name,
         electrical_distribution_buses.node_id,
         electrical_distribution_buses.aic_rating,
+        electrical_single_line_nodes.loc_x,
+        electrical_single_line_nodes.loc_y,
         statuses.status,
         electrical_service_amp_ratings.amp_rating
         FROM electrical_distribution_buses
@@ -214,6 +230,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         ON electrical_service_amp_ratings.id = electrical_distribution_buses.amp_rating_id
         LEFT JOIN statuses 
         ON statuses.id = electrical_distribution_buses.status_id
+        LEFT JOIN electrical_single_line_nodes 
+        ON electrical_single_line_nodes.id = electrical_distribution_buses.node_id
         WHERE electrical_distribution_buses.project_id = @projectId
         ";
       OpenConnection();
@@ -225,11 +243,11 @@ namespace GMEPElectricalCommands.GmepDatabase
         distributionBuses.Add(
           new DistributionBus(
             GetSafeString(reader, "id"),
-            GetSafeString(reader, "name"),
             GetSafeString(reader, "node_id"),
             GetSafeString(reader, "status"),
             GetSafeInt(reader, "amp_rating"),
-            GetSafeFloat(reader, "aic_rating")
+            GetSafeFloat(reader, "aic_rating"),
+            new System.Drawing.Point(GetSafeInt(reader, "loc_x"), GetSafeInt(reader, "loc_y"))
           )
         );
       }
@@ -248,6 +266,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_distribution_breakers.aic_rating,
         electrical_distribution_breakers.num_poles,
         electrical_distribution_breakers.is_fuse_only,
+        electrical_single_line_nodes.loc_x,
+        electrical_single_line_nodes.loc_y,
         statuses.status,
         electrical_panel_bus_amp_ratings.amp_rating
         FROM electrical_distribution_breakers
@@ -255,6 +275,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         ON electrical_panel_bus_amp_ratings.id = electrical_distribution_breakers.amp_rating_id
         LEFT JOIN statuses 
         ON statuses.id = electrical_distribution_breakers.status_id
+        LEFT JOIN electrical_single_line_nodes 
+        ON electrical_single_line_nodes.id = electrical_distribution_breakers.node_id
         WHERE electrical_distribution_breakers.project_id = @projectId
       ";
       OpenConnection();
@@ -271,7 +293,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeInt(reader, "amp_rating"),
             GetSafeInt(reader, "num_poles"),
             GetSafeBoolean(reader, "is_fuse_only"),
-            GetSafeFloat(reader, "aic_rating")
+            GetSafeFloat(reader, "aic_rating"),
+            new System.Drawing.Point(GetSafeInt(reader, "loc_x"), GetSafeInt(reader, "loc_y"))
           )
         );
       }
@@ -299,6 +322,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_panels.aic_rating,
         electrical_panels.is_hidden_on_plan,
         electrical_panels.node_id,
+        electrical_single_line_nodes.loc_x as node_x,
+        electrical_single_line_nodes.loc_y as node_y,
         statuses.status
         FROM electrical_panels
         LEFT JOIN electrical_panel_bus_amp_ratings AS bus_amp_ratings
@@ -309,6 +334,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         ON electrical_service_voltages.id = electrical_panels.voltage_id
         LEFT JOIN statuses
         ON statuses.id = electrical_panels.status_id
+        LEFT JOIN electrical_single_line_nodes 
+        ON electrical_single_line_nodes.id = electrical_panels.node_id
         WHERE electrical_panels.project_id = @projectId
         ORDER BY electrical_panels.name ASC";
       OpenConnection();
@@ -333,7 +360,8 @@ namespace GMEPElectricalCommands.GmepDatabase
               reader.GetFloat("aic_rating"),
               reader.GetBoolean("is_hidden_on_plan"),
               reader.GetString("node_id"),
-              reader.GetString("status")
+              reader.GetString("status"),
+              new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y"))
             )
           );
         }
@@ -356,11 +384,14 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_panel_breakers.circuit_no,
         electrical_panel_breakers.aic_rating,
         electrical_panel_bus_amp_ratings.amp_rating,
+        electrical_single_line_nodes.loc_x,
+        electrical_single_line_nodes.loc_y,
         statuses.status
         FROM electrical_panel_breakers
         LEFT JOIN statuses ON statuses.id = electrical_panel_breakers.status_id
+        LEFT JOIN electrical_single_line_nodes ON electrical_single_line_nodes.id = electrical_panel_breakers.node_id
         LEFT JOIN electrical_panel_bus_amp_ratings ON electrical_panel_bus_amp_ratings.id = electrical_panel_breakers.amp_rating_id
-        WHERE project_id = 0
+        WHERE electrical_panel_breakers.project_id = @projectId
         ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
@@ -376,7 +407,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeInt(reader, "amp_rating"),
             GetSafeInt(reader, "num_poles"),
             GetSafeInt(reader, "circuit_no"),
-            GetSafeFloat(reader, "aic_rating")
+            GetSafeFloat(reader, "aic_rating"),
+            new System.Drawing.Point(GetSafeInt(reader, "loc_x"), GetSafeInt(reader, "loc_y"))
           )
         );
       }
@@ -399,12 +431,15 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_disconnects.num_poles,
         electrical_disconnects.parent_distance,
         electrical_disconnects.aic_rating,
+        electrical_single_line_nodes.loc_x as node_x,
+        electrical_single_line_nodes.loc_y as node_y,
         statuses.status
         FROM electrical_disconnects
         LEFT JOIN statuses ON statuses.id = electrical_disconnects.status_id
         LEFT JOIN electrical_disconnect_as_sizes ON electrical_disconnect_as_sizes.id = electrical_disconnects.as_size_id
         LEFT JOIN electrical_disconnect_af_sizes ON electrical_disconnect_af_sizes.id = electrical_disconnects.af_size_id
-        WHERE project_id = @projectId
+        LEFT JOIN electrical_single_line_nodes ON electrical_single_line_nodes.id = electrical_disconnects.node_id        
+        WHERE electrical_disconnects.project_id = @projectId
         ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
@@ -422,7 +457,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeInt(reader, "as_size"),
             GetSafeInt(reader, "af_size"),
             GetSafeInt(reader, "num_poles"),
-            GetSafeFloat(reader, "aic_rating")
+            GetSafeFloat(reader, "aic_rating"),
+            new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y"))
           )
         );
       }
@@ -436,13 +472,30 @@ namespace GMEPElectricalCommands.GmepDatabase
       List<Transformer> xfmrs = new List<Transformer>();
       string query =
         @"
-        SELECT * FROM electrical_transformers
+        SELECT 
+        electrical_transformers.id,
+        electrical_transformers.parent_id,
+        electrical_transformers.name,
+        electrical_transformers.parent_distance,
+        electrical_transformers.loc_x,
+        electrical_transformers.loc_y,
+        electrical_transformer_kva_ratings.kva_rating,
+        electrical_transformer_voltages.voltage,
+        electrical_transformers.aic_rating,
+        electrical_transformers.is_hidden_on_plan,
+        electrical_transformers.node_id,
+        electrical_single_line_nodes.loc_x as node_x,
+        electrical_single_line_nodes.loc_y as node_y,
+        statuses.status
+        FROM electrical_transformers
         LEFT JOIN electrical_transformer_kva_ratings
         ON electrical_transformer_kva_ratings.id = electrical_transformers.kva_id
         LEFT JOIN electrical_transformer_voltages
         ON electrical_transformer_voltages.id = electrical_transformers.voltage_id
         LEFT JOIN statuses
         ON statuses.id = electrical_transformers.status_id
+        LEFT JOIN electrical_single_line_nodes
+        ON electrical_single_line_nodes.id = electrical_transformers.node_id
         WHERE electrical_transformers.project_id = @projectId
         ORDER BY electrical_transformers.name ASC";
       OpenConnection();
@@ -451,33 +504,30 @@ namespace GMEPElectricalCommands.GmepDatabase
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
-        try
-        {
-          xfmrs.Add(
-            new Transformer(
-              reader.GetString("id"),
-              reader.GetString("parent_id"),
-              reader.GetString("name"),
-              reader.GetInt32("parent_distance"),
-              reader.GetFloat("loc_x"),
-              reader.GetFloat("loc_y"),
-              reader.GetFloat("kva_rating"),
-              reader.GetString("voltage"),
-              reader.GetFloat("aic_rating"),
-              reader.GetBoolean("is_hidden_on_plan"),
-              reader.GetString("node_id"),
-              GetSafeString(reader, "status")
-            )
-          );
-        }
-        catch { }
+        xfmrs.Add(
+          new Transformer(
+            GetSafeString(reader, "id"),
+            GetSafeString(reader, "parent_id"),
+            GetSafeString(reader, "name"),
+            GetSafeInt(reader, "parent_distance"),
+            GetSafeFloat(reader, "loc_x"),
+            GetSafeFloat(reader, "loc_y"),
+            GetSafeFloat(reader, "kva_rating"),
+            GetSafeString(reader, "voltage"),
+            GetSafeFloat(reader, "aic_rating"),
+            GetSafeBoolean(reader, "is_hidden_on_plan"),
+            GetSafeString(reader, "node_id"),
+            GetSafeString(reader, "status"),
+            new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y"))
+          )
+        );
       }
       CloseConnection();
       reader.Close();
       return xfmrs;
     }
 
-    public List<NodeLink> GetNodesLinks(string projectId)
+    public List<NodeLink> GetNodeLinks(string projectId)
     {
       List<NodeLink> nodeLinks = new List<NodeLink>();
       string query =
@@ -490,21 +540,57 @@ namespace GMEPElectricalCommands.GmepDatabase
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
-        try
-        {
-          nodeLinks.Add(
-            new NodeLink(
-              GetSafeString(reader, "id"),
-              GetSafeString(reader, "input_connector_node_id"),
-              GetSafeString(reader, "output_connector_node_id")
-            )
-          );
-        }
-        catch { }
+        nodeLinks.Add(
+          new NodeLink(
+            GetSafeString(reader, "id"),
+            GetSafeString(reader, "input_connector_node_id"),
+            GetSafeString(reader, "output_connector_node_id")
+          )
+        );
       }
       CloseConnection();
       reader.Close();
       return nodeLinks;
+    }
+
+    public List<GroupNode> GetGroupNodes(string projectId)
+    {
+      List<GroupNode> groupNodes = new List<GroupNode>();
+      string query =
+        @"
+        SELECT 
+        electrical_single_line_groups.id,
+        electrical_single_line_groups.width,
+        electrical_single_line_groups.height,
+        electrical_single_line_groups.name,
+        electrical_single_line_groups.loc_x,
+        electrical_single_line_groups.loc_y,
+        statuses.status
+        FROM electrical_single_line_groups
+        LEFT JOIN statuses ON statuses.id = electrical_single_line_groups.status_id
+        WHERE project_id = @projectId
+        ORDER BY electrical_single_line_groups.loc_x ASC
+        ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read())
+      {
+        groupNodes.Add(
+          new GroupNode(
+            GetSafeString(reader, "id"),
+            GetSafeInt(reader, "width"),
+            GetSafeInt(reader, "height"),
+            GetSafeString(reader, "name"),
+            new System.Drawing.Point(GetSafeInt(reader, "loc_x"), GetSafeInt(reader, "loc_y")),
+            GetSafeString(reader, "status")
+          )
+        );
+      }
+      CloseConnection();
+      reader.Close();
+      return groupNodes;
     }
 
     public List<Equipment> GetEquipment(string projectId)

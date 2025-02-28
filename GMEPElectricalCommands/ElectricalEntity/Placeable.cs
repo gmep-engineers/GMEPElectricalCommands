@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Windows;
 using System.Windows.Forms;
 using Autodesk.AutoCAD.Geometry;
+using ElectricalCommands.SingleLine;
 
 namespace ElectricalCommands.ElectricalEntity
 {
@@ -115,19 +118,23 @@ namespace ElectricalCommands.ElectricalEntity
 
     public Service(
       string Id,
-      string Name,
+      string NodeId,
       string Status,
       int AmpRating,
       string Voltage,
-      double AicRating
+      double AicRating,
+      System.Drawing.Point NodePosition
     )
     {
       this.Id = Id;
-      this.Name = Name;
+      this.NodeId = NodeId;
+      Name = $"{AmpRating}A {Voltage.Replace(" ", "V-")} Service";
       this.Status = Status;
       this.AmpRating = AmpRating;
       this.Voltage = Voltage;
       this.AicRating = AicRating;
+      NodeType = NodeType.Service;
+      this.NodePosition = NodePosition;
     }
   }
 
@@ -200,7 +207,8 @@ namespace ElectricalCommands.ElectricalEntity
       int AsSize,
       int AfSize,
       int NumPoles,
-      double AicRating
+      double AicRating,
+      System.Drawing.Point NodePosition
     )
     {
       this.Id = Id;
@@ -213,6 +221,8 @@ namespace ElectricalCommands.ElectricalEntity
       this.Status = Status;
       this.AicRating = AicRating;
       Name = $"{AsSize}AS/{AfSize}AF/{NumPoles}P Disconnect";
+      NodeType = NodeType.Disconnect;
+      this.NodePosition = NodePosition;
     }
   }
 
@@ -237,7 +247,8 @@ namespace ElectricalCommands.ElectricalEntity
       double AicRating,
       bool IsHidden,
       string NodeId,
-      string Status
+      string Status,
+      System.Drawing.Point NodePosition
     )
     {
       this.Id = Id;
@@ -252,6 +263,8 @@ namespace ElectricalCommands.ElectricalEntity
       this.IsHidden = IsHidden;
       this.NodeId = NodeId;
       this.Status = Status;
+      NodeType = NodeType.Panel;
+      this.NodePosition = NodePosition;
     }
   }
 
@@ -272,7 +285,8 @@ namespace ElectricalCommands.ElectricalEntity
       double AicRating,
       bool IsHidden,
       string NodeId,
-      string Status
+      string Status,
+      System.Drawing.Point NodePosition
     )
     {
       this.Id = Id;
@@ -286,6 +300,8 @@ namespace ElectricalCommands.ElectricalEntity
       this.IsHidden = IsHidden;
       this.NodeId = NodeId;
       this.Status = Status;
+      NodeType = NodeType.Transformer;
+      this.NodePosition = NodePosition;
     }
   }
 }

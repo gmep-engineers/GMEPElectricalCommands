@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using ElectricalCommands.SingleLine;
 
 namespace ElectricalCommands.ElectricalEntity
 {
@@ -13,6 +15,8 @@ namespace ElectricalCommands.ElectricalEntity
       NodeId;
     public string Status;
     public double AicRating;
+    public NodeType NodeType;
+    public Point NodePosition;
   }
 
   public class DistributionBreaker : ElectricalEntity
@@ -28,7 +32,8 @@ namespace ElectricalCommands.ElectricalEntity
       int AmpRating,
       int NumPoles,
       bool IsFuseOnly,
-      double AicRating
+      double AicRating,
+      System.Drawing.Point NodePosition
     )
     {
       this.Id = Id;
@@ -39,6 +44,8 @@ namespace ElectricalCommands.ElectricalEntity
       this.IsFuseOnly = IsFuseOnly;
       this.AicRating = AicRating;
       Name = $"{AmpRating}A/{NumPoles}P";
+      NodeType = NodeType.DistributionBreaker;
+      this.NodePosition = NodePosition;
     }
   }
 
@@ -48,11 +55,11 @@ namespace ElectricalCommands.ElectricalEntity
 
     public DistributionBus(
       string Id,
-      string Name,
       string NodeId,
       string Status,
       int AmpRating,
-      double AicRating
+      double AicRating,
+      Point NodePosition
     )
     {
       this.Id = Id;
@@ -61,6 +68,8 @@ namespace ElectricalCommands.ElectricalEntity
       this.AmpRating = AmpRating;
       this.AicRating = AicRating;
       Name = $"{AmpRating}A Bus";
+      NodeType = NodeType.DistributionBus;
+      this.NodePosition = NodePosition;
     }
   }
 
@@ -79,7 +88,8 @@ namespace ElectricalCommands.ElectricalEntity
       bool HasGroundFaultProtection,
       bool HasSurgeProtection,
       int NumPoles,
-      double AicRating
+      double AicRating,
+      Point NodePosition
     )
     {
       this.Id = Id;
@@ -91,6 +101,8 @@ namespace ElectricalCommands.ElectricalEntity
       this.NumPoles = NumPoles;
       this.AicRating = AicRating;
       Name = $"{AmpRating}A/{NumPoles}P Main Breaker";
+      NodeType = NodeType.MainBreaker;
+      this.NodePosition = NodePosition;
     }
   }
 
@@ -98,7 +110,14 @@ namespace ElectricalCommands.ElectricalEntity
   {
     public bool HasCts;
 
-    public Meter(string Id, string NodeId, string Status, bool HasCts, double AicRating)
+    public Meter(
+      string Id,
+      string NodeId,
+      string Status,
+      bool HasCts,
+      double AicRating,
+      Point NodePosition
+    )
     {
       this.Id = Id;
       this.NodeId = NodeId;
@@ -106,6 +125,8 @@ namespace ElectricalCommands.ElectricalEntity
       this.HasCts = HasCts;
       this.AicRating = AicRating;
       Name = HasCts ? "CTS Meter" : "Meter";
+      NodeType = NodeType.Meter;
+      this.NodePosition = NodePosition;
     }
   }
 
@@ -122,7 +143,8 @@ namespace ElectricalCommands.ElectricalEntity
       int AmpRating,
       int NumPoles,
       int CircuitNo,
-      double AicRating
+      double AicRating,
+      Point NodePosition
     )
     {
       this.Id = Id;
@@ -133,6 +155,8 @@ namespace ElectricalCommands.ElectricalEntity
       this.CircuitNo = CircuitNo;
       this.AicRating = AicRating;
       Name = $"{AmpRating}A/{NumPoles}P Panel Breaker";
+      NodeType = NodeType.PanelBreaker;
+      this.NodePosition = NodePosition;
     }
   }
 
@@ -147,6 +171,33 @@ namespace ElectricalCommands.ElectricalEntity
       Id = id;
       InputConnectorNodeId = inputConnectorNodeId;
       OutputConnectorNodeId = outputConnectorNodeId;
+    }
+  }
+
+  public class GroupNode
+  {
+    public string Id;
+    public int Width;
+    public int Height;
+    public string Name;
+    public Point NodePosition;
+    public string Status;
+
+    public GroupNode(
+      string id,
+      int width,
+      int height,
+      string name,
+      Point nodePosition,
+      string status
+    )
+    {
+      Id = id;
+      Width = width;
+      Height = height;
+      Name = name;
+      NodePosition = nodePosition;
+      Status = status;
     }
   }
 }

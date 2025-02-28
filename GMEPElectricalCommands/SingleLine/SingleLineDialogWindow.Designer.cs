@@ -28,7 +28,9 @@
             this.mainMenu1 = new System.Windows.Forms.MainMenu(this.components);
             this.menuItem1 = new System.Windows.Forms.MenuItem();
             this.menuItem2 = new System.Windows.Forms.MenuItem();
-            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.InfoGroupBox = new System.Windows.Forms.GroupBox();
+            this.InfoTextBox = new System.Windows.Forms.TextBox();
+            this.InfoGroupBox.SuspendLayout();
             this.SuspendLayout();
             // 
             // SingleLineTreeView
@@ -38,8 +40,9 @@
             | System.Windows.Forms.AnchorStyles.Right)));
             this.SingleLineTreeView.Location = new System.Drawing.Point(12, 12);
             this.SingleLineTreeView.Name = "SingleLineTreeView";
-            this.SingleLineTreeView.Size = new System.Drawing.Size(595, 737);
+            this.SingleLineTreeView.Size = new System.Drawing.Size(802, 737);
             this.SingleLineTreeView.TabIndex = 0;
+            this.SingleLineTreeView.NodeMouseClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.TreeView_OnNodeMouseClick);
             // 
             // mainMenu1
             // 
@@ -58,28 +61,43 @@
             this.menuItem2.Index = 0;
             this.menuItem2.Text = "Generate";
             // 
-            // groupBox1
+            // InfoGroupBox
             // 
-            this.groupBox1.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
+            this.InfoGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.groupBox1.Location = new System.Drawing.Point(614, -2);
-            this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(558, 751);
-            this.groupBox1.TabIndex = 1;
-            this.groupBox1.TabStop = false;
-            this.groupBox1.Text = "groupBox1";
+            this.InfoGroupBox.AutoSizeMode = System.Windows.Forms.AutoSizeMode.GrowAndShrink;
+            this.InfoGroupBox.Controls.Add(this.InfoTextBox);
+            this.InfoGroupBox.Location = new System.Drawing.Point(820, 4);
+            this.InfoGroupBox.Name = "InfoGroupBox";
+            this.InfoGroupBox.Size = new System.Drawing.Size(352, 745);
+            this.InfoGroupBox.TabIndex = 1;
+            this.InfoGroupBox.TabStop = false;
+            this.InfoGroupBox.Text = "groupBox1";
+            // 
+            // InfoTextBox
+            // 
+            this.InfoTextBox.BorderStyle = System.Windows.Forms.BorderStyle.None;
+            this.InfoTextBox.Font = new System.Drawing.Font("Lucida Console", 8.25F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.InfoTextBox.ForeColor = System.Drawing.SystemColors.MenuText;
+            this.InfoTextBox.Location = new System.Drawing.Point(6, 19);
+            this.InfoTextBox.Multiline = true;
+            this.InfoTextBox.Name = "InfoTextBox";
+            this.InfoTextBox.ReadOnly = true;
+            this.InfoTextBox.Size = new System.Drawing.Size(340, 720);
+            this.InfoTextBox.TabIndex = 0;
             // 
             // SingleLineDialogWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1184, 761);
-            this.Controls.Add(this.groupBox1);
+            this.Controls.Add(this.InfoGroupBox);
             this.Controls.Add(this.SingleLineTreeView);
             this.Menu = this.mainMenu1;
             this.Name = "SingleLineDialogWindow";
             this.Text = "SingleLineDialogWindow";
+            this.InfoGroupBox.ResumeLayout(false);
+            this.InfoGroupBox.PerformLayout();
             this.ResumeLayout(false);
 
     }
@@ -90,6 +108,7 @@
     private System.Windows.Forms.MainMenu mainMenu1;
     private System.Windows.Forms.MenuItem menuItem1;
     private System.Windows.Forms.MenuItem menuItem2;
-    private System.Windows.Forms.GroupBox groupBox1;
+    private System.Windows.Forms.GroupBox InfoGroupBox;
+    private System.Windows.Forms.TextBox InfoTextBox;
   }
 }
