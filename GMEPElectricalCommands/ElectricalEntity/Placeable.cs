@@ -243,6 +243,7 @@ namespace ElectricalCommands.ElectricalEntity
       double LocationY,
       int BusAmpRating,
       int MainAmpRating,
+      bool IsMlo,
       string Voltage,
       double AicRating,
       bool IsHidden,
@@ -258,6 +259,7 @@ namespace ElectricalCommands.ElectricalEntity
       Location = new Point3d(LocationX, LocationY, 0);
       this.BusAmpRating = BusAmpRating;
       this.MainAmpRating = MainAmpRating;
+      this.IsMlo = IsMlo;
       this.Voltage = Voltage;
       this.AicRating = AicRating;
       this.IsHidden = IsHidden;

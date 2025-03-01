@@ -60,6 +60,7 @@
             // 
             this.menuItem2.Index = 0;
             this.menuItem2.Text = "Generate";
+            this.menuItem2.Click += new System.EventHandler(this.GenerateButton_Click);
             // 
             // InfoGroupBox
             // 
@@ -95,7 +96,8 @@
             this.Controls.Add(this.SingleLineTreeView);
             this.Menu = this.mainMenu1;
             this.Name = "SingleLineDialogWindow";
-            this.Text = "SingleLineDialogWindow";
+            this.Text = "Single Line";
+            this.Load += new System.EventHandler(this.SingleLineDialogWindow_Load);
             this.InfoGroupBox.ResumeLayout(false);
             this.InfoGroupBox.PerformLayout();
             this.ResumeLayout(false);

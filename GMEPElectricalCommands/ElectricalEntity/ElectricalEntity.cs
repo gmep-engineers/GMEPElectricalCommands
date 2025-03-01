@@ -43,7 +43,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.NumPoles = NumPoles;
       this.IsFuseOnly = IsFuseOnly;
       this.AicRating = AicRating;
-      Name = $"{AmpRating}A/{NumPoles}P";
+      Name = $"{AmpRating}A/{NumPoles}P Distrib. Breaker";
       NodeType = NodeType.DistributionBreaker;
       this.NodePosition = NodePosition;
     }
@@ -67,7 +67,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.Status = Status;
       this.AmpRating = AmpRating;
       this.AicRating = AicRating;
-      Name = $"{AmpRating}A Bus";
+      Name = $"{AmpRating}A Distrib. Bus";
       NodeType = NodeType.DistributionBus;
       this.NodePosition = NodePosition;
     }
