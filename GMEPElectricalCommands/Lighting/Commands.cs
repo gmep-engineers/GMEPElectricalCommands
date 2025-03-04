@@ -486,8 +486,7 @@ namespace ElectricalCommands.Lighting
             {
               BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
-              BlockTableRecord block = (BlockTableRecord)
-                tr.GetObject(bt[fixture.blockName], OpenMode.ForRead);
+              BlockTableRecord block = (BlockTableRecord)tr.GetObject(bt[fixture.blockName], OpenMode.ForRead);
               BlockJig blockJig = new BlockJig();
 
               PromptResult res = blockJig.DragMe(block.ObjectId, out point);
