@@ -97,9 +97,13 @@ namespace ElectricalCommands.SingleLine
       );
     }
 
-    public double AggregateEntityWidth(TreeNode parentNode, NodeType entityType)
+    public double AggregateEntityWidth(TreeNode parentNode, NodeType parentType)
     {
       double width = 0;
+      if (parentType == NodeType.Undefined)
+      {
+        width = 2;
+      }
       foreach (TreeNode childNode in parentNode.Nodes)
       {
         ElectricalEntity.ElectricalEntity childEntity = (ElectricalEntity.ElectricalEntity)
@@ -115,19 +119,17 @@ namespace ElectricalCommands.SingleLine
           case NodeType.Panel:
             width +=
               AggregateEntityWidth(childNode, childEntity.NodeType)
-              + (entityType == NodeType.Panel ? 2 : 0);
+              + (parentType == NodeType.Panel ? 2 : 0);
             break;
           case NodeType.Disconnect:
             width +=
               AggregateEntityWidth(childNode, childEntity.NodeType)
-              + (entityType == NodeType.Panel ? 2 : 0);
-
+              + (parentType == NodeType.Panel ? 2 : 0);
             break;
           case NodeType.Transformer:
             width +=
               AggregateEntityWidth(childNode, childEntity.NodeType)
-              + (entityType == NodeType.Panel ? 2 : 0);
-
+              + (parentType == NodeType.Panel ? 2 : 0);
             break;
           case NodeType.PanelBreaker:
             width += 2 + AggregateEntityWidth(childNode, childEntity.NodeType);
@@ -148,7 +150,12 @@ namespace ElectricalCommands.SingleLine
           return width;
         }
         TreeNode childNode = nodes[0];
-        width += 2 + AggregateEntityWidth(childNode, NodeType.Undefined);
+        ElectricalEntity.ElectricalEntity parent = (ElectricalEntity.ElectricalEntity)
+          childNode.Parent.Tag;
+        if (parent.NodeType == NodeType.DistributionBus)
+        {
+          width += AggregateEntityWidth(childNode, NodeType.Undefined);
+        }
       }
       return width;
     }
@@ -679,6 +686,10 @@ namespace ElectricalCommands.SingleLine
 
     private void MakeEntityFromDistributionBus(TreeNode distributionBusChild, Point3d currentPoint)
     {
+      if (distributionBusChild == null || distributionBusChild.Nodes.Count == 0)
+      {
+        return;
+      }
       ElectricalEntity.ElectricalEntity distributionBusChildEntity =
         (ElectricalEntity.ElectricalEntity)distributionBusChild.Tag;
 
@@ -700,119 +711,214 @@ namespace ElectricalCommands.SingleLine
         {
           SingleLine.MakeDistributionMeterAndBreakerCombo(meter, distributionBreaker, currentPoint);
         }
+        if (distributionBusChild.Nodes.Count > 0)
+        {
+          MakeFieldEntity(
+            distributionBusChild.Nodes[0],
+            new Point3d(currentPoint.X, currentPoint.Y - 4, 0)
+          );
+          SingleLine.MakeDistributionChildConduit(
+            new Point3d(currentPoint.X, currentPoint.Y - 1.6875, 0)
+          );
+        }
       }
       else
       {
         DistributionBreaker distributionBreaker = (DistributionBreaker)distributionBusChildEntity;
         SingleLine.MakeDistributionBreakerCombo(distributionBreaker, currentPoint);
+        MakeFieldEntity(distributionBusChild, new Point3d(currentPoint.X, currentPoint.Y - 4, 0));
+        SingleLine.MakeDistributionChildConduit(
+          new Point3d(currentPoint.X, currentPoint.Y - 1.6875, 0)
+        );
       }
+    }
 
-      MakeFieldEntity(distributionBusChild, currentPoint);
+    private List<ElectricalEntity.PanelBreaker> GetPanelBreakersFromPanel(TreeNode panelNode)
+    {
+      List<ElectricalEntity.PanelBreaker> panelBreakers = new List<PanelBreaker>();
+      foreach (TreeNode childNode in panelNode.Nodes)
+      {
+        ElectricalEntity.ElectricalEntity childEntity = (ElectricalEntity.ElectricalEntity)
+          childNode.Tag;
+        if (childEntity != null && childEntity.NodeType == NodeType.PanelBreaker)
+        {
+          ElectricalEntity.PanelBreaker panelBreaker = (ElectricalEntity.PanelBreaker)childEntity;
+          panelBreakers.Add(panelBreaker);
+        }
+      }
+      return panelBreakers;
     }
 
     private void MakeFieldEntity(TreeNode parentNode, Point3d currentPoint)
     {
+      if (parentNode == null || parentNode.Nodes.Count == 0)
+      {
+        return;
+      }
       TreeNode childNode = parentNode.Nodes[0];
       ElectricalEntity.ElectricalEntity childEntity = (ElectricalEntity.ElectricalEntity)
         childNode.Tag;
       if (childEntity.NodeType == NodeType.Panel)
       {
         // Make panel
-        // check for PanelBreakers and make (including conduits), then call MakeFieldEntity with next entity and new point for all children from the breakers
+        ElectricalEntity.Panel panel = (ElectricalEntity.Panel)childEntity;
+        SingleLine.MakePanel(panel, currentPoint);
+        List<ElectricalEntity.PanelBreaker> panelBreakers = GetPanelBreakersFromPanel(childNode);
+        for (int i = 0; i < panelBreakers.Count; i++)
+        {
+          // HERE test
+          if (i == 0)
+          {
+            Point3d breakerPoint = new Point3d(currentPoint.X + 0.3125, currentPoint.Y - 0.9333, 0);
+            SingleLine.MakeRightPanelBreaker(panelBreakers[i], breakerPoint);
+            currentPoint = SingleLine.MakePanelChildConduit(i, breakerPoint);
+            MakeFieldEntity(childNode.Nodes[i], currentPoint);
+          }
+          if (i == 1)
+          {
+            Point3d breakerPoint = new Point3d(currentPoint.X - 0.3125, currentPoint.Y - 0.9333, 0);
+            SingleLine.MakeRightPanelBreaker(panelBreakers[i], breakerPoint);
+            currentPoint = SingleLine.MakePanelChildConduit(i, breakerPoint);
+            MakeFieldEntity(childNode.Nodes[i], currentPoint);
+          }
+          if (i == 2)
+          {
+            Point3d breakerPoint = new Point3d(currentPoint.X + 0.3125, currentPoint.Y - 0.1833, 0);
+            SingleLine.MakeRightPanelBreaker(panelBreakers[i], breakerPoint);
+            currentPoint = SingleLine.MakePanelChildConduit(i, breakerPoint);
+            MakeFieldEntity(childNode.Nodes[i], currentPoint);
+          }
+          if (i == 3)
+          {
+            Point3d breakerPoint = new Point3d(currentPoint.X - 0.3125, currentPoint.Y - 0.1833, 0);
+            SingleLine.MakeRightPanelBreaker(panelBreakers[i], breakerPoint);
+            currentPoint = SingleLine.MakePanelChildConduit(i, breakerPoint);
+            MakeFieldEntity(childNode.Nodes[i], currentPoint);
+          }
+        }
       }
       if (childEntity.NodeType == NodeType.Disconnect)
       {
-        // Make Disconnect
-        // advance currentPoint
-        // call MakeFieldEntity(childEntity, currentPoint)
+        ElectricalEntity.Disconnect disconnect = (ElectricalEntity.Disconnect)childEntity;
+        SingleLine.MakeDisconnect(disconnect, currentPoint);
+        // HERE make conduit from disconnect
+        currentPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.1201, 0);
+        MakeFieldEntity(childNode, currentPoint);
       }
       if (childEntity.NodeType == NodeType.Transformer)
       {
+        ElectricalEntity.Transformer transformer = (ElectricalEntity.Transformer)childEntity;
+        SingleLine.MakeTransformer(transformer, currentPoint);
+        currentPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.3739, 0);
+        MakeFieldEntity(childNode, currentPoint);
         // Make Transformer
         // advance currentPoint
-        // call MakeFieldEntity(childEntity, currentPoint)
+        // call MakeFieldEntity(childNode, new currentPoint)ElectricalEntity.Disconnect disconnect = (ElectricalEntity.Disconnect)childEntity;
       }
     }
 
-    private void MakeDistributionSection(string groupId, Point3d currentPoint)
+    private string MakeDistributionSection(
+      string groupId,
+      Point3d groupPoint,
+      string distributionBusId = ""
+    )
     {
-      currentPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.25, 0);
-      Point3d distributionBusPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.0625, 0);
-      string distributionBusId = String.Empty;
-      foreach (string groupMember in groupDict[groupId])
-      {
-        if (distributionBusList.Select(entity => entity.Id).ToArray().Contains(groupMember))
-        {
-          distributionBusId = groupMember;
-        }
-      }
+      Point3d busBarPoint = new Point3d(groupPoint.X + 0.25, groupPoint.Y - 0.25, 0);
+      Point3d distributionBusChildPoint = new Point3d(
+        groupPoint.X,
+        groupPoint.Y - 0.0625 - 0.25,
+        0
+      );
+      bool addBusBar = false;
       if (String.IsNullOrEmpty(distributionBusId))
       {
-        return;
+        foreach (string groupMember in groupDict[groupId])
+        {
+          if (distributionBusList.Select(entity => entity.Id).ToArray().Contains(groupMember))
+          {
+            distributionBusId = groupMember;
+            addBusBar = true;
+          }
+        }
       }
-
       double totalBusBarWidth = 0;
       TreeNode distributionBusNode = SingleLineTreeView.Nodes.Find(distributionBusId, true)[0];
+      bool groupMembersAdded = false;
       foreach (TreeNode distributionBusChild in distributionBusNode.Nodes)
       {
+        double width = 0;
         NodeType nodeType = NodeType.DistributionBreaker;
+        if (!groupDict[groupId].Contains(distributionBusChild.Name))
+        {
+          width = 2 + AggregateEntityWidth(distributionBusChild, nodeType);
+          totalBusBarWidth += width;
+          continue;
+        }
         if (meterList.Select(entity => entity.Id).ToArray().Contains(distributionBusChild.Name))
         {
           nodeType = NodeType.Meter;
         }
-        double width = 2 + AggregateEntityWidth(distributionBusChild, nodeType);
+        width = 2 + AggregateEntityWidth(distributionBusChild, nodeType);
         totalBusBarWidth += width;
         // move to center of width
-        distributionBusPoint = new Point3d(
-          distributionBusPoint.X + (width / 2),
-          distributionBusPoint.Y,
-          distributionBusPoint.Z
+        distributionBusChildPoint = new Point3d(
+          distributionBusChildPoint.X + (width / 2),
+          distributionBusChildPoint.Y,
+          distributionBusChildPoint.Z
         );
-        MakeEntityFromDistributionBus(distributionBusChild, distributionBusPoint);
+        MakeEntityFromDistributionBus(distributionBusChild, distributionBusChildPoint);
         // move to end of width
-        distributionBusPoint = new Point3d(
-          distributionBusPoint.X + (width / 2),
-          distributionBusPoint.Y,
-          distributionBusPoint.Z
+        distributionBusChildPoint = new Point3d(
+          distributionBusChildPoint.X + (width / 2),
+          distributionBusChildPoint.Y,
+          distributionBusChildPoint.Z
         );
+        groupMembersAdded = true;
       }
-      // Make bus bar based on totalBusBarWidth
-      Polyline2dData polyData = new Polyline2dData();
-
-      polyData.Layer = "E-CND1";
-      polyData.Vertices.Add(new SimpleVector3d(currentPoint.X + 0.25, currentPoint.Y, 0));
-      polyData.Vertices.Add(
-        new SimpleVector3d(currentPoint.X + totalBusBarWidth, currentPoint.Y, 0)
-      );
-      polyData.Vertices.Add(
-        new SimpleVector3d(currentPoint.X + totalBusBarWidth, currentPoint.Y - 0.0625, 0)
-      );
-      polyData.Vertices.Add(new SimpleVector3d(currentPoint.X + 0.25, currentPoint.Y - 0.0625, 0));
-      polyData.Vertices.Add(new SimpleVector3d(currentPoint.X + 0.25, currentPoint.Y, 0));
-      polyData.Closed = true;
-
-      Document doc = Autodesk
-        .AutoCAD
-        .ApplicationServices
-        .Application
-        .DocumentManager
-        .MdiActiveDocument;
-      Database db = doc.Database;
-      Editor ed = doc.Editor;
-      using (Transaction tr = db.TransactionManager.StartTransaction())
+      if (!groupMembersAdded)
       {
-        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord btr = (BlockTableRecord)
-          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
-        CADObjectCommands.CreatePolyline2d(new Point3d(), tr, btr, polyData, 1);
-        tr.Commit();
+        // this means we've encountered another bus bar
+        return MakeDistributionSection(groupId, groupPoint);
       }
+      if (addBusBar)
+      {
+        Polyline2dData polyData = new Polyline2dData();
+        polyData.Layer = "E-CND1";
+        polyData.Vertices.Add(new SimpleVector3d(busBarPoint.X, busBarPoint.Y, 0));
+        polyData.Vertices.Add(
+          new SimpleVector3d(busBarPoint.X + totalBusBarWidth - 0.5, busBarPoint.Y, 0)
+        );
+        polyData.Vertices.Add(
+          new SimpleVector3d(busBarPoint.X + totalBusBarWidth - 0.5, busBarPoint.Y - 0.0625, 0)
+        );
+        polyData.Vertices.Add(new SimpleVector3d(busBarPoint.X, busBarPoint.Y - 0.0625, 0));
+        polyData.Vertices.Add(new SimpleVector3d(busBarPoint.X, busBarPoint.Y, 0));
+        polyData.Closed = true;
+        Document doc = Autodesk
+          .AutoCAD
+          .ApplicationServices
+          .Application
+          .DocumentManager
+          .MdiActiveDocument;
+        Database db = doc.Database;
+        Editor ed = doc.Editor;
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+          BlockTableRecord btr = (BlockTableRecord)
+            tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+          CADObjectCommands.CreatePolyline2d(new Point3d(), tr, btr, polyData, 1);
+          tr.Commit();
+        }
+      }
+      return distributionBusId;
     }
 
     private void MakeGroups(Point3d startingPoint)
     {
       Point3d currentPoint = startingPoint;
       int index = 1;
+      string distributionBusId = String.Empty;
       foreach (string groupId in groupDict.Keys)
       {
         if (String.IsNullOrEmpty(groupId))
@@ -823,7 +929,7 @@ namespace ElectricalCommands.SingleLine
         if (groupType == GroupType.MultimeterSection || groupType == GroupType.DistributionSection)
         {
           groupWidth = AggregateGroupWidth(groupId);
-          MakeDistributionSection(groupId, currentPoint);
+          distributionBusId = MakeDistributionSection(groupId, currentPoint, distributionBusId);
         }
         if (groupType == GroupType.PullSection)
         {
