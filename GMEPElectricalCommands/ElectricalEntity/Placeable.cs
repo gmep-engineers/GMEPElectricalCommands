@@ -7,6 +7,7 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using ElectricalCommands.SingleLine;
 
 namespace ElectricalCommands.ElectricalEntity
@@ -20,6 +21,8 @@ namespace ElectricalCommands.ElectricalEntity
     public bool IsHidden;
     public string BlockName;
     public bool Rotate;
+    public string TableName;
+    public ObjectId BlockId;
 
     public bool IsPlaced()
     {
@@ -73,11 +76,27 @@ namespace ElectricalCommands.ElectricalEntity
             }
           }
           catch { }
+          try
+          {
+            Line line = (Line)tr.GetObject(id, OpenMode.ForWrite);
+            if (line != null)
+            {
+              ObjectId fieldId = line.GetField("gmep_equip_id");
+              if (fieldId != null)
+              {
+                Field field = (Field)tr.GetObject(fieldId, OpenMode.ForWrite);
+                if (field != null && field.GetFieldCode() == Id)
+                {
+                  line.Erase();
+                }
+              }
+            }
+          }
+          catch { }
         }
         tr.Commit();
       }
       double scale = 12;
-      ObjectId blockId;
       if (
         CADObjectCommands.Scale <= 0
         && (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
@@ -99,7 +118,7 @@ namespace ElectricalCommands.ElectricalEntity
         BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
         BlockTableRecord block = (BlockTableRecord)tr.GetObject(bt[BlockName], OpenMode.ForRead);
-        BlockJig blockJig = new BlockJig();
+        BlockJig blockJig = new BlockJig(Name);
 
         PromptResult blockPromptResult = blockJig.DragMe(block.ObjectId, out firstClickPoint);
 
@@ -119,40 +138,77 @@ namespace ElectricalCommands.ElectricalEntity
             scaleFactor = scale;
           }
 
-          BlockReference br = new BlockReference(firstClickPoint, block.ObjectId);
-
-          if (blockPromptResult.Status == PromptStatus.OK)
+          using (BlockReference br = new BlockReference(firstClickPoint, block.ObjectId))
           {
-            BlockTableRecord currentSpace =
-              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-            br.ScaleFactors = new Scale3d(0.25 / scaleFactor);
-            br.Layer = "E-SYM1";
-          }
-
-          if (Rotate)
-          {
-            RotateJig rotateJig = new RotateJig(br);
-            PromptResult rotatePromptResult = ed.Drag(rotateJig);
-
-            if (rotatePromptResult.Status != PromptStatus.OK)
+            if (blockPromptResult.Status == PromptStatus.OK)
             {
-              return new Point3d();
+              BlockTableRecord currentSpace =
+                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+              br.ScaleFactors = new Scale3d(0.25 / scaleFactor);
+              br.Layer = "E-SYM1";
             }
-            rotation = br.Rotation;
+
+            if (Rotate)
+            {
+              RotateJig rotateJig = new RotateJig(br);
+              PromptResult rotatePromptResult = ed.Drag(rotateJig);
+
+              if (rotatePromptResult.Status != PromptStatus.OK)
+              {
+                return null;
+              }
+              rotation = br.Rotation;
+            }
+            curSpace.AppendEntity(br);
+            tr.AddNewlyCreatedDBObject(br, true);
+            BlockId = br.Id;
+            Location = firstClickPoint;
+            tr.Commit();
           }
-
-          curSpace.AppendEntity(br);
-
-          tr.AddNewlyCreatedDBObject(br, true);
-          blockId = br.Id;
         }
         else
         {
-          return new Point3d();
+          return null;
         }
-
-        tr.Commit();
       }
+
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        try
+        {
+          BlockReference br = (BlockReference)tr.GetObject(BlockId, OpenMode.ForWrite);
+          if (
+            br != null
+            && br.IsDynamicBlock
+            && br.DynamicBlockReferencePropertyCollection.Count > 0
+          )
+          {
+            DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+            foreach (DynamicBlockReferenceProperty prop in pc)
+            {
+              if (prop.PropertyName == "gmep_equip_id")
+              {
+                prop.Value = Id;
+              }
+              if (prop.PropertyName == "gmep_equip_parent_id" && ParentId != null)
+              {
+                prop.Value = ParentId;
+              }
+              if (prop.PropertyName == "gmep_equip_no")
+              {
+                prop.Value = Name;
+              }
+              if (prop.PropertyName == "gmep_equip_locator")
+              {
+                prop.Value = "true";
+              }
+            }
+            tr.Commit();
+          }
+        }
+        catch { }
+      }
+
       double labelOffsetX = 0;
       double labelOffsetY = 0;
 
@@ -164,7 +220,7 @@ namespace ElectricalCommands.ElectricalEntity
         0
       );
 
-      LabelJig jig = new LabelJig(firstClickPoint);
+      LabelJig jig = new LabelJig(firstClickPoint, Id);
       PromptResult res = ed.Drag(jig);
       if (res.Status != PromptStatus.OK)
         return null;
@@ -186,7 +242,7 @@ namespace ElectricalCommands.ElectricalEntity
       }
       if (angle != 0 && angle != Math.PI)
       {
-        DynamicLineJig lineJig = new DynamicLineJig(jig.endPoint, scale);
+        DynamicLineJig lineJig = new DynamicLineJig(jig.endPoint, scale, Id);
         res = ed.Drag(lineJig);
         if (res.Status == PromptStatus.OK)
         {
@@ -223,45 +279,7 @@ namespace ElectricalCommands.ElectricalEntity
           0
         );
       }
-      using (Transaction tr = db.TransactionManager.StartTransaction())
-      {
-        try
-        {
-          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-          ObjectId locatorBlockId = bt["EQUIPMENT LOCATOR"];
-          using (BlockReference acBlkRef = new BlockReference(firstClickPoint, locatorBlockId))
-          {
-            BlockTableRecord acCurSpaceBlkTblRec;
-            acCurSpaceBlkTblRec =
-              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-            acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-            DynamicBlockReferencePropertyCollection pc =
-              acBlkRef.DynamicBlockReferencePropertyCollection;
-            foreach (DynamicBlockReferenceProperty prop in pc)
-            {
-              if (prop.PropertyName == "gmep_equip_id")
-              {
-                prop.Value = Id;
-              }
-              if (prop.PropertyName == "gmep_equip_parent_id" && ParentId != null)
-              {
-                prop.Value = ParentId;
-              }
-              if (prop.PropertyName == "gmep_equip_no")
-              {
-                prop.Value = Name;
-              }
-            }
-            acBlkRef.Layer = "E-TXT1";
-            tr.AddNewlyCreatedDBObject(acBlkRef, true);
-          }
-          tr.Commit();
-        }
-        catch (Autodesk.AutoCAD.Runtime.Exception ex)
-        {
-          tr.Commit();
-        }
-      }
+
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
         try
@@ -329,6 +347,100 @@ namespace ElectricalCommands.ElectricalEntity
         }
       }
       return firstClickPoint;
+    }
+
+    public void SetBlockId(List<ObjectId> dynamicBlockIds)
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      Transaction tr = db.TransactionManager.StartTransaction();
+      using (tr)
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        foreach (ObjectId id in dynamicBlockIds)
+        {
+          try
+          {
+            BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
+            if (br != null && br.IsDynamicBlock)
+            {
+              DynamicBlockReferencePropertyCollection pc =
+                br.DynamicBlockReferencePropertyCollection;
+              bool isEquip = false;
+              ObjectId blockId = new ObjectId();
+              foreach (DynamicBlockReferenceProperty prop in pc)
+              {
+                if (prop.PropertyName == "gmep_equip_id" && prop.Value as string == Id)
+                {
+                  blockId = id;
+                }
+                if (prop.PropertyName == "gmep_equip_locator" && prop.Value as string == "true")
+                {
+                  isEquip = true;
+                }
+              }
+              if (isEquip)
+              {
+                BlockId = blockId;
+              }
+            }
+          }
+          catch { }
+        }
+      }
+    }
+
+    private bool ResetLocation()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      Transaction tr = db.TransactionManager.StartTransaction();
+      using (tr)
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+
+        foreach (ObjectId id in modelSpace)
+        {
+          try
+          {
+            BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
+            if (br != null && br.IsDynamicBlock)
+            {
+              DynamicBlockReferencePropertyCollection pc =
+                br.DynamicBlockReferencePropertyCollection;
+              foreach (DynamicBlockReferenceProperty prop in pc)
+              {
+                if (prop.PropertyName == "gmep_equip_id" && prop.Value as string != "0") { }
+              }
+            }
+          }
+          catch { }
+        }
+
+        BlockReference _br = (BlockReference)tr.GetObject(BlockId, OpenMode.ForRead);
+        if (Location != _br.Position)
+        {
+          Location = _br.Position;
+          return true;
+        }
+      }
+      return false;
     }
   }
 
@@ -422,7 +534,8 @@ namespace ElectricalCommands.ElectricalEntity
       string Status,
       int AmpRating,
       double AicRating,
-      System.Drawing.Point NodePosition
+      System.Drawing.Point NodePosition,
+      Point3d Location
     )
     {
       this.Id = Id;
@@ -434,7 +547,9 @@ namespace ElectricalCommands.ElectricalEntity
       NodeType = NodeType.DistributionBus;
       this.NodePosition = NodePosition;
       BlockName = "GMEP DISTRIBUTION SECTION";
+      TableName = "electrical_distribution_buses";
       Rotate = true;
+      this.Location = Location;
     }
   }
 
@@ -450,7 +565,8 @@ namespace ElectricalCommands.ElectricalEntity
       int AmpRating,
       string Voltage,
       double AicRating,
-      System.Drawing.Point NodePosition
+      System.Drawing.Point NodePosition,
+      Point3d Location
     )
     {
       this.Id = Id;
@@ -463,7 +579,9 @@ namespace ElectricalCommands.ElectricalEntity
       NodeType = NodeType.Service;
       this.NodePosition = NodePosition;
       BlockName = "GMEP SERVICE SECTION";
+      TableName = "electrical_services";
       Rotate = true;
+      this.Location = Location;
     }
   }
 
@@ -518,6 +636,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.Circuit = Circuit;
       this.HasPlug = HasPlug;
       this.IsHidden = Hidden;
+      TableName = "electrical_equipment";
     }
   }
 
@@ -537,7 +656,8 @@ namespace ElectricalCommands.ElectricalEntity
       int AfSize,
       int NumPoles,
       double AicRating,
-      System.Drawing.Point NodePosition
+      System.Drawing.Point NodePosition,
+      Point3d Location
     )
     {
       this.Id = Id;
@@ -554,6 +674,9 @@ namespace ElectricalCommands.ElectricalEntity
       this.NodePosition = NodePosition;
       BlockName = "GMEP DISCONNECT";
       Rotate = false;
+      TableName = "electrical_disconnects";
+      this.Location = Location;
+      this.BlockId = (ObjectId)BlockId;
     }
   }
 
@@ -585,7 +708,7 @@ namespace ElectricalCommands.ElectricalEntity
     {
       this.Id = Id;
       this.ParentId = ParentId;
-      this.Name = Name;
+      this.Name = Name.ToUpper().Replace("PANEL", "").Trim();
       this.ParentDistance = ParentDistance;
       Location = new Point3d(LocationX, LocationY, 0);
       this.BusAmpRating = BusAmpRating;
@@ -600,6 +723,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.NodePosition = NodePosition;
       BlockName = $"A$C26441056";
       Rotate = true;
+      TableName = "electrical_panels";
     }
   }
 
@@ -639,6 +763,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.NodePosition = NodePosition;
       BlockName = "GMEP TRANSFORMER";
       Rotate = false;
+      TableName = "electrical_transformers";
     }
   }
 }

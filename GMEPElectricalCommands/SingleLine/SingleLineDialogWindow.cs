@@ -41,6 +41,7 @@ namespace ElectricalCommands.SingleLine
     private List<ElectricalEntity.NodeLink> nodeLinkList;
     private List<ElectricalEntity.GroupNode> groupList;
     private Dictionary<string, List<string>> groupDict;
+    private List<ObjectId> dynamicBlockIds;
 
     private List<PlaceableElectricalEntity> placeables;
     public GmepDatabase gmepDb;
@@ -82,6 +83,41 @@ namespace ElectricalCommands.SingleLine
       placeables.AddRange(panelList);
       placeables.AddRange(disconnectList);
       placeables.AddRange(transformerList);
+      dynamicBlockIds = new List<ObjectId>();
+      SetDynamicBlockIds();
+      placeables.ForEach(placeable => placeable.SetBlockId(dynamicBlockIds));
+    }
+
+    public void SetDynamicBlockIds()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      Transaction tr = db.TransactionManager.StartTransaction();
+      dynamicBlockIds.Clear();
+      using (tr)
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+        foreach (ObjectId id in modelSpace)
+        {
+          try
+          {
+            BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
+            if (br != null && br.IsDynamicBlock)
+            {
+              dynamicBlockIds.Add(id);
+            }
+          }
+          catch { }
+        }
+      }
     }
 
     public void MakeGroupDict()
@@ -622,7 +658,7 @@ namespace ElectricalCommands.SingleLine
       {
         return "NOT SET";
       }
-      return $"{entity.Location.X},{entity.Location.Y}";
+      return $"{Math.Round(entity.Location.X, 0)},{Math.Round(entity.Location.Y, 0)}";
     }
 
     private void TreeView_OnNodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
@@ -1222,6 +1258,17 @@ namespace ElectricalCommands.SingleLine
         }
       }
       CalculateDistances();
+
+      SingleLineTreeView.BeginUpdate();
+      SingleLineTreeView.Nodes.Clear();
+      PopulateTreeView();
+      SingleLineTreeView.ExpandAll();
+      SingleLineTreeView.EndUpdate();
+      if (serviceList.Count > 0)
+      {
+        SetInfoBoxText(serviceList[0]);
+      }
+      placeables.ForEach(gmepDb.UpdatePlaceable);
     }
   }
 }

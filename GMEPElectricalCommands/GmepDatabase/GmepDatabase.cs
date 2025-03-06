@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Xml.Linq;
 using Accord.Statistics.Distributions;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Geometry;
 using DocumentFormat.OpenXml.Office2010.CustomUI;
 using ElectricalCommands.ElectricalEntity;
 using ElectricalCommands.Equipment;
+using ElectricalCommands.SingleLine;
 using MySql.Data.MySqlClient;
 
 namespace GMEPElectricalCommands.GmepDatabase
@@ -88,8 +92,10 @@ namespace GMEPElectricalCommands.GmepDatabase
           electrical_service_voltages.voltage,
           electrical_services.aic_rating,
           electrical_services.node_id,
-          electrical_single_line_nodes.loc_x,
-          electrical_single_line_nodes.loc_y,
+          electrical_services.loc_x,
+          electrical_services.loc_y,
+          electrical_single_line_nodes.loc_x as node_x,
+          electrical_single_line_nodes.loc_y as node_y,
           statuses.status
           FROM `electrical_services`
           LEFT JOIN electrical_service_meter_configs
@@ -117,7 +123,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeInt(reader, "amp_rating"),
             GetSafeString(reader, "voltage"),
             GetSafeFloat(reader, "aic_rating"),
-            new System.Drawing.Point(GetSafeInt(reader, "loc_x"), GetSafeInt(reader, "loc_y"))
+            new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y")),
+            new Point3d(GetSafeFloat(reader, "loc_x"), GetSafeFloat(reader, "loc_y"), 0)
           )
         );
       }
@@ -223,8 +230,10 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_distribution_buses.id,
         electrical_distribution_buses.node_id,
         electrical_distribution_buses.aic_rating,
-        electrical_single_line_nodes.loc_x,
-        electrical_single_line_nodes.loc_y,
+        electrical_distribution_buses.loc_x,
+        electrical_distribution_buses.loc_y,
+        electrical_single_line_nodes.loc_x as node_x,
+        electrical_single_line_nodes.loc_y as node_y,
         statuses.status,
         electrical_service_amp_ratings.amp_rating
         FROM electrical_distribution_buses
@@ -249,7 +258,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeString(reader, "status"),
             GetSafeInt(reader, "amp_rating"),
             GetSafeFloat(reader, "aic_rating"),
-            new System.Drawing.Point(GetSafeInt(reader, "loc_x"), GetSafeInt(reader, "loc_y"))
+            new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y")),
+            new Point3d(GetSafeFloat(reader, "loc_x"), GetSafeFloat(reader, "loc_y"), 0)
           )
         );
       }
@@ -435,6 +445,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_disconnects.num_poles,
         electrical_disconnects.parent_distance,
         electrical_disconnects.aic_rating,
+        electrical_disconnects.loc_x,
+        electrical_disconnects.loc_y,
         electrical_single_line_nodes.loc_x as node_x,
         electrical_single_line_nodes.loc_y as node_y,
         statuses.status
@@ -462,7 +474,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeInt(reader, "af_size"),
             GetSafeInt(reader, "num_poles"),
             GetSafeFloat(reader, "aic_rating"),
-            new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y"))
+            new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y")),
+            new Point3d(GetSafeFloat(reader, "loc_x"), GetSafeFloat(reader, "loc_y"), 0)
           )
         );
       }
@@ -878,6 +891,7 @@ namespace GMEPElectricalCommands.GmepDatabase
           SET
           loc_x = @xLoc,
           loc_y = @yLoc,
+          aic_rating = @aicRating,
           parent_distance = @parentDistance
           WHERE id = @equipId;
           ";
@@ -885,8 +899,48 @@ namespace GMEPElectricalCommands.GmepDatabase
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("@xLoc", xfmr.Location.X);
       command.Parameters.AddWithValue("@yLoc", xfmr.Location.Y);
+      command.Parameters.AddWithValue("@aicRating", xfmr.AicRating);
       command.Parameters.AddWithValue("@parentDistance", xfmr.ParentDistance);
       command.Parameters.AddWithValue("@equipId", xfmr.Id);
+      command.ExecuteNonQuery();
+      CloseConnection();
+    }
+
+    public void UpdatePlaceable(PlaceableElectricalEntity placeable)
+    { // HERE test placing equip
+      string query = $"UPDATE {placeable.TableName}";
+      if (placeable.NodeType != NodeType.Service)
+      {
+        query +=
+          @"
+          SET
+          loc_x = @xLoc,
+          loc_y = @yLoc,
+          aic_rating = @aicRating,
+          parent_distance = @parentDistance
+          WHERE id = @placeableId
+          ";
+      }
+      else
+      {
+        query +=
+          @"
+          SET
+          loc_x = @xLoc,
+          loc_y = @yLoc
+          WHERE id = @placeableId
+          ";
+      }
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@xLoc", placeable.Location.X);
+      command.Parameters.AddWithValue("@yLoc", placeable.Location.Y);
+      if (placeable.NodeType != NodeType.Service)
+      {
+        command.Parameters.AddWithValue("@aicRating", placeable.AicRating);
+        command.Parameters.AddWithValue("@parentDistance", placeable.ParentDistance);
+      }
+      command.Parameters.AddWithValue("@placeableId", placeable.Id);
       command.ExecuteNonQuery();
       CloseConnection();
     }
