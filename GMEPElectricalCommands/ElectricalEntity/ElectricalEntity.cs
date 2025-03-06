@@ -49,30 +49,6 @@ namespace ElectricalCommands.ElectricalEntity
     }
   }
 
-  public class DistributionBus : ElectricalEntity
-  {
-    public int AmpRating;
-
-    public DistributionBus(
-      string Id,
-      string NodeId,
-      string Status,
-      int AmpRating,
-      double AicRating,
-      Point NodePosition
-    )
-    {
-      this.Id = Id;
-      this.NodeId = NodeId;
-      this.Status = Status;
-      this.AmpRating = AmpRating;
-      this.AicRating = AicRating;
-      Name = $"{AmpRating}A Distrib. Bus";
-      NodeType = NodeType.DistributionBus;
-      this.NodePosition = NodePosition;
-    }
-  }
-
   public class MainBreaker : ElectricalEntity
   {
     public int AmpRating;
@@ -109,12 +85,14 @@ namespace ElectricalCommands.ElectricalEntity
   public class Meter : ElectricalEntity
   {
     public bool HasCts;
+    public bool IsSpace;
 
     public Meter(
       string Id,
       string NodeId,
       string Status,
       bool HasCts,
+      bool IsSpace,
       double AicRating,
       Point NodePosition
     )
@@ -123,6 +101,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.NodeId = NodeId;
       this.Status = Status;
       this.HasCts = HasCts;
+      this.IsSpace = IsSpace;
       this.AicRating = AicRating;
       Name = HasCts ? "CTS Meter" : "Meter";
       NodeType = NodeType.Meter;

@@ -7,13 +7,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using Accord.Statistics.Distributions;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
-using DocumentFormat.OpenXml.Drawing.Charts;
-using DocumentFormat.OpenXml.Spreadsheet;
 using ElectricalCommands.ElectricalEntity;
 using GMEPElectricalCommands.GmepDatabase;
 
@@ -44,6 +41,8 @@ namespace ElectricalCommands.SingleLine
     private List<ElectricalEntity.NodeLink> nodeLinkList;
     private List<ElectricalEntity.GroupNode> groupList;
     private Dictionary<string, List<string>> groupDict;
+
+    private List<PlaceableElectricalEntity> placeables;
     public GmepDatabase gmepDb;
 
     public SingleLineDialogWindow(SingleLineCommands singleLineCommands)
@@ -77,6 +76,12 @@ namespace ElectricalCommands.SingleLine
       {
         SetInfoBoxText(serviceList[0]);
       }
+      placeables = new List<PlaceableElectricalEntity>();
+      placeables.AddRange(serviceList);
+      placeables.AddRange(distributionBusList);
+      placeables.AddRange(panelList);
+      placeables.AddRange(disconnectList);
+      placeables.AddRange(transformerList);
     }
 
     public void MakeGroupDict()
@@ -197,12 +202,27 @@ namespace ElectricalCommands.SingleLine
       return String.Empty;
     }
 
+    public void SetTreeNodeColor(TreeNode node, PlaceableElectricalEntity entity)
+    {
+      if (entity.Location.X == 0 && entity.Location.Y == 0)
+      {
+        node.ForeColor = Color.White;
+        node.BackColor = Color.Crimson;
+      }
+      else
+      {
+        node.ForeColor = Color.White;
+        node.BackColor = Color.DarkCyan;
+      }
+    }
+
     public void PopulateTreeView()
     {
       foreach (ElectricalEntity.Service service in serviceList)
       {
         TreeNode serviceNode = SingleLineTreeView.Nodes.Add(service.Id, service.Name);
         serviceNode.Tag = service;
+        SetTreeNodeColor(serviceNode, service);
         PopulateFromService(serviceNode, service.NodeId);
       }
     }
@@ -250,6 +270,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode distributionBusNode = node.Nodes.Add(distributionBus.Id, distributionBus.Name);
           distributionBusNode.Tag = distributionBus;
+          SetTreeNodeColor(distributionBusNode, distributionBus);
           PopulateFromDistributionBus(distributionBusNode, distributionBus.NodeId);
         }
       }
@@ -304,6 +325,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
           panelNode.Tag = panel;
+          SetTreeNodeColor(panelNode, panel);
           PopulateFromPanel(panelNode, panel.NodeId);
         }
       }
@@ -313,6 +335,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
           disconnectNode.Tag = disconnect;
+          SetTreeNodeColor(disconnectNode, disconnect);
           PopulateFromDisconnect(disconnectNode, disconnect.NodeId);
         }
       }
@@ -322,6 +345,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode transformerNode = node.Nodes.Add(transformer.Id, transformer.Name);
           transformerNode.Tag = transformer;
+          SetTreeNodeColor(transformerNode, transformer);
           PopulateFromTransformer(transformerNode, transformer.NodeId);
         }
       }
@@ -344,6 +368,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
           panelNode.Tag = panel;
+          SetTreeNodeColor(panelNode, panel);
           PopulateFromPanel(panelNode, panel.NodeId);
         }
       }
@@ -353,6 +378,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
           disconnectNode.Tag = disconnect;
+          SetTreeNodeColor(disconnectNode, disconnect);
           PopulateFromDisconnect(disconnectNode, disconnect.NodeId);
         }
       }
@@ -362,6 +388,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode transformerNode = node.Nodes.Add(transformer.Id, transformer.Name);
           transformerNode.Tag = transformer;
+          SetTreeNodeColor(transformerNode, transformer);
           PopulateFromTransformer(transformerNode, transformer.NodeId);
         }
       }
@@ -375,6 +402,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
           panelNode.Tag = panel;
+          SetTreeNodeColor(panelNode, panel);
           PopulateFromPanel(panelNode, panel.NodeId);
         }
       }
@@ -384,6 +412,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
           disconnectNode.Tag = disconnect;
+          SetTreeNodeColor(disconnectNode, disconnect);
           PopulateFromDisconnect(disconnectNode, disconnect.NodeId);
         }
       }
@@ -393,6 +422,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode transformerNode = node.Nodes.Add(transformer.Id, transformer.Name);
           transformerNode.Tag = transformer;
+          SetTreeNodeColor(transformerNode, transformer);
           PopulateFromTransformer(transformerNode, transformer.NodeId);
         }
       }
@@ -406,6 +436,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
           panelNode.Tag = panel;
+          SetTreeNodeColor(panelNode, panel);
           PopulateFromPanel(panelNode, panel.NodeId);
         }
       }
@@ -415,6 +446,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
           disconnectNode.Tag = disconnect;
+          SetTreeNodeColor(disconnectNode, disconnect);
           PopulateFromDisconnect(disconnectNode, disconnect.NodeId);
         }
       }
@@ -424,6 +456,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode transformerNode = node.Nodes.Add(transformer.Id, transformer.Name);
           transformerNode.Tag = transformer;
+          SetTreeNodeColor(transformerNode, transformer);
           PopulateFromTransformer(transformerNode, transformer.NodeId);
         }
       }
@@ -437,6 +470,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
           panelNode.Tag = panel;
+          SetTreeNodeColor(panelNode, panel);
           PopulateFromPanel(panelNode, panel.NodeId);
         }
       }
@@ -446,6 +480,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
           disconnectNode.Tag = disconnect;
+          SetTreeNodeColor(disconnectNode, disconnect);
           PopulateFromDisconnect(disconnectNode, disconnect.NodeId);
         }
       }
@@ -470,15 +505,21 @@ namespace ElectricalCommands.SingleLine
     {
       InfoTextBox.Clear();
       InfoGroupBox.Text = entity.Name;
+      InfoTextBox.AppendText("--------------------General---------------------");
+      InfoTextBox.AppendText(Environment.NewLine);
+      InfoTextBox.AppendText($"ID:       {entity.Id}");
+      InfoTextBox.AppendText(Environment.NewLine);
+      InfoTextBox.AppendText($"Status:   {entity.Status}");
+      InfoTextBox.AppendText(Environment.NewLine);
+      InfoTextBox.AppendText($"AIC:      {entity.AicRating} AIC");
+      InfoTextBox.AppendText(Environment.NewLine);
       switch (entity.NodeType)
       {
         case NodeType.Service:
           ElectricalEntity.Service service = (ElectricalEntity.Service)entity;
-          InfoTextBox.AppendText($"ID:         {service.Id}");
+          InfoTextBox.AppendText($"Location: {GetLocationString(service)}");
           InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"Status:     {service.Status}");
-          InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"AIC:        {service.AicRating} AIC");
+          InfoTextBox.AppendText("--------------------Service---------------------");
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"Amp Rating: {service.AmpRating}A");
           InfoTextBox.AppendText(Environment.NewLine);
@@ -486,17 +527,15 @@ namespace ElectricalCommands.SingleLine
           break;
         case NodeType.Meter:
           ElectricalEntity.Meter meter = (ElectricalEntity.Meter)entity;
+          InfoTextBox.AppendText("---------------------Meter----------------------");
+          InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"ID:     {meter.Id}");
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"Status: {meter.Status}");
           break;
         case NodeType.MainBreaker:
           ElectricalEntity.MainBreaker mainBreaker = (ElectricalEntity.MainBreaker)entity;
-          InfoTextBox.AppendText($"ID:         {mainBreaker.Id}");
-          InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"Status:     {mainBreaker.Status}");
-          InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"AIC:        {mainBreaker.AicRating} AIC");
+          InfoTextBox.AppendText("--------------------Breaker---------------------");
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"Amp Rating: {mainBreaker.AmpRating}A");
           InfoTextBox.AppendText(Environment.NewLine);
@@ -515,22 +554,16 @@ namespace ElectricalCommands.SingleLine
         case NodeType.DistributionBus:
           ElectricalEntity.DistributionBus distributionBus =
             (ElectricalEntity.DistributionBus)entity;
-          InfoTextBox.AppendText($"ID:         {distributionBus.Id}");
+          InfoTextBox.AppendText($"Location: {GetLocationString(distributionBus)}");
           InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"Status:     {distributionBus.Status}");
-          InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"AIC:        {distributionBus.AicRating} AIC");
+          InfoTextBox.AppendText("----------------------Bus-----------------------");
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"Amp Rating: {distributionBus.AmpRating}A");
           break;
         case NodeType.DistributionBreaker:
           ElectricalEntity.DistributionBreaker distributionBreaker =
             (ElectricalEntity.DistributionBreaker)entity;
-          InfoTextBox.AppendText($"ID:         {distributionBreaker.Id}");
-          InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"Status:     {distributionBreaker.Status}");
-          InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"AIC:        {distributionBreaker.AicRating} AIC");
+          InfoTextBox.AppendText("--------------------Breaker---------------------");
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"Amp Rating: {distributionBreaker.AmpRating}A");
           InfoTextBox.AppendText(Environment.NewLine);
@@ -538,11 +571,9 @@ namespace ElectricalCommands.SingleLine
           break;
         case NodeType.Panel:
           ElectricalEntity.Panel panel = (ElectricalEntity.Panel)entity;
-          InfoTextBox.AppendText($"ID:      {panel.Id}");
+          InfoTextBox.AppendText($"Location: {GetLocationString(panel)}");
           InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"Status:  {panel.Status}");
-          InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"AIC:     {panel.AicRating} AIC");
+          InfoTextBox.AppendText("---------------------Panel----------------------");
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"Bus:     {panel.BusAmpRating}A");
           InfoTextBox.AppendText(Environment.NewLine);
@@ -554,11 +585,7 @@ namespace ElectricalCommands.SingleLine
           break;
         case NodeType.PanelBreaker:
           ElectricalEntity.PanelBreaker panelBreaker = (ElectricalEntity.PanelBreaker)entity;
-          InfoTextBox.AppendText($"ID:         {panelBreaker.Id}");
-          InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"Status:     {panelBreaker.Status}");
-          InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"AIC:        {panelBreaker.AicRating} AIC");
+          InfoTextBox.AppendText("--------------------Breaker---------------------");
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"Amp Rating: {panelBreaker.AmpRating}A");
           InfoTextBox.AppendText(Environment.NewLine);
@@ -566,11 +593,9 @@ namespace ElectricalCommands.SingleLine
           break;
         case NodeType.Disconnect:
           ElectricalEntity.Disconnect disconnect = (ElectricalEntity.Disconnect)entity;
-          InfoTextBox.AppendText($"ID:     {disconnect.Id}");
+          InfoTextBox.AppendText($"Location: {GetLocationString(disconnect)}");
           InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"Status: {disconnect.Status}");
-          InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"AIC:    {disconnect.AicRating} AIC");
+          InfoTextBox.AppendText("------------------Disconnect--------------------");
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"AS:     {disconnect.AsSize}AS");
           InfoTextBox.AppendText(Environment.NewLine);
@@ -580,17 +605,24 @@ namespace ElectricalCommands.SingleLine
           break;
         case NodeType.Transformer:
           ElectricalEntity.Transformer transformer = (ElectricalEntity.Transformer)entity;
-          InfoTextBox.AppendText($"ID:      {transformer.Id}");
+          InfoTextBox.AppendText($"Location: {GetLocationString(transformer)}");
           InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"Status:  {transformer.Status}");
-          InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"AIC:     {transformer.AicRating} AIC");
+          InfoTextBox.AppendText("------------------Transformer-------------------");
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"KVA:     {transformer.Kva} KVA");
           InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"Voltage: {transformer.Voltage}");
+          InfoTextBox.AppendText($"Voltage: {transformer.Voltage}" + "\u0081");
           break;
       }
+    }
+
+    private string GetLocationString(PlaceableElectricalEntity entity)
+    {
+      if (entity.Location.X == 0 && entity.Location.Y == 0)
+      {
+        return "NOT SET";
+      }
+      return $"{entity.Location.X},{entity.Location.Y}";
     }
 
     private void TreeView_OnNodeMouseClick(object sender, TreeNodeMouseClickEventArgs e)
@@ -638,7 +670,6 @@ namespace ElectricalCommands.SingleLine
         }
         MakeGroups(startingPoint);
       }
-      //singleLineNodeTree.SaveAicRatings();
     }
 
     private GroupType InferGroupType(List<string> groupMembers)
@@ -686,14 +717,32 @@ namespace ElectricalCommands.SingleLine
 
     private void MakeEntityFromDistributionBus(TreeNode distributionBusChild, Point3d currentPoint)
     {
-      if (distributionBusChild == null || distributionBusChild.Nodes.Count == 0)
+      if (distributionBusChild == null)
       {
         return;
       }
       ElectricalEntity.ElectricalEntity distributionBusChildEntity =
         (ElectricalEntity.ElectricalEntity)distributionBusChild.Tag;
-
-      if (distributionBusChildEntity.NodeType == NodeType.Meter)
+      if (
+        distributionBusChild.Nodes.Count == 0
+        && distributionBusChildEntity.NodeType == NodeType.Meter
+      )
+      {
+        Meter meter = (Meter)distributionBusChildEntity;
+        if (meter.HasCts)
+        {
+          SingleLine.MakeDistributionCtsMeterCombo(meter, currentPoint);
+        }
+        else
+        {
+          SingleLine.MakeDistributionMeterCombo(meter, currentPoint);
+        }
+      }
+      else if (distributionBusChild.Nodes.Count == 0)
+      {
+        return;
+      }
+      else if (distributionBusChildEntity.NodeType == NodeType.Meter)
       {
         Meter meter = (Meter)distributionBusChildEntity;
         TreeNode childNode = distributionBusChild.Nodes[0];
@@ -711,7 +760,7 @@ namespace ElectricalCommands.SingleLine
         {
           SingleLine.MakeDistributionMeterAndBreakerCombo(meter, distributionBreaker, currentPoint);
         }
-        if (distributionBusChild.Nodes.Count > 0)
+        if (childNode.Nodes.Count > 0)
         {
           MakeFieldEntity(
             distributionBusChild.Nodes[0],
@@ -766,7 +815,6 @@ namespace ElectricalCommands.SingleLine
         List<ElectricalEntity.PanelBreaker> panelBreakers = GetPanelBreakersFromPanel(childNode);
         for (int i = 0; i < panelBreakers.Count; i++)
         {
-          // HERE test
           if (i == 0)
           {
             Point3d breakerPoint = new Point3d(currentPoint.X + 0.3125, currentPoint.Y - 0.9333, 0);
@@ -801,19 +849,23 @@ namespace ElectricalCommands.SingleLine
       {
         ElectricalEntity.Disconnect disconnect = (ElectricalEntity.Disconnect)childEntity;
         SingleLine.MakeDisconnect(disconnect, currentPoint);
-        // HERE make conduit from disconnect
         currentPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.1201, 0);
-        MakeFieldEntity(childNode, currentPoint);
+        if (childNode.Nodes.Count > 0)
+        {
+          currentPoint = SingleLine.MakeConduitFromDisconnect(currentPoint);
+          MakeFieldEntity(childNode, currentPoint);
+        }
       }
       if (childEntity.NodeType == NodeType.Transformer)
       {
         ElectricalEntity.Transformer transformer = (ElectricalEntity.Transformer)childEntity;
         SingleLine.MakeTransformer(transformer, currentPoint);
         currentPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.3739, 0);
-        MakeFieldEntity(childNode, currentPoint);
-        // Make Transformer
-        // advance currentPoint
-        // call MakeFieldEntity(childNode, new currentPoint)ElectricalEntity.Disconnect disconnect = (ElectricalEntity.Disconnect)childEntity;
+        if (childNode.Nodes.Count > 0)
+        {
+          currentPoint = SingleLine.MakeConduitFromTransformer(currentPoint);
+          MakeFieldEntity(childNode, currentPoint);
+        }
       }
     }
 
@@ -1020,5 +1072,156 @@ namespace ElectricalCommands.SingleLine
     }
 
     private void SingleLineDialogWindow_Load(object sender, EventArgs e) { }
+
+    private void CalculateDistances()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      Transaction tr = db.TransactionManager.StartTransaction();
+      List<PlaceableElectricalEntity> pooledEquipment = new List<PlaceableElectricalEntity>();
+      using (tr)
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+        foreach (ObjectId id in modelSpace)
+        {
+          try
+          {
+            BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
+            if (br != null && br.IsDynamicBlock)
+            {
+              DynamicBlockReferencePropertyCollection pc =
+                br.DynamicBlockReferencePropertyCollection;
+              bool addEquip = false;
+              PlaceableElectricalEntity eq = new PlaceableElectricalEntity();
+              foreach (DynamicBlockReferenceProperty prop in pc)
+              {
+                if (prop.PropertyName == "gmep_equip_locator" && prop.Value as string == "true")
+                {
+                  addEquip = true;
+                }
+                if (prop.PropertyName == "gmep_equip_id" && prop.Value as string != "0")
+                {
+                  eq.Id = prop.Value as string;
+                }
+                if (prop.PropertyName == "gmep_equip_parent_id" && prop.Value as string != "0")
+                {
+                  eq.ParentId = prop.Value as string;
+                }
+              }
+              eq.Location = br.Position;
+              if (addEquip)
+              {
+                PlaceableElectricalEntity p = new PlaceableElectricalEntity();
+                p.Id = eq.Id;
+                p.ParentId = eq.ParentId;
+                p.Location = eq.Location;
+                pooledEquipment.Add(p);
+              }
+            }
+          }
+          catch { }
+        }
+      }
+      for (int i = 0; i < pooledEquipment.Count; i++)
+      {
+        for (int j = 0; j < pooledEquipment.Count; j++)
+        {
+          if (pooledEquipment[j].ParentId == pooledEquipment[i].Id)
+          {
+            PlaceableElectricalEntity equip = pooledEquipment[j];
+            equip.ParentDistance =
+              Convert.ToInt32(
+                Math.Abs(pooledEquipment[j].Location.X - pooledEquipment[i].Location.X)
+                  + Math.Abs(pooledEquipment[j].Location.Y - pooledEquipment[i].Location.Y)
+              ) / 12;
+            pooledEquipment[j] = equip;
+          }
+        }
+      }
+      for (int i = 0; i < pooledEquipment.Count; i++)
+      {
+        bool isMatch = false;
+
+        if (!isMatch)
+        {
+          for (int j = 0; j < panelList.Count; j++)
+          {
+            if (panelList[j].Id == pooledEquipment[i].Id)
+            {
+              isMatch = true;
+              ElectricalEntity.Panel panel = panelList[j];
+              if (
+                panel.ParentDistance != pooledEquipment[i].ParentDistance
+                || panel.Location.X != pooledEquipment[i].Location.X
+                || panel.Location.Y != pooledEquipment[i].Location.Y
+              )
+              {
+                panel.ParentDistance = pooledEquipment[i].ParentDistance;
+                panel.Location = pooledEquipment[i].Location;
+                panelList[j] = panel;
+                gmepDb.UpdatePanel(panel);
+              }
+            }
+          }
+        }
+        if (!isMatch)
+        {
+          for (int j = 0; j < transformerList.Count; j++)
+          {
+            if (transformerList[j].Id == pooledEquipment[i].Id)
+            {
+              isMatch = true;
+              Transformer xfmr = transformerList[j];
+              if (
+                xfmr.ParentDistance != pooledEquipment[i].ParentDistance
+                || xfmr.Location.X != pooledEquipment[i].Location.X
+                || xfmr.Location.Y != pooledEquipment[i].Location.Y
+              )
+              {
+                xfmr.ParentDistance = pooledEquipment[i].ParentDistance;
+                xfmr.Location = pooledEquipment[i].Location;
+                transformerList[j] = xfmr;
+                gmepDb.UpdateTransformer(xfmr);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    private void PlaceOnPlanButton_Click(object sender, EventArgs e)
+    {
+      using (
+        DocumentLock docLock =
+          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
+      )
+      {
+        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
+          .AutoCAD
+          .Windows
+          .Window
+          .State
+          .Maximized;
+        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
+        foreach (PlaceableElectricalEntity placeable in placeables)
+        {
+          Point3d? p = placeable.Place();
+          if (p == null)
+          {
+            break;
+          }
+        }
+      }
+      CalculateDistances();
+    }
   }
 }

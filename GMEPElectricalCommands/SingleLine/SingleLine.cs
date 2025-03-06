@@ -172,6 +172,78 @@ namespace ElectricalCommands.SingleLine
       }
     }
 
+    public static void MakeDistributionCtsMeterCombo(
+      ElectricalEntity.Meter meter,
+      Point3d currentPoint
+    )
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+        LineData conduitLine1 = new LineData();
+        conduitLine1.Layer = "E-CND1";
+        conduitLine1.StartPoint = new SimpleVector3d();
+        conduitLine1.EndPoint = new SimpleVector3d();
+        conduitLine1.StartPoint.X = currentPoint.X;
+        conduitLine1.StartPoint.Y = currentPoint.Y;
+        conduitLine1.EndPoint.X = currentPoint.X;
+        conduitLine1.EndPoint.Y = currentPoint.Y - 1.6875;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
+
+        tr.Commit();
+      }
+      MakeCtsMeter(meter, currentPoint);
+    }
+
+    public static void MakeDistributionMeterCombo(
+      ElectricalEntity.Meter meter,
+      Point3d currentPoint
+    )
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+        LineData conduitLine1 = new LineData();
+        conduitLine1.Layer = "E-CND1";
+        conduitLine1.StartPoint = new SimpleVector3d();
+        conduitLine1.EndPoint = new SimpleVector3d();
+        conduitLine1.StartPoint.X = currentPoint.X;
+        conduitLine1.StartPoint.Y = currentPoint.Y;
+        conduitLine1.EndPoint.X = currentPoint.X;
+        conduitLine1.EndPoint.Y = currentPoint.Y - 0.5;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
+        LineData conduitLine2 = new LineData();
+        conduitLine2.Layer = "E-CND1";
+        conduitLine2.StartPoint = new SimpleVector3d();
+        conduitLine2.EndPoint = new SimpleVector3d();
+        conduitLine2.StartPoint.X = currentPoint.X;
+        conduitLine2.StartPoint.Y = currentPoint.Y - 0.75;
+        conduitLine2.EndPoint.X = currentPoint.X;
+        conduitLine2.EndPoint.Y = currentPoint.Y - 1.6875;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine2, 1);
+        tr.Commit();
+      }
+      MakeMeter(meter, new Point3d(currentPoint.X, currentPoint.Y - 0.625, 0));
+    }
+
     public static void MakeDistributionCtsMeterAndBreakerCombo(
       ElectricalEntity.Meter meter,
       ElectricalEntity.DistributionBreaker distributionBreaker,
@@ -360,7 +432,12 @@ namespace ElectricalCommands.SingleLine
           "E-TXT1",
           new Point3d(currentPoint.X + 0.33, currentPoint.Y - 0.369, 0)
         );
-        ObjectId meterSymbol = bt["METER CTS (AUTO SINGLE LINE)"];
+        string blockName = "METER CTS (AUTO SINGLE LINE)";
+        if (meter.IsSpace)
+        {
+          blockName = "METER CTS SPACE (AUTO SINGLE LINE)";
+        }
+        ObjectId meterSymbol = bt[blockName];
         using (
           BlockReference acBlkRef = new BlockReference(
             new Point3d(currentPoint.X, currentPoint.Y - 0.5, 0),
@@ -402,8 +479,12 @@ namespace ElectricalCommands.SingleLine
           "E-TXT1",
           new Point3d(currentPoint.X + 0.1441, currentPoint.Y + 0.115, 0)
         );
-
-        ObjectId meterSymbol = bt["METER (AUTO SINGLE LINE)"];
+        string blockName = "METER (AUTO SINGLE LINE)";
+        if (meter.IsSpace)
+        {
+          blockName = "METER SPACE (AUTO SINGLE LINE)";
+        }
+        ObjectId meterSymbol = bt[blockName];
         using (
           BlockReference acBlkRef = new BlockReference(
             new Point3d(currentPoint.X, currentPoint.Y, 0),
@@ -487,6 +568,47 @@ namespace ElectricalCommands.SingleLine
         polyData.Vertices.Add(new SimpleVector3d(currentPoint.X - (5.0 / 16.0), currentPoint.Y, 0));
         polyData.Closed = true;
         CADObjectCommands.CreatePolyline2d(new Point3d(), tr, btr, polyData, 1);
+
+        if (!panel.IsMlo)
+        {
+          // Make main breaker
+          ArcData arcData = new ArcData();
+          arcData.Layer = "E-CND1";
+          arcData.Center = new SimpleVector3d();
+          arcData.Radius = 1.0 / 8.0;
+          arcData.Center.X = currentPoint.X - 0.0302;
+          arcData.Center.Y = currentPoint.Y - (1.0 / 8.0) + 0.0037;
+          arcData.StartAngle = 4.92183;
+          arcData.EndAngle = 1.32645;
+          CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData, 1);
+          ObjectId breakerLeader = bt["BREAKER LEADER RIGHT (AUTO SINGLE LINE)"];
+          using (
+            BlockReference acBlkRef = new BlockReference(
+              new Point3d(currentPoint.X, currentPoint.Y, 0),
+              breakerLeader
+            )
+          )
+          {
+            BlockTableRecord acCurSpaceBlkTblRec;
+            acCurSpaceBlkTblRec =
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+            acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+            tr.AddNewlyCreatedDBObject(acBlkRef, true);
+          }
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "(N)" + panel.MainAmpRating + "A/" + (panel.Voltage.Contains("3") ? "3P" : "2P"),
+            "gmep",
+            0.0938,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(currentPoint.X - 0.42, currentPoint.Y + 0.165, 0),
+            TextHorizontalMode.TextCenter,
+            TextVerticalMode.TextBase,
+            AttachmentPoint.BaseRight
+          );
+        }
         tr.Commit();
       }
     }
@@ -851,6 +973,65 @@ namespace ElectricalCommands.SingleLine
           TextVerticalMode.TextBase,
           AttachmentPoint.BaseRight
         );
+        ObjectId arrowSymbol = bt["RIGHT ARROW LONG (AUTO SINGLE LINE)"];
+        using (
+          BlockReference acBlkRef = new BlockReference(
+            new Point3d(currentPoint.X - 0.0601 - 0.1273, currentPoint.Y - 0.0601, 0), // HERE test
+            arrowSymbol
+          )
+        )
+        {
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+        }
+        string line1 =
+          $"{GetStatusText(transformer)}{transformer.Kva.ToString()}KVA XFMR '{transformer.Name.ToUpper()}'";
+        Console.WriteLine("voltg" + transformer.Voltage);
+        string line2 =
+          $"{transformer.Voltage}\u0081-{(transformer.Voltage.Contains("3") ? "4W" : "3W")}";
+        string line3 = $"Z=3.5";
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          line1,
+          "gmep",
+          0.0938,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(currentPoint.X - 0.3333, currentPoint.Y - 0.05, 0),
+          TextHorizontalMode.TextCenter,
+          TextVerticalMode.TextBase,
+          AttachmentPoint.BaseRight
+        );
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          line2,
+          "gmep",
+          0.0938,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(currentPoint.X - 0.3333, currentPoint.Y - 0.18, 0),
+          TextHorizontalMode.TextCenter,
+          TextVerticalMode.TextBase,
+          AttachmentPoint.BaseRight
+        );
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          line3,
+          "gmep",
+          0.0938,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(currentPoint.X - 0.3333, currentPoint.Y - 0.31, 0),
+          TextHorizontalMode.TextCenter,
+          TextVerticalMode.TextBase,
+          AttachmentPoint.BaseRight
+        );
         tr.Commit();
       }
     }
@@ -882,6 +1063,66 @@ namespace ElectricalCommands.SingleLine
       }
     }
 
+    public static Point3d MakeConduitFromTransformer(Point3d currentPoint)
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      double xOffset = 0;
+      double yOffset = -2.5;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+        LineData conduitLine1 = new LineData();
+        conduitLine1.Layer = "E-CND1";
+        conduitLine1.StartPoint = new SimpleVector3d();
+        conduitLine1.EndPoint = new SimpleVector3d();
+        conduitLine1.StartPoint.X = currentPoint.X;
+        conduitLine1.StartPoint.Y = currentPoint.Y;
+        conduitLine1.EndPoint.X = currentPoint.X + xOffset;
+        conduitLine1.EndPoint.Y = currentPoint.Y + yOffset;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
+        tr.Commit();
+      }
+      return new Point3d(currentPoint.X + xOffset, currentPoint.Y + yOffset, 0);
+    }
+
+    public static Point3d MakeConduitFromDisconnect(Point3d currentPoint)
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      double xOffset = 0;
+      double yOffset = -2.5;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+        LineData conduitLine1 = new LineData();
+        conduitLine1.Layer = "E-CND1";
+        conduitLine1.StartPoint = new SimpleVector3d();
+        conduitLine1.EndPoint = new SimpleVector3d();
+        conduitLine1.StartPoint.X = currentPoint.X;
+        conduitLine1.StartPoint.Y = currentPoint.Y;
+        conduitLine1.EndPoint.X = currentPoint.X + xOffset;
+        conduitLine1.EndPoint.Y = currentPoint.Y + yOffset;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
+        tr.Commit();
+      }
+      return new Point3d(currentPoint.X + xOffset, currentPoint.Y + yOffset, 0);
+    }
+
     public static Point3d MakePanelChildConduit(int index, Point3d currentPoint)
     {
       Document doc = Autodesk
@@ -892,10 +1133,9 @@ namespace ElectricalCommands.SingleLine
         .MdiActiveDocument;
       Database db = doc.Database;
       double xOffset = 1.5;
-      double yOffset = -2;
+      double yOffset = -2.5;
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
-        if (index == 0) { }
         if (index == 1)
         {
           xOffset = xOffset * -1;

@@ -27,7 +27,8 @@
             this.SingleLineTreeView = new System.Windows.Forms.TreeView();
             this.mainMenu1 = new System.Windows.Forms.MainMenu(this.components);
             this.menuItem1 = new System.Windows.Forms.MenuItem();
-            this.menuItem2 = new System.Windows.Forms.MenuItem();
+            this.GenerateSldButton = new System.Windows.Forms.MenuItem();
+            this.PlaceOnPlanButton = new System.Windows.Forms.MenuItem();
             this.InfoGroupBox = new System.Windows.Forms.GroupBox();
             this.InfoTextBox = new System.Windows.Forms.TextBox();
             this.InfoGroupBox.SuspendLayout();
@@ -53,14 +54,21 @@
             // 
             this.menuItem1.Index = 0;
             this.menuItem1.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
-            this.menuItem2});
+            this.GenerateSldButton,
+            this.PlaceOnPlanButton});
             this.menuItem1.Text = "Actions";
             // 
-            // menuItem2
+            // GenerateSldButton
             // 
-            this.menuItem2.Index = 0;
-            this.menuItem2.Text = "Generate";
-            this.menuItem2.Click += new System.EventHandler(this.GenerateButton_Click);
+            this.GenerateSldButton.Index = 0;
+            this.GenerateSldButton.Text = "Generate SLD";
+            this.GenerateSldButton.Click += new System.EventHandler(this.GenerateButton_Click);
+            // 
+            // PlaceOnPlanButton
+            // 
+            this.PlaceOnPlanButton.Index = 1;
+            this.PlaceOnPlanButton.Text = "Place equip. on plan";
+            this.PlaceOnPlanButton.Click += new System.EventHandler(this.PlaceOnPlanButton_Click);
             // 
             // InfoGroupBox
             // 
@@ -109,8 +117,9 @@
     private System.Windows.Forms.TreeView SingleLineTreeView;
     private System.Windows.Forms.MainMenu mainMenu1;
     private System.Windows.Forms.MenuItem menuItem1;
-    private System.Windows.Forms.MenuItem menuItem2;
+    private System.Windows.Forms.MenuItem GenerateSldButton;
     private System.Windows.Forms.GroupBox InfoGroupBox;
     private System.Windows.Forms.TextBox InfoTextBox;
+    private System.Windows.Forms.MenuItem PlaceOnPlanButton;
   }
 }

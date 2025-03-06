@@ -133,6 +133,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         @"SELECT 
           electrical_meters.id,
           electrical_meters.has_cts,
+          electrical_meters.is_space,
           electrical_meters.node_id,
           electrical_meters.aic_rating,
           electrical_single_line_nodes.loc_x,
@@ -155,6 +156,7 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeString(reader, "node_id"),
             GetSafeString(reader, "status"),
             GetSafeBoolean(reader, "has_cts"),
+            GetSafeBoolean(reader, "is_space"),
             GetSafeFloat(reader, "aic_rating"),
             new System.Drawing.Point(GetSafeInt(reader, "loc_x"), GetSafeInt(reader, "loc_y"))
           )
