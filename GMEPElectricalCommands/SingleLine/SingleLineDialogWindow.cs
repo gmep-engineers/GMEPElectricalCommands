@@ -252,6 +252,15 @@ namespace ElectricalCommands.SingleLine
       }
     }
 
+    public void InheritLineVoltageAndPhase(
+      ElectricalEntity.ElectricalEntity parent,
+      ElectricalEntity.ElectricalEntity child
+    )
+    {
+      child.LineVoltage = parent.LineVoltage;
+      child.Phase = parent.Phase;
+    }
+
     public void PopulateTreeView()
     {
       foreach (ElectricalEntity.Service service in serviceList)
@@ -259,265 +268,289 @@ namespace ElectricalCommands.SingleLine
         TreeNode serviceNode = SingleLineTreeView.Nodes.Add(service.Id, service.Name);
         serviceNode.Tag = service;
         SetTreeNodeColor(serviceNode, service);
-        PopulateFromService(serviceNode, service.NodeId);
+        PopulateFromService(serviceNode, service);
       }
     }
 
-    public void PopulateFromService(TreeNode node, string serviceNodeId)
+    public void PopulateFromService(TreeNode node, ElectricalEntity.Service service)
     {
       foreach (ElectricalEntity.Meter meter in meterList)
       {
-        if (VerifyNodeLink(serviceNodeId, meter.NodeId))
+        if (VerifyNodeLink(service.NodeId, meter.NodeId))
         {
+          InheritLineVoltageAndPhase(service, meter);
           TreeNode meterNode = node.Nodes.Add(meter.Id, meter.Name);
           meterNode.Tag = meter;
-          PopulateFromMainMeter(meterNode, meter.NodeId);
+          PopulateFromMainMeter(meterNode, meter);
         }
       }
       foreach (ElectricalEntity.MainBreaker mainBreaker in mainBreakerList)
       {
-        if (VerifyNodeLink(serviceNodeId, mainBreaker.NodeId))
+        if (VerifyNodeLink(service.NodeId, mainBreaker.NodeId))
         {
+          InheritLineVoltageAndPhase(service, mainBreaker);
           TreeNode mainBreakerNode = node.Nodes.Add(mainBreaker.Id, mainBreaker.Name);
           mainBreakerNode.Tag = mainBreaker;
-          PopulateFromMainBreaker(mainBreakerNode, mainBreaker.NodeId);
+          PopulateFromMainBreaker(mainBreakerNode, mainBreaker);
         }
       }
     }
 
-    public void PopulateFromMainMeter(TreeNode node, string meterNodeId)
+    public void PopulateFromMainMeter(TreeNode node, ElectricalEntity.Meter meter)
     {
       foreach (ElectricalEntity.MainBreaker mainBreaker in mainBreakerList)
       {
-        if (VerifyNodeLink(meterNodeId, mainBreaker.NodeId))
+        if (VerifyNodeLink(meter.NodeId, mainBreaker.NodeId))
         {
+          InheritLineVoltageAndPhase(meter, mainBreaker);
           TreeNode mainBreakerNode = node.Nodes.Add(mainBreaker.Id, mainBreaker.Name);
           mainBreakerNode.Tag = mainBreaker;
-          PopulateFromMainBreaker(mainBreakerNode, mainBreaker.NodeId);
+          PopulateFromMainBreaker(mainBreakerNode, mainBreaker);
         }
       }
     }
 
-    public void PopulateFromMainBreaker(TreeNode node, string mainBreakerNodeId)
+    public void PopulateFromMainBreaker(TreeNode node, ElectricalEntity.MainBreaker mainBreaker)
     {
       foreach (ElectricalEntity.DistributionBus distributionBus in distributionBusList)
       {
-        if (VerifyNodeLink(mainBreakerNodeId, distributionBus.NodeId))
+        if (VerifyNodeLink(mainBreaker.NodeId, distributionBus.NodeId))
         {
+          InheritLineVoltageAndPhase(mainBreaker, distributionBus);
           TreeNode distributionBusNode = node.Nodes.Add(distributionBus.Id, distributionBus.Name);
           distributionBusNode.Tag = distributionBus;
           SetTreeNodeColor(distributionBusNode, distributionBus);
-          PopulateFromDistributionBus(distributionBusNode, distributionBus.NodeId);
+          PopulateFromDistributionBus(distributionBusNode, distributionBus);
         }
       }
     }
 
-    public void PopulateFromDistributionBus(TreeNode node, string distributionBusNodeId)
+    public void PopulateFromDistributionBus(
+      TreeNode node,
+      ElectricalEntity.DistributionBus distributionBus
+    )
     {
       foreach (ElectricalEntity.Meter meter in meterList)
       {
-        if (VerifyNodeLink(distributionBusNodeId, meter.NodeId))
+        if (VerifyNodeLink(distributionBus.NodeId, meter.NodeId))
         {
+          InheritLineVoltageAndPhase(distributionBus, meter);
           TreeNode distributionMeterNode = node.Nodes.Add(meter.Id, meter.Name);
           distributionMeterNode.Tag = meter;
-          PopulateFromDistributionMeter(distributionMeterNode, meter.NodeId);
+          PopulateFromDistributionMeter(distributionMeterNode, meter);
         }
       }
       foreach (ElectricalEntity.DistributionBreaker distributionBreaker in distributionBreakerList)
       {
-        if (VerifyNodeLink(distributionBusNodeId, distributionBreaker.NodeId))
+        if (VerifyNodeLink(distributionBus.NodeId, distributionBreaker.NodeId))
         {
+          InheritLineVoltageAndPhase(distributionBus, distributionBreaker);
           TreeNode distributionBreakerNode = node.Nodes.Add(
             distributionBreaker.Id,
             distributionBreaker.Name
           );
           distributionBreakerNode.Tag = distributionBreaker;
-          PopulateFromDistributionBreaker(distributionBreakerNode, distributionBreaker.NodeId);
+          PopulateFromDistributionBreaker(distributionBreakerNode, distributionBreaker);
         }
       }
     }
 
-    public void PopulateFromDistributionMeter(TreeNode node, string meterNodeId)
+    public void PopulateFromDistributionMeter(TreeNode node, ElectricalEntity.Meter meter)
     {
       foreach (ElectricalEntity.DistributionBreaker distributionBreaker in distributionBreakerList)
       {
-        if (VerifyNodeLink(meterNodeId, distributionBreaker.NodeId))
+        if (VerifyNodeLink(meter.NodeId, distributionBreaker.NodeId))
         {
+          InheritLineVoltageAndPhase(meter, distributionBreaker);
           TreeNode distributionBreakerNode = node.Nodes.Add(
             distributionBreaker.Id,
             distributionBreaker.Name
           );
           distributionBreakerNode.Tag = distributionBreaker;
-          PopulateFromDistributionBreaker(distributionBreakerNode, distributionBreaker.NodeId);
+          PopulateFromDistributionBreaker(distributionBreakerNode, distributionBreaker);
         }
       }
     }
 
-    public void PopulateFromDistributionBreaker(TreeNode node, string distributionBreakerNodeId)
+    public void PopulateFromDistributionBreaker(
+      TreeNode node,
+      ElectricalEntity.DistributionBreaker distributionBreaker
+    )
     {
       foreach (ElectricalEntity.Panel panel in panelList)
       {
-        if (VerifyNodeLink(distributionBreakerNodeId, panel.NodeId))
+        if (VerifyNodeLink(distributionBreaker.NodeId, panel.NodeId))
         {
+          InheritLineVoltageAndPhase(distributionBreaker, panel);
           TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
-          PopulateFromPanel(panelNode, panel.NodeId);
+          PopulateFromPanel(panelNode, panel);
         }
       }
       foreach (ElectricalEntity.Disconnect disconnect in disconnectList)
       {
-        if (VerifyNodeLink(distributionBreakerNodeId, disconnect.NodeId))
+        if (VerifyNodeLink(distributionBreaker.NodeId, disconnect.NodeId))
         {
+          InheritLineVoltageAndPhase(distributionBreaker, disconnect);
           TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
           disconnectNode.Tag = disconnect;
           SetTreeNodeColor(disconnectNode, disconnect);
-          PopulateFromDisconnect(disconnectNode, disconnect.NodeId);
+          PopulateFromDisconnect(disconnectNode, disconnect);
         }
       }
       foreach (ElectricalEntity.Transformer transformer in transformerList)
       {
-        if (VerifyNodeLink(distributionBreakerNodeId, transformer.NodeId))
+        if (VerifyNodeLink(distributionBreaker.NodeId, transformer.NodeId))
         {
           TreeNode transformerNode = node.Nodes.Add(transformer.Id, transformer.Name);
           transformerNode.Tag = transformer;
           SetTreeNodeColor(transformerNode, transformer);
-          PopulateFromTransformer(transformerNode, transformer.NodeId);
+          PopulateFromTransformer(transformerNode, transformer);
         }
       }
     }
 
-    public void PopulateFromPanel(TreeNode node, string panelNodeId)
+    public void PopulateFromPanel(TreeNode node, ElectricalEntity.Panel panel)
     {
       foreach (ElectricalEntity.PanelBreaker panelBreaker in panelBreakerList)
       {
-        if (VerifyNodeLink(panelNodeId, panelBreaker.NodeId))
+        if (VerifyNodeLink(panel.NodeId, panelBreaker.NodeId))
         {
+          InheritLineVoltageAndPhase(panel, panelBreaker);
           TreeNode panelBreakerNode = node.Nodes.Add(panelBreaker.Id, panelBreaker.Name);
           panelBreakerNode.Tag = panelBreaker;
-          PopulateFromPanelBreaker(panelBreakerNode, panelBreaker.NodeId);
+          PopulateFromPanelBreaker(panelBreakerNode, panelBreaker);
         }
       }
-      foreach (ElectricalEntity.Panel panel in panelList)
+      foreach (ElectricalEntity.Panel childPanel in panelList)
       {
-        if (VerifyNodeLink(panelNodeId, panel.NodeId))
+        if (VerifyNodeLink(panel.NodeId, childPanel.NodeId))
         {
-          TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
-          panelNode.Tag = panel;
-          SetTreeNodeColor(panelNode, panel);
-          PopulateFromPanel(panelNode, panel.NodeId);
+          InheritLineVoltageAndPhase(panel, childPanel);
+          TreeNode childPanelNode = node.Nodes.Add(childPanel.Id, childPanel.Name);
+          childPanelNode.Tag = childPanel;
+          SetTreeNodeColor(childPanelNode, childPanel);
+          PopulateFromPanel(childPanelNode, childPanel);
         }
       }
       foreach (ElectricalEntity.Disconnect disconnect in disconnectList)
       {
-        if (VerifyNodeLink(panelNodeId, disconnect.NodeId))
+        if (VerifyNodeLink(panel.NodeId, disconnect.NodeId))
         {
+          InheritLineVoltageAndPhase(panel, disconnect);
           TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
           disconnectNode.Tag = disconnect;
           SetTreeNodeColor(disconnectNode, disconnect);
-          PopulateFromDisconnect(disconnectNode, disconnect.NodeId);
+          PopulateFromDisconnect(disconnectNode, disconnect);
         }
       }
       foreach (ElectricalEntity.Transformer transformer in transformerList)
       {
-        if (VerifyNodeLink(panelNodeId, transformer.NodeId))
+        if (VerifyNodeLink(panel.NodeId, transformer.NodeId))
         {
           TreeNode transformerNode = node.Nodes.Add(transformer.Id, transformer.Name);
           transformerNode.Tag = transformer;
           SetTreeNodeColor(transformerNode, transformer);
-          PopulateFromTransformer(transformerNode, transformer.NodeId);
+          PopulateFromTransformer(transformerNode, transformer);
         }
       }
     }
 
-    public void PopulateFromPanelBreaker(TreeNode node, string panelBreakerNodeId)
+    public void PopulateFromPanelBreaker(TreeNode node, ElectricalEntity.PanelBreaker panelBreaker)
     {
       foreach (ElectricalEntity.Panel panel in panelList)
       {
-        if (VerifyNodeLink(panelBreakerNodeId, panel.NodeId))
+        if (VerifyNodeLink(panelBreaker.NodeId, panel.NodeId))
         {
+          InheritLineVoltageAndPhase(panelBreaker, panel);
           TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
-          PopulateFromPanel(panelNode, panel.NodeId);
+          PopulateFromPanel(panelNode, panel);
         }
       }
       foreach (ElectricalEntity.Disconnect disconnect in disconnectList)
       {
-        if (VerifyNodeLink(panelBreakerNodeId, disconnect.NodeId))
+        if (VerifyNodeLink(panelBreaker.NodeId, disconnect.NodeId))
         {
+          InheritLineVoltageAndPhase(panelBreaker, disconnect);
           TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
           disconnectNode.Tag = disconnect;
           SetTreeNodeColor(disconnectNode, disconnect);
-          PopulateFromDisconnect(disconnectNode, disconnect.NodeId);
+          PopulateFromDisconnect(disconnectNode, disconnect);
         }
       }
       foreach (ElectricalEntity.Transformer transformer in transformerList)
       {
-        if (VerifyNodeLink(panelBreakerNodeId, transformer.NodeId))
+        if (VerifyNodeLink(panelBreaker.NodeId, transformer.NodeId))
         {
           TreeNode transformerNode = node.Nodes.Add(transformer.Id, transformer.Name);
           transformerNode.Tag = transformer;
           SetTreeNodeColor(transformerNode, transformer);
-          PopulateFromTransformer(transformerNode, transformer.NodeId);
+          PopulateFromTransformer(transformerNode, transformer);
         }
       }
     }
 
-    public void PopulateFromDisconnect(TreeNode node, string disconnectNodeId)
+    public void PopulateFromDisconnect(TreeNode node, ElectricalEntity.Disconnect disconnect)
     {
       foreach (ElectricalEntity.Panel panel in panelList)
       {
-        if (VerifyNodeLink(disconnectNodeId, panel.NodeId))
+        if (VerifyNodeLink(disconnect.NodeId, panel.NodeId))
         {
+          InheritLineVoltageAndPhase(disconnect, panel);
           TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
-          PopulateFromPanel(panelNode, panel.NodeId);
+          PopulateFromPanel(panelNode, panel);
         }
       }
-      foreach (ElectricalEntity.Disconnect disconnect in disconnectList)
+      foreach (ElectricalEntity.Disconnect childDisconnect in disconnectList)
       {
-        if (VerifyNodeLink(disconnectNodeId, disconnect.NodeId))
+        if (VerifyNodeLink(disconnect.NodeId, childDisconnect.NodeId))
         {
-          TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
-          disconnectNode.Tag = disconnect;
-          SetTreeNodeColor(disconnectNode, disconnect);
-          PopulateFromDisconnect(disconnectNode, disconnect.NodeId);
+          InheritLineVoltageAndPhase(disconnect, childDisconnect);
+          TreeNode childDisconnectNode = node.Nodes.Add(childDisconnect.Id, childDisconnect.Name);
+          childDisconnectNode.Tag = childDisconnect;
+          SetTreeNodeColor(childDisconnectNode, childDisconnect);
+          PopulateFromDisconnect(childDisconnectNode, childDisconnect);
         }
       }
       foreach (ElectricalEntity.Transformer transformer in transformerList)
       {
-        if (VerifyNodeLink(disconnectNodeId, transformer.NodeId))
+        if (VerifyNodeLink(disconnect.NodeId, transformer.NodeId))
         {
           TreeNode transformerNode = node.Nodes.Add(transformer.Id, transformer.Name);
           transformerNode.Tag = transformer;
           SetTreeNodeColor(transformerNode, transformer);
-          PopulateFromTransformer(transformerNode, transformer.NodeId);
+          PopulateFromTransformer(transformerNode, transformer);
         }
       }
     }
 
-    public void PopulateFromTransformer(TreeNode node, string transformerNodeId)
+    public void PopulateFromTransformer(TreeNode node, ElectricalEntity.Transformer transformer)
     {
       foreach (ElectricalEntity.Panel panel in panelList)
       {
-        if (VerifyNodeLink(transformerNodeId, panel.NodeId))
+        if (VerifyNodeLink(transformer.NodeId, panel.NodeId))
         {
+          InheritLineVoltageAndPhase(transformer, panel);
           TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
-          PopulateFromPanel(panelNode, panel.NodeId);
+          PopulateFromPanel(panelNode, panel);
         }
       }
       foreach (ElectricalEntity.Disconnect disconnect in disconnectList)
       {
-        if (VerifyNodeLink(transformerNodeId, disconnect.NodeId))
+        if (VerifyNodeLink(transformer.NodeId, disconnect.NodeId))
         {
+          InheritLineVoltageAndPhase(transformer, disconnect);
           TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
           disconnectNode.Tag = disconnect;
           SetTreeNodeColor(disconnectNode, disconnect);
-          PopulateFromDisconnect(disconnectNode, disconnect.NodeId);
+          PopulateFromDisconnect(disconnectNode, disconnect);
         }
       }
     }
@@ -562,12 +595,12 @@ namespace ElectricalCommands.SingleLine
           InfoTextBox.AppendText($"Voltage:    {service.Voltage.Replace(" ", "V-")}");
           break;
         case NodeType.Meter:
-          ElectricalEntity.Meter meter = (ElectricalEntity.Meter)entity;
-          InfoTextBox.AppendText("---------------------Meter----------------------");
-          InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"ID:     {meter.Id}");
-          InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"Status: {meter.Status}");
+          //ElectricalEntity.Meter meter = (ElectricalEntity.Meter)entity;
+          //InfoTextBox.AppendText("---------------------Meter----------------------");
+          //InfoTextBox.AppendText(Environment.NewLine);
+          //InfoTextBox.AppendText($"ID:     {meter.Id}");
+          //InfoTextBox.AppendText(Environment.NewLine);
+          //InfoTextBox.AppendText($"Status: {meter.Status}");
           break;
         case NodeType.MainBreaker:
           ElectricalEntity.MainBreaker mainBreaker = (ElectricalEntity.MainBreaker)entity;
@@ -843,11 +876,22 @@ namespace ElectricalCommands.SingleLine
       TreeNode childNode = parentNode.Nodes[0];
       ElectricalEntity.ElectricalEntity childEntity = (ElectricalEntity.ElectricalEntity)
         childNode.Tag;
+
       if (childEntity.NodeType == NodeType.Panel)
       {
         // Make panel
         ElectricalEntity.Panel panel = (ElectricalEntity.Panel)childEntity;
         SingleLine.MakePanel(panel, currentPoint);
+
+        SingleLine.AddConduitSpec(
+          panel.LoadAmperage,
+          panel.AmpRating,
+          panel.ParentDistance,
+          panel.LineVoltage,
+          1,
+          panel.Phase,
+          currentPoint
+        );
         List<ElectricalEntity.PanelBreaker> panelBreakers = GetPanelBreakersFromPanel(childNode);
         for (int i = 0; i < panelBreakers.Count; i++)
         {
@@ -885,6 +929,15 @@ namespace ElectricalCommands.SingleLine
       {
         ElectricalEntity.Disconnect disconnect = (ElectricalEntity.Disconnect)childEntity;
         SingleLine.MakeDisconnect(disconnect, currentPoint);
+        SingleLine.AddConduitSpec(
+          disconnect.LoadAmperage,
+          disconnect.AmpRating,
+          disconnect.ParentDistance,
+          disconnect.LineVoltage,
+          1,
+          disconnect.Phase,
+          currentPoint
+        );
         currentPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.1201, 0);
         if (childNode.Nodes.Count > 0)
         {
@@ -896,6 +949,15 @@ namespace ElectricalCommands.SingleLine
       {
         ElectricalEntity.Transformer transformer = (ElectricalEntity.Transformer)childEntity;
         SingleLine.MakeTransformer(transformer, currentPoint);
+        SingleLine.AddConduitSpec(
+          transformer.LoadAmperage,
+          transformer.AmpRating,
+          transformer.ParentDistance,
+          transformer.LineVoltage,
+          1,
+          transformer.Phase,
+          currentPoint
+        );
         currentPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.3739, 0);
         if (childNode.Nodes.Count > 0)
         {
@@ -1253,6 +1315,7 @@ namespace ElectricalCommands.SingleLine
           Point3d? p = placeable.Place();
           if (p == null)
           {
+            placeable.Location = new Point3d(0, 0, 0);
             break;
           }
         }

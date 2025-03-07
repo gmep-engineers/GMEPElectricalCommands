@@ -22,6 +22,10 @@ namespace ElectricalCommands.ElectricalEntity
     public bool Rotate;
     public string TableName;
     public ObjectId BlockId;
+    public int AmpRating;
+    public string Voltage;
+    public double LoadAmperage;
+    public double Kva;
 
     public bool IsPlaced()
     {
@@ -593,8 +597,6 @@ namespace ElectricalCommands.ElectricalEntity
 
   public class DistributionBus : PlaceableElectricalEntity
   {
-    public int AmpRating;
-
     public DistributionBus(
       string Id,
       string NodeId,
@@ -622,9 +624,6 @@ namespace ElectricalCommands.ElectricalEntity
 
   public class Service : PlaceableElectricalEntity
   {
-    public int AmpRating;
-    public string Voltage;
-
     public Service(
       string Id,
       string NodeId,
@@ -641,7 +640,7 @@ namespace ElectricalCommands.ElectricalEntity
       Name =
         $"{AmpRating}A {Voltage.Replace(" ", "V-")}"
         + "\u0081"
-        + $"-{(Voltage.Contains("3") ? "4W" : "3W")}";
+        + $"-{(Voltage.Contains("3") ? "4W" : "3W")} Service";
       this.Status = Status;
       this.AmpRating = AmpRating;
       this.Voltage = Voltage;
@@ -652,6 +651,20 @@ namespace ElectricalCommands.ElectricalEntity
       TableName = "electrical_services";
       Rotate = true;
       this.Location = Location;
+      LineVoltage = 208;
+      if (Voltage.Contains("480"))
+      {
+        LineVoltage = 480;
+      }
+      if (Voltage.Contains("240"))
+      {
+        LineVoltage = 240;
+      }
+      Phase = 1;
+      if (Voltage.Contains("3"))
+      {
+        Phase = 3;
+      }
     }
   }
 
@@ -660,8 +673,7 @@ namespace ElectricalCommands.ElectricalEntity
     public string Description,
       Hp,
       Category;
-    public int Voltage,
-      MountingHeight,
+    public int MountingHeight,
       Circuit;
     public double Fla,
       Mca;
@@ -695,7 +707,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.Name = Name.ToUpper();
       this.Description = Description;
       this.Category = Category;
-      this.Voltage = Voltage;
+      this.Voltage = Voltage.ToString();
       this.Fla = Fla;
       this.Is3Phase = Is3Phase;
       this.Location = new Point3d(LocationX, LocationY, 0);
@@ -753,7 +765,6 @@ namespace ElectricalCommands.ElectricalEntity
   {
     public int BusAmpRating;
     public int MainAmpRating;
-    public string Voltage;
     public bool IsMlo;
     public List<PanelBreaker> Breakers;
 
@@ -768,6 +779,8 @@ namespace ElectricalCommands.ElectricalEntity
       int MainAmpRating,
       bool IsMlo,
       string Voltage,
+      double LoadAmperage,
+      double Kva,
       double AicRating,
       bool IsHidden,
       string NodeId,
@@ -781,6 +794,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.ParentDistance = ParentDistance;
       Location = new Point3d(LocationX, LocationY, 0);
       this.BusAmpRating = BusAmpRating;
+      AmpRating = BusAmpRating;
       this.MainAmpRating = MainAmpRating;
       this.IsMlo = IsMlo;
       this.Voltage = Voltage;
@@ -793,14 +807,13 @@ namespace ElectricalCommands.ElectricalEntity
       BlockName = $"A$C26441056";
       Rotate = true;
       TableName = "electrical_panels";
+      this.LoadAmperage = LoadAmperage;
+      this.Kva = Kva;
     }
   }
 
   public class Transformer : PlaceableElectricalEntity
   {
-    public double Kva;
-    public string Voltage;
-
     public Transformer(
       string Id,
       string ParentId,
@@ -833,6 +846,11 @@ namespace ElectricalCommands.ElectricalEntity
       BlockName = "GMEP TRANSFORMER";
       Rotate = false;
       TableName = "electrical_transformers";
+      // HERE set line and phase for output
+      LineVoltage = Double.Parse(
+        Voltage.Split('-')[1].Replace("120/", "").Replace("277/", "").Replace("V", "")
+      );
+      Phase = Int32.Parse(Voltage.Split('-')[2]);
     }
   }
 }

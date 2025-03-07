@@ -1174,5 +1174,51 @@ namespace ElectricalCommands.SingleLine
       }
       return new Point3d(currentPoint.X + xOffset, currentPoint.Y + yOffset, 0);
     }
+
+    public static void AddConduitSpec(
+      double loadAmperage,
+      double mocp,
+      double distance,
+      double voltage,
+      double maxVoltageDropPercent,
+      int phase,
+      Point3d currentPoint
+    )
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+
+      (
+        string firstLine,
+        string secondLine,
+        string thirdLine,
+        string supplemental1,
+        string supplemental2,
+        string supplemental3
+      ) = CADObjectCommands.GetWireAndConduitSizeText(
+        loadAmperage,
+        mocp,
+        distance,
+        voltage,
+        maxVoltageDropPercent,
+        phase
+      );
+      CADObjectCommands.AddWireAndConduitTextToPlan(
+        db,
+        new Point3d(currentPoint.X, currentPoint.Y + 0.3, 0),
+        firstLine,
+        secondLine,
+        thirdLine,
+        supplemental1,
+        supplemental2,
+        supplemental3,
+        false
+      );
+    }
   }
 }

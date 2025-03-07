@@ -17,6 +17,8 @@ namespace ElectricalCommands.ElectricalEntity
     public double AicRating;
     public NodeType NodeType;
     public Point NodePosition;
+    public double LineVoltage;
+    public int Phase;
   }
 
   public class DistributionBreaker : ElectricalEntity
