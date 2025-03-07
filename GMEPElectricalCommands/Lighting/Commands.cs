@@ -437,7 +437,28 @@ namespace ElectricalCommands.Lighting
         }
       }
     }
+    [CommandMethod("PlaceLightingCircuits")]
+    public static void AssignLightingCircuits() {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
 
+      PromptSelectionResult psr = ed.GetSelection();
+      if (psr.Status == PromptStatus.OK) {
+        SelectionSet ss = psr.Value;
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          foreach (ObjectId objId in ss.GetObjectIds()) {
+            if (objId.ObjectClass.Name == "AcDbText") {
+               DBObject obj = objId.GetObject(OpenMode.ForWrite);
+              if (obj is DBText text) {
+                ed.WriteMessage
+                  ("\nText: " + text.TextString);
+              }
+            }
+          }
+        }
+      }
+    }
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
     {
