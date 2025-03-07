@@ -7,7 +7,6 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
-using DocumentFormat.OpenXml.Office2010.Excel;
 using ElectricalCommands.SingleLine;
 
 namespace ElectricalCommands.ElectricalEntity
@@ -89,6 +88,18 @@ namespace ElectricalCommands.ElectricalEntity
                 {
                   line.Erase();
                 }
+              }
+            }
+          }
+          catch { }
+          try
+          {
+            DBText text = (DBText)tr.GetObject(id, OpenMode.ForWrite);
+            if (text != null)
+            {
+              if (text.Hyperlinks.Count > 0 && text.Hyperlinks[0].SubLocation == Id)
+              {
+                text.Erase();
               }
             }
           }
@@ -262,84 +273,140 @@ namespace ElectricalCommands.ElectricalEntity
       }
       Point3d textAlignmentReferencePoint = thirdClickOccurred ? thirdClickPoint : secondClickPoint;
       Point3d comparisonPoint = thirdClickOccurred ? secondClickPoint : firstClickPoint;
-      Point3d labelInsertionPoint;
-      if (textAlignmentReferencePoint.X > comparisonPoint.X)
-      {
-        labelInsertionPoint = new Point3d(
-          textAlignmentReferencePoint.X + 14.1197 * 0.25 / scale,
-          textAlignmentReferencePoint.Y,
-          0
-        );
-      }
-      else
-      {
-        labelInsertionPoint = new Point3d(
-          textAlignmentReferencePoint.X - 14.1197 * 0.25 / scale,
-          textAlignmentReferencePoint.Y,
-          0
-        );
-      }
 
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
         try
         {
-          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-          ObjectId locatorBlockId = bt["EQUIP_MARKER"];
-          using (BlockReference acBlkRef = new BlockReference(labelInsertionPoint, locatorBlockId))
+          if (NodeType == NodeType.Panel)
           {
-            BlockTableRecord acCurSpaceBlkTblRec;
-            acCurSpaceBlkTblRec =
-              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-            acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-            DynamicBlockReferencePropertyCollection pc =
-              acBlkRef.DynamicBlockReferencePropertyCollection;
-            foreach (DynamicBlockReferenceProperty prop in pc)
+            Point3d labelInsertionPoint;
+            if (textAlignmentReferencePoint.X > comparisonPoint.X)
             {
-              if (prop.PropertyName == "gmep_equip_id")
-              {
-                prop.Value = Id;
-              }
-              if (prop.PropertyName == "gmep_equip_parent_id" && ParentId != null)
-              {
-                prop.Value = ParentId;
-              }
-            }
-            TextStyleTable textStyleTable = (TextStyleTable)
-              tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
-            ObjectId gmepTextStyleId;
-            if (textStyleTable.Has("gmep"))
-            {
-              gmepTextStyleId = textStyleTable["gmep"];
+              labelInsertionPoint = new Point3d(
+                textAlignmentReferencePoint.X + 14.1197 * 0.25 / scale,
+                textAlignmentReferencePoint.Y,
+                0
+              );
             }
             else
             {
-              ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
-              gmepTextStyleId = doc.Database.Textstyle;
+              labelInsertionPoint = new Point3d(
+                textAlignmentReferencePoint.X - 14.1197 * 0.25 / scale,
+                textAlignmentReferencePoint.Y,
+                0
+              );
             }
-            AttributeDefinition attrDef = new AttributeDefinition();
-            attrDef.Position = labelInsertionPoint;
-            attrDef.LockPositionInBlock = true;
-            attrDef.Tag = Name;
-            attrDef.IsMTextAttributeDefinition = false;
-            attrDef.TextString = Name;
-            attrDef.Justify = AttachmentPoint.MiddleCenter;
-            attrDef.Visible = true;
-            attrDef.Invisible = false;
-            attrDef.Constant = false;
-            attrDef.Height = 4.5 * 0.25 / scale;
-            attrDef.WidthFactor = 0.85;
-            attrDef.TextStyleId = gmepTextStyleId;
-            attrDef.Layer = "0";
+            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+            ObjectId locatorBlockId = bt["EQUIP_MARKER"];
+            using (
+              BlockReference acBlkRef = new BlockReference(labelInsertionPoint, locatorBlockId)
+            )
+            {
+              BlockTableRecord acCurSpaceBlkTblRec;
+              acCurSpaceBlkTblRec =
+                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+              acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+              DynamicBlockReferencePropertyCollection pc =
+                acBlkRef.DynamicBlockReferencePropertyCollection;
+              foreach (DynamicBlockReferenceProperty prop in pc)
+              {
+                if (prop.PropertyName == "gmep_equip_id")
+                {
+                  prop.Value = Id;
+                }
+                if (prop.PropertyName == "gmep_equip_parent_id" && ParentId != null)
+                {
+                  prop.Value = ParentId;
+                }
+              }
+              TextStyleTable textStyleTable = (TextStyleTable)
+                tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+              ObjectId gmepTextStyleId;
+              if (textStyleTable.Has("gmep"))
+              {
+                gmepTextStyleId = textStyleTable["gmep"];
+              }
+              else
+              {
+                ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+                gmepTextStyleId = doc.Database.Textstyle;
+              }
+              AttributeDefinition attrDef = new AttributeDefinition();
+              attrDef.Position = labelInsertionPoint;
+              attrDef.LockPositionInBlock = true;
+              attrDef.Tag = Name;
+              attrDef.IsMTextAttributeDefinition = false;
+              attrDef.TextString = Name;
+              attrDef.Justify = AttachmentPoint.MiddleCenter;
+              attrDef.Visible = true;
+              attrDef.Invisible = false;
+              attrDef.Constant = false;
+              attrDef.Height = 4.5 * 0.25 / scale;
+              attrDef.WidthFactor = 0.85;
+              attrDef.TextStyleId = gmepTextStyleId;
+              attrDef.Layer = "0";
 
-            AttributeReference attrRef = new AttributeReference();
-            attrRef.SetAttributeFromBlock(attrDef, acBlkRef.BlockTransform);
-            acBlkRef.AttributeCollection.AppendAttribute(attrRef);
-            acBlkRef.Layer = "E-TXT1";
-            acBlkRef.ScaleFactors = new Scale3d(0.25 / scale);
-            tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              AttributeReference attrRef = new AttributeReference();
+              attrRef.SetAttributeFromBlock(attrDef, acBlkRef.BlockTransform);
+              acBlkRef.AttributeCollection.AppendAttribute(attrRef);
+              acBlkRef.Layer = "E-TXT1";
+              acBlkRef.ScaleFactors = new Scale3d(0.25 / scale);
+              tr.AddNewlyCreatedDBObject(acBlkRef, true);
+            }
+            tr.Commit();
           }
-          tr.Commit();
+          else
+          {
+            // create text above line
+            Point3d labelInsertionPoint;
+            double verticalAdjustment = -0.5 / scale;
+            labelInsertionPoint = new Point3d(
+              textAlignmentReferencePoint.X,
+              textAlignmentReferencePoint.Y + verticalAdjustment,
+              0
+            );
+            ObjectId textId;
+            if (textAlignmentReferencePoint.X > comparisonPoint.X)
+            {
+              textId = GeneralCommands.CreateAndPositionText(
+                tr,
+                Name.ToUpper(),
+                "gmep",
+                0.0938 * 12 / scale,
+                0.85,
+                2,
+                "E-TXT1",
+                new Point3d(labelInsertionPoint.X + (0.5 / scale), labelInsertionPoint.Y, 0),
+                TextHorizontalMode.TextCenter,
+                TextVerticalMode.TextBase,
+                AttachmentPoint.BaseLeft
+              );
+            }
+            else
+            {
+              textId = GeneralCommands.CreateAndPositionText(
+                tr,
+                Name.ToUpper(),
+                "gmep",
+                0.0938 * 12 / scale,
+                0.85,
+                2,
+                "E-TXT1",
+                new Point3d(labelInsertionPoint.X - (0.5 / scale), labelInsertionPoint.Y, 0),
+                TextHorizontalMode.TextCenter,
+                TextVerticalMode.TextBase,
+                AttachmentPoint.BaseRight
+              );
+            }
+            var text = (DBText)tr.GetObject(textId, OpenMode.ForWrite);
+            // this is the quickest way to add a custom attribute to DBText without
+            // having to do a bunch of bloated AutoCAD database nonsense
+            HyperLink customAttr = new HyperLink();
+            customAttr.SubLocation = Id;
+            text.Hyperlinks.Add(customAttr);
+            tr.Commit();
+          }
         }
         catch (Autodesk.AutoCAD.Runtime.Exception ex)
         {
@@ -571,7 +638,10 @@ namespace ElectricalCommands.ElectricalEntity
     {
       this.Id = Id;
       this.NodeId = NodeId;
-      Name = $"{AmpRating}A {Voltage.Replace(" ", "V-")} Service";
+      Name =
+        $"{AmpRating}A {Voltage.Replace(" ", "V-")}"
+        + "\u0081"
+        + $"-{(Voltage.Contains("3") ? "4W" : "3W")}";
       this.Status = Status;
       this.AmpRating = AmpRating;
       this.Voltage = Voltage;
@@ -750,11 +820,11 @@ namespace ElectricalCommands.ElectricalEntity
     {
       this.Id = Id;
       this.ParentId = ParentId;
-      this.Name = Name;
       this.ParentDistance = ParentDistance;
       Location = new Point3d(LocationX, LocationY, 0);
       this.Kva = Kva;
-      this.Voltage = Voltage;
+      this.Voltage = Voltage + "\u0081" + $"-{(Voltage.Contains("3") ? "4W" : "3W")}";
+      this.Name = $"{Kva}KVA, {this.Voltage} XFMR '{Name.ToUpper()}'";
       this.AicRating = AicRating;
       this.IsHidden = IsHidden;
       this.NodeId = NodeId;

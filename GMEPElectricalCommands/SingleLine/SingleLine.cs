@@ -976,7 +976,7 @@ namespace ElectricalCommands.SingleLine
         ObjectId arrowSymbol = bt["RIGHT ARROW LONG (AUTO SINGLE LINE)"];
         using (
           BlockReference acBlkRef = new BlockReference(
-            new Point3d(currentPoint.X - 0.0601 - 0.1273, currentPoint.Y - 0.0601, 0), // HERE test
+            new Point3d(currentPoint.X - 0.0601 - 0.1273, currentPoint.Y - 0.0601, 0),
             arrowSymbol
           )
         )
@@ -989,9 +989,7 @@ namespace ElectricalCommands.SingleLine
         }
         string line1 =
           $"{GetStatusText(transformer)}{transformer.Kva.ToString()}KVA XFMR '{transformer.Name.ToUpper()}'";
-        Console.WriteLine("voltg" + transformer.Voltage);
-        string line2 =
-          $"{transformer.Voltage}\u0081-{(transformer.Voltage.Contains("3") ? "4W" : "3W")}";
+        string line2 = $"{transformer.Voltage}";
         string line3 = $"Z=3.5";
         GeneralCommands.CreateAndPositionText(
           tr,

@@ -907,7 +907,7 @@ namespace GMEPElectricalCommands.GmepDatabase
     }
 
     public void UpdatePlaceable(PlaceableElectricalEntity placeable)
-    { // HERE test placing equip
+    {
       string query = $"UPDATE {placeable.TableName}";
       if (placeable.NodeType != NodeType.Service)
       {

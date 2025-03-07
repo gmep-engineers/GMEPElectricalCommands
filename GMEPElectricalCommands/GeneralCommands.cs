@@ -2507,7 +2507,7 @@ namespace ElectricalCommands
       }
     }
 
-    public static void CreateAndPositionText(
+    public static ObjectId CreateAndPositionText(
       Transaction tr,
       string content,
       string style,
@@ -2545,6 +2545,7 @@ namespace ElectricalCommands
       {
         text.AlignmentPoint = position;
       }
+      return textId;
     }
 
     public static ObjectId GetTextStyleId(string styleName)

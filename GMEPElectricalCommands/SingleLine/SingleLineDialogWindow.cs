@@ -647,7 +647,7 @@ namespace ElectricalCommands.SingleLine
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"KVA:     {transformer.Kva} KVA");
           InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"Voltage: {transformer.Voltage}" + "\u0081");
+          InfoTextBox.AppendText($"Voltage: {transformer.Voltage}");
           break;
       }
     }
