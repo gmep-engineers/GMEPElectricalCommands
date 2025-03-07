@@ -449,16 +449,21 @@ namespace ElectricalCommands.Lighting
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           foreach (ObjectId objId in ss.GetObjectIds()) {
             if (objId.ObjectClass.Name == "AcDbText") {
-               DBObject obj = objId.GetObject(OpenMode.ForWrite);
+              DBObject obj = objId.GetObject(OpenMode.ForWrite);
               if (obj is DBText text) {
-                ed.WriteMessage
-                  ("\nText: " + text.TextString);
+                ed.WriteMessage("\nText: " + text.TextString);
+                DBObject obj2 = text.OwnerId.GetObject(OpenMode.ForWrite);
+                if (obj2 is BlockTableRecord br) {
+                  ed.WriteMessage("\nRecord: " + br.Id);
+                }
+                }
+
               }
             }
           }
         }
       }
-    }
+    
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
     {
