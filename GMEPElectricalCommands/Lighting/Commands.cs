@@ -443,26 +443,53 @@ namespace ElectricalCommands.Lighting
       Database db = doc.Database;
       Editor ed = doc.Editor;
 
-      PromptSelectionResult psr = ed.GetSelection();
-      if (psr.Status == PromptStatus.OK) {
-        SelectionSet ss = psr.Value;
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
-          foreach (ObjectId objId in ss.GetObjectIds()) {
-            if (objId.ObjectClass.Name == "AcDbText") {
-              DBObject obj = objId.GetObject(OpenMode.ForWrite);
-              if (obj is DBText text) {
-                ed.WriteMessage("\nText: " + text.TextString);
-                DBObject obj2 = text.OwnerId.GetObject(OpenMode.ForWrite);
-                if (obj2 is BlockTableRecord br) {
-                  ed.WriteMessage("\nRecord: " + br.Id);
-                }
-                }
+      PromptEntityOptions peo = new PromptEntityOptions("\nSelect a text object:");
+      peo.SetRejectMessage("\nObject is not a text object.");
+      peo.AddAllowedClass(typeof(DBText), true);
+      peo.AddAllowedClass(typeof(MText), true);
 
+      PromptEntityResult per = ed.GetEntity(peo);
+
+      if (per.Status != PromptStatus.OK) {
+        return;
+      }
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        DBObject obj = tr.GetObject(per.ObjectId, OpenMode.ForRead);
+
+        if (obj is DBText || obj is MText) {
+          ObjectId blockDefinitionId = obj.OwnerId; // The BlockTableRecord ID
+
+          if (blockDefinitionId.ObjectClass.Name == "AcDbBlockTableRecord") {
+            BlockTableRecord record = (BlockTableRecord)tr.GetObject(blockDefinitionId, OpenMode.ForRead);
+
+            foreach (ObjectId blockReferenceId in record) {
+              if (blockReferenceId.ObjectClass.Name == "AcDbBlockReference") {
+                ed.WriteMessage("\nBlockReference found: " + blockReferenceId.ToString());
+                BlockReference blockReference = (BlockReference)tr.GetObject(blockReferenceId, OpenMode.ForRead);
+
+                if (blockReference.BlockTableRecord == blockDefinitionId) {
+                  // Iterate through the BlockReference's entities
+                  BlockTableRecord blockReferenceRecord = (BlockTableRecord)tr.GetObject(blockReference.BlockTableRecord, OpenMode.ForRead);
+                  foreach (ObjectId entityId in blockReferenceRecord) {
+                    if (entityId == per.ObjectId) {
+                      ed.WriteMessage("\nBlockReference found: " + blockReference.ObjectId.ToString());
+                      tr.Commit();
+                      return;
+                    }
+                  }
+                }
               }
             }
+            ed.WriteMessage("\nBlockReference instance not found.");
+          }
+          else {
+            ed.WriteMessage("\nText object is not part of a block definition.");
           }
         }
+        tr.Commit();
       }
+    }
     
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
