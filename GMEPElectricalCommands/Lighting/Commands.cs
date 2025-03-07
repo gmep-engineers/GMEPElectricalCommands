@@ -13,6 +13,7 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using Dreambuild.AutoCAD;
+using ElectricalCommands.ElectricalEntity;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -437,7 +438,57 @@ namespace ElectricalCommands.Lighting
         }
       }
     }
+    [CommandMethod("AssignLightingCircuits")]
+    public static void AssignLightingCircuits() {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      GmepDatabase gmepDb = new GmepDatabase();
 
+      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
+      List<ElectricalEntity.Panel> panelList = gmepDb.GetPanels(projectId);
+      PromptKeywordOptions pko = new PromptKeywordOptions("");
+      pko.Message = "\nSelect a panel: ";
+
+      foreach (ElectricalEntity.Panel panel in panelList) {
+        // pko.Keywords.Add(panel.Name + ":" + panel.Id);
+        ed.WriteMessage("Meow:" + panel.Id + ": " + panel.Name);
+       }
+
+      PromptSelectionResult psr = ed.GetSelection();
+
+
+      //Dictionary<string, string> lightingParents = new Dictionary<string, string>();
+
+      if (psr.Status == PromptStatus.OK) {
+        SelectionSet ss = psr.Value;
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          foreach(ObjectId id in ss.GetObjectIds()) {
+            DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
+            if (obj is BlockReference block) {
+              //ed.WriteMessage("\nBlock reference + " + block.Id + "found");
+              string lightingFixtureId = "";
+              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+                if (property.PropertyName == "gmep_lighting_fixture_id") {
+                  lightingFixtureId = property.Value as string;
+                }
+              }
+              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+                if (property.PropertyName == "gmep_lighting_parent_id") {
+                  //PromptResult pr = ed.GetKeywords(pko);
+                  //string result = pr.StringResult;
+                  //property.Value = result;
+                  //property.Value = result.Split(':')[1];
+                  //var parent = new PromptKeywordOptions("\nEnter the string: ");
+                  //property.Value = ed.GetString(parent).StringResult;
+                }
+              }
+            }
+          }
+          tr.Commit();
+        }
+      }
+      }
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
     {

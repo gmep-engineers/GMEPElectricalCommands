@@ -730,7 +730,7 @@ namespace GMEPElectricalCommands.GmepDatabase
           new LightingFixture(
             reader.GetString("id"),
             reader.GetString("parent_id"),
-            reader.GetString("name"),
+            reader.IsDBNull(reader.GetOrdinal("name")) ? string.Empty : reader.GetString("name"),
             reader.GetString("tag"),
             reader.GetString("control_id"),
             reader.GetString("block_name"),
