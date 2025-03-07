@@ -746,7 +746,6 @@ namespace ElectricalCommands.ElectricalEntity
       Rotate = false;
       TableName = "electrical_disconnects";
       this.Location = Location;
-      this.BlockId = (ObjectId)BlockId;
     }
   }
 
