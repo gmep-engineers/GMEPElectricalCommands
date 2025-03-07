@@ -8,37 +8,11 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using DocumentFormat.OpenXml.Drawing.Charts;
+using ElectricalCommands.ElectricalEntity;
 using GMEPElectricalCommands.GmepDatabase;
 
 namespace ElectricalCommands.Equipment
 {
-  public struct Service
-  {
-    public string id;
-    public string name;
-    public bool isMultiMeter;
-    public int amp;
-    public string voltage;
-    public double aicRating;
-
-    public Service(
-      string id,
-      string name,
-      string meterConfig,
-      int amp,
-      string voltage,
-      double aicRating
-    )
-    {
-      this.id = id;
-      this.name = name;
-      isMultiMeter = meterConfig == "MULTIMETER";
-      this.amp = amp;
-      this.voltage = voltage;
-      this.aicRating = aicRating;
-    }
-  }
-
   public enum EquipmentType
   {
     Duplex,
@@ -56,14 +30,14 @@ namespace ElectricalCommands.Equipment
     private string filterEquipNo;
     private string filterCategory;
     private List<ListViewItem> equipmentListViewList;
-    private List<Equipment> equipmentList;
+    private List<ElectricalEntity.Equipment> equipmentList;
     private List<ListViewItem> panelListViewList;
-    private List<Panel> panelList;
+    private List<ElectricalEntity.Panel> panelList;
     private List<ListViewItem> transformerListViewList;
-    private List<Transformer> transformerList;
+    private List<ElectricalEntity.Transformer> transformerList;
     private string projectId;
     private bool isLoading;
-    private List<Service> services;
+    private List<ElectricalEntity.Service> services;
     public GmepDatabase gmepDb = new GmepDatabase();
 
     public EquipmentDialogWindow(EquipmentCommands EquipCommands)
@@ -80,12 +54,12 @@ namespace ElectricalCommands.Equipment
       services = gmepDb.GetServices(projectId);
       for (int i = 0; i < panelList.Count; i++)
       {
-        foreach (Service service in services)
+        foreach (ElectricalEntity.Service service in services)
         {
-          if (service.id == panelList[i].parentId)
+          if (service.Id == panelList[i].ParentId)
           {
-            Panel panel = panelList[i];
-            panel.parentName = service.name;
+            ElectricalEntity.Panel panel = panelList[i];
+            panel.ParentName = service.Name;
             panelList[i] = panel;
           }
           else
@@ -93,10 +67,10 @@ namespace ElectricalCommands.Equipment
             bool found = false;
             for (int j = 0; j < panelList.Count; j++)
             {
-              if (panelList[i].parentId == panelList[j].id)
+              if (panelList[i].ParentId == panelList[j].Id)
               {
-                Panel panel = panelList[i];
-                panel.parentName = panelList[j].name;
+                ElectricalEntity.Panel panel = panelList[i];
+                panel.ParentName = panelList[j].Name;
                 panelList[i] = panel;
                 found = true;
               }
@@ -105,10 +79,10 @@ namespace ElectricalCommands.Equipment
             {
               for (int j = 0; j < transformerList.Count; j++)
               {
-                if (panelList[i].parentId == transformerList[j].id)
+                if (panelList[i].ParentId == transformerList[j].Id)
                 {
-                  Panel panel = panelList[i];
-                  panel.parentName = transformerList[j].name;
+                  ElectricalEntity.Panel panel = panelList[i];
+                  panel.ParentName = transformerList[j].Name;
                   panelList[i] = panel;
                 }
               }
@@ -118,22 +92,22 @@ namespace ElectricalCommands.Equipment
       }
       for (int i = 0; i < transformerList.Count; i++)
       {
-        foreach (Service service in services)
+        foreach (ElectricalEntity.Service service in services)
         {
-          if (service.id == transformerList[i].parentId)
+          if (service.Id == transformerList[i].ParentId)
           {
-            Transformer xfmr = transformerList[i];
-            xfmr.parentName = service.name;
+            ElectricalEntity.Transformer xfmr = transformerList[i];
+            xfmr.ParentName = service.Name;
             transformerList[i] = xfmr;
           }
           else
           {
             for (int j = 0; j < panelList.Count; j++)
             {
-              if (transformerList[i].parentId == panelList[j].id)
+              if (transformerList[i].ParentId == panelList[j].Id)
               {
-                Transformer xfmr = transformerList[i];
-                xfmr.parentName = panelList[j].name;
+                ElectricalEntity.Transformer xfmr = transformerList[i];
+                xfmr.ParentName = panelList[j].Name;
                 transformerList[i] = xfmr;
               }
             }
@@ -156,20 +130,20 @@ namespace ElectricalCommands.Equipment
       }
       equipmentListView.View = View.Details;
       equipmentListView.FullRowSelect = true;
-      foreach (Equipment equipment in equipmentList)
+      foreach (ElectricalEntity.Equipment equipment in equipmentList)
       {
-        if (!String.IsNullOrEmpty(filterPanel) && equipment.parentName != filterPanel)
+        if (!String.IsNullOrEmpty(filterPanel) && equipment.ParentName != filterPanel)
         {
           continue;
         }
-        if (!String.IsNullOrEmpty(filterVoltage) && equipment.voltage.ToString() != filterVoltage)
+        if (!String.IsNullOrEmpty(filterVoltage) && equipment.Voltage.ToString() != filterVoltage)
         {
           continue;
         }
         if (
           !String.IsNullOrEmpty(filterPhase)
           && filterPhase.ToString() == "1"
-          && equipment.is3Phase
+          && equipment.Is3Phase
         )
         {
           continue;
@@ -177,52 +151,52 @@ namespace ElectricalCommands.Equipment
         if (
           !String.IsNullOrEmpty(filterPhase)
           && filterPhase.ToString() == "3"
-          && !equipment.is3Phase
+          && !equipment.Is3Phase
         )
         {
           continue;
         }
-        if (!String.IsNullOrEmpty(filterEquipNo) && equipment.name != filterEquipNo)
+        if (!String.IsNullOrEmpty(filterEquipNo) && equipment.Name != filterEquipNo)
         {
           continue;
         }
         if (
           !String.IsNullOrEmpty(filterCategory)
-          && equipment.category.ToUpper() != filterCategory.ToUpper()
+          && equipment.Category.ToUpper() != filterCategory.ToUpper()
         )
         {
           continue;
         }
-        ListViewItem item = new ListViewItem(equipment.name, 0);
-        item.SubItems.Add(equipment.description);
-        item.SubItems.Add(equipment.category);
-        item.SubItems.Add(equipment.parentName);
-        item.SubItems.Add(equipment.circuit.ToString());
-        if (equipment.parentDistance == -1)
+        ListViewItem item = new ListViewItem(equipment.Name, 0);
+        item.SubItems.Add(equipment.Description);
+        item.SubItems.Add(equipment.Category);
+        item.SubItems.Add(equipment.ParentName);
+        item.SubItems.Add(equipment.Circuit.ToString());
+        if (equipment.ParentDistance == -1)
         {
           item.SubItems.Add("Not Set");
         }
         else
         {
-          item.SubItems.Add(equipment.parentDistance.ToString() + "'");
+          item.SubItems.Add(equipment.ParentDistance.ToString() + "'");
         }
-        item.SubItems.Add(equipment.voltage.ToString());
-        item.SubItems.Add(equipment.is3Phase ? "3" : "1");
-        if (equipment.loc.X == 0 && equipment.loc.Y == 0)
+        item.SubItems.Add(equipment.Voltage.ToString());
+        item.SubItems.Add(equipment.Is3Phase ? "3" : "1");
+        if (equipment.Location.X == 0 && equipment.Location.Y == 0)
         {
           item.SubItems.Add("Not Set");
         }
         else
         {
           item.SubItems.Add(
-            Math.Round(equipment.loc.X / 12, 1).ToString()
+            Math.Round(equipment.Location.X / 12, 1).ToString()
               + ", "
-              + Math.Round(equipment.loc.Y / 12, 1).ToString()
+              + Math.Round(equipment.Location.Y / 12, 1).ToString()
           );
         }
-        item.SubItems.Add(equipment.hidden.ToString());
-        item.SubItems.Add(equipment.id);
-        item.SubItems.Add(equipment.parentId);
+        item.SubItems.Add(equipment.IsHidden.ToString());
+        item.SubItems.Add(equipment.Id);
+        item.SubItems.Add(equipment.ParentId);
         equipmentListView.Items.Add(item);
       }
       if (!updateOnly)
@@ -250,9 +224,9 @@ namespace ElectricalCommands.Equipment
       {
         int numSubitems = equipmentListView.SelectedItems[0].SubItems.Count;
         string equipId = equipmentListView.SelectedItems[0].SubItems[numSubitems - 2].Text;
-        foreach (Equipment eq in equipmentList)
+        foreach (ElectricalEntity.Equipment eq in equipmentList)
         {
-          if (eq.id == equipId && eq.loc.X != 0 && eq.loc.Y != 0)
+          if (eq.Id == equipId && eq.Location.X != 0 && eq.Location.Y != 0)
           {
             Document doc = Autodesk
               .AutoCAD
@@ -270,7 +244,7 @@ namespace ElectricalCommands.Equipment
                   * Matrix3d.Displacement(view.Target - Point3d.Origin)
                   * Matrix3d.PlaneToWorld(view.ViewDirection)
                 ).Inverse() * ed.CurrentUserCoordinateSystem;
-              var center = eq.loc.TransformBy(UCS2DCS);
+              var center = eq.Location.TransformBy(UCS2DCS);
               view.CenterPoint = new Point2d(center.X, center.Y);
               ed.SetCurrentView(view);
             }
@@ -288,37 +262,37 @@ namespace ElectricalCommands.Equipment
       }
       panelListView.View = View.Details;
       panelListView.FullRowSelect = true;
-      foreach (Panel panel in panelList)
+      foreach (ElectricalEntity.Panel panel in panelList)
       {
-        ListViewItem item = new ListViewItem(panel.name, 0);
-        item.SubItems.Add(panel.parentName);
-        if (panel.parentDistance == -1)
+        ListViewItem item = new ListViewItem(panel.Name, 0);
+        item.SubItems.Add(panel.ParentName);
+        if (panel.ParentDistance == -1)
         {
           item.SubItems.Add("Not Set");
         }
         else
         {
-          item.SubItems.Add(panel.parentDistance.ToString() + "'");
+          item.SubItems.Add(panel.ParentDistance.ToString() + "'");
         }
-        if (panel.loc.X == 0 && panel.loc.Y == 0)
+        if (panel.Location.X == 0 && panel.Location.Y == 0)
         {
           item.SubItems.Add("Not Set");
         }
         else
         {
           item.SubItems.Add(
-            Math.Round(panel.loc.X / 12, 1).ToString()
+            Math.Round(panel.Location.X / 12, 1).ToString()
               + ", "
-              + Math.Round(panel.loc.Y / 12, 1).ToString()
+              + Math.Round(panel.Location.Y / 12, 1).ToString()
           );
         }
-        item.SubItems.Add(panel.hidden.ToString());
-        item.SubItems.Add(panel.id);
-        item.SubItems.Add(panel.parentId);
+        item.SubItems.Add(panel.IsHidden.ToString());
+        item.SubItems.Add(panel.Id);
+        item.SubItems.Add(panel.ParentId);
         panelListView.Items.Add(item);
         if (!updateOnly)
         {
-          filterPanelComboBox.Items.Add(panel.name);
+          filterPanelComboBox.Items.Add(panel.Name);
         }
       }
       if (!updateOnly)
@@ -341,9 +315,9 @@ namespace ElectricalCommands.Equipment
       {
         int numSubitems = panelListView.SelectedItems[0].SubItems.Count;
         string equipId = panelListView.SelectedItems[0].SubItems[numSubitems - 2].Text;
-        foreach (Panel p in panelList)
+        foreach (ElectricalEntity.Panel p in panelList)
         {
-          if (p.id == equipId && p.loc.X != 0 && p.loc.Y != 0)
+          if (p.Id == equipId && p.Location.X != 0 && p.Location.Y != 0)
           {
             Document doc = Autodesk
               .AutoCAD
@@ -361,7 +335,7 @@ namespace ElectricalCommands.Equipment
                   * Matrix3d.Displacement(view.Target - Point3d.Origin)
                   * Matrix3d.PlaneToWorld(view.ViewDirection)
                 ).Inverse() * ed.CurrentUserCoordinateSystem;
-              var center = p.loc.TransformBy(UCS2DCS);
+              var center = p.Location.TransformBy(UCS2DCS);
               view.CenterPoint = new Point2d(center.X, center.Y);
               ed.SetCurrentView(view);
             }
@@ -381,35 +355,35 @@ namespace ElectricalCommands.Equipment
       transformerListView.FullRowSelect = true;
       foreach (Transformer xfmr in transformerList)
       {
-        ListViewItem item = new ListViewItem(xfmr.name, 0);
-        item.SubItems.Add(xfmr.parentName);
-        if (xfmr.parentDistance == -1)
+        ListViewItem item = new ListViewItem(xfmr.Name, 0);
+        item.SubItems.Add(xfmr.ParentName);
+        if (xfmr.ParentDistance == -1)
         {
           item.SubItems.Add("Not Set");
         }
         else
         {
-          item.SubItems.Add(xfmr.parentDistance.ToString() + "'");
+          item.SubItems.Add(xfmr.ParentDistance.ToString() + "'");
         }
-        if (xfmr.loc.X == 0 && xfmr.loc.Y == 0)
+        if (xfmr.Location.X == 0 && xfmr.Location.Y == 0)
         {
           item.SubItems.Add("Not Set");
         }
         else
         {
           item.SubItems.Add(
-            Math.Round(xfmr.loc.X / 12, 1).ToString()
+            Math.Round(xfmr.Location.X / 12, 1).ToString()
               + ", "
-              + Math.Round(xfmr.loc.Y / 12, 1).ToString()
+              + Math.Round(xfmr.Location.Y / 12, 1).ToString()
           );
         }
-        item.SubItems.Add(xfmr.hidden.ToString());
-        item.SubItems.Add(xfmr.id);
-        item.SubItems.Add(xfmr.parentId);
+        item.SubItems.Add(xfmr.IsHidden.ToString());
+        item.SubItems.Add(xfmr.Id);
+        item.SubItems.Add(xfmr.ParentId);
         transformerListView.Items.Add(item);
         if (!updateOnly)
         {
-          filterPanelComboBox.Items.Add(xfmr.name);
+          filterPanelComboBox.Items.Add(xfmr.Name);
         }
       }
       if (!updateOnly)
@@ -434,7 +408,7 @@ namespace ElectricalCommands.Equipment
         string equipId = transformerListView.SelectedItems[0].SubItems[numSubitems - 2].Text;
         foreach (Transformer t in transformerList)
         {
-          if (t.id == equipId && t.loc.X != 0 && t.loc.Y != 0)
+          if (t.Id == equipId && t.Location.X != 0 && t.Location.Y != 0)
           {
             Document doc = Autodesk
               .AutoCAD
@@ -452,7 +426,7 @@ namespace ElectricalCommands.Equipment
                   * Matrix3d.Displacement(view.Target - Point3d.Origin)
                   * Matrix3d.PlaneToWorld(view.ViewDirection)
                 ).Inverse() * ed.CurrentUserCoordinateSystem;
-              var center = t.loc.TransformBy(UCS2DCS);
+              var center = t.Location.TransformBy(UCS2DCS);
               view.CenterPoint = new Point2d(center.X, center.Y);
               ed.SetCurrentView(view);
             }
@@ -507,7 +481,7 @@ namespace ElectricalCommands.Equipment
         bool found = false;
         foreach (string eqId in eqIds)
         {
-          if (eqId == equipmentList[i].id)
+          if (eqId == equipmentList[i].Id)
           {
             found = true;
             break;
@@ -515,36 +489,36 @@ namespace ElectricalCommands.Equipment
         }
         if (!found)
         {
-          Equipment eq = equipmentList[i];
-          eq.loc = new Point3d(0, 0, 0);
-          if (!equipmentList[i].hidden)
+          ElectricalEntity.Equipment eq = equipmentList[i];
+          eq.Location = new Point3d(0, 0, 0);
+          if (!equipmentList[i].IsHidden)
           {
             int parentDistance = -1;
-            foreach (Panel p in panelList)
+            foreach (ElectricalEntity.Panel p in panelList)
             {
-              if (p.id == equipmentList[i].parentId)
+              if (p.Id == equipmentList[i].ParentId)
               {
-                if (p.hidden)
+                if (p.IsHidden)
                 {
-                  parentDistance = equipmentList[i].parentDistance;
+                  parentDistance = equipmentList[i].ParentDistance;
                 }
               }
             }
             foreach (Transformer t in transformerList)
             {
-              if (t.id == equipmentList[i].parentId)
+              if (t.Id == equipmentList[i].ParentId)
               {
-                if (t.hidden)
+                if (t.IsHidden)
                 {
-                  parentDistance = equipmentList[i].parentDistance;
+                  parentDistance = equipmentList[i].ParentDistance;
                 }
               }
             }
-            eq.parentDistance = parentDistance;
+            eq.ParentDistance = parentDistance;
           }
           else
           {
-            eq.parentDistance = equipmentList[i].parentDistance;
+            eq.ParentDistance = equipmentList[i].ParentDistance;
           }
           equipmentList[i] = eq;
           gmepDb.UpdateEquipment(eq);
@@ -555,7 +529,7 @@ namespace ElectricalCommands.Equipment
         bool found = false;
         foreach (string eqId in eqIds)
         {
-          if (eqId == panelList[i].id)
+          if (eqId == panelList[i].Id)
           {
             found = true;
             break;
@@ -563,36 +537,36 @@ namespace ElectricalCommands.Equipment
         }
         if (!found)
         {
-          Panel panel = panelList[i];
-          panel.loc = new Point3d(0, 0, 0);
-          if (!panelList[i].hidden)
+          ElectricalEntity.Panel panel = panelList[i];
+          panel.Location = new Point3d(0, 0, 0);
+          if (!panelList[i].IsHidden)
           {
             int parentDistance = -1;
-            foreach (Panel p in panelList)
+            foreach (ElectricalEntity.Panel p in panelList)
             {
-              if (p.id == panelList[i].parentId)
+              if (p.Id == panelList[i].ParentId)
               {
-                if (p.hidden)
+                if (p.IsHidden)
                 {
-                  parentDistance = panelList[i].parentDistance;
+                  parentDistance = panelList[i].ParentDistance;
                 }
               }
             }
             foreach (Transformer t in transformerList)
             {
-              if (t.id == panelList[i].parentId)
+              if (t.Id == panelList[i].ParentId)
               {
-                if (t.hidden)
+                if (t.IsHidden)
                 {
-                  parentDistance = panelList[i].parentDistance;
+                  parentDistance = panelList[i].ParentDistance;
                 }
               }
             }
-            panel.parentDistance = parentDistance;
+            panel.ParentDistance = parentDistance;
           }
           else
           {
-            panel.parentDistance = panelList[i].parentDistance;
+            panel.ParentDistance = panelList[i].ParentDistance;
           }
           panelList[i] = panel;
           gmepDb.UpdatePanel(panel);
@@ -603,7 +577,7 @@ namespace ElectricalCommands.Equipment
         bool found = false;
         foreach (string eqId in eqIds)
         {
-          if (eqId == transformerList[i].id)
+          if (eqId == transformerList[i].Id)
           {
             found = true;
             break;
@@ -612,26 +586,26 @@ namespace ElectricalCommands.Equipment
         if (!found)
         {
           Transformer xfmr = transformerList[i];
-          xfmr.loc = new Point3d(0, 0, 0);
-          if (!transformerList[i].hidden)
+          xfmr.Location = new Point3d(0, 0, 0);
+          if (!transformerList[i].IsHidden)
           {
             int parentDistance = -1;
-            foreach (Panel p in panelList)
+            foreach (ElectricalEntity.Panel p in panelList)
             {
-              if (p.id == transformerList[i].parentId)
+              if (p.Id == transformerList[i].ParentId)
               {
-                if (p.hidden)
+                if (p.IsHidden)
                 {
-                  parentDistance = transformerList[i].parentDistance;
+                  parentDistance = transformerList[i].ParentDistance;
                 }
               }
             }
 
-            xfmr.parentDistance = parentDistance;
+            xfmr.ParentDistance = parentDistance;
           }
           else
           {
-            xfmr.parentDistance = transformerList[i].parentDistance;
+            xfmr.ParentDistance = transformerList[i].ParentDistance;
           }
           transformerList[i] = xfmr;
           gmepDb.UpdateTransformer(xfmr);
@@ -1017,7 +991,7 @@ namespace ElectricalCommands.Equipment
       Database db = doc.Database;
       Editor ed = doc.Editor;
       Transaction tr = db.TransactionManager.StartTransaction();
-      List<Placeable> pooledEquipment = new List<Placeable>();
+      List<PlaceableElectricalEntity> pooledEquipment = new List<PlaceableElectricalEntity>();
       using (tr)
       {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -1033,7 +1007,7 @@ namespace ElectricalCommands.Equipment
               DynamicBlockReferencePropertyCollection pc =
                 br.DynamicBlockReferencePropertyCollection;
               bool addEquip = false;
-              Placeable eq = new Placeable();
+              PlaceableElectricalEntity eq = new PlaceableElectricalEntity();
               foreach (DynamicBlockReferenceProperty prop in pc)
               {
                 if (prop.PropertyName == "gmep_equip_locator" && prop.Value as string == "true")
@@ -1042,20 +1016,20 @@ namespace ElectricalCommands.Equipment
                 }
                 if (prop.PropertyName == "gmep_equip_id" && prop.Value as string != "0")
                 {
-                  eq.id = prop.Value as string;
+                  eq.Id = prop.Value as string;
                 }
                 if (prop.PropertyName == "gmep_equip_parent_id" && prop.Value as string != "0")
                 {
-                  eq.parentId = prop.Value as string;
+                  eq.ParentId = prop.Value as string;
                 }
               }
-              eq.loc = br.Position;
+              eq.Location = br.Position;
               if (addEquip)
               {
-                Placeable p = new Placeable();
-                p.id = eq.id;
-                p.parentId = eq.parentId;
-                p.loc = eq.loc;
+                PlaceableElectricalEntity p = new PlaceableElectricalEntity();
+                p.Id = eq.Id;
+                p.ParentId = eq.ParentId;
+                p.Location = eq.Location;
                 pooledEquipment.Add(p);
               }
             }
@@ -1067,13 +1041,13 @@ namespace ElectricalCommands.Equipment
       {
         for (int j = 0; j < pooledEquipment.Count; j++)
         {
-          if (pooledEquipment[j].parentId == pooledEquipment[i].id)
+          if (pooledEquipment[j].ParentId == pooledEquipment[i].Id)
           {
-            Placeable equip = pooledEquipment[j];
-            equip.parentDistance =
+            PlaceableElectricalEntity equip = pooledEquipment[j];
+            equip.ParentDistance =
               Convert.ToInt32(
-                Math.Abs(pooledEquipment[j].loc.X - pooledEquipment[i].loc.X)
-                  + Math.Abs(pooledEquipment[j].loc.Y - pooledEquipment[i].loc.Y)
+                Math.Abs(pooledEquipment[j].Location.X - pooledEquipment[i].Location.X)
+                  + Math.Abs(pooledEquipment[j].Location.Y - pooledEquipment[i].Location.Y)
               ) / 12;
             pooledEquipment[j] = equip;
           }
@@ -1084,18 +1058,18 @@ namespace ElectricalCommands.Equipment
         bool isMatch = false;
         for (int j = 0; j < equipmentList.Count; j++)
         {
-          if (equipmentList[j].id == pooledEquipment[i].id)
+          if (equipmentList[j].Id == pooledEquipment[i].Id)
           {
             isMatch = true;
-            Equipment equip = equipmentList[j];
+            ElectricalEntity.Equipment equip = equipmentList[j];
             if (
-              equip.parentDistance != pooledEquipment[i].parentDistance
-              || equip.loc.X != pooledEquipment[i].loc.X
-              || equip.loc.Y != pooledEquipment[i].loc.Y
+              equip.ParentDistance != pooledEquipment[i].ParentDistance
+              || equip.Location.X != pooledEquipment[i].Location.X
+              || equip.Location.Y != pooledEquipment[i].Location.Y
             )
             {
-              equip.parentDistance = pooledEquipment[i].parentDistance;
-              equip.loc = pooledEquipment[i].loc;
+              equip.ParentDistance = pooledEquipment[i].ParentDistance;
+              equip.Location = pooledEquipment[i].Location;
               equipmentList[j] = equip;
               gmepDb.UpdateEquipment(equip);
             }
@@ -1105,18 +1079,18 @@ namespace ElectricalCommands.Equipment
         {
           for (int j = 0; j < panelList.Count; j++)
           {
-            if (panelList[j].id == pooledEquipment[i].id)
+            if (panelList[j].Id == pooledEquipment[i].Id)
             {
               isMatch = true;
-              Panel panel = panelList[j];
+              ElectricalEntity.Panel panel = panelList[j];
               if (
-                panel.parentDistance != pooledEquipment[i].parentDistance
-                || panel.loc.X != pooledEquipment[i].loc.X
-                || panel.loc.Y != pooledEquipment[i].loc.Y
+                panel.ParentDistance != pooledEquipment[i].ParentDistance
+                || panel.Location.X != pooledEquipment[i].Location.X
+                || panel.Location.Y != pooledEquipment[i].Location.Y
               )
               {
-                panel.parentDistance = pooledEquipment[i].parentDistance;
-                panel.loc = pooledEquipment[i].loc;
+                panel.ParentDistance = pooledEquipment[i].ParentDistance;
+                panel.Location = pooledEquipment[i].Location;
                 panelList[j] = panel;
                 gmepDb.UpdatePanel(panel);
               }
@@ -1127,18 +1101,18 @@ namespace ElectricalCommands.Equipment
         {
           for (int j = 0; j < transformerList.Count; j++)
           {
-            if (transformerList[j].id == pooledEquipment[i].id)
+            if (transformerList[j].Id == pooledEquipment[i].Id)
             {
               isMatch = true;
               Transformer xfmr = transformerList[j];
               if (
-                xfmr.parentDistance != pooledEquipment[i].parentDistance
-                || xfmr.loc.X != pooledEquipment[i].loc.X
-                || xfmr.loc.Y != pooledEquipment[i].loc.Y
+                xfmr.ParentDistance != pooledEquipment[i].ParentDistance
+                || xfmr.Location.X != pooledEquipment[i].Location.X
+                || xfmr.Location.Y != pooledEquipment[i].Location.Y
               )
               {
-                xfmr.parentDistance = pooledEquipment[i].parentDistance;
-                xfmr.loc = pooledEquipment[i].loc;
+                xfmr.ParentDistance = pooledEquipment[i].ParentDistance;
+                xfmr.Location = pooledEquipment[i].Location;
                 transformerList[j] = xfmr;
                 gmepDb.UpdateTransformer(xfmr);
               }
@@ -1209,12 +1183,12 @@ namespace ElectricalCommands.Equipment
         }
         for (int i = 0; i < equipmentList.Count; i++)
         {
-          Equipment equipment = equipmentList[i];
+          ElectricalEntity.Equipment equipment = equipmentList[i];
           if (
-            equipmentList[i].id == equipmentListView.SelectedItems[0].SubItems[numSubItems - 2].Text
+            equipmentList[i].Id == equipmentListView.SelectedItems[0].SubItems[numSubItems - 2].Text
           )
           {
-            equipment.loc = (Point3d)p;
+            equipment.Location = (Point3d)p;
             equipmentList[i] = equipment;
           }
         }
@@ -1539,248 +1513,7 @@ namespace ElectricalCommands.Equipment
       }
     }
 
-    private void MakeSingleLineNodeTreeFromPanel(SLPanel panel)
-    {
-      foreach (Panel p in panelList)
-      {
-        if (p.parentId == panel.id)
-        {
-          SLPanel childPanel = new SLPanel(p.id, p.name, false, false, p.parentDistance);
-          childPanel.mainBreakerSize = p.busSize;
-          childPanel.voltageSpec = p.voltage;
-          if (panel.isDistribution)
-          {
-            if (!panel.hasMeter)
-            {
-              childPanel.hasMeter = true;
-            }
-            childPanel.distributionBreakerSize = p.busSize;
-            if (p.busSize >= 400)
-            {
-              childPanel.hasCts = true;
-            }
-          }
-          if (p.voltage.Contains("3"))
-          {
-            childPanel.is3Phase = true;
-          }
-          childPanel.parentAicRating = panel.aicRating;
-          MakeSingleLineNodeTreeFromPanel(childPanel);
-          panel.children.Add(childPanel);
-        }
-      }
-      foreach (Transformer t in transformerList)
-      {
-        if (t.parentId == panel.id)
-        {
-          SLDisconnect disc = new SLDisconnect(t.name);
-          bool is3Phase = false;
-          if (t.voltageSpec.Contains("3"))
-          {
-            is3Phase = true;
-          }
-          double voltage = 208;
-          if (t.voltageSpec.StartsWith("480"))
-          {
-            voltage = 480;
-          }
-          double amperage = t.kva * 1000 / voltage;
-          int mainBreakerSize = 0;
-          string grounding = "(N)";
-          switch (amperage)
-          {
-            case var _ when amperage <= 100:
-              mainBreakerSize = 100;
-              grounding += "3/4\"C. (1#8CU.)";
-              break;
-            case var _ when amperage <= 125:
-              mainBreakerSize = 125;
-              grounding += "3/4\"C. (1#8CU.)";
-              break;
-            case var _ when amperage <= 150:
-              mainBreakerSize = 150;
-              grounding += "3/4\"C. (1#8CU.)";
-              break;
-            case var _ when amperage <= 175:
-              mainBreakerSize = 175;
-              grounding += "3/4\"C. (1#8CU.)";
-              break;
-            case var _ when amperage <= 200:
-              mainBreakerSize = 200;
-              grounding += "3/4\"C. (1#6CU.)";
-              break;
-            case var _ when amperage <= 225:
-              mainBreakerSize = 225;
-              grounding += "3/4\"C. (1#6CU.)";
-              break;
-            case var _ when amperage <= 250:
-              mainBreakerSize = 250;
-              grounding += "3/4\"C. (1#6CU.)";
-              break;
-            case var _ when amperage <= 275:
-              mainBreakerSize = 275;
-              grounding += "3/4\"C. (1#6CU.)";
-              break;
-            case var _ when amperage <= 400:
-              mainBreakerSize = 400;
-              grounding += "3/4\"C. (1#3CU.)";
-              break;
-            case var _ when amperage <= 500:
-              mainBreakerSize = 500;
-              grounding += "3/4\"C. (1#2CU.)";
-              break;
-            case var _ when amperage <= 600:
-              mainBreakerSize = 600;
-              grounding += "3/4\"C. (1#1CU.)";
-              break;
-            case var _ when amperage <= 800:
-              mainBreakerSize = 800;
-              grounding += "3/4\"C. (1#1/0CU.)";
-              break;
-          }
-          disc.is3Phase = is3Phase;
-          disc.voltage = voltage;
-          disc.mainBreakerSize = mainBreakerSize;
-          disc.fromDistribution = panel.isDistribution;
-          disc.parentDistance = t.parentDistance;
-          if (panel.isDistribution && !panel.hasMeter)
-          {
-            disc.hasMeter = true;
-            if (mainBreakerSize > 200)
-            {
-              disc.hasCts = true;
-            }
-          }
-          SLTransformer childXfmr = new SLTransformer(t.id, t.name);
-          childXfmr.voltage = voltage;
-          childXfmr.parentDistance = 0;
-          childXfmr.is3Phase = panel.is3Phase;
-          childXfmr.mainBreakerSize = mainBreakerSize;
-          childXfmr.grounding = grounding;
-          childXfmr.kva = t.kva;
-          childXfmr.parentAicRating = panel.aicRating;
-          disc.children.Add(childXfmr);
-          MakeSingleLineNodeTreeFromTransformer(childXfmr);
-          panel.children.Add(disc);
-        }
-      }
-    }
-
-    private void MakeSingleLineNodeTreeFromTransformer(SLTransformer transformer)
-    {
-      foreach (Panel p in panelList)
-      {
-        if (p.parentId == transformer.id)
-        {
-          SLPanel childPanel = new SLPanel(p.id, p.name, false, false, p.parentDistance);
-          childPanel.mainBreakerSize = p.busSize;
-          childPanel.voltageSpec = p.voltage;
-          if (p.voltage.Contains("3"))
-          {
-            childPanel.is3Phase = true;
-          }
-          childPanel.parentAicRating = transformer.aicRating;
-          MakeSingleLineNodeTreeFromPanel(childPanel);
-          transformer.children.Add(childPanel);
-        }
-      }
-    }
-
-    private void MakeSingleLineNodeTreeFromService(SLServiceFeeder sf)
-    {
-      foreach (Panel panel in panelList)
-      {
-        if (panel.parentId == sf.id)
-        {
-          bool hasMeter = false;
-          if (!sf.isMultiMeter)
-          {
-            hasMeter = true;
-          }
-          SLPanel p = new SLPanel(panel.id, panel.name, true, hasMeter, panel.parentDistance);
-          if (sf.amp >= 400)
-          {
-            p.hasCts = true;
-          }
-          if (sf.amp >= 1200 && sf.voltageSpec.Contains("480"))
-          {
-            p.hasGfp = true;
-          }
-          p.distributionBreakerSize = sf.amp;
-          p.voltageSpec = sf.voltageSpec;
-          p.is3Phase = false;
-          p.aicRating = sf.aicRating;
-          if (sf.voltageSpec.Contains("3"))
-          {
-            p.is3Phase = true;
-          }
-          MakeSingleLineNodeTreeFromPanel(p);
-          sf.children.Add(p);
-        }
-      }
-    }
-
-    private SingleLine MakeSingleLineNodeTree()
-    {
-      SingleLine singleLine = new SingleLine();
-      foreach (Service service in services)
-      {
-        SLServiceFeeder sf = new SLServiceFeeder(
-          service.id,
-          service.name,
-          service.isMultiMeter,
-          service.amp,
-          service.voltage
-        );
-        sf.aicRating = service.aicRating;
-        MakeSingleLineNodeTreeFromService(sf);
-        singleLine.children.Add(sf);
-      }
-      return singleLine;
-    }
-
-    private void MakeSingleLineButton_Click(object sender, EventArgs e)
-    {
-      SingleLine singleLineNodeTree;
-      using (
-        DocumentLock docLock =
-          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
-      )
-      {
-        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
-          .AutoCAD
-          .Windows
-          .Window
-          .State
-          .Maximized;
-        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
-        Point3d startingPoint;
-        Document doc = Autodesk
-          .AutoCAD
-          .ApplicationServices
-          .Application
-          .DocumentManager
-          .MdiActiveDocument;
-        Database db = doc.Database;
-        Editor ed = doc.Editor;
-        using (Transaction tr = db.TransactionManager.StartTransaction())
-        {
-          var promptOptions = new PromptPointOptions("\nSelect upper left point:");
-          var promptResult = ed.GetPoint(promptOptions);
-          if (promptResult.Status == PromptStatus.OK)
-            startingPoint = promptResult.Value;
-          else
-          {
-            return;
-          }
-        }
-        singleLineNodeTree = MakeSingleLineNodeTree();
-        singleLineNodeTree.AggregateWidths();
-        singleLineNodeTree.SetChildStartingPoints(startingPoint);
-        singleLineNodeTree.Make();
-      }
-      singleLineNodeTree.SaveAicRatings();
-    }
+    private void MakeSingleLineButton_Click(object sender, EventArgs e) { }
 
     private void CreateEquipmentSchedule(Document doc, Database db, Editor ed, Point3d startPoint)
     {
@@ -1847,16 +1580,16 @@ namespace ElectricalCommands.Equipment
         for (int i = 0; i < equipmentList.Count; i++)
         {
           int row = i + 3;
-          tb.Cells[row, 0].TextString = equipmentList[i].name;
-          tb.Cells[row, 1].TextString = equipmentList[i].description.ToUpper();
-          tb.Cells[row, 2].TextString = equipmentList[i].voltage.ToString();
+          tb.Cells[row, 0].TextString = equipmentList[i].Name;
+          tb.Cells[row, 1].TextString = equipmentList[i].Description.ToUpper();
+          tb.Cells[row, 2].TextString = equipmentList[i].Voltage.ToString();
           tb.Cells[row, 3].TextString =
-            equipmentList[i].fla > 0 ? Math.Round(equipmentList[i].fla, 1).ToString() : "-";
-          tb.Cells[row, 4].TextString = equipmentList[i].hp == "0" ? "-" : equipmentList[i].hp;
-          double mca = (equipmentList[i].mca);
+            equipmentList[i].Fla > 0 ? Math.Round(equipmentList[i].Fla, 1).ToString() : "-";
+          tb.Cells[row, 4].TextString = equipmentList[i].Hp == "0" ? "-" : equipmentList[i].Hp;
+          double mca = (equipmentList[i].Mca);
           if (mca <= 0)
           {
-            mca = CADObjectCommands.GetMcaFromFla(equipmentList[i].fla);
+            mca = CADObjectCommands.GetMcaFromFla(equipmentList[i].Fla);
           }
           if (mca <= 0)
           {
@@ -1867,27 +1600,27 @@ namespace ElectricalCommands.Equipment
           {
             (string firstLine, string secondLine, string _, string _, string _, string _) =
               CADObjectCommands.GetWireAndConduitSizeText(
-                equipmentList[i].fla,
+                equipmentList[i].Fla,
                 mca,
-                equipmentList[i].parentDistance + 10,
-                equipmentList[i].voltage,
+                equipmentList[i].ParentDistance + 10,
+                equipmentList[i].Voltage,
                 3,
-                equipmentList[i].is3Phase ? 3 : 1
+                equipmentList[i].Is3Phase ? 3 : 1
               );
             tb.Cells[row, 5].TextString = mca.ToString();
             tb.Cells[row, 7].TextString = CADObjectCommands.GetConnectionTypeFromFlaVoltage(
-              equipmentList[i].fla,
-              equipmentList[i].voltage,
-              equipmentList[i].hasPlug,
-              equipmentList[i].is3Phase
+              equipmentList[i].Fla,
+              equipmentList[i].Voltage,
+              equipmentList[i].HasPlug,
+              equipmentList[i].Is3Phase
             );
-            tb.Cells[row, 8].TextString = equipmentList[i].mountingHeight.ToString() + "\"";
+            tb.Cells[row, 8].TextString = equipmentList[i].MountingHeight.ToString() + "\"";
             tb.Cells[row, 9].TextString = firstLine.Substring(0, firstLine.IndexOf(" "));
             tb.Cells[row, 10].TextString = firstLine.Substring(firstLine.IndexOf(";") + 2);
             tb.Cells[row, 11].TextString = secondLine.Replace("PLUS ", "").Replace(" GND.", "");
           }
 
-          tb.Cells[row, 6].TextString = equipmentList[i].is3Phase ? "3" : "1";
+          tb.Cells[row, 6].TextString = equipmentList[i].Is3Phase ? "3" : "1";
         }
         BlockTable bt = (BlockTable)tr.GetObject(doc.Database.BlockTableId, OpenMode.ForRead);
         btr.AppendEntity(tb);

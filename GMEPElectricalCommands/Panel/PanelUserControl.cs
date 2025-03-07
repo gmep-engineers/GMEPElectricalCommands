@@ -3432,6 +3432,54 @@ namespace ElectricalCommands
       doc.SetLispSymbol($"panel_{id.Replace("-", "")}_a", feederAmps.ToString() + " A");
     }
 
+    private double CalculateLclOnPhase(string phase)
+    {
+      double lcl = 0;
+      string side = "left";
+      for (int j = 0; j < 2; j++)
+      {
+        for (int i = 0; i < PANEL_GRID.Rows.Count; i++)
+        {
+          if (PANEL_GRID.Rows[i].Cells["description_" + side].Tag != null)
+          {
+            string descriptionTag = PANEL_GRID.Rows[i].Cells["description_" + side].Tag.ToString();
+            if (descriptionTag.Contains("LCL"))
+            {
+              lcl += SafeConvertToDouble(
+                PANEL_GRID.Rows[i].Cells[$"phase_{phase}_{side}"].Value?.ToString()
+              );
+            }
+          }
+        }
+        side = "right";
+      }
+      return lcl;
+    }
+
+    private double CalculateLmlOnPhase(string phase)
+    {
+      double lml = 0;
+      string side = "left";
+      for (int j = 0; j < 2; j++)
+      {
+        for (int i = 0; i < PANEL_GRID.Rows.Count; i++)
+        {
+          if (PANEL_GRID.Rows[i].Cells["description_" + side].Tag != null)
+          {
+            string descriptionTag = PANEL_GRID.Rows[i].Cells["description_" + side].Tag.ToString();
+            if (descriptionTag.Contains("LML"))
+            {
+              lml += SafeConvertToDouble(
+                PANEL_GRID.Rows[i].Cells[$"phase_{phase}_{side}"].Value?.ToString()
+              );
+            }
+          }
+        }
+        side = "right";
+      }
+      return lml;
+    }
+
     public void UpdatePerCellValueChange()
     {
       if (isLoading)
@@ -3520,6 +3568,14 @@ namespace ElectricalCommands
         double fC = Math.Abs(l2 - l3);
         double l3N = l3;
         double l2N = l2;
+        lcl = Math.Max(
+          CalculateLclOnPhase("a"),
+          Math.Max(CalculateLclOnPhase("b"), CalculateLclOnPhase("c"))
+        );
+        lml = Math.Max(
+          CalculateLmlOnPhase("a"),
+          Math.Max(CalculateLmlOnPhase("b"), CalculateLmlOnPhase("c"))
+        );
         double iFa = (fA + (0.25 * lml)) / 240;
         double iFb = (fB + (0.25 * lml)) / 240;
         double iFc = (fC + (0.25 * lml)) / 240;
@@ -3563,6 +3619,14 @@ namespace ElectricalCommands
           }
           else
           {
+            lcl = Math.Max(
+              CalculateLclOnPhase("a"),
+              Math.Max(CalculateLclOnPhase("b"), CalculateLclOnPhase("c"))
+            );
+            lml = Math.Max(
+              CalculateLmlOnPhase("a"),
+              Math.Max(CalculateLmlOnPhase("b"), CalculateLmlOnPhase("c"))
+            );
             double maxPhaseVa = Math.Max(phA, Math.Max(phB, phC));
             feederAmps = safetyFactor * (maxPhaseVa + (0.25 * lcl) + (0.25 * lml)) / phaseVoltage;
             feederAmps = Math.Round(feederAmps, 1);

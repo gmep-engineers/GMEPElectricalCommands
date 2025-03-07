@@ -158,13 +158,15 @@ namespace ElectricalCommands
     private double scale;
     public Line line;
 
-    public DynamicLineJig(Point3d startPt, double scale)
+    public DynamicLineJig(Point3d startPt, double scale, string equipId = "")
     {
       this.scale = scale;
       startPoint = startPt;
       endPoint = startPt;
       line = new Line(startPoint, startPoint);
       line.Layer = "E-TXT1";
+      Field field = new Field(equipId);
+      line.SetField("gmep_equip_id", field);
     }
 
     protected override bool WorldDraw(WorldDraw draw)
@@ -346,11 +348,13 @@ namespace ElectricalCommands
     public Point3d endPoint { get; private set; }
     public Line line;
 
-    public LabelJig(Point3d firstClick)
+    public LabelJig(Point3d firstClick, string equipId = "")
     {
       startPoint = firstClick;
       endPoint = startPoint;
       line = new Line(startPoint, startPoint);
+      Field field = new Field(equipId);
+      line.SetField("gmep_equip_id", field);
       line.Layer = "E-TXT1";
     }
 
@@ -400,6 +404,13 @@ namespace ElectricalCommands
 
     private ObjectId _blockId = ObjectId.Null;
 
+    private string _name = string.Empty;
+
+    public BlockJig(string _name = "block")
+    {
+      this._name = _name;
+    }
+
     public PromptResult DragMe(ObjectId i_blockId, out Point3d o_pnt)
     {
       _blockId = i_blockId;
@@ -421,7 +432,7 @@ namespace ElectricalCommands
         UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted
       );
 
-      jigOpts.Message = "Select a point:";
+      jigOpts.Message = $"Select a point for {_name}:";
 
       PromptPointResult jigRes = prompts.AcquirePoint(jigOpts);
 
