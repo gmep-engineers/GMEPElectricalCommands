@@ -357,8 +357,6 @@ namespace GMEPElectricalCommands.GmepDatabase
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
-        try
-        {
           panels.Add(
             new Panel(
               reader.GetString("id"),
@@ -373,13 +371,11 @@ namespace GMEPElectricalCommands.GmepDatabase
               reader.GetString("voltage"),
               reader.GetFloat("aic_rating"),
               reader.GetBoolean("is_hidden_on_plan"),
-              reader.GetString("node_id"),
+              reader.IsDBNull(reader.GetOrdinal("node_id")) ? string.Empty : reader.GetString("node_id"),
               reader.GetString("status"),
               new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y"))
             )
           );
-        }
-        catch { }
       }
       CloseConnection();
       reader.Close();

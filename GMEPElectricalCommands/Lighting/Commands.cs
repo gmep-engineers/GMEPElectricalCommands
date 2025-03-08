@@ -446,17 +446,15 @@ namespace ElectricalCommands.Lighting
       GmepDatabase gmepDb = new GmepDatabase();
 
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
-      List<ElectricalEntity.Panel> panelList = gmepDb.GetPanels(projectId);
+      List<Panel> panelList = gmepDb.GetPanels(projectId);
       PromptKeywordOptions pko = new PromptKeywordOptions("");
       pko.Message = "\nSelect a panel: ";
 
-      foreach (ElectricalEntity.Panel panel in panelList) {
-        // pko.Keywords.Add(panel.Name + ":" + panel.Id);
-        ed.WriteMessage("Meow:" + panel.Id + ": " + panel.Name);
+      foreach (Panel panel in panelList) {
+         pko.Keywords.Add(panel.Name + ":" + panel.Id);
        }
 
       PromptSelectionResult psr = ed.GetSelection();
-
 
       //Dictionary<string, string> lightingParents = new Dictionary<string, string>();
 
@@ -468,6 +466,7 @@ namespace ElectricalCommands.Lighting
             if (obj is BlockReference block) {
               //ed.WriteMessage("\nBlock reference + " + block.Id + "found");
               string lightingFixtureId = "";
+             
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_fixture_id") {
                   lightingFixtureId = property.Value as string;
@@ -475,12 +474,9 @@ namespace ElectricalCommands.Lighting
               }
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_parent_id") {
-                  //PromptResult pr = ed.GetKeywords(pko);
-                  //string result = pr.StringResult;
-                  //property.Value = result;
-                  //property.Value = result.Split(':')[1];
-                  //var parent = new PromptKeywordOptions("\nEnter the string: ");
-                  //property.Value = ed.GetString(parent).StringResult;
+                  PromptResult pr = ed.GetKeywords(pko);
+                  string result = pr.StringResult;
+                  property.Value = result.Split(':')[1];
                 }
               }
             }
