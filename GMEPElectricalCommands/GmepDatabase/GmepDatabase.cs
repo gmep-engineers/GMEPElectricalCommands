@@ -833,15 +833,14 @@ namespace GMEPElectricalCommands.GmepDatabase
     public void InsertEquipment(Equipment equip, string projectId)
     {
       string query =
-        @"INSERT INTO electrical_equipment (id, project_id, parent_id, name, description, category, voltage, fla, is_three_phase, circuit_no) VALUES (@id, @projectId, @parentId, @name, @description, @category, @voltage, @fla, @isThreePhase, @circuit)";
+        @"INSERT INTO electrical_equipment (id, project_id, parent_id, description, category, voltage, fla, is_three_phase, circuit_no) VALUES (@id, @projectId, @parentId, @description, @category, @voltage, @fla, @isThreePhase, @circuit)";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("@id", equip.Id);
       command.Parameters.AddWithValue("@projectId", projectId);
       command.Parameters.AddWithValue("@parentId", equip.Id);
-      command.Parameters.AddWithValue("@name", equip.Name);
       command.Parameters.AddWithValue("@description", equip.Description);
-      command.Parameters.AddWithValue("@caregory", equip.Category);
+      command.Parameters.AddWithValue("@category", equip.Category);
       command.Parameters.AddWithValue("@voltage", equip.Voltage);
       command.Parameters.AddWithValue("@fla", equip.Fla);
       command.Parameters.AddWithValue("@isThreePhase", equip.Is3Phase);

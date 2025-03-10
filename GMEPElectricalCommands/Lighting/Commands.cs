@@ -539,6 +539,29 @@ namespace ElectricalCommands.Lighting
         }
       }
       }
+    public ElectricalEntity.Equipment LightingToEquipment(ElectricalEntity.LightingFixture fixture) {
+
+      return new ElectricalEntity.Equipment(
+        fixture.Id,
+        fixture.ParentId,
+        fixture.ParentName,
+        fixture.Name,
+        fixture.Name,
+        "General",
+        fixture.Voltage,
+        fixture.Wattage,
+        false,
+        fixture.ParentDistance,
+        fixture.Location.X,
+        fixture.Location.Y,
+        0,
+        "",
+        0,
+        fixture.Circuit,
+        false,
+        fixture.IsHidden
+      );
+    }
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
     {
