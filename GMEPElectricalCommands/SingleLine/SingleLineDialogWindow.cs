@@ -11,6 +11,7 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
+using DocumentFormat.OpenXml.Drawing.Charts;
 using ElectricalCommands.ElectricalEntity;
 using GMEPElectricalCommands.GmepDatabase;
 
@@ -308,6 +309,17 @@ namespace ElectricalCommands.SingleLine
           PopulateFromMainBreaker(mainBreakerNode, mainBreaker);
         }
       }
+      foreach (ElectricalEntity.DistributionBus distributionBus in distributionBusList)
+      {
+        if (VerifyNodeLink(meter.NodeId, distributionBus.NodeId))
+        {
+          InheritLineVoltageAndPhase(meter, distributionBus);
+          TreeNode distributionBusNode = node.Nodes.Add(distributionBus.Id, distributionBus.Name);
+          distributionBusNode.Tag = distributionBus;
+          SetTreeNodeColor(distributionBusNode, distributionBus);
+          PopulateFromDistributionBus(distributionBusNode, distributionBus);
+        }
+      }
     }
 
     public void PopulateFromMainBreaker(TreeNode node, ElectricalEntity.MainBreaker mainBreaker)
@@ -535,7 +547,8 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(transformer.NodeId, panel.NodeId))
         {
-          InheritLineVoltageAndPhase(transformer, panel);
+          panel.LineVoltage = transformer.OutputLineVoltage;
+          panel.Phase = transformer.Phase; // todo: account for phase change
           TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
@@ -546,7 +559,8 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(transformer.NodeId, disconnect.NodeId))
         {
-          InheritLineVoltageAndPhase(transformer, disconnect);
+          disconnect.LineVoltage = transformer.OutputLineVoltage;
+          disconnect.Phase = transformer.Phase; // todo: account for phase change
           TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
           disconnectNode.Tag = disconnect;
           SetTreeNodeColor(disconnectNode, disconnect);
@@ -807,6 +821,14 @@ namespace ElectricalCommands.SingleLine
           SingleLine.MakeDistributionMeterCombo(meter, currentPoint);
         }
       }
+      else if (
+        distributionBusChild.Nodes.Count == 0
+        && distributionBusChildEntity.NodeType == NodeType.DistributionBreaker
+      )
+      {
+        DistributionBreaker distributionBreaker = (DistributionBreaker)distributionBusChildEntity;
+        SingleLine.MakeDistributionBreakerCombo(distributionBreaker, currentPoint);
+      }
       else if (distributionBusChild.Nodes.Count == 0)
       {
         return;
@@ -833,7 +855,7 @@ namespace ElectricalCommands.SingleLine
         {
           MakeFieldEntity(
             distributionBusChild.Nodes[0],
-            new Point3d(currentPoint.X, currentPoint.Y - 4, 0)
+            new Point3d(currentPoint.X, currentPoint.Y - 4.1875, 0)
           );
           SingleLine.MakeDistributionChildConduit(
             new Point3d(currentPoint.X, currentPoint.Y - 1.6875, 0)
@@ -844,7 +866,10 @@ namespace ElectricalCommands.SingleLine
       {
         DistributionBreaker distributionBreaker = (DistributionBreaker)distributionBusChildEntity;
         SingleLine.MakeDistributionBreakerCombo(distributionBreaker, currentPoint);
-        MakeFieldEntity(distributionBusChild, new Point3d(currentPoint.X, currentPoint.Y - 4, 0));
+        MakeFieldEntity(
+          distributionBusChild,
+          new Point3d(currentPoint.X, currentPoint.Y - 4.1875, 0)
+        );
         SingleLine.MakeDistributionChildConduit(
           new Point3d(currentPoint.X, currentPoint.Y - 1.6875, 0)
         );
@@ -890,7 +915,8 @@ namespace ElectricalCommands.SingleLine
           panel.LineVoltage,
           1,
           panel.Phase,
-          currentPoint
+          currentPoint,
+          panel
         );
         List<ElectricalEntity.PanelBreaker> panelBreakers = GetPanelBreakersFromPanel(childNode);
         for (int i = 0; i < panelBreakers.Count; i++)
@@ -936,7 +962,8 @@ namespace ElectricalCommands.SingleLine
           disconnect.LineVoltage,
           1,
           disconnect.Phase,
-          currentPoint
+          currentPoint,
+          disconnect
         );
         currentPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.1201, 0);
         if (childNode.Nodes.Count > 0)
@@ -956,7 +983,8 @@ namespace ElectricalCommands.SingleLine
           transformer.LineVoltage,
           1,
           transformer.Phase,
-          currentPoint
+          currentPoint,
+          transformer
         );
         currentPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.3739, 0);
         if (childNode.Nodes.Count > 0)
@@ -970,6 +998,8 @@ namespace ElectricalCommands.SingleLine
     private string MakeDistributionSection(
       string groupId,
       Point3d groupPoint,
+      bool isMultimeter,
+      string sectionName,
       string distributionBusId = ""
     )
     {
@@ -1028,40 +1058,114 @@ namespace ElectricalCommands.SingleLine
       if (!groupMembersAdded)
       {
         // this means we've encountered another bus bar
-        return MakeDistributionSection(groupId, groupPoint);
+        return MakeDistributionSection(groupId, groupPoint, isMultimeter, sectionName);
       }
       if (addBusBar)
       {
-        Polyline2dData polyData = new Polyline2dData();
-        polyData.Layer = "E-CND1";
-        polyData.Vertices.Add(new SimpleVector3d(busBarPoint.X, busBarPoint.Y, 0));
-        polyData.Vertices.Add(
-          new SimpleVector3d(busBarPoint.X + totalBusBarWidth - 0.5, busBarPoint.Y, 0)
+        ElectricalEntity.DistributionBus distributionBus = (ElectricalEntity.DistributionBus)
+          distributionBusNode.Tag;
+        SingleLine.MakeDistributionBus(
+          distributionBus,
+          isMultimeter,
+          totalBusBarWidth,
+          groupPoint,
+          sectionName
         );
-        polyData.Vertices.Add(
-          new SimpleVector3d(busBarPoint.X + totalBusBarWidth - 0.5, busBarPoint.Y - 0.0625, 0)
-        );
-        polyData.Vertices.Add(new SimpleVector3d(busBarPoint.X, busBarPoint.Y - 0.0625, 0));
-        polyData.Vertices.Add(new SimpleVector3d(busBarPoint.X, busBarPoint.Y, 0));
-        polyData.Closed = true;
-        Document doc = Autodesk
-          .AutoCAD
-          .ApplicationServices
-          .Application
-          .DocumentManager
-          .MdiActiveDocument;
-        Database db = doc.Database;
-        Editor ed = doc.Editor;
-        using (Transaction tr = db.TransactionManager.StartTransaction())
-        {
-          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-          BlockTableRecord btr = (BlockTableRecord)
-            tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
-          CADObjectCommands.CreatePolyline2d(new Point3d(), tr, btr, polyData, 1);
-          tr.Commit();
-        }
+      }
+      else
+      {
+        // todo: add label above section
       }
       return distributionBusId;
+    }
+
+    private ElectricalEntity.Meter GetMeterFromMainSection(string groupId)
+    {
+      foreach (string entityId in groupDict[groupId])
+      {
+        foreach (ElectricalEntity.Meter meter in meterList)
+        {
+          if (meter.Id == entityId)
+          {
+            return meter;
+          }
+        }
+      }
+      ElectricalEntity.Meter nullMeter = new ElectricalEntity.Meter(
+        "",
+        "",
+        "",
+        false,
+        false,
+        0,
+        new Point()
+      );
+      nullMeter.NodeType = NodeType.Undefined;
+      return nullMeter;
+    }
+
+    private ElectricalEntity.MainBreaker GetMainBreakerFromMainSection(string groupId)
+    {
+      foreach (string entityId in groupDict[groupId])
+      {
+        foreach (ElectricalEntity.MainBreaker mainBreaker in mainBreakerList)
+        {
+          if (mainBreaker.Id == entityId)
+          {
+            return mainBreaker;
+          }
+        }
+      }
+      ElectricalEntity.MainBreaker nullMainBreaker = new ElectricalEntity.MainBreaker(
+        "",
+        "",
+        "",
+        0,
+        false,
+        false,
+        0,
+        0,
+        new Point()
+      );
+      nullMainBreaker.NodeType = NodeType.Undefined;
+      return nullMainBreaker;
+    }
+
+    private string GetGroupNameFromId(string groupId)
+    {
+      string name = string.Empty;
+      GroupNode group = groupList.Find(groupList => groupList.Id == groupId);
+      if (group == null)
+      {
+        name = group.Name;
+      }
+      return name;
+    }
+
+    private ElectricalEntity.Service GetServiceFromPullSection(string groupId)
+    {
+      foreach (string entityId in groupDict[groupId])
+      {
+        foreach (ElectricalEntity.Service service in serviceList)
+        {
+          if (service.Id == entityId)
+          {
+            return service;
+          }
+        }
+      }
+      ElectricalEntity.Service nullService = new ElectricalEntity.Service(
+        "",
+        "",
+        "",
+        0,
+        "",
+        0,
+        new Point(),
+        new Point3d()
+      );
+      nullService.NodeType = NodeType.Undefined;
+      return nullService;
     }
 
     private void MakeGroups(Point3d startingPoint)
@@ -1079,27 +1183,42 @@ namespace ElectricalCommands.SingleLine
         if (groupType == GroupType.MultimeterSection || groupType == GroupType.DistributionSection)
         {
           groupWidth = AggregateGroupWidth(groupId);
-          distributionBusId = MakeDistributionSection(groupId, currentPoint, distributionBusId);
+          string groupName = GetGroupNameFromId(groupId);
+          distributionBusId = MakeDistributionSection(
+            groupId,
+            currentPoint,
+            groupType == GroupType.MultimeterSection,
+            groupName,
+            distributionBusId
+          );
         }
-        if (groupType == GroupType.PullSection)
+        else if (groupType == GroupType.PullSection)
         {
           groupWidth = 0.75;
-          // MakePullSection(startingPoint)
+          ElectricalEntity.Service service = GetServiceFromPullSection(groupId);
+          SingleLine.MakePullSection(service, currentPoint);
         }
-        if (groupType == GroupType.MainMeterSection)
+        else if (groupType == GroupType.MainMeterSection)
         {
-          // MakeMainMeterSection(startingPoint);
-          // MakeGroundBus(startingPoint);
+          // get meter from section
+          ElectricalEntity.Meter meter = GetMeterFromMainSection(groupId);
+          groupWidth = 1.75;
+          SingleLine.MakeMainMeterSection(meter, currentPoint);
         }
-        if (groupType == GroupType.MainBreakerSection)
+        else if (groupType == GroupType.MainBreakerSection)
         {
-          // MakeMainBreakerSection(startingPoint);
-          // MakeGroundBus(startingPoint);
+          // get breaker from section
+          ElectricalEntity.MainBreaker mainBreaker = GetMainBreakerFromMainSection(groupId);
+          groupWidth = 1.75;
+          SingleLine.MakeMainBreakerSection(mainBreaker, currentPoint);
         }
-        if (groupType == GroupType.MainMeterAndBreakerSection)
+        else if (groupType == GroupType.MainMeterAndBreakerSection)
         {
-          // MakeMainMeterAndBreakerSection(startingPoint);
-          // MakeGroundBus(startingPoint);
+          // get meter and breaker from section
+          ElectricalEntity.Meter meter = GetMeterFromMainSection(groupId);
+          ElectricalEntity.MainBreaker mainBreaker = GetMainBreakerFromMainSection(groupId);
+          groupWidth = 1.75;
+          SingleLine.MakeMainMeterAndBreakerSection(meter, mainBreaker, currentPoint);
         }
 
         // draw lines on CAD
@@ -1242,55 +1361,6 @@ namespace ElectricalCommands.SingleLine
                   + Math.Abs(pooledEquipment[j].Location.Y - pooledEquipment[i].Location.Y)
               ) / 12;
             pooledEquipment[j] = equip;
-          }
-        }
-      }
-      for (int i = 0; i < pooledEquipment.Count; i++)
-      {
-        bool isMatch = false;
-
-        if (!isMatch)
-        {
-          for (int j = 0; j < panelList.Count; j++)
-          {
-            if (panelList[j].Id == pooledEquipment[i].Id)
-            {
-              isMatch = true;
-              ElectricalEntity.Panel panel = panelList[j];
-              if (
-                panel.ParentDistance != pooledEquipment[i].ParentDistance
-                || panel.Location.X != pooledEquipment[i].Location.X
-                || panel.Location.Y != pooledEquipment[i].Location.Y
-              )
-              {
-                panel.ParentDistance = pooledEquipment[i].ParentDistance;
-                panel.Location = pooledEquipment[i].Location;
-                panelList[j] = panel;
-                gmepDb.UpdatePanel(panel);
-              }
-            }
-          }
-        }
-        if (!isMatch)
-        {
-          for (int j = 0; j < transformerList.Count; j++)
-          {
-            if (transformerList[j].Id == pooledEquipment[i].Id)
-            {
-              isMatch = true;
-              Transformer xfmr = transformerList[j];
-              if (
-                xfmr.ParentDistance != pooledEquipment[i].ParentDistance
-                || xfmr.Location.X != pooledEquipment[i].Location.X
-                || xfmr.Location.Y != pooledEquipment[i].Location.Y
-              )
-              {
-                xfmr.ParentDistance = pooledEquipment[i].ParentDistance;
-                xfmr.Location = pooledEquipment[i].Location;
-                transformerList[j] = xfmr;
-                gmepDb.UpdateTransformer(xfmr);
-              }
-            }
           }
         }
       }

@@ -3469,13 +3469,17 @@ namespace ElectricalCommands
             string descriptionTag = PANEL_GRID.Rows[i].Cells["description_" + side].Tag.ToString();
             if (descriptionTag.Contains("LML"))
             {
-              lml += SafeConvertToDouble(
+              double thisLml = SafeConvertToDouble(
                 PANEL_GRID.Rows[i].Cells[$"phase_{phase}_{side}"].Value?.ToString()
               );
+              if (lml < thisLml)
+              {
+                lml = thisLml;
+              }
             }
           }
+          side = "right";
         }
-        side = "right";
       }
       return lml;
     }
@@ -3619,15 +3623,20 @@ namespace ElectricalCommands
           }
           else
           {
-            lcl = Math.Max(
-              CalculateLclOnPhase("a"),
-              Math.Max(CalculateLclOnPhase("b"), CalculateLclOnPhase("c"))
-            );
-            lml = Math.Max(
-              CalculateLmlOnPhase("a"),
-              Math.Max(CalculateLmlOnPhase("b"), CalculateLmlOnPhase("c"))
-            );
-            double maxPhaseVa = Math.Max(phA, Math.Max(phB, phC));
+            double maxPhaseVa = phA;
+            string maxPhase = "a";
+            if (phB > phA)
+            {
+              maxPhase = "b";
+              maxPhaseVa = phB;
+            }
+            if (phC > phB && phC > phA)
+            {
+              maxPhase = "c";
+              maxPhaseVa = phC;
+            }
+            lcl = CalculateLclOnPhase(maxPhase);
+            lml = CalculateLmlOnPhase(maxPhase);
             feederAmps = safetyFactor * (maxPhaseVa + (0.25 * lcl) + (0.25 * lml)) / phaseVoltage;
             feederAmps = Math.Round(feederAmps, 1);
             FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;

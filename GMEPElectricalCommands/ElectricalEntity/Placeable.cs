@@ -301,6 +301,23 @@ namespace ElectricalCommands.ElectricalEntity
                 0
               );
             }
+            GeneralCommands.CreateAndPositionText(
+              tr,
+              GetStatusAbbr(),
+              "gmep",
+              0.0938 * 12 / scale,
+              0.85,
+              2,
+              "E-TXT1",
+              new Point3d(
+                labelInsertionPoint.X - (0.85 / scale),
+                labelInsertionPoint.Y + (1.25 / scale),
+                0
+              ),
+              TextHorizontalMode.TextCenter,
+              TextVerticalMode.TextBase,
+              AttachmentPoint.BaseLeft
+            );
             BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
             ObjectId locatorBlockId = bt["EQUIP_MARKER"];
             using (
@@ -375,7 +392,7 @@ namespace ElectricalCommands.ElectricalEntity
             {
               textId = GeneralCommands.CreateAndPositionText(
                 tr,
-                Name.ToUpper(),
+                GetStatusAbbr() + Name.ToUpper(),
                 "gmep",
                 0.0938 * 12 / scale,
                 0.85,
@@ -391,7 +408,7 @@ namespace ElectricalCommands.ElectricalEntity
             {
               textId = GeneralCommands.CreateAndPositionText(
                 tr,
-                Name.ToUpper(),
+                GetStatusAbbr() + Name.ToUpper(),
                 "gmep",
                 0.0938 * 12 / scale,
                 0.85,
@@ -751,6 +768,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.NumPoles = NumPoles;
       this.Status = Status;
       this.AicRating = AicRating;
+      AmpRating = AfSize;
       Name = $"{AsSize}AS/{AfSize}AF/{NumPoles}P Disconnect";
       NodeType = NodeType.Disconnect;
       this.NodePosition = NodePosition;
@@ -814,6 +832,8 @@ namespace ElectricalCommands.ElectricalEntity
 
   public class Transformer : PlaceableElectricalEntity
   {
+    public double OutputLineVoltage;
+
     public Transformer(
       string Id,
       string ParentId,
@@ -846,8 +866,8 @@ namespace ElectricalCommands.ElectricalEntity
       BlockName = "GMEP TRANSFORMER";
       Rotate = false;
       TableName = "electrical_transformers";
-      // HERE set line and phase for output
-      LineVoltage = Double.Parse(
+      LineVoltage = Double.Parse(Voltage.Split('-')[0].Replace("V", ""));
+      OutputLineVoltage = Double.Parse(
         Voltage.Split('-')[1].Replace("120/", "").Replace("277/", "").Replace("V", "")
       );
       Phase = Int32.Parse(Voltage.Split('-')[2]);
