@@ -373,7 +373,8 @@ namespace GMEPElectricalCommands.GmepDatabase
               reader.GetBoolean("is_hidden_on_plan"),
               reader.IsDBNull(reader.GetOrdinal("node_id")) ? string.Empty : reader.GetString("node_id"),
               reader.GetString("status"),
-              new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y"))
+              new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y")),
+              reader.GetInt32("num_breakers")
             )
           );
       }

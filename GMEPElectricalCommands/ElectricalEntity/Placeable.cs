@@ -755,6 +755,7 @@ namespace ElectricalCommands.ElectricalEntity
     public int MainAmpRating;
     public string Voltage;
     public bool IsMlo;
+    public int numBreakers;
     public List<PanelBreaker> Breakers;
 
     public Panel(
@@ -772,7 +773,8 @@ namespace ElectricalCommands.ElectricalEntity
       bool IsHidden,
       string NodeId,
       string Status,
-      System.Drawing.Point NodePosition
+      System.Drawing.Point NodePosition,
+      int numBreakers
     )
     {
       this.Id = Id;
@@ -793,6 +795,7 @@ namespace ElectricalCommands.ElectricalEntity
       BlockName = $"A$C26441056";
       Rotate = true;
       TableName = "electrical_panels";
+      this.numBreakers = numBreakers;
     }
   }
 
