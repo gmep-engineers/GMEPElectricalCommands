@@ -447,11 +447,48 @@ namespace ElectricalCommands.Lighting
 
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
       List<Panel> panelList = gmepDb.GetPanels(projectId);
+      List<ElectricalEntity.Equipment> equipmentList = gmepDb.GetEquipment(projectId);
+      List<Transformer> transformerList = gmepDb.GetTransformers(projectId);
+      Dictionary<string,List<string>> panelCircuits = new Dictionary<string, List<string>>();
+
       PromptKeywordOptions pko = new PromptKeywordOptions("");
 
+
       foreach (Panel panel in panelList) {
-         pko.Keywords.Add(panel.Name + ":" + panel.Id);
+          pko.Keywords.Add(panel.Name + ":" + panel.Id);
+          for (int i = 1; i <= panel.NumBreakers; i++) {
+            if (!panelCircuits.ContainsKey(panel.Id)) {
+            panelCircuits.Add(panel.Id, new List<string>());
+          }
+          panelCircuits[panel.Id].Add(i.ToString());
+          }
        }
+
+      //Start removing Circuits from the dictionary, accounting for circuitnumber and pole.
+      foreach (Panel panel in panelList) {
+        if (panelCircuits.ContainsKey(panel.ParentId)) {
+          for (int i = 0; i < panel.Pole; i++) {
+            panelCircuits[panel.ParentId].Remove((panel.Circuit + i*2).ToString());
+          }
+        }
+      }
+      foreach (ElectricalEntity.Equipment equipment in equipmentList) {
+        if (panelCircuits.ContainsKey(equipment.ParentId)) {
+          for (int i = 0; i < equipment.Pole; i++) {
+            panelCircuits[equipment.ParentId].Remove((equipment.Circuit + i * 2).ToString());
+          }
+        }
+      }
+      foreach (Transformer transformer in transformerList) {
+        if (panelCircuits.ContainsKey(transformer.ParentId)) {
+          for (int i = 0; i < transformer.Pole; i++) {
+            panelCircuits[transformer.ParentId].Remove((transformer.Circuit + i * 2).ToString());
+          }
+        }
+      }
+      //end sorting circuits
+
+
 
       PromptSelectionResult psr = ed.GetSelection();
 
@@ -465,6 +502,7 @@ namespace ElectricalCommands.Lighting
             if (obj is BlockReference block) {
               //ed.WriteMessage("\nBlock reference + " + block.Id + "found");
               string lightingName = "";
+              string chosenPanel = "";
              
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_name") {
@@ -478,7 +516,21 @@ namespace ElectricalCommands.Lighting
                   pko.Message = "\nAssign Panel for " + lightingName + ":";
                   PromptResult pr = ed.GetKeywords(pko);
                   string result = pr.StringResult;
+                  chosenPanel = result.Split(':')[1];
                   property.Value = result.Split(':')[1];
+                }
+              }
+              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+                if (property.PropertyName == "gmep_lighting_circuit") {
+                  PromptKeywordOptions pko2 = new PromptKeywordOptions("");
+                  pko2.Message = "\nAssign Circuit for " + lightingName + ":";
+                  foreach (string circuit in panelCircuits[chosenPanel]) {
+                    pko2.Keywords.Add(circuit);
+                  }
+                  PromptResult pr2 = ed.GetKeywords(pko2);
+                  string result2 = pr2.StringResult;
+                  property.Value = result2;
+                  panelCircuits[chosenPanel].Remove(result2);
                 }
               }
             }

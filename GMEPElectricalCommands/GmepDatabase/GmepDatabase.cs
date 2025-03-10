@@ -325,6 +325,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_panels.parent_id,
         electrical_panels.name,
         electrical_panels.num_breakers,
+        electrical_panels.circuit_no,
         electrical_panels.parent_distance,
         electrical_panels.loc_x,
         electrical_panels.loc_y,
@@ -375,7 +376,8 @@ namespace GMEPElectricalCommands.GmepDatabase
               reader.IsDBNull(reader.GetOrdinal("node_id")) ? string.Empty : reader.GetString("node_id"),
               reader.GetString("status"),
               new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y")),
-              reader.GetInt32("num_breakers")
+              reader.GetInt32("num_breakers"),
+              reader.GetInt32("circuit_no")
             )
           );
       }
@@ -491,6 +493,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_transformers.id,
         electrical_transformers.parent_id,
         electrical_transformers.name,
+        electrical_transformers.circuit_no,
         electrical_transformers.parent_distance,
         electrical_transformers.loc_x,
         electrical_transformers.loc_y,
@@ -533,7 +536,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeBoolean(reader, "is_hidden_on_plan"),
             GetSafeString(reader, "node_id"),
             GetSafeString(reader, "status"),
-            new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y"))
+            new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y")),
+            reader.GetInt32("circuit_no")
           )
         );
       }
@@ -691,6 +695,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_panels.name,
         electrical_lighting.control_id,
         electrical_lighting.description,
+        electrical_lighting.circuit_no,
         electrical_equipment_voltages.voltage,
         electrical_lighting.wattage,
         electrical_lighting.em_capable,
@@ -746,7 +751,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             reader.GetFloat("label_transform_h_x"),
             reader.GetFloat("label_transform_h_y"),
             reader.GetFloat("label_transform_v_x"),
-            reader.GetFloat("label_transform_v_y")
+            reader.GetFloat("label_transform_v_y"),
+            reader.GetInt32("circuit_no")
           )
         );
       }
