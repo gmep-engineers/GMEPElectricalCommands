@@ -466,21 +466,21 @@ namespace ElectricalCommands.Lighting
 
       //Start removing Circuits from the dictionary, accounting for circuitnumber and pole.
       foreach (Panel panel in panelList) {
-        if (panelCircuits.ContainsKey(panel.ParentId)) {
+        if (panelCircuits.ContainsKey(panel.ParentId) && panel.Circuit != 0) {
           for (int i = 0; i < panel.Pole; i++) {
             panelCircuits[panel.ParentId].Remove((panel.Circuit + i*2).ToString());
           }
         }
       }
       foreach (ElectricalEntity.Equipment equipment in equipmentList) {
-        if (panelCircuits.ContainsKey(equipment.ParentId)) {
+        if (panelCircuits.ContainsKey(equipment.ParentId) && equipment.Circuit != 0) {
           for (int i = 0; i < equipment.Pole; i++) {
             panelCircuits[equipment.ParentId].Remove((equipment.Circuit + i * 2).ToString());
           }
         }
       }
       foreach (Transformer transformer in transformerList) {
-        if (panelCircuits.ContainsKey(transformer.ParentId)) {
+        if (panelCircuits.ContainsKey(transformer.ParentId) && transformer.Circuit != 0) {
           for (int i = 0; i < transformer.Pole; i++) {
             panelCircuits[transformer.ParentId].Remove((transformer.Circuit + i * 2).ToString());
           }
@@ -525,7 +525,7 @@ namespace ElectricalCommands.Lighting
                   PromptKeywordOptions pko2 = new PromptKeywordOptions("");
                   pko2.Message = "\nAssign Circuit for " + lightingName + ":";
                   foreach (string circuit in panelCircuits[chosenPanel]) {
-                    pko2.Keywords.Add(circuit);
+                    pko2.Keywords.Add(circuit + "\n");
                   }
                   PromptResult pr2 = ed.GetKeywords(pko2);
                   string result2 = pr2.StringResult;
