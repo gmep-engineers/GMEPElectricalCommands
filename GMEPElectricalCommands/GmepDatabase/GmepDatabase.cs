@@ -324,6 +324,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_panels.id,
         electrical_panels.parent_id,
         electrical_panels.name,
+        electrical_panels.num_breakers,
         electrical_panels.parent_distance,
         electrical_panels.loc_x,
         electrical_panels.loc_y,

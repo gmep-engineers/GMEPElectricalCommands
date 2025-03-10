@@ -448,7 +448,6 @@ namespace ElectricalCommands.Lighting
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
       List<Panel> panelList = gmepDb.GetPanels(projectId);
       PromptKeywordOptions pko = new PromptKeywordOptions("");
-      pko.Message = "\nSelect a panel: ";
 
       foreach (Panel panel in panelList) {
          pko.Keywords.Add(panel.Name + ":" + panel.Id);
@@ -465,15 +464,18 @@ namespace ElectricalCommands.Lighting
             DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
             if (obj is BlockReference block) {
               //ed.WriteMessage("\nBlock reference + " + block.Id + "found");
-              string lightingFixtureId = "";
+              string lightingName = "";
              
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
-                if (property.PropertyName == "gmep_lighting_fixture_id") {
-                  lightingFixtureId = property.Value as string;
+                if (property.PropertyName == "gmep_lighting_name") {
+                  lightingName = property.Value as string;
                 }
               }
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_parent_id") {
+                  //var loadAmperagePrompt = new PromptStringOptions("\nAssign Panel for " + lightingName + ":");
+                  //var loadAmperageResult = ed.GetString(loadAmperagePrompt);
+                  pko.Message = "\nAssign Panel for " + lightingName + ":";
                   PromptResult pr = ed.GetKeywords(pko);
                   string result = pr.StringResult;
                   property.Value = result.Split(':')[1];
@@ -587,6 +589,9 @@ namespace ElectricalCommands.Lighting
                 if (prop.PropertyName == "gmep_lighting_fixture_id" && prop.Value as string == "0")
                 {
                   prop.Value = fixture.Id;
+                }
+                if (prop.PropertyName == "gmep_lighting_name" && prop.Value as string == "0") {
+                  prop.Value = fixture.Name;
                 }
               }
               tr.Commit();
