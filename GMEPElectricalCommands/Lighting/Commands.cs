@@ -536,15 +536,17 @@ namespace ElectricalCommands.Lighting
                   PromptKeywordOptions pko2 = new PromptKeywordOptions("");
                   pko2.Message = "\nAssign Circuit for " + lightingName + ":";
                   foreach (string circuit in panelCircuits[chosenPanel]) {
-                    pko2.Keywords.Add(circuit + "\n");
+                    pko2.Keywords.Add(circuit);
                   }
                   PromptResult pr2 = ed.GetKeywords(pko2);
                   string result2 = pr2.StringResult;
                   property.Value = result2;
                   chosenCircuit = int.Parse(result2);
+                  //panelCircuits[chosenPanel].Remove(result2);
+                  gmepDb.InsertLightingEquipment(lightingId, fixtureId, chosenPanel, chosenCircuit, projectId);
                   panelCircuits[chosenPanel].Remove(result2);
                 }
-                //gmepDb.InsertLightingEquipment(lightingId, fixtureId, projectId, chosenPanel, chosenCircuit);
+                
               }
             }
           }
