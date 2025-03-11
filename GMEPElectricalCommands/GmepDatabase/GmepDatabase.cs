@@ -881,7 +881,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       command2.Parameters.AddWithValue("@projectId", projectId);
       command2.Parameters.AddWithValue("@parentId", panelId);
       command2.Parameters.AddWithValue("@description", "Lighting");
-      command2.Parameters.AddWithValue("@category", 1);
+      command2.Parameters.AddWithValue("@category", 5);
       command2.Parameters.AddWithValue("@voltage", 1);
       command2.Parameters.AddWithValue("@fla", Math.Round(newWattage / 115, 1, MidpointRounding.AwayFromZero));
       command2.Parameters.AddWithValue("@va", newWattage);
