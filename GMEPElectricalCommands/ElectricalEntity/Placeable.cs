@@ -710,8 +710,7 @@ namespace ElectricalCommands.ElectricalEntity
       Hp,
       Category;
 
-    public int Voltage,
-      MountingHeight,
+    public int MountingHeight,
       Circuit, Pole;
     public double Fla,
       Mca;
@@ -879,8 +878,7 @@ namespace ElectricalCommands.ElectricalEntity
     }
   }
 
-  public class Transformer : PlaceableElectricalEntity
-  {
+  public class Transformer : PlaceableElectricalEntity {
     public double Kva;
     public string Voltage;
     public int Circuit;
@@ -902,8 +900,7 @@ namespace ElectricalCommands.ElectricalEntity
       string Status,
       System.Drawing.Point NodePosition,
       int Circuit
-    )
-    {
+    ) {
       this.Id = Id;
       this.ParentId = ParentId;
       this.ParentDistance = ParentDistance;
@@ -935,4 +932,5 @@ namespace ElectricalCommands.ElectricalEntity
       return 3;
     }
   }
+
 }
