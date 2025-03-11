@@ -873,8 +873,8 @@ namespace GMEPElectricalCommands.GmepDatabase
 
       query =
         @"INSERT INTO electrical_equipment (id, project_id, parent_id, description, category_id, voltage_id, 
-        fla, is_three_phase, circuit_no, spec_sheet_from_client, aic_rating, color_code, connection_type_id, va) VALUES (@id, @projectId, @parentId, @description, @category, 
-        @voltage, @fla, @isThreePhase, @circuit, @specFromClient, @aicRating, @colorCode, @connectionId, @va)";
+        fla, is_three_phase, circuit_no, spec_sheet_from_client, aic_rating, color_code, connection_type_id, va, load_type) VALUES (@id, @projectId, @parentId, @description, @category, 
+        @voltage, @fla, @isThreePhase, @circuit, @specFromClient, @aicRating, @colorCode, @connectionId, @va, @loadType)";
 
       MySqlCommand  command2 = new MySqlCommand(query, Connection);
       command2.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
@@ -891,6 +891,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       command2.Parameters.AddWithValue("@aicRating", 0);
       command2.Parameters.AddWithValue("@colorCode", "#FF00FF");
       command2.Parameters.AddWithValue("@connectionId", 1);
+      command2.Parameters.AddWithValue("@loadType", 3);
       command2.ExecuteNonQuery();
       CloseConnection();
     }
