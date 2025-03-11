@@ -1974,7 +1974,50 @@ namespace ElectricalCommands.SingleLine
       }
     }
 
-    public static void AddConduitSpec(
+    public static void MakeAicRating(double aicRating, Point3d currentPoint)
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+        ObjectId aicMarker = bt["AIC MARKER (AUTO SINGLE LINE)"];
+        using (
+          BlockReference acBlkRef = new BlockReference(
+            new Point3d(currentPoint.X, currentPoint.Y + 0.125, 0),
+            aicMarker
+          )
+        )
+        {
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+        }
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          "~" + Math.Round(aicRating, 0).ToString() + " AIC",
+          "gmep",
+          0.0938,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(currentPoint.X + 0.0678, currentPoint.Y + 0.08, 0)
+        );
+        tr.Commit();
+      }
+    }
+
+    public static (string, int) AddConduitSpec(
       double loadAmperage,
       double mocp,
       double distance,
@@ -2019,6 +2062,17 @@ namespace ElectricalCommands.SingleLine
         supplemental3,
         false
       );
+
+      int feederWireCount = 1;
+      if (firstLine.StartsWith("["))
+      {
+        feederWireCount = Int32.Parse(firstLine[1].ToString());
+      }
+      string feederWireSize = Regex
+        .Match(firstLine, @"(?<=#)([0-9]+(\/0)?( KCMIL)?)")
+        .Groups[0]
+        .Value;
+      return (feederWireSize, feederWireCount);
     }
   }
 }

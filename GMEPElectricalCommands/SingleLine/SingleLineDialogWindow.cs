@@ -87,6 +87,36 @@ namespace ElectricalCommands.SingleLine
       dynamicBlockIds = new List<ObjectId>();
       SetDynamicBlockIds();
       placeables.ForEach(placeable => placeable.SetBlockId(dynamicBlockIds));
+      foreach (TreeNode node in SingleLineTreeView.Nodes)
+      {
+        if (node != null)
+        {
+          ContextMenuStrip docMenu = new ContextMenuStrip();
+          ToolStripMenuItem placeLabel = new ToolStripMenuItem();
+          placeLabel.Text = "Place";
+          placeLabel.Click += TreeViewPlaceSelected_Click;
+          docMenu.Items.Add(placeLabel);
+          node.ContextMenuStrip = docMenu;
+          SetTreeContextMenu(node);
+        }
+      }
+    }
+
+    private void SetTreeContextMenu(TreeNode parentNode)
+    {
+      foreach (TreeNode node in parentNode.Nodes)
+      {
+        if (node != null)
+        {
+          ContextMenuStrip docMenu = new ContextMenuStrip();
+          ToolStripMenuItem placeLabel = new ToolStripMenuItem();
+          placeLabel.Text = "Place";
+          placeLabel.Click += TreeViewPlaceSelected_Click;
+          docMenu.Items.Add(placeLabel);
+          node.ContextMenuStrip = docMenu;
+          SetTreeContextMenu(node);
+        }
+      }
     }
 
     public void SetDynamicBlockIds()
@@ -253,13 +283,14 @@ namespace ElectricalCommands.SingleLine
       }
     }
 
-    public void InheritLineVoltageAndPhase(
+    public void InheritElectricalAttributes(
       ElectricalEntity.ElectricalEntity parent,
       ElectricalEntity.ElectricalEntity child
     )
     {
       child.LineVoltage = parent.LineVoltage;
       child.Phase = parent.Phase;
+      child.AicRating = parent.AicRating;
     }
 
     public void PopulateTreeView()
@@ -279,7 +310,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(service.NodeId, meter.NodeId))
         {
-          InheritLineVoltageAndPhase(service, meter);
+          InheritElectricalAttributes(service, meter);
           TreeNode meterNode = node.Nodes.Add(meter.Id, meter.Name);
           meterNode.Tag = meter;
           PopulateFromMainMeter(meterNode, meter);
@@ -289,7 +320,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(service.NodeId, mainBreaker.NodeId))
         {
-          InheritLineVoltageAndPhase(service, mainBreaker);
+          InheritElectricalAttributes(service, mainBreaker);
           TreeNode mainBreakerNode = node.Nodes.Add(mainBreaker.Id, mainBreaker.Name);
           mainBreakerNode.Tag = mainBreaker;
           PopulateFromMainBreaker(mainBreakerNode, mainBreaker);
@@ -303,7 +334,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(meter.NodeId, mainBreaker.NodeId))
         {
-          InheritLineVoltageAndPhase(meter, mainBreaker);
+          InheritElectricalAttributes(meter, mainBreaker);
           TreeNode mainBreakerNode = node.Nodes.Add(mainBreaker.Id, mainBreaker.Name);
           mainBreakerNode.Tag = mainBreaker;
           PopulateFromMainBreaker(mainBreakerNode, mainBreaker);
@@ -313,7 +344,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(meter.NodeId, distributionBus.NodeId))
         {
-          InheritLineVoltageAndPhase(meter, distributionBus);
+          InheritElectricalAttributes(meter, distributionBus);
           TreeNode distributionBusNode = node.Nodes.Add(distributionBus.Id, distributionBus.Name);
           distributionBusNode.Tag = distributionBus;
           SetTreeNodeColor(distributionBusNode, distributionBus);
@@ -328,7 +359,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(mainBreaker.NodeId, distributionBus.NodeId))
         {
-          InheritLineVoltageAndPhase(mainBreaker, distributionBus);
+          InheritElectricalAttributes(mainBreaker, distributionBus);
           TreeNode distributionBusNode = node.Nodes.Add(distributionBus.Id, distributionBus.Name);
           distributionBusNode.Tag = distributionBus;
           SetTreeNodeColor(distributionBusNode, distributionBus);
@@ -346,7 +377,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(distributionBus.NodeId, meter.NodeId))
         {
-          InheritLineVoltageAndPhase(distributionBus, meter);
+          InheritElectricalAttributes(distributionBus, meter);
           TreeNode distributionMeterNode = node.Nodes.Add(meter.Id, meter.Name);
           distributionMeterNode.Tag = meter;
           PopulateFromDistributionMeter(distributionMeterNode, meter);
@@ -356,7 +387,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(distributionBus.NodeId, distributionBreaker.NodeId))
         {
-          InheritLineVoltageAndPhase(distributionBus, distributionBreaker);
+          InheritElectricalAttributes(distributionBus, distributionBreaker);
           TreeNode distributionBreakerNode = node.Nodes.Add(
             distributionBreaker.Id,
             distributionBreaker.Name
@@ -373,7 +404,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(meter.NodeId, distributionBreaker.NodeId))
         {
-          InheritLineVoltageAndPhase(meter, distributionBreaker);
+          InheritElectricalAttributes(meter, distributionBreaker);
           TreeNode distributionBreakerNode = node.Nodes.Add(
             distributionBreaker.Id,
             distributionBreaker.Name
@@ -393,7 +424,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(distributionBreaker.NodeId, panel.NodeId))
         {
-          InheritLineVoltageAndPhase(distributionBreaker, panel);
+          InheritElectricalAttributes(distributionBreaker, panel);
           TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
@@ -404,7 +435,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(distributionBreaker.NodeId, disconnect.NodeId))
         {
-          InheritLineVoltageAndPhase(distributionBreaker, disconnect);
+          InheritElectricalAttributes(distributionBreaker, disconnect);
           TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
           disconnectNode.Tag = disconnect;
           SetTreeNodeColor(disconnectNode, disconnect);
@@ -429,7 +460,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(panel.NodeId, panelBreaker.NodeId))
         {
-          InheritLineVoltageAndPhase(panel, panelBreaker);
+          InheritElectricalAttributes(panel, panelBreaker);
           TreeNode panelBreakerNode = node.Nodes.Add(panelBreaker.Id, panelBreaker.Name);
           panelBreakerNode.Tag = panelBreaker;
           PopulateFromPanelBreaker(panelBreakerNode, panelBreaker);
@@ -439,7 +470,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(panel.NodeId, childPanel.NodeId))
         {
-          InheritLineVoltageAndPhase(panel, childPanel);
+          InheritElectricalAttributes(panel, childPanel);
           TreeNode childPanelNode = node.Nodes.Add(childPanel.Id, childPanel.Name);
           childPanelNode.Tag = childPanel;
           SetTreeNodeColor(childPanelNode, childPanel);
@@ -450,7 +481,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(panel.NodeId, disconnect.NodeId))
         {
-          InheritLineVoltageAndPhase(panel, disconnect);
+          InheritElectricalAttributes(panel, disconnect);
           TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
           disconnectNode.Tag = disconnect;
           SetTreeNodeColor(disconnectNode, disconnect);
@@ -475,7 +506,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(panelBreaker.NodeId, panel.NodeId))
         {
-          InheritLineVoltageAndPhase(panelBreaker, panel);
+          InheritElectricalAttributes(panelBreaker, panel);
           TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
@@ -486,7 +517,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(panelBreaker.NodeId, disconnect.NodeId))
         {
-          InheritLineVoltageAndPhase(panelBreaker, disconnect);
+          InheritElectricalAttributes(panelBreaker, disconnect);
           TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
           disconnectNode.Tag = disconnect;
           SetTreeNodeColor(disconnectNode, disconnect);
@@ -511,7 +542,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(disconnect.NodeId, panel.NodeId))
         {
-          InheritLineVoltageAndPhase(disconnect, panel);
+          InheritElectricalAttributes(disconnect, panel);
           TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
@@ -522,7 +553,7 @@ namespace ElectricalCommands.SingleLine
       {
         if (VerifyNodeLink(disconnect.NodeId, childDisconnect.NodeId))
         {
-          InheritLineVoltageAndPhase(disconnect, childDisconnect);
+          InheritElectricalAttributes(disconnect, childDisconnect);
           TreeNode childDisconnectNode = node.Nodes.Add(childDisconnect.Id, childDisconnect.Name);
           childDisconnectNode.Tag = childDisconnect;
           SetTreeNodeColor(childDisconnectNode, childDisconnect);
@@ -898,6 +929,8 @@ namespace ElectricalCommands.SingleLine
       {
         return;
       }
+      ElectricalEntity.ElectricalEntity parentEntity = (ElectricalEntity.ElectricalEntity)
+        parentNode.Tag;
       TreeNode childNode = parentNode.Nodes[0];
       ElectricalEntity.ElectricalEntity childEntity = (ElectricalEntity.ElectricalEntity)
         childNode.Tag;
@@ -908,16 +941,46 @@ namespace ElectricalCommands.SingleLine
         ElectricalEntity.Panel panel = (ElectricalEntity.Panel)childEntity;
         SingleLine.MakePanel(panel, currentPoint);
 
-        SingleLine.AddConduitSpec(
+        (string feederWireSize, int feederWireCount) = SingleLine.AddConduitSpec(
           panel.LoadAmperage,
           panel.AmpRating,
-          panel.ParentDistance,
+          panel.ParentDistance + 10,
           panel.LineVoltage,
           1,
           panel.Phase,
           currentPoint,
           panel
         );
+        double aicRating;
+        if (parentEntity.NodeType == NodeType.Transformer)
+        {
+          ElectricalEntity.Transformer transformer = (ElectricalEntity.Transformer)parentNode.Tag;
+          aicRating = CADObjectCommands.GetAicRatingFromTransformer(
+            transformer.Kva,
+            1,
+            0.035,
+            panel.ParentDistance + 10,
+            feederWireCount,
+            panel.LineVoltage,
+            feederWireSize,
+            panel.Phase == 3
+          );
+        }
+        else
+        {
+          aicRating = CADObjectCommands.GetAicRating(
+            parentEntity.AicRating,
+            panel.ParentDistance + 10,
+            feederWireCount,
+            panel.LineVoltage,
+            feederWireSize,
+            panel.Phase == 3
+          );
+        }
+
+        panel.AicRating = aicRating;
+        SingleLine.MakeAicRating(aicRating, currentPoint);
+
         List<ElectricalEntity.PanelBreaker> panelBreakers = GetPanelBreakersFromPanel(childNode);
         for (int i = 0; i < panelBreakers.Count; i++)
         {
@@ -955,7 +1018,7 @@ namespace ElectricalCommands.SingleLine
       {
         ElectricalEntity.Disconnect disconnect = (ElectricalEntity.Disconnect)childEntity;
         SingleLine.MakeDisconnect(disconnect, currentPoint);
-        SingleLine.AddConduitSpec(
+        (string feederWireSize, int feederWireCount) = SingleLine.AddConduitSpec(
           disconnect.LoadAmperage,
           disconnect.AmpRating,
           disconnect.ParentDistance,
@@ -965,6 +1028,35 @@ namespace ElectricalCommands.SingleLine
           currentPoint,
           disconnect
         );
+        double aicRating;
+        if (parentEntity.NodeType == NodeType.Transformer)
+        {
+          ElectricalEntity.Transformer transformer = (ElectricalEntity.Transformer)parentNode.Tag;
+          aicRating = CADObjectCommands.GetAicRatingFromTransformer(
+            transformer.Kva,
+            1,
+            0.035,
+            disconnect.ParentDistance + 10,
+            feederWireCount,
+            disconnect.LineVoltage,
+            feederWireSize,
+            disconnect.Phase == 3
+          );
+        }
+        else
+        {
+          aicRating = CADObjectCommands.GetAicRating(
+            parentEntity.AicRating,
+            disconnect.ParentDistance + 10,
+            feederWireCount,
+            disconnect.LineVoltage,
+            feederWireSize,
+            disconnect.Phase == 3
+          );
+        }
+        disconnect.AicRating = aicRating;
+        SingleLine.MakeAicRating(aicRating, currentPoint);
+
         currentPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.1201, 0);
         if (childNode.Nodes.Count > 0)
         {
@@ -976,7 +1068,7 @@ namespace ElectricalCommands.SingleLine
       {
         ElectricalEntity.Transformer transformer = (ElectricalEntity.Transformer)childEntity;
         SingleLine.MakeTransformer(transformer, currentPoint);
-        SingleLine.AddConduitSpec(
+        (string feederWireSize, int feederWireCount) = SingleLine.AddConduitSpec(
           transformer.LoadAmperage,
           transformer.AmpRating,
           transformer.ParentDistance,
@@ -986,6 +1078,18 @@ namespace ElectricalCommands.SingleLine
           currentPoint,
           transformer
         );
+
+        double aicRating = CADObjectCommands.GetAicRating(
+          parentEntity.AicRating,
+          transformer.ParentDistance,
+          feederWireCount,
+          transformer.LineVoltage,
+          feederWireSize,
+          transformer.Phase == 3
+        );
+        transformer.AicRating = aicRating;
+        SingleLine.MakeAicRating(aicRating, currentPoint);
+
         currentPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.3739, 0);
         if (childNode.Nodes.Count > 0)
         {
@@ -1364,6 +1468,16 @@ namespace ElectricalCommands.SingleLine
           }
         }
       }
+      foreach (PlaceableElectricalEntity placeable in placeables)
+      {
+        foreach (PlaceableElectricalEntity pooledPlaceable in pooledEquipment)
+        {
+          if (placeable.Id == pooledPlaceable.Id)
+          {
+            placeable.ParentDistance = pooledPlaceable.ParentDistance;
+          }
+        }
+      }
     }
 
     private void PlaceOnPlanButton_Click(object sender, EventArgs e)
@@ -1402,6 +1516,72 @@ namespace ElectricalCommands.SingleLine
         SetInfoBoxText(serviceList[0]);
       }
       placeables.ForEach(gmepDb.UpdatePlaceable);
+      foreach (TreeNode node in SingleLineTreeView.Nodes)
+      {
+        if (node != null)
+        {
+          ContextMenuStrip docMenu = new ContextMenuStrip();
+          ToolStripMenuItem placeLabel = new ToolStripMenuItem();
+          placeLabel.Text = "Place";
+          placeLabel.Click += TreeViewPlaceSelected_Click;
+          docMenu.Items.Add(placeLabel);
+          node.ContextMenuStrip = docMenu;
+          SetTreeContextMenu(node);
+        }
+      }
+    }
+
+    public void TreeViewPlaceSelected_Click(object sender, EventArgs e)
+    {
+      if (SingleLineTreeView.SelectedNode == null)
+      {
+        return;
+      }
+      using (
+        DocumentLock docLock =
+          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
+      )
+      {
+        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
+          .AutoCAD
+          .Windows
+          .Window
+          .State
+          .Maximized;
+        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
+        ElectricalEntity.PlaceableElectricalEntity placeable =
+          (ElectricalEntity.PlaceableElectricalEntity)SingleLineTreeView.SelectedNode.Tag;
+        Point3d? p = placeable.Place();
+        if (p == null)
+        {
+          placeable.Location = new Point3d(0, 0, 0);
+        }
+      }
+      CalculateDistances();
+
+      SingleLineTreeView.BeginUpdate();
+      SingleLineTreeView.Nodes.Clear();
+      PopulateTreeView();
+      SingleLineTreeView.ExpandAll();
+      SingleLineTreeView.EndUpdate();
+      if (serviceList.Count > 0)
+      {
+        SetInfoBoxText(serviceList[0]);
+      }
+      placeables.ForEach(gmepDb.UpdatePlaceable);
+      foreach (TreeNode node in SingleLineTreeView.Nodes)
+      {
+        if (node != null)
+        {
+          ContextMenuStrip docMenu = new ContextMenuStrip();
+          ToolStripMenuItem placeLabel = new ToolStripMenuItem();
+          placeLabel.Text = "Place";
+          placeLabel.Click += TreeViewPlaceSelected_Click;
+          docMenu.Items.Add(placeLabel);
+          node.ContextMenuStrip = docMenu;
+          SetTreeContextMenu(node);
+        }
+      }
     }
   }
 }

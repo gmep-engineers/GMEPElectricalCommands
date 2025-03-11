@@ -301,7 +301,7 @@ namespace ElectricalCommands.ElectricalEntity
                 0
               );
             }
-            GeneralCommands.CreateAndPositionText(
+            ObjectId textId = GeneralCommands.CreateAndPositionText(
               tr,
               GetStatusAbbr(),
               "gmep",
@@ -318,6 +318,15 @@ namespace ElectricalCommands.ElectricalEntity
               TextVerticalMode.TextBase,
               AttachmentPoint.BaseLeft
             );
+
+            // set hyperlink
+            var text = (DBText)tr.GetObject(textId, OpenMode.ForWrite);
+            // this is the quickest way to add a custom attribute to DBText without
+            // having to do a bunch of bloated AutoCAD database nonsense
+            HyperLink customAttr = new HyperLink();
+            customAttr.SubLocation = Id;
+            text.Hyperlinks.Add(customAttr);
+
             BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
             ObjectId locatorBlockId = bt["EQUIP_MARKER"];
             using (
