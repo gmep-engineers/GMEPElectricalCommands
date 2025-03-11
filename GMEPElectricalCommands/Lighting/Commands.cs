@@ -515,25 +515,13 @@ namespace ElectricalCommands.Lighting
           foreach(ObjectId id in ss.GetObjectIds()) {
             DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
             if (obj is BlockReference block) {
-              
-              //string fixtureId = "";
 
-              /*foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
-                if (property.PropertyName == "gmep_lighting_name") {
-                  lightingName = property.Value as string;
-                }
-              }*/
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_fixture_id") {
                   var fixtureId = property.Value as string;
                   lightings.Add(fixtureId);
                 }
               }
-              /*foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
-                if (property.PropertyName == "gmep_lighting_id") {
-                  lightingId = property.Value as string;
-                }
-              }*/
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_parent_id") {
                   property.Value = chosenPanel;
@@ -552,29 +540,7 @@ namespace ElectricalCommands.Lighting
         }
       }
       }
-    /*public ElectricalEntity.Equipment LightingToEquipment(ElectricalEntity.LightingFixture fixture) {
-
-      return new ElectricalEntity.Equipment(
-        fixture.Id,
-        fixture.ParentId,
-        fixture.ParentName,
-        fixture.Name,
-        fixture.Name,
-        "General",
-        fixture.Voltage,
-        fixture.Wattage,
-        false,
-        fixture.ParentDistance,
-        fixture.Location.X,
-        fixture.Location.Y,
-        0,
-        "",
-        0,
-        fixture.Circuit,
-        false,
-        fixture.IsHidden
-      );
-    }*/
+    
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
     {

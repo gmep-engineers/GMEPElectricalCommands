@@ -834,27 +834,8 @@ namespace GMEPElectricalCommands.GmepDatabase
       command.ExecuteNonQuery();
       CloseConnection();
     }
-    /*public void InsertEquipment(Equipment equip, string projectId)
-    {
-      string query =
-        @"INSERT INTO electrical_equipment (id, project_id, parent_id, description, category, voltage, fla, is_three_phase, circuit_no) VALUES (@id, @projectId, @parentId, @description, @category, @voltage, @fla, @isThreePhase, @circuit)";
-      OpenConnection();
-      MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("@id", equip.Id);
-      command.Parameters.AddWithValue("@projectId", projectId);
-      command.Parameters.AddWithValue("@parentId", equip.Id);
-      command.Parameters.AddWithValue("@description", equip.Description);
-      command.Parameters.AddWithValue("@category", equip.Category);
-      command.Parameters.AddWithValue("@voltage", equip.Voltage);
-      command.Parameters.AddWithValue("@fla", equip.Fla);
-      command.Parameters.AddWithValue("@isThreePhase", equip.Is3Phase);
-      command.Parameters.AddWithValue("@circuit", equip.Circuit);
 
-      command.ExecuteNonQuery();
-      CloseConnection();
-    }*/
     public void InsertLightingEquipment(List<string> lightings, string panelId, int circuitNo, string projectId) {
-      //List<LightingFixture> ltg = new List<LightingFixture>();
 
       float newWattage = 0;
       string query =
