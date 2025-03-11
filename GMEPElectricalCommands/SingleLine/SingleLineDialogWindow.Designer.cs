@@ -61,13 +61,13 @@
             // GenerateSldButton
             // 
             this.GenerateSldButton.Index = 0;
-            this.GenerateSldButton.Text = "Generate SLD";
+            this.GenerateSldButton.Text = "Generate";
             this.GenerateSldButton.Click += new System.EventHandler(this.GenerateButton_Click);
             // 
             // PlaceOnPlanButton
             // 
             this.PlaceOnPlanButton.Index = 1;
-            this.PlaceOnPlanButton.Text = "Place equip. on plan";
+            this.PlaceOnPlanButton.Text = "Place equipment";
             this.PlaceOnPlanButton.Click += new System.EventHandler(this.PlaceOnPlanButton_Click);
             // 
             // InfoGroupBox

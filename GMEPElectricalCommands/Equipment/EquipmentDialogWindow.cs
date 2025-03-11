@@ -1596,21 +1596,21 @@ namespace ElectricalCommands.Equipment
             tb.Cells[row, 9].TextString = "V.I.F.";
             tb.Cells[row, 10].TextString = "V.I.F.";
           }
-          else
+          else if (Int32.TryParse(equipmentList[i].Voltage, out int voltage))
           {
             (string firstLine, string secondLine, string _, string _, string _, string _) =
               CADObjectCommands.GetWireAndConduitSizeText(
                 equipmentList[i].Fla,
                 mca,
                 equipmentList[i].ParentDistance + 10,
-                equipmentList[i].Voltage,
+                voltage,
                 3,
                 equipmentList[i].Is3Phase ? 3 : 1
               );
             tb.Cells[row, 5].TextString = mca.ToString();
             tb.Cells[row, 7].TextString = CADObjectCommands.GetConnectionTypeFromFlaVoltage(
               equipmentList[i].Fla,
-              equipmentList[i].Voltage,
+              voltage,
               equipmentList[i].HasPlug,
               equipmentList[i].Is3Phase
             );

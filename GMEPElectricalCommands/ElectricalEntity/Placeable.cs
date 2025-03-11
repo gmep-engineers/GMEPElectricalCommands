@@ -22,6 +22,10 @@ namespace ElectricalCommands.ElectricalEntity
     public bool Rotate;
     public string TableName;
     public ObjectId BlockId;
+    public int AmpRating;
+    public string Voltage;
+    public double LoadAmperage;
+    public double Kva;
 
     public bool IsPlaced()
     {
@@ -230,7 +234,14 @@ namespace ElectricalCommands.ElectricalEntity
         firstClickPoint.Y + labelOffsetY,
         0
       );
-
+      if (NodeType == NodeType.Transformer)
+      {
+        firstClickPoint = new Point3d(firstClickPoint.X, firstClickPoint.Y + 19.9429, 0);
+      }
+      if (NodeType == NodeType.Disconnect)
+      {
+        firstClickPoint = new Point3d(firstClickPoint.X, firstClickPoint.Y + 2.5 * 0.25 / scale, 0);
+      }
       LabelJig jig = new LabelJig(firstClickPoint, Id);
       PromptResult res = ed.Drag(jig);
       if (res.Status != PromptStatus.OK)
@@ -297,6 +308,32 @@ namespace ElectricalCommands.ElectricalEntity
                 0
               );
             }
+            ObjectId textId = GeneralCommands.CreateAndPositionText(
+              tr,
+              GetStatusAbbr(),
+              "gmep",
+              0.0938 * 12 / scale,
+              0.85,
+              2,
+              "E-TXT1",
+              new Point3d(
+                labelInsertionPoint.X - (0.85 / scale),
+                labelInsertionPoint.Y + (1.25 / scale),
+                0
+              ),
+              TextHorizontalMode.TextCenter,
+              TextVerticalMode.TextBase,
+              AttachmentPoint.BaseLeft
+            );
+
+            // set hyperlink
+            var text = (DBText)tr.GetObject(textId, OpenMode.ForWrite);
+            // this is the quickest way to add a custom attribute to DBText without
+            // having to do a bunch of bloated AutoCAD database nonsense
+            HyperLink customAttr = new HyperLink();
+            customAttr.SubLocation = Id;
+            text.Hyperlinks.Add(customAttr);
+
             BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
             ObjectId locatorBlockId = bt["EQUIP_MARKER"];
             using (
@@ -371,7 +408,7 @@ namespace ElectricalCommands.ElectricalEntity
             {
               textId = GeneralCommands.CreateAndPositionText(
                 tr,
-                Name.ToUpper(),
+                GetStatusAbbr() + Name.ToUpper(),
                 "gmep",
                 0.0938 * 12 / scale,
                 0.85,
@@ -387,7 +424,7 @@ namespace ElectricalCommands.ElectricalEntity
             {
               textId = GeneralCommands.CreateAndPositionText(
                 tr,
-                Name.ToUpper(),
+                GetStatusAbbr() + Name.ToUpper(),
                 "gmep",
                 0.0938 * 12 / scale,
                 0.85,
@@ -596,8 +633,6 @@ namespace ElectricalCommands.ElectricalEntity
 
   public class DistributionBus : PlaceableElectricalEntity
   {
-    public int AmpRating;
-
     public DistributionBus(
       string Id,
       string NodeId,
@@ -625,9 +660,6 @@ namespace ElectricalCommands.ElectricalEntity
 
   public class Service : PlaceableElectricalEntity
   {
-    public int AmpRating;
-    public string Voltage;
-
     public Service(
       string Id,
       string NodeId,
@@ -644,7 +676,7 @@ namespace ElectricalCommands.ElectricalEntity
       Name =
         $"{AmpRating}A {Voltage.Replace(" ", "V-")}"
         + "\u0081"
-        + $"-{(Voltage.Contains("3") ? "4W" : "3W")}";
+        + $"-{(Voltage.Contains("3") ? "4W" : "3W")} Service";
       this.Status = Status;
       this.AmpRating = AmpRating;
       this.Voltage = Voltage;
@@ -655,6 +687,20 @@ namespace ElectricalCommands.ElectricalEntity
       TableName = "electrical_services";
       Rotate = true;
       this.Location = Location;
+      LineVoltage = 208;
+      if (Voltage.Contains("480"))
+      {
+        LineVoltage = 480;
+      }
+      if (Voltage.Contains("240"))
+      {
+        LineVoltage = 240;
+      }
+      Phase = 1;
+      if (Voltage.Contains("3"))
+      {
+        Phase = 3;
+      }
     }
   }
 
@@ -663,6 +709,7 @@ namespace ElectricalCommands.ElectricalEntity
     public string Description,
       Hp,
       Category;
+
     public int Voltage,
       MountingHeight,
       Circuit, Pole;
@@ -698,7 +745,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.Name = Name.ToUpper();
       this.Description = Description;
       this.Category = Category;
-      this.Voltage = Voltage;
+      this.Voltage = Voltage.ToString();
       this.Fla = Fla;
       this.Is3Phase = Is3Phase;
       this.Location = new Point3d(LocationX, LocationY, 0);
@@ -756,6 +803,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.NumPoles = NumPoles;
       this.Status = Status;
       this.AicRating = AicRating;
+      AmpRating = AfSize;
       Name = $"{AsSize}AS/{AfSize}AF/{NumPoles}P Disconnect";
       NodeType = NodeType.Disconnect;
       this.NodePosition = NodePosition;
@@ -770,7 +818,6 @@ namespace ElectricalCommands.ElectricalEntity
   {
     public int BusAmpRating;
     public int MainAmpRating;
-    public string Voltage;
     public bool IsMlo;
     public int NumBreakers;
     public List<PanelBreaker> Breakers;
@@ -789,6 +836,8 @@ namespace ElectricalCommands.ElectricalEntity
       int MainAmpRating,
       bool IsMlo,
       string Voltage,
+      double LoadAmperage,
+      double Kva,
       double AicRating,
       bool IsHidden,
       string NodeId,
@@ -803,6 +852,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.ParentDistance = ParentDistance;
       Location = new Point3d(LocationX, LocationY, 0);
       this.BusAmpRating = BusAmpRating;
+      AmpRating = BusAmpRating;
       this.MainAmpRating = MainAmpRating;
       this.IsMlo = IsMlo;
       this.Voltage = Voltage;
@@ -818,7 +868,8 @@ namespace ElectricalCommands.ElectricalEntity
       this.NumBreakers = NumBreakers;
       this.Circuit = Circuit;
       this.Pole = SetPole(Voltage);
-
+      this.LoadAmperage = LoadAmperage;
+      this.Kva = Kva;
     }
     public int SetPole(string voltage) {
       if (voltage == "120/240 1" || voltage == "120/208 1") {
@@ -834,6 +885,7 @@ namespace ElectricalCommands.ElectricalEntity
     public string Voltage;
     public int Circuit;
     public int Pole;
+    public double OutputLineVoltage;
 
     public Transformer(
       string Id,
@@ -870,6 +922,11 @@ namespace ElectricalCommands.ElectricalEntity
       TableName = "electrical_transformers";
       this.Circuit = Circuit;
       this.Pole = SetPole(Voltage);
+      LineVoltage = Double.Parse(Voltage.Split('-')[0].Replace("V", ""));
+      OutputLineVoltage = Double.Parse(
+        Voltage.Split('-')[1].Replace("120/", "").Replace("277/", "").Replace("V", "")
+      );
+      Phase = Int32.Parse(Voltage.Split('-')[2]);
     }
     public int SetPole(string voltage) {
       if (voltage == "240V-120/208V-1" || voltage == "208V-120/240V-1") {

@@ -17,6 +17,13 @@ namespace ElectricalCommands.ElectricalEntity
     public double AicRating;
     public NodeType NodeType;
     public Point NodePosition;
+    public double LineVoltage;
+    public int Phase;
+
+    public string GetStatusAbbr()
+    {
+      return "(" + Status[0].ToString().ToUpper() + ")";
+    }
   }
 
   public class DistributionBreaker : ElectricalEntity
