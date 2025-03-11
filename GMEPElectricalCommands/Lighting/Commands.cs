@@ -13,6 +13,7 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using Dreambuild.AutoCAD;
+using ElectricalCommands.ElectricalEntity;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
 using Emgu.CV.Structure;
@@ -21,6 +22,7 @@ using GMEPElectricalCommands.GmepDatabase;
 using Newtonsoft.Json;
 using TriangleNet.Meshing.Algorithm;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
+using System.Threading.Tasks;
 
 namespace ElectricalCommands.Lighting
 {
@@ -437,7 +439,108 @@ namespace ElectricalCommands.Lighting
         }
       }
     }
+    [CommandMethod("AssignLightingCircuit")]
+    public static void AssignLightingCircuit() {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      GmepDatabase gmepDb = new GmepDatabase();
 
+      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
+      List<Panel> panelList = gmepDb.GetPanels(projectId);
+      List<ElectricalEntity.Equipment> equipmentList = gmepDb.GetEquipment(projectId);
+      List<Transformer> transformerList = gmepDb.GetTransformers(projectId);
+      Dictionary<string,List<string>> panelCircuits = new Dictionary<string, List<string>>();
+      List<string> lightings = new List<string>();
+
+      PromptKeywordOptions pko = new PromptKeywordOptions("");
+
+
+
+      foreach (Panel panel in panelList) {
+          pko.Keywords.Add(panel.Name + ":" + panel.Id);
+          for (int i = 1; i <= panel.NumBreakers; i++) {
+            if (!panelCircuits.ContainsKey(panel.Id)) {
+            panelCircuits.Add(panel.Id, new List<string>());
+          }
+          panelCircuits[panel.Id].Add(i.ToString());
+          }
+       }
+
+      //Start removing Circuits from the dictionary, accounting for circuitnumber and pole.
+      foreach (Panel panel in panelList) {
+        if (panelCircuits.ContainsKey(panel.ParentId) && panel.Circuit != 0) {
+          for (int i = 0; i < panel.Pole; i++) {
+            panelCircuits[panel.ParentId].Remove((panel.Circuit + i*2).ToString());
+          }
+        }
+      }
+      foreach (ElectricalEntity.Equipment equipment in equipmentList) {
+        if (panelCircuits.ContainsKey(equipment.ParentId) && equipment.Circuit != 0) {
+          for (int i = 0; i < equipment.Pole; i++) {
+            panelCircuits[equipment.ParentId].Remove((equipment.Circuit + i * 2).ToString());
+          }
+        }
+      }
+      foreach (Transformer transformer in transformerList) {
+        if (panelCircuits.ContainsKey(transformer.ParentId) && transformer.Circuit != 0) {
+          for (int i = 0; i < transformer.Pole; i++) {
+            panelCircuits[transformer.ParentId].Remove((transformer.Circuit + i * 2).ToString());
+          }
+        }
+      }
+      //end sorting circuits
+
+      PromptSelectionResult psr = ed.GetSelection();
+
+      //Prompt user for panel
+      pko.Message = "\nAssign Panel:";
+      PromptResult pr = ed.GetKeywords(pko);
+      string result = pr.StringResult;
+      var chosenPanel = result.Split(':')[1];
+
+      //Prompt user for circuit
+      PromptKeywordOptions pko2 = new PromptKeywordOptions("");
+      pko2.Message = "\nAssign Circuit:";
+      foreach (string circuit in panelCircuits[chosenPanel]) {
+        pko2.Keywords.Add(circuit);
+      }
+      PromptResult pr2 = ed.GetKeywords(pko2);
+      string result2 = pr2.StringResult;
+      var chosenCircuit = int.Parse(result2);
+
+      if (psr.Status == PromptStatus.OK) {
+        SelectionSet ss = psr.Value;
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          foreach(ObjectId id in ss.GetObjectIds()) {
+            DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
+            if (obj is BlockReference block) {
+
+              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+                if (property.PropertyName == "gmep_lighting_fixture_id") {
+                  var fixtureId = property.Value as string;
+                  lightings.Add(fixtureId);
+                }
+              }
+              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+                if (property.PropertyName == "gmep_lighting_parent_id") {
+                  property.Value = chosenPanel;
+                }
+              }
+              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+                if (property.PropertyName == "gmep_lighting_circuit") {
+                  property.Value = chosenCircuit;
+                }
+                
+              }
+            }
+          }
+          gmepDb.InsertLightingEquipment(lightings, chosenPanel, chosenCircuit, projectId);
+          tr.Commit();
+        }
+      }
+      }
+    
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
     {
@@ -540,6 +643,9 @@ namespace ElectricalCommands.Lighting
                 if (prop.PropertyName == "gmep_lighting_fixture_id" && prop.Value as string == "0")
                 {
                   prop.Value = fixture.Id;
+                }
+                if (prop.PropertyName == "gmep_lighting_name" && prop.Value as string == "0") {
+                  prop.Value = fixture.Name;
                 }
               }
               tr.Commit();

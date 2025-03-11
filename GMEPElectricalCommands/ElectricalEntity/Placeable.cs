@@ -565,7 +565,7 @@ namespace ElectricalCommands.ElectricalEntity
   public class LightingFixture : PlaceableElectricalEntity
   {
     public int Voltage,
-      Qty;
+      Qty, Circuit, Pole;
     public double Wattage,
       PaperSpaceScale,
       LabelTransformHX,
@@ -601,7 +601,8 @@ namespace ElectricalCommands.ElectricalEntity
       double LabelTransformHX,
       double LabelTransformHY,
       double LabelTransformVX,
-      double LabelTransformVY
+      double LabelTransformVY,
+      int Circuit
     )
     {
       this.Id = Id;
@@ -625,6 +626,8 @@ namespace ElectricalCommands.ElectricalEntity
       this.LabelTransformHY = LabelTransformHY;
       this.LabelTransformVX = LabelTransformVX;
       this.LabelTransformVY = LabelTransformVY;
+      this.Circuit = Circuit;
+      this.Pole = 1;
     }
   }
 
@@ -706,8 +709,9 @@ namespace ElectricalCommands.ElectricalEntity
     public string Description,
       Hp,
       Category;
+
     public int MountingHeight,
-      Circuit;
+      Circuit, Pole;
     public double Fla,
       Mca;
     public bool Is3Phase,
@@ -752,7 +756,21 @@ namespace ElectricalCommands.ElectricalEntity
       this.HasPlug = HasPlug;
       this.IsHidden = Hidden;
       TableName = "electrical_equipment";
+      Pole = SetPole(Is3Phase, Voltage);
     }
+    private int SetPole(bool is3Phase, int voltage) {
+      int pole = 3;
+      if (is3Phase == false) {
+        if (voltage == 115 || voltage == 120 || voltage == 277) {
+          pole = 1;
+        }
+        else {
+          pole = 2;
+        }
+      }
+      return pole;
+    }
+    
   }
 
   public class Disconnect : PlaceableElectricalEntity
@@ -800,7 +818,11 @@ namespace ElectricalCommands.ElectricalEntity
     public int BusAmpRating;
     public int MainAmpRating;
     public bool IsMlo;
+    public int NumBreakers;
     public List<PanelBreaker> Breakers;
+    public int Circuit;
+    public int Pole;
+
 
     public Panel(
       string Id,
@@ -819,9 +841,10 @@ namespace ElectricalCommands.ElectricalEntity
       bool IsHidden,
       string NodeId,
       string Status,
-      System.Drawing.Point NodePosition
-    )
-    {
+      System.Drawing.Point NodePosition,
+      int NumBreakers,
+      int Circuit
+    ) {
       this.Id = Id;
       this.ParentId = ParentId;
       this.Name = Name.ToUpper().Replace("PANEL", "").Trim();
@@ -841,13 +864,25 @@ namespace ElectricalCommands.ElectricalEntity
       BlockName = $"A$C26441056";
       Rotate = true;
       TableName = "electrical_panels";
+      this.NumBreakers = NumBreakers;
+      this.Circuit = Circuit;
+      this.Pole = SetPole(Voltage);
       this.LoadAmperage = LoadAmperage;
       this.Kva = Kva;
     }
+    public int SetPole(string voltage) {
+      if (voltage == "120/240 1" || voltage == "120/208 1") {
+        return 2;
+      }
+      return 3;
+    }
   }
 
-  public class Transformer : PlaceableElectricalEntity
-  {
+  public class Transformer : PlaceableElectricalEntity {
+    public double Kva;
+    public string Voltage;
+    public int Circuit;
+    public int Pole;
     public double OutputLineVoltage;
 
     public Transformer(
@@ -863,9 +898,9 @@ namespace ElectricalCommands.ElectricalEntity
       bool IsHidden,
       string NodeId,
       string Status,
-      System.Drawing.Point NodePosition
-    )
-    {
+      System.Drawing.Point NodePosition,
+      int Circuit
+    ) {
       this.Id = Id;
       this.ParentId = ParentId;
       this.ParentDistance = ParentDistance;
@@ -882,11 +917,20 @@ namespace ElectricalCommands.ElectricalEntity
       BlockName = "GMEP TRANSFORMER";
       Rotate = false;
       TableName = "electrical_transformers";
+      this.Circuit = Circuit;
+      this.Pole = SetPole(Voltage);
       LineVoltage = Double.Parse(Voltage.Split('-')[0].Replace("V", ""));
       OutputLineVoltage = Double.Parse(
         Voltage.Split('-')[1].Replace("120/", "").Replace("277/", "").Replace("V", "")
       );
       Phase = Int32.Parse(Voltage.Split('-')[2]);
     }
+    public int SetPole(string voltage) {
+      if (voltage == "240V-120/208V-1" || voltage == "208V-120/240V-1") {
+        return 2;
+      }
+      return 3;
+    }
   }
+
 }

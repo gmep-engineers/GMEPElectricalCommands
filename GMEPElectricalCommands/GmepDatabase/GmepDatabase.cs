@@ -324,6 +324,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_panels.id,
         electrical_panels.parent_id,
         electrical_panels.name,
+        electrical_panels.num_breakers,
+        electrical_panels.circuit_no,
         electrical_panels.parent_distance,
         electrical_panels.loc_x,
         electrical_panels.loc_y,
@@ -359,8 +361,6 @@ namespace GMEPElectricalCommands.GmepDatabase
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
-        try
-        {
           panels.Add(
             new Panel(
               reader.GetString("id"),
@@ -377,13 +377,13 @@ namespace GMEPElectricalCommands.GmepDatabase
               reader.GetFloat("kva"),
               reader.GetFloat("aic_rating"),
               reader.GetBoolean("is_hidden_on_plan"),
-              reader.GetString("node_id"),
+              reader.IsDBNull(reader.GetOrdinal("node_id")) ? string.Empty : reader.GetString("node_id"),
               reader.GetString("status"),
-              new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y"))
+              new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y")),
+              reader.GetInt32("num_breakers"),
+              reader.GetInt32("circuit_no")
             )
           );
-        }
-        catch { }
       }
       CloseConnection();
       reader.Close();
@@ -497,6 +497,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_transformers.id,
         electrical_transformers.parent_id,
         electrical_transformers.name,
+        electrical_transformers.circuit_no,
         electrical_transformers.parent_distance,
         electrical_transformers.loc_x,
         electrical_transformers.loc_y,
@@ -539,7 +540,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeBoolean(reader, "is_hidden_on_plan"),
             GetSafeString(reader, "node_id"),
             GetSafeString(reader, "status"),
-            new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y"))
+            new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y")),
+            reader.GetInt32("circuit_no")
           )
         );
       }
@@ -697,6 +699,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_panels.name,
         electrical_lighting.control_id,
         electrical_lighting.description,
+        electrical_lighting.circuit_no,
         electrical_equipment_voltages.voltage,
         electrical_lighting.wattage,
         electrical_lighting.em_capable,
@@ -734,7 +737,7 @@ namespace GMEPElectricalCommands.GmepDatabase
           new LightingFixture(
             reader.GetString("id"),
             reader.GetString("parent_id"),
-            reader.GetString("name"),
+            reader.IsDBNull(reader.GetOrdinal("name")) ? string.Empty : reader.GetString("name"),
             reader.GetString("tag"),
             reader.GetString("control_id"),
             reader.GetString("block_name"),
@@ -752,7 +755,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             reader.GetFloat("label_transform_h_x"),
             reader.GetFloat("label_transform_h_y"),
             reader.GetFloat("label_transform_v_x"),
-            reader.GetFloat("label_transform_v_y")
+            reader.GetFloat("label_transform_v_y"),
+            reader.GetInt32("circuit_no")
           )
         );
       }
@@ -811,9 +815,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       reader.Close();
       return id;
     }
-
-    public void UpdateEquipment(Equipment equip)
-    {
+    public void UpdateEquipment(Equipment equip) {
       string query =
         @"
           UPDATE electrical_equipment
@@ -830,6 +832,52 @@ namespace GMEPElectricalCommands.GmepDatabase
       command.Parameters.AddWithValue("@parentDistance", equip.ParentDistance);
       command.Parameters.AddWithValue("@equipId", equip.Id);
       command.ExecuteNonQuery();
+      CloseConnection();
+    }
+
+    public void InsertLightingEquipment(List<string> lightings, string panelId, int circuitNo, string projectId) {
+
+      float newWattage = 0;
+      string query =
+        @"
+        SELECT
+        electrical_lighting.wattage
+        FROM electrical_lighting
+        WHERE electrical_lighting.id = @id";
+
+      this.OpenConnection();
+      foreach (var id in lightings) {
+        MySqlCommand command = new MySqlCommand(query, Connection);
+        command.Parameters.AddWithValue("@id", id);
+        MySqlDataReader reader = command.ExecuteReader();
+        while (reader.Read()) {
+          newWattage += reader.GetInt32("wattage");
+        }
+        reader.Close();
+      }
+
+      query =
+        @"INSERT INTO electrical_equipment (id, project_id, parent_id, description, category_id, voltage_id, 
+        fla, is_three_phase, circuit_no, spec_sheet_from_client, aic_rating, color_code, connection_type_id, va, load_type) VALUES (@id, @projectId, @parentId, @description, @category, 
+        @voltage, @fla, @isThreePhase, @circuit, @specFromClient, @aicRating, @colorCode, @connectionId, @va, @loadType)";
+
+      MySqlCommand  command2 = new MySqlCommand(query, Connection);
+      command2.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
+      command2.Parameters.AddWithValue("@projectId", projectId);
+      command2.Parameters.AddWithValue("@parentId", panelId);
+      command2.Parameters.AddWithValue("@description", "Lighting");
+      command2.Parameters.AddWithValue("@category", 5);
+      command2.Parameters.AddWithValue("@voltage", 1);
+      command2.Parameters.AddWithValue("@fla", Math.Round(newWattage / 115, 1, MidpointRounding.AwayFromZero));
+      command2.Parameters.AddWithValue("@va", newWattage);
+      command2.Parameters.AddWithValue("@isThreePhase", false);
+      command2.Parameters.AddWithValue("@circuit", circuitNo);
+      command2.Parameters.AddWithValue("@specFromClient", false);
+      command2.Parameters.AddWithValue("@aicRating", 0);
+      command2.Parameters.AddWithValue("@colorCode", "#FF00FF");
+      command2.Parameters.AddWithValue("@connectionId", 1);
+      command2.Parameters.AddWithValue("@loadType", 3);
+      command2.ExecuteNonQuery();
       CloseConnection();
     }
 
