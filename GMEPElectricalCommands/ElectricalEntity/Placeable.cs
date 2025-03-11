@@ -234,7 +234,14 @@ namespace ElectricalCommands.ElectricalEntity
         firstClickPoint.Y + labelOffsetY,
         0
       );
-
+      if (NodeType == NodeType.Transformer)
+      {
+        firstClickPoint = new Point3d(firstClickPoint.X, firstClickPoint.Y + 19.9429, 0);
+      }
+      if (NodeType == NodeType.Disconnect)
+      {
+        firstClickPoint = new Point3d(firstClickPoint.X, firstClickPoint.Y + 2.5 * 0.25 / scale, 0);
+      }
       LabelJig jig = new LabelJig(firstClickPoint, Id);
       PromptResult res = ed.Drag(jig);
       if (res.Status != PromptStatus.OK)

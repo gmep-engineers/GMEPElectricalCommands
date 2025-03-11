@@ -425,7 +425,7 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(distributionBreaker.NodeId, panel.NodeId))
         {
           InheritElectricalAttributes(distributionBreaker, panel);
-          TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
+          TreeNode panelNode = node.Nodes.Add(panel.Id, "Panel " + panel.Name);
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
           PopulateFromPanel(panelNode, panel);
@@ -471,7 +471,7 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(panel.NodeId, childPanel.NodeId))
         {
           InheritElectricalAttributes(panel, childPanel);
-          TreeNode childPanelNode = node.Nodes.Add(childPanel.Id, childPanel.Name);
+          TreeNode childPanelNode = node.Nodes.Add(childPanel.Id, "Panel " + childPanel.Name);
           childPanelNode.Tag = childPanel;
           SetTreeNodeColor(childPanelNode, childPanel);
           PopulateFromPanel(childPanelNode, childPanel);
@@ -507,7 +507,7 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(panelBreaker.NodeId, panel.NodeId))
         {
           InheritElectricalAttributes(panelBreaker, panel);
-          TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
+          TreeNode panelNode = node.Nodes.Add(panel.Id, "Panel " + panel.Name);
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
           PopulateFromPanel(panelNode, panel);
@@ -543,7 +543,7 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(disconnect.NodeId, panel.NodeId))
         {
           InheritElectricalAttributes(disconnect, panel);
-          TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
+          TreeNode panelNode = node.Nodes.Add(panel.Id, "Panel " + panel.Name);
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
           PopulateFromPanel(panelNode, panel);
@@ -580,7 +580,7 @@ namespace ElectricalCommands.SingleLine
         {
           panel.LineVoltage = transformer.OutputLineVoltage;
           panel.Phase = transformer.Phase; // todo: account for phase change
-          TreeNode panelNode = node.Nodes.Add(panel.Id, panel.Name);
+          TreeNode panelNode = node.Nodes.Add(panel.Id, "Panel " + panel.Name);
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
           PopulateFromPanel(panelNode, panel);
@@ -613,6 +613,21 @@ namespace ElectricalCommands.SingleLine
         }
       }
       return false;
+    }
+
+    private string GetParentName(string parentId)
+    {
+      string parentName = string.Empty;
+      PlaceableElectricalEntity parent = placeables.FirstOrDefault(p => parentId == p.Id);
+      if (parent != null)
+      {
+        parentName = parent.Name;
+        if (parent.NodeType == NodeType.Panel)
+        {
+          parentName = "Panel " + parentName;
+        }
+      }
+      return parentName;
     }
 
     private void SetInfoBoxText(ElectricalEntity.ElectricalEntity entity)
@@ -687,6 +702,10 @@ namespace ElectricalCommands.SingleLine
           ElectricalEntity.Panel panel = (ElectricalEntity.Panel)entity;
           InfoTextBox.AppendText($"Location: {GetLocationString(panel)}");
           InfoTextBox.AppendText(Environment.NewLine);
+          InfoTextBox.AppendText($"Fed From: {GetParentName(panel.ParentId)}");
+          InfoTextBox.AppendText(Environment.NewLine);
+          InfoTextBox.AppendText($"Distance: {panel.ParentDistance}'");
+          InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText("---------------------Panel----------------------");
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"Bus:     {panel.BusAmpRating}A");
@@ -709,6 +728,10 @@ namespace ElectricalCommands.SingleLine
           ElectricalEntity.Disconnect disconnect = (ElectricalEntity.Disconnect)entity;
           InfoTextBox.AppendText($"Location: {GetLocationString(disconnect)}");
           InfoTextBox.AppendText(Environment.NewLine);
+          InfoTextBox.AppendText($"Fed From: {GetParentName(disconnect.ParentId)}");
+          InfoTextBox.AppendText(Environment.NewLine);
+          InfoTextBox.AppendText($"Distance: {disconnect.ParentDistance}'");
+          InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText("------------------Disconnect--------------------");
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"AS:     {disconnect.AsSize}AS");
@@ -720,6 +743,10 @@ namespace ElectricalCommands.SingleLine
         case NodeType.Transformer:
           ElectricalEntity.Transformer transformer = (ElectricalEntity.Transformer)entity;
           InfoTextBox.AppendText($"Location: {GetLocationString(transformer)}");
+          InfoTextBox.AppendText(Environment.NewLine);
+          InfoTextBox.AppendText($"Fed From: {GetParentName(transformer.ParentId)}");
+          InfoTextBox.AppendText(Environment.NewLine);
+          InfoTextBox.AppendText($"Distance: {transformer.ParentDistance}'");
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText("------------------Transformer-------------------");
           InfoTextBox.AppendText(Environment.NewLine);
@@ -980,37 +1007,42 @@ namespace ElectricalCommands.SingleLine
 
         panel.AicRating = aicRating;
         SingleLine.MakeAicRating(aicRating, currentPoint);
-
         List<ElectricalEntity.PanelBreaker> panelBreakers = GetPanelBreakersFromPanel(childNode);
+        Point3d panelPoint = currentPoint;
         for (int i = 0; i < panelBreakers.Count; i++)
         {
+          currentPoint = panelPoint;
           if (i == 0)
           {
             Point3d breakerPoint = new Point3d(currentPoint.X + 0.3125, currentPoint.Y - 0.9333, 0);
             SingleLine.MakeRightPanelBreaker(panelBreakers[i], breakerPoint);
             currentPoint = SingleLine.MakePanelChildConduit(i, breakerPoint);
-            MakeFieldEntity(childNode.Nodes[i], currentPoint);
+            TreeNode breakerNode = SingleLineTreeView.Nodes.Find(panelBreakers[i].Id, true)[0];
+            MakeFieldEntity(breakerNode, currentPoint);
           }
           if (i == 1)
           {
             Point3d breakerPoint = new Point3d(currentPoint.X - 0.3125, currentPoint.Y - 0.9333, 0);
-            SingleLine.MakeRightPanelBreaker(panelBreakers[i], breakerPoint);
+            SingleLine.MakeLeftPanelBreaker(panelBreakers[i], breakerPoint);
             currentPoint = SingleLine.MakePanelChildConduit(i, breakerPoint);
-            MakeFieldEntity(childNode.Nodes[i], currentPoint);
+            TreeNode breakerNode = SingleLineTreeView.Nodes.Find(panelBreakers[i].Id, true)[0];
+            MakeFieldEntity(breakerNode, currentPoint);
           }
           if (i == 2)
           {
             Point3d breakerPoint = new Point3d(currentPoint.X + 0.3125, currentPoint.Y - 0.1833, 0);
             SingleLine.MakeRightPanelBreaker(panelBreakers[i], breakerPoint);
             currentPoint = SingleLine.MakePanelChildConduit(i, breakerPoint);
-            MakeFieldEntity(childNode.Nodes[i], currentPoint);
+            TreeNode breakerNode = SingleLineTreeView.Nodes.Find(panelBreakers[i].Id, true)[0];
+            MakeFieldEntity(breakerNode, currentPoint);
           }
           if (i == 3)
           {
             Point3d breakerPoint = new Point3d(currentPoint.X - 0.3125, currentPoint.Y - 0.1833, 0);
-            SingleLine.MakeRightPanelBreaker(panelBreakers[i], breakerPoint);
+            SingleLine.MakeLeftPanelBreaker(panelBreakers[i], breakerPoint);
             currentPoint = SingleLine.MakePanelChildConduit(i, breakerPoint);
-            MakeFieldEntity(childNode.Nodes[i], currentPoint);
+            TreeNode breakerNode = SingleLineTreeView.Nodes.Find(panelBreakers[i].Id, true)[0];
+            MakeFieldEntity(breakerNode, currentPoint);
           }
         }
       }

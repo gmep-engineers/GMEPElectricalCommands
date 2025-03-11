@@ -662,6 +662,32 @@ namespace ElectricalCommands.SingleLine
             AttachmentPoint.BaseRight
           );
         }
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          Math.Round(panel.Kva, 0).ToString() + " KVA",
+          "gmep",
+          0.0938,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(currentPoint.X + 0.2874, currentPoint.Y - 1.1826, 0),
+          TextHorizontalMode.TextCenter,
+          TextVerticalMode.TextBase,
+          AttachmentPoint.BaseRight
+        );
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          Math.Round(panel.LoadAmperage, 0).ToString() + " A",
+          "gmep",
+          0.0938,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(currentPoint.X + 0.0977, currentPoint.Y - 1.3126, 0),
+          TextHorizontalMode.TextCenter,
+          TextVerticalMode.TextBase,
+          AttachmentPoint.BaseRight
+        );
         tr.Commit();
       }
     }
