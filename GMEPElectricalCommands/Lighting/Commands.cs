@@ -22,6 +22,7 @@ using GMEPElectricalCommands.GmepDatabase;
 using Newtonsoft.Json;
 using TriangleNet.Meshing.Algorithm;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
+using System.Threading.Tasks;
 
 namespace ElectricalCommands.Lighting
 {
@@ -438,8 +439,8 @@ namespace ElectricalCommands.Lighting
         }
       }
     }
-    [CommandMethod("AssignLightingCircuits")]
-    public static void AssignLightingCircuits() {
+    [CommandMethod("AssignLightingCircuit")]
+    public static void AssignLightingCircuit() {
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
@@ -543,7 +544,7 @@ namespace ElectricalCommands.Lighting
                   property.Value = result2;
                   chosenCircuit = int.Parse(result2);
                   //panelCircuits[chosenPanel].Remove(result2);
-                  gmepDb.InsertLightingEquipment(lightingId, fixtureId, chosenPanel, chosenCircuit, projectId);
+                  Task.Run(() => gmepDb.InsertLightingEquipment(lightingId, fixtureId, chosenPanel, chosenCircuit, projectId));
                   panelCircuits[chosenPanel].Remove(result2);
                 }
                 
