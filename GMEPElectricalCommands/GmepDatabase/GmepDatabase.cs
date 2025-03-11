@@ -849,79 +849,50 @@ namespace GMEPElectricalCommands.GmepDatabase
       command.ExecuteNonQuery();
       CloseConnection();
     }*/
-    public void InsertLightingEquipment(string lightingId, string fixtureId, string panelId, int circuitNo, string projectId) {
-      List<LightingFixture> ltg = new List<LightingFixture>();
+    public void InsertLightingEquipment(List<string> lightings, string panelId, int circuitNo, string projectId) {
+      //List<LightingFixture> ltg = new List<LightingFixture>();
+
+      float newWattage = 0;
       string query =
         @"
         SELECT
-        electrical_lighting.tag,
-        electrical_lighting.voltage_id,
-        electrical_lighting.wattage,
-        electrical_lighting.notes
+        electrical_lighting.wattage
         FROM electrical_lighting
         WHERE electrical_lighting.id = @id";
 
       this.OpenConnection();
-      MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("@id", fixtureId);
-      MySqlDataReader reader = command.ExecuteReader();
-
-      string tag = "";
-      int voltageId = 0;
-      float wattage = 0;
-
-      while (reader.Read()) {
-        tag = reader.GetString("tag");
-        voltageId = reader.GetInt32("voltage_id");
-        wattage = reader.GetFloat("wattage");
+      foreach (var id in lightings) {
+        MySqlCommand command = new MySqlCommand(query, Connection);
+        command.Parameters.AddWithValue("@id", id);
+        MySqlDataReader reader = command.ExecuteReader();
+        while (reader.Read()) {
+          newWattage += reader.GetInt32("wattage");
+        }
+        reader.Close();
       }
-      reader.Close();
 
       query =
         @"INSERT INTO electrical_equipment (id, project_id, parent_id, description, category_id, voltage_id, 
-        fla, is_three_phase, circuit_no, spec_sheet_from_client, aic_rating, color_code, connection_type_id) VALUES (@id, @projectId, @parentId, @description, @category, 
-        @voltage, @fla, @isThreePhase, @circuit, @specFromClient, @aicRating, @colorCode, @connectionId)";
+        fla, is_three_phase, circuit_no, spec_sheet_from_client, aic_rating, color_code, connection_type_id, va) VALUES (@id, @projectId, @parentId, @description, @category, 
+        @voltage, @fla, @isThreePhase, @circuit, @specFromClient, @aicRating, @colorCode, @connectionId, @va)";
 
-      command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("@id", lightingId);
-      command.Parameters.AddWithValue("@projectId", projectId);
-      command.Parameters.AddWithValue("@parentId", panelId);
-      command.Parameters.AddWithValue("@description", tag);
-      command.Parameters.AddWithValue("@category", 1);
-      command.Parameters.AddWithValue("@voltage", voltageId);
-      command.Parameters.AddWithValue("@fla", wattage / idToVoltage(voltageId));
-      command.Parameters.AddWithValue("@isThreePhase", false);
-      command.Parameters.AddWithValue("@circuit", circuitNo);
-      command.Parameters.AddWithValue("@specFromClient", false);
-      command.Parameters.AddWithValue("@aicRating", 0);
-      command.Parameters.AddWithValue("@colorCode", "White");
-      command.Parameters.AddWithValue("@connectionId", 1);
-      command.ExecuteNonQuery();
+      MySqlCommand  command2 = new MySqlCommand(query, Connection);
+      command2.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
+      command2.Parameters.AddWithValue("@projectId", projectId);
+      command2.Parameters.AddWithValue("@parentId", panelId);
+      command2.Parameters.AddWithValue("@description", "Lighting");
+      command2.Parameters.AddWithValue("@category", 1);
+      command2.Parameters.AddWithValue("@voltage", 1);
+      command2.Parameters.AddWithValue("@fla", Math.Round(newWattage / 115, 1, MidpointRounding.AwayFromZero));
+      command2.Parameters.AddWithValue("@va", newWattage);
+      command2.Parameters.AddWithValue("@isThreePhase", false);
+      command2.Parameters.AddWithValue("@circuit", circuitNo);
+      command2.Parameters.AddWithValue("@specFromClient", false);
+      command2.Parameters.AddWithValue("@aicRating", 0);
+      command2.Parameters.AddWithValue("@colorCode", "#FF00FF");
+      command2.Parameters.AddWithValue("@connectionId", 1);
+      command2.ExecuteNonQuery();
       CloseConnection();
-
-      float idToVoltage(int id) {
-        switch (id) {
-          case 1:
-            return 115;
-          case 2:
-            return 120;
-          case 3:
-            return 208;
-          case 4:
-            return 230;
-          case 5:
-            return 240;
-          case 6:
-            return 277;
-          case 7:
-            return 460;
-          case 8:
-            return 480;
-          default:
-            return 0;
-        }
-      }
-
     }
 
     public void UpdatePanel(Panel panel)

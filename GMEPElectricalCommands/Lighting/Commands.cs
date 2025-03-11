@@ -451,8 +451,10 @@ namespace ElectricalCommands.Lighting
       List<ElectricalEntity.Equipment> equipmentList = gmepDb.GetEquipment(projectId);
       List<Transformer> transformerList = gmepDb.GetTransformers(projectId);
       Dictionary<string,List<string>> panelCircuits = new Dictionary<string, List<string>>();
+      List<string> lightings = new List<string>();
 
       PromptKeywordOptions pko = new PromptKeywordOptions("");
+
 
 
       foreach (Panel panel in panelList) {
@@ -491,7 +493,21 @@ namespace ElectricalCommands.Lighting
 
       PromptSelectionResult psr = ed.GetSelection();
 
-      //Dictionary<string, string> lightingParents = new Dictionary<string, string>();
+      //Prompt user for panel
+      pko.Message = "\nAssign Panel:";
+      PromptResult pr = ed.GetKeywords(pko);
+      string result = pr.StringResult;
+      var chosenPanel = result.Split(':')[1];
+
+      //Prompt user for circuit
+      PromptKeywordOptions pko2 = new PromptKeywordOptions("");
+      pko2.Message = "\nAssign Circuit:";
+      foreach (string circuit in panelCircuits[chosenPanel]) {
+        pko2.Keywords.Add(circuit);
+      }
+      PromptResult pr2 = ed.GetKeywords(pko2);
+      string result2 = pr2.StringResult;
+      var chosenCircuit = int.Parse(result2);
 
       if (psr.Status == PromptStatus.OK) {
         SelectionSet ss = psr.Value;
@@ -499,58 +515,39 @@ namespace ElectricalCommands.Lighting
           foreach(ObjectId id in ss.GetObjectIds()) {
             DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
             if (obj is BlockReference block) {
-              //ed.WriteMessage("\nBlock reference + " + block.Id + "found");
-              string lightingName = "";
-              string chosenPanel = "";
-              string lightingId = "";
-              string fixtureId = "";
-              int chosenCircuit = 0;
+              
+              //string fixtureId = "";
 
-              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+              /*foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_name") {
                   lightingName = property.Value as string;
                 }
-              }
+              }*/
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_fixture_id") {
-                  fixtureId = property.Value as string;
+                  var fixtureId = property.Value as string;
+                  lightings.Add(fixtureId);
                 }
               }
-              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+              /*foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_id") {
                   lightingId = property.Value as string;
                 }
-              }
+              }*/
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_parent_id") {
-                  //var loadAmperagePrompt = new PromptStringOptions("\nAssign Panel for " + lightingName + ":");
-                  //var loadAmperageResult = ed.GetString(loadAmperagePrompt);
-                  pko.Message = "\nAssign Panel for " + lightingName + ":";
-                  PromptResult pr = ed.GetKeywords(pko);
-                  string result = pr.StringResult;
-                  chosenPanel = result.Split(':')[1];
-                  property.Value = result.Split(':')[1];
+                  property.Value = chosenPanel;
                 }
               }
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_circuit") {
-                  PromptKeywordOptions pko2 = new PromptKeywordOptions("");
-                  pko2.Message = "\nAssign Circuit for " + lightingName + ":";
-                  foreach (string circuit in panelCircuits[chosenPanel]) {
-                    pko2.Keywords.Add(circuit);
-                  }
-                  PromptResult pr2 = ed.GetKeywords(pko2);
-                  string result2 = pr2.StringResult;
-                  property.Value = result2;
-                  chosenCircuit = int.Parse(result2);
-                  //panelCircuits[chosenPanel].Remove(result2);
-                  Task.Run(() => gmepDb.InsertLightingEquipment(lightingId, fixtureId, chosenPanel, chosenCircuit, projectId));
-                  panelCircuits[chosenPanel].Remove(result2);
+                  property.Value = chosenCircuit;
                 }
                 
               }
             }
           }
+          gmepDb.InsertLightingEquipment(lightings, chosenPanel, chosenCircuit, projectId);
           tr.Commit();
         }
       }
