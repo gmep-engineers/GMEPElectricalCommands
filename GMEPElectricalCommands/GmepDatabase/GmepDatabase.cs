@@ -830,7 +830,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       command.ExecuteNonQuery();
       CloseConnection();
     }
-    public void InsertEquipment(Equipment equip, string projectId)
+    /*public void InsertEquipment(Equipment equip, string projectId)
     {
       string query =
         @"INSERT INTO electrical_equipment (id, project_id, parent_id, description, category, voltage, fla, is_three_phase, circuit_no) VALUES (@id, @projectId, @parentId, @description, @category, @voltage, @fla, @isThreePhase, @circuit)";
@@ -848,6 +848,9 @@ namespace GMEPElectricalCommands.GmepDatabase
 
       command.ExecuteNonQuery();
       CloseConnection();
+    }*/
+    public void InsertLightingEquipment(string lightingId, string fixtureId, string panelId, int circuitNo) {
+
     }
 
     public void UpdatePanel(Panel panel)

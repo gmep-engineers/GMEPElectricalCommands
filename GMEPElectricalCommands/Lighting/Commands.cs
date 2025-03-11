@@ -488,8 +488,6 @@ namespace ElectricalCommands.Lighting
       }
       //end sorting circuits
 
-
-
       PromptSelectionResult psr = ed.GetSelection();
 
       //Dictionary<string, string> lightingParents = new Dictionary<string, string>();
@@ -503,10 +501,23 @@ namespace ElectricalCommands.Lighting
               //ed.WriteMessage("\nBlock reference + " + block.Id + "found");
               string lightingName = "";
               string chosenPanel = "";
-             
+              string lightingId = "";
+              string fixtureId = "";
+              int chosenCircuit = 0;
+
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_name") {
                   lightingName = property.Value as string;
+                }
+              }
+              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+                if (property.PropertyName == "gmep_lighting_fixture_id") {
+                  fixtureId = property.Value as string;
+                }
+              }
+              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+                if (property.PropertyName == "gmep_lighting_id") {
+                  lightingId = property.Value as string;
                 }
               }
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
@@ -530,8 +541,10 @@ namespace ElectricalCommands.Lighting
                   PromptResult pr2 = ed.GetKeywords(pko2);
                   string result2 = pr2.StringResult;
                   property.Value = result2;
+                  chosenCircuit = int.Parse(result2);
                   panelCircuits[chosenPanel].Remove(result2);
                 }
+                //gmepDb.InsertLightingEquipment(lightingId, fixtureId, projectId, chosenPanel, chosenCircuit);
               }
             }
           }
@@ -539,7 +552,7 @@ namespace ElectricalCommands.Lighting
         }
       }
       }
-    public ElectricalEntity.Equipment LightingToEquipment(ElectricalEntity.LightingFixture fixture) {
+    /*public ElectricalEntity.Equipment LightingToEquipment(ElectricalEntity.LightingFixture fixture) {
 
       return new ElectricalEntity.Equipment(
         fixture.Id,
@@ -561,7 +574,7 @@ namespace ElectricalCommands.Lighting
         false,
         fixture.IsHidden
       );
-    }
+    }*/
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
     {
