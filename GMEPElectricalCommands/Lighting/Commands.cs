@@ -406,7 +406,7 @@ namespace ElectricalCommands.Lighting
           {
             BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
             var modelSpace = (BlockTableRecord)
-              tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+            tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
             BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
             DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
             foreach (DynamicBlockReferenceProperty prop in pc)
@@ -414,6 +414,9 @@ namespace ElectricalCommands.Lighting
               if (prop.PropertyName == "gmep_lighting_control_id" && prop.Value as string == "0")
               {
                 prop.Value = control.Id;
+              }
+              if (prop.PropertyName == "gmep_lighting_control_tag" && prop.Value as string == "0") {
+                prop.Value = control.Name;
               }
             }
             tr.Commit();
@@ -479,6 +482,62 @@ namespace ElectricalCommands.Lighting
         }
       }
     }
+    [CommandMethod("AssignLightingControl")]
+    public static void AssignLightingControl() {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      GmepDatabase gmepDb = new GmepDatabase();
+
+      PromptSelectionOptions pso2 = new PromptSelectionOptions();
+      pso2.MessageForAdding = "\nSelect a Lighting Control:";
+      pso2.SingleOnly = true;
+      PromptSelectionResult psr2 = ed.GetSelection(pso2);
+
+      PromptSelectionOptions pso = new PromptSelectionOptions();
+      pso.MessageForAdding = "\nSelect lighting fixtures: ";
+      PromptSelectionResult psr = ed.GetSelection(pso);
+
+      string controlId = "";
+
+      if (psr2.Status == PromptStatus.OK) {
+        SelectionSet ss = psr2.Value;
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          foreach (ObjectId id in ss.GetObjectIds()) {
+            DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
+            if (obj is BlockReference block) {
+              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+                if (property.PropertyName == "gmep_lighting_control_id") {
+                 controlId = property.Value as string;
+                }
+              }
+            }
+
+          }
+          tr.Commit();  
+        }
+      }
+
+      if (psr.Status == PromptStatus.OK) {
+        SelectionSet ss = psr.Value;
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          foreach (ObjectId id in ss.GetObjectIds()) {
+            DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
+            if (obj is BlockReference block) {
+              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+                if (property.PropertyName == "gmep_lighting_control_id") {
+                  property.Value = controlId;
+
+                }
+              }
+            }
+
+            }
+          tr.Commit();
+        }
+      }
+    }
+
     [CommandMethod("AssignLightingCircuit")]
     public static void AssignLightingCircuit() {
       Document doc = Application.DocumentManager.MdiActiveDocument;
@@ -555,7 +614,6 @@ namespace ElectricalCommands.Lighting
           foreach(ObjectId id in ss.GetObjectIds()) {
             DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
             if (obj is BlockReference block) {
-
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_fixture_id") {
                   var fixtureId = property.Value as string;
