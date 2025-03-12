@@ -362,6 +362,7 @@ namespace ElectricalCommands.Lighting
         }
 
         ObjectId blockId;
+        Point3d point;
         try
         {
           using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -371,8 +372,6 @@ namespace ElectricalCommands.Lighting
             BlockTableRecord block = (BlockTableRecord)
               tr.GetObject(bt[blockName], OpenMode.ForRead);
             BlockJig blockJig = new BlockJig();
-
-            Point3d point;
 
             PromptResult res = blockJig.DragMe(block.ObjectId, out point);
 
@@ -419,11 +418,52 @@ namespace ElectricalCommands.Lighting
             }
             tr.Commit();
           }
-        }
+          using (Transaction tr = db.TransactionManager.StartTransaction()) {
+            TextStyleTable textStyleTable = (TextStyleTable)
+              tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+            ObjectId gmepTextStyleId;
+            if (textStyleTable.Has("gmep")) {
+              gmepTextStyleId = textStyleTable["gmep"];
+            }
+            else {
+              ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+              gmepTextStyleId = doc.Database.Textstyle;
+            }
+            Point3d position = new Point3d(
+              point.X,
+              point.Y
+                + (
+                  (CADObjectCommands.Scale - 0.25)
+                  * 12
+                  * Math.Pow(0.25 / CADObjectCommands.Scale, 1.5)
+                ),
+              0
+            );
+            
+            var text = new DBText {
+              TextString = control.Name,
+              Position = position,
+              Height = 0.0938 / CADObjectCommands.Scale * 12,
+              WidthFactor = 0.85,
+              Layer = "E-TEXT",
+              TextStyleId = gmepTextStyleId,
+              HorizontalMode = TextHorizontalMode.TextLeft,
+              VerticalMode = TextVerticalMode.TextVerticalMid,
+              Justify = AttachmentPoint.BaseLeft,
+              Rotation = 0,
+            };
+            var currentSpace = (BlockTableRecord)
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+            currentSpace.AppendEntity(text);
+            tr.AddNewlyCreatedDBObject(text, true);
+            tr.Commit();
+          }
+      }
         catch (System.Exception ex)
         {
           ed.WriteMessage(ex.ToString());
         }
+
       }
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
