@@ -1,9 +1,13 @@
 ﻿using System;
+using System.Diagnostics.Metrics;
 using System.Text.RegularExpressions;
+using System.Windows.Forms;
+using Accord.Statistics.Distributions;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
+using ElectricalCommands.ElectricalEntity;
 
 namespace ElectricalCommands.SingleLine
 {
@@ -82,6 +86,10 @@ namespace ElectricalCommands.SingleLine
       Point3d currentPoint
     )
     {
+      MakeDistributionBreaker(
+        distributionBreaker,
+        new Point3d(currentPoint.X, currentPoint.Y - 0.75, 0)
+      );
       Document doc = Autodesk
         .AutoCAD
         .ApplicationServices
@@ -94,38 +102,10 @@ namespace ElectricalCommands.SingleLine
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord btr = (BlockTableRecord)
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
-        GeneralCommands.CreateAndPositionText(
-          tr,
-          distributionBreaker.GetStatusAbbr(),
-          "gmep",
-          0.0938,
-          0.85,
-          2,
-          "E-TXT1",
-          new Point3d(currentPoint.X + 0.1775, currentPoint.Y - 0.82, 0)
-        );
-        GeneralCommands.CreateAndPositionText(
-          tr,
-          distributionBreaker.AmpRating.ToString() + "A",
-          "gmep",
-          0.0938,
-          0.85,
-          2,
-          "E-TXT1",
-          new Point3d(currentPoint.X + 0.1775, currentPoint.Y - 0.95, 0)
-        );
-        GeneralCommands.CreateAndPositionText(
-          tr,
-          distributionBreaker.NumPoles.ToString() + "P",
-          "gmep",
-          0.0938,
-          0.85,
-          2,
-          "E-TXT1",
-          new Point3d(currentPoint.X + 0.1775, currentPoint.Y - 1.08, 0)
-        );
+
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = distributionBreaker.IsExisting() ? 8 : 256;
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
         conduitLine1.StartPoint.X = currentPoint.X;
@@ -135,6 +115,7 @@ namespace ElectricalCommands.SingleLine
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
         LineData conduitLine2 = new LineData();
         conduitLine2.Layer = "E-CND1";
+        conduitLine2.ColorIndex = distributionBreaker.IsExisting() ? 8 : 256;
         conduitLine2.StartPoint = new SimpleVector3d();
         conduitLine2.EndPoint = new SimpleVector3d();
         conduitLine2.StartPoint.X = currentPoint.X;
@@ -142,20 +123,6 @@ namespace ElectricalCommands.SingleLine
         conduitLine2.EndPoint.X = currentPoint.X;
         conduitLine2.EndPoint.Y = currentPoint.Y - 1.6875;
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine2, 1);
-        ObjectId breakerSymbol = bt["DS BREAKER (AUTO SINGLE LINE)"];
-        using (
-          BlockReference acBlkRef = new BlockReference(
-            new Point3d(currentPoint.X, currentPoint.Y - 0.75, 0),
-            breakerSymbol
-          )
-        )
-        {
-          BlockTableRecord acCurSpaceBlkTblRec;
-          acCurSpaceBlkTblRec =
-            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-          tr.AddNewlyCreatedDBObject(acBlkRef, true);
-        }
         tr.Commit();
       }
     }
@@ -179,6 +146,7 @@ namespace ElectricalCommands.SingleLine
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = meter.IsExisting() ? 8 : 256;
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
         conduitLine1.StartPoint.X = currentPoint.X;
@@ -211,6 +179,7 @@ namespace ElectricalCommands.SingleLine
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = meter.IsExisting() ? 8 : 256;
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
         conduitLine1.StartPoint.X = currentPoint.X;
@@ -220,6 +189,7 @@ namespace ElectricalCommands.SingleLine
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
         LineData conduitLine2 = new LineData();
         conduitLine2.Layer = "E-CND1";
+        conduitLine2.ColorIndex = meter.IsExisting() ? 8 : 256;
         conduitLine2.StartPoint = new SimpleVector3d();
         conduitLine2.EndPoint = new SimpleVector3d();
         conduitLine2.StartPoint.X = currentPoint.X;
@@ -252,6 +222,7 @@ namespace ElectricalCommands.SingleLine
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = meter.IsExisting() ? 8 : 256;
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
         conduitLine1.StartPoint.X = currentPoint.X;
@@ -261,6 +232,7 @@ namespace ElectricalCommands.SingleLine
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
         LineData conduitLine2 = new LineData();
         conduitLine2.Layer = "E-CND1";
+        conduitLine2.ColorIndex = meter.IsExisting() ? 8 : 256;
         conduitLine2.StartPoint = new SimpleVector3d();
         conduitLine2.EndPoint = new SimpleVector3d();
         conduitLine2.StartPoint.X = currentPoint.X;
@@ -297,6 +269,7 @@ namespace ElectricalCommands.SingleLine
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = meter.IsExisting() ? 8 : 256;
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
         conduitLine1.StartPoint.X = currentPoint.X;
@@ -306,6 +279,7 @@ namespace ElectricalCommands.SingleLine
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
         LineData conduitLine2 = new LineData();
         conduitLine2.Layer = "E-CND1";
+        conduitLine2.ColorIndex = distributionBreaker.IsExisting() ? 8 : 256;
         conduitLine2.StartPoint = new SimpleVector3d();
         conduitLine2.EndPoint = new SimpleVector3d();
         conduitLine2.StartPoint.X = currentPoint.X;
@@ -315,6 +289,7 @@ namespace ElectricalCommands.SingleLine
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine2, 1);
         LineData conduitLine3 = new LineData();
         conduitLine3.Layer = "E-CND1";
+        conduitLine3.ColorIndex = distributionBreaker.IsExisting() ? 8 : 256;
         conduitLine3.StartPoint = new SimpleVector3d();
         conduitLine3.EndPoint = new SimpleVector3d();
         conduitLine3.StartPoint.X = currentPoint.X;
@@ -356,6 +331,7 @@ namespace ElectricalCommands.SingleLine
           )
         )
         {
+          acBlkRef.Layer = mainBreaker.IsExisting() ? "E-SYM-EXISTING" : "E-SYM1";
           BlockTableRecord acCurSpaceBlkTblRec;
           acCurSpaceBlkTblRec =
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -394,6 +370,10 @@ namespace ElectricalCommands.SingleLine
         );
         tr.Commit();
       }
+      if (mainBreaker.IsExisting())
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 0.4675, currentPoint.Y + 0.0316, 0));
+      }
     }
 
     public static void MakeDistributionBreaker(
@@ -421,6 +401,7 @@ namespace ElectricalCommands.SingleLine
           )
         )
         {
+          acBlkRef.Layer = distributionBreaker.IsExisting() ? "E-SYM-EXISTING" : "E-SYM1";
           BlockTableRecord acCurSpaceBlkTblRec;
           acCurSpaceBlkTblRec =
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -458,6 +439,10 @@ namespace ElectricalCommands.SingleLine
           new Point3d(currentPoint.X + 0.1775, currentPoint.Y - 0.3178, 0)
         );
         tr.Commit();
+      }
+      if (distributionBreaker.IsExisting())
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 0.2634, currentPoint.Y - 0.4385, 0));
       }
     }
 
@@ -498,6 +483,7 @@ namespace ElectricalCommands.SingleLine
           )
         )
         {
+          acBlkRef.Layer = meter.IsExisting() ? "E-SYM-EXISTING" : "E-SYM1";
           BlockTableRecord acCurSpaceBlkTblRec;
           acCurSpaceBlkTblRec =
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -505,6 +491,10 @@ namespace ElectricalCommands.SingleLine
           tr.AddNewlyCreatedDBObject(acBlkRef, true);
         }
         tr.Commit();
+      }
+      if (meter.IsExisting())
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 0.4627, currentPoint.Y + 0.1462, 0));
       }
     }
 
@@ -545,6 +535,7 @@ namespace ElectricalCommands.SingleLine
           )
         )
         {
+          acBlkRef.Layer = meter.IsExisting() ? "E-SYM-EXISTING" : "E-SYM1";
           BlockTableRecord acCurSpaceBlkTblRec;
           acCurSpaceBlkTblRec =
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -552,6 +543,10 @@ namespace ElectricalCommands.SingleLine
           tr.AddNewlyCreatedDBObject(acBlkRef, true);
         }
         tr.Commit();
+      }
+      if (meter.IsExisting())
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 0.2595, currentPoint.Y - 0.0250, 0));
       }
     }
 
@@ -610,6 +605,8 @@ namespace ElectricalCommands.SingleLine
         ); // panel rectangle
         Polyline2dData polyData = new Polyline2dData();
         polyData.Layer = "E-SYMBOL";
+        polyData.ColorIndex =
+          panel.IsExisting() && panel.Kva == 0 && panel.LoadAmperage == 0 ? 8 : 256;
         polyData.Vertices.Add(new SimpleVector3d(currentPoint.X - (5.0 / 16.0), currentPoint.Y, 0));
         polyData.Vertices.Add(
           new SimpleVector3d(currentPoint.X - (5.0 / 16.0), currentPoint.Y - (17.0 / 16.0), 0)
@@ -618,7 +615,6 @@ namespace ElectricalCommands.SingleLine
           new SimpleVector3d(currentPoint.X + (5.0 / 16.0), currentPoint.Y - (17.0 / 16.0), 0)
         );
         polyData.Vertices.Add(new SimpleVector3d(currentPoint.X + (5.0 / 16.0), currentPoint.Y, 0));
-        polyData.Vertices.Add(new SimpleVector3d(currentPoint.X - (5.0 / 16.0), currentPoint.Y, 0));
         polyData.Closed = true;
         CADObjectCommands.CreatePolyline2d(new Point3d(), tr, btr, polyData, 1);
 
@@ -627,6 +623,7 @@ namespace ElectricalCommands.SingleLine
           // Make main breaker
           ArcData arcData = new ArcData();
           arcData.Layer = "E-CND1";
+          arcData.ColorIndex = panel.IsExisting() ? 8 : 256;
           arcData.Center = new SimpleVector3d();
           arcData.Radius = 1.0 / 8.0;
           arcData.Center.X = currentPoint.X - 0.0302;
@@ -662,92 +659,58 @@ namespace ElectricalCommands.SingleLine
             AttachmentPoint.BaseRight
           );
         }
-        GeneralCommands.CreateAndPositionText(
-          tr,
-          Math.Round(panel.Kva, 0).ToString() + " KVA",
-          "gmep",
-          0.0938,
-          0.85,
-          2,
-          "E-TXT1",
-          new Point3d(currentPoint.X + 0.2874, currentPoint.Y - 1.1826, 0),
-          TextHorizontalMode.TextCenter,
-          TextVerticalMode.TextBase,
-          AttachmentPoint.BaseRight
-        );
-        GeneralCommands.CreateAndPositionText(
-          tr,
-          Math.Round(panel.LoadAmperage, 0).ToString() + " A",
-          "gmep",
-          0.0938,
-          0.85,
-          2,
-          "E-TXT1",
-          new Point3d(currentPoint.X + 0.0977, currentPoint.Y - 1.3126, 0),
-          TextHorizontalMode.TextCenter,
-          TextVerticalMode.TextBase,
-          AttachmentPoint.BaseRight
-        );
+        if (panel.Kva == 0 && panel.LoadAmperage == 0 && panel.IsExisting())
+        {
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "NO WORK",
+            "gmep",
+            0.0938,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(currentPoint.X, currentPoint.Y - 1.1826, 0),
+            TextHorizontalMode.TextCenter,
+            TextVerticalMode.TextBase,
+            AttachmentPoint.BaseCenter
+          );
+          InsertKeyedNoteMarker(1, new Point3d(currentPoint.X, currentPoint.Y - 1.3191, 0));
+        }
+        else
+        {
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            Math.Round(panel.Kva, 0).ToString() + " KVA",
+            "gmep",
+            0.0938,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(currentPoint.X + 0.2874, currentPoint.Y - 1.1826, 0),
+            TextHorizontalMode.TextCenter,
+            TextVerticalMode.TextBase,
+            AttachmentPoint.BaseRight
+          );
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            Math.Round(panel.LoadAmperage, 0).ToString() + " A",
+            "gmep",
+            0.0938,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(currentPoint.X + 0.0977, currentPoint.Y - 1.3126, 0),
+            TextHorizontalMode.TextCenter,
+            TextVerticalMode.TextBase,
+            AttachmentPoint.BaseRight
+          );
+        }
+
         tr.Commit();
       }
-    }
-
-    public static void MakeMainBreakerArc(ElectricalEntity.Panel panel, Point3d currentPoint)
-    {
-      Document doc = Autodesk
-        .AutoCAD
-        .ApplicationServices
-        .Application
-        .DocumentManager
-        .MdiActiveDocument;
-      Database db = doc.Database;
-      bool is3Phase = panel.Voltage.Contains("3");
-      using (Transaction tr = db.TransactionManager.StartTransaction())
+      if (panel.IsExisting())
       {
-        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord btr = (BlockTableRecord)
-          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
-        // main breaker arc
-        ArcData arcData2 = new ArcData();
-        arcData2.Layer = "E-CND1";
-        arcData2.Center = new SimpleVector3d();
-        arcData2.Radius = 1.0 / 8.0;
-        arcData2.Center.X = currentPoint.X - 0.0302;
-        arcData2.Center.Y = currentPoint.Y - (1.0 / 8.0) + 0.0037;
-        arcData2.StartAngle = 4.92183;
-        arcData2.EndAngle = 1.32645;
-        CADObjectCommands.CreateArc(new Point3d(), tr, btr, arcData2, 1);
-        ObjectId breakerLeader = bt["BREAKER LEADER RIGHT (AUTO SINGLE LINE)"];
-        using (
-          BlockReference acBlkRef = new BlockReference(
-            new Point3d(currentPoint.X, currentPoint.Y, 0),
-            breakerLeader
-          )
-        )
-        {
-          BlockTableRecord acCurSpaceBlkTblRec;
-          acCurSpaceBlkTblRec =
-            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-          tr.AddNewlyCreatedDBObject(acBlkRef, true);
-        }
-        GeneralCommands.CreateAndPositionText(
-          tr,
-          (panel.GetStatusAbbr())
-            + panel.MainAmpRating.ToString()
-            + "A/"
-            + (is3Phase ? "3P" : "2P"),
-          "gmep",
-          0.0938,
-          0.85,
-          2,
-          "E-TXT1",
-          new Point3d(currentPoint.X - 0.42, currentPoint.Y + 0.165, 0),
-          TextHorizontalMode.TextCenter,
-          TextVerticalMode.TextBase,
-          AttachmentPoint.BaseRight
-        );
-        tr.Commit();
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X, currentPoint.Y - 0.1541, 0));
       }
     }
 
@@ -769,6 +732,7 @@ namespace ElectricalCommands.SingleLine
         BlockTableRecord btr = (BlockTableRecord)
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         ArcData arcData1 = new ArcData();
+        arcData1.ColorIndex = panelBreaker.IsExisting() ? 8 : 256;
         arcData1.Layer = "E-CND1";
         arcData1.Center = new SimpleVector3d();
         arcData1.Radius = 0.1038;
@@ -810,6 +774,10 @@ namespace ElectricalCommands.SingleLine
         );
         tr.Commit();
       }
+      if (panelBreaker.IsExisting())
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 0.7, currentPoint.Y + 0.4050, 0));
+      }
     }
 
     public static void MakeLeftPanelBreaker(
@@ -831,6 +799,7 @@ namespace ElectricalCommands.SingleLine
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         // left panel breaker
         ArcData arcData1 = new ArcData();
+        arcData1.ColorIndex = panelBreaker.IsExisting() ? 8 : 256;
         arcData1.Layer = "E-CND1";
         arcData1.Center = new SimpleVector3d();
         arcData1.Radius = 0.1038;
@@ -872,6 +841,10 @@ namespace ElectricalCommands.SingleLine
         );
         tr.Commit();
       }
+      if (panelBreaker.IsExisting())
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X - 0.7, currentPoint.Y + 0.4050, 0));
+      }
     }
 
     public static void MakeDisconnect(ElectricalEntity.Disconnect disconnect, Point3d currentPoint)
@@ -896,6 +869,7 @@ namespace ElectricalCommands.SingleLine
           )
         )
         {
+          acBlkRef.Layer = disconnect.IsExisting() ? "E-SYM-EXISTING" : "E-SYM1";
           BlockTableRecord acCurSpaceBlkTblRec;
           acCurSpaceBlkTblRec =
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -948,6 +922,10 @@ namespace ElectricalCommands.SingleLine
           AttachmentPoint.BaseRight
         );
         tr.Commit();
+      }
+      if (disconnect.IsExisting())
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X - 0.7210, currentPoint.Y + 0.1891, 0));
       }
     }
 
@@ -1023,6 +1001,7 @@ namespace ElectricalCommands.SingleLine
           )
         )
         {
+          acBlkRef.Layer = transformer.IsExisting() ? "E-SYM-EXISTING" : "E-SYM1";
           BlockTableRecord acCurSpaceBlkTblRec;
           acCurSpaceBlkTblRec =
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -1031,7 +1010,7 @@ namespace ElectricalCommands.SingleLine
         }
         GeneralCommands.CreateAndPositionText(
           tr,
-          grounding,
+          transformer.GetStatusAbbr() + grounding,
           "gmep",
           0.0938,
           0.85,
@@ -1069,10 +1048,9 @@ namespace ElectricalCommands.SingleLine
           acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
           tr.AddNewlyCreatedDBObject(acBlkRef, true);
         }
-        string line1 = transformer
-          .Name.Replace(transformer.Voltage, "")
-          .Replace(", ", "")
-          .ToUpper();
+        string line1 =
+          transformer.GetStatusAbbr()
+          + transformer.Name.Replace(transformer.Voltage, "").Replace(", ", "").ToUpper();
         string line2 = transformer.Voltage;
         string line3 = $"Z=3.5";
         GeneralCommands.CreateAndPositionText(
@@ -1116,9 +1094,14 @@ namespace ElectricalCommands.SingleLine
         );
         tr.Commit();
       }
+      if (transformer.IsExisting())
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X - 1.0573, currentPoint.Y + 0.1649, 0));
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X - 1.0573, currentPoint.Y - 0.6340, 0));
+      }
     }
 
-    public static void MakeDistributionChildConduit(Point3d currentPoint)
+    public static void MakeDistributionChildConduit(Point3d currentPoint, bool existing)
     {
       Document doc = Autodesk
         .AutoCAD
@@ -1134,6 +1117,7 @@ namespace ElectricalCommands.SingleLine
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = existing ? 8 : 256;
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
         conduitLine1.StartPoint.X = currentPoint.X;
@@ -1143,9 +1127,13 @@ namespace ElectricalCommands.SingleLine
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
         tr.Commit();
       }
+      if (existing)
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X - 0.4437, currentPoint.Y - 1.6585, 0));
+      }
     }
 
-    public static Point3d MakeConduitFromTransformer(Point3d currentPoint)
+    public static Point3d MakeConduitFromTransformer(Point3d currentPoint, bool existing)
     {
       Document doc = Autodesk
         .AutoCAD
@@ -1163,6 +1151,7 @@ namespace ElectricalCommands.SingleLine
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = existing ? 8 : 256;
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
         conduitLine1.StartPoint.X = currentPoint.X;
@@ -1175,7 +1164,7 @@ namespace ElectricalCommands.SingleLine
       return new Point3d(currentPoint.X + xOffset, currentPoint.Y + yOffset, 0);
     }
 
-    public static Point3d MakeConduitFromDisconnect(Point3d currentPoint)
+    public static Point3d MakeConduitFromDisconnect(Point3d currentPoint, bool existing)
     {
       Document doc = Autodesk
         .AutoCAD
@@ -1193,6 +1182,7 @@ namespace ElectricalCommands.SingleLine
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = existing ? 8 : 256;
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
         conduitLine1.StartPoint.X = currentPoint.X;
@@ -1202,10 +1192,14 @@ namespace ElectricalCommands.SingleLine
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
         tr.Commit();
       }
+      if (existing)
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X - 0.4437, currentPoint.Y - 1.6585, 0));
+      }
       return new Point3d(currentPoint.X + xOffset, currentPoint.Y + yOffset, 0);
     }
 
-    public static Point3d MakePanelChildConduit(int index, Point3d currentPoint)
+    public static Point3d MakePanelChildConduit(int index, Point3d currentPoint, bool existing)
     {
       Document doc = Autodesk
         .AutoCAD
@@ -1218,19 +1212,42 @@ namespace ElectricalCommands.SingleLine
       double yOffset = -2.5;
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
+        if (index == 0)
+        {
+          if (existing)
+            InsertKeyedNoteMarker(
+              1,
+              new Point3d(currentPoint.X + 1.0581, currentPoint.Y - 1.6585, 0)
+            );
+        }
         if (index == 1)
         {
           xOffset = xOffset * -1;
+          if (existing)
+            InsertKeyedNoteMarker(
+              1,
+              new Point3d(currentPoint.X - 1.9562, currentPoint.Y - 1.6585, 0)
+            );
         }
         if (index == 2)
         {
-          xOffset = xOffset * 2;
-          yOffset = yOffset + 0.75;
+          xOffset = xOffset * 2.25;
+          yOffset = yOffset - 0.7;
+          if (existing)
+            InsertKeyedNoteMarker(
+              1,
+              new Point3d(currentPoint.X + 2.9147, currentPoint.Y - 2.3895, 0)
+            );
         }
         if (index == 3)
         {
-          xOffset = xOffset * -2;
-          yOffset = yOffset + 0.75;
+          xOffset = xOffset * -2.25;
+          yOffset = yOffset - 0.7;
+          if (existing)
+            InsertKeyedNoteMarker(
+              1,
+              new Point3d(currentPoint.X - 3.8321, currentPoint.Y - 2.3895, 0)
+            );
         }
 
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -1238,6 +1255,7 @@ namespace ElectricalCommands.SingleLine
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = existing ? 8 : 256;
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
         conduitLine1.StartPoint.X = currentPoint.X;
@@ -1247,6 +1265,7 @@ namespace ElectricalCommands.SingleLine
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
         LineData conduitLine2 = new LineData();
         conduitLine2.Layer = "E-CND1";
+        conduitLine2.ColorIndex = existing ? 8 : 256;
         conduitLine2.StartPoint = new SimpleVector3d();
         conduitLine2.EndPoint = new SimpleVector3d();
         conduitLine2.StartPoint.X = currentPoint.X + xOffset;
@@ -1275,6 +1294,7 @@ namespace ElectricalCommands.SingleLine
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = service.IsExisting() ? 8 : 256;
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
         conduitLine1.StartPoint.X = currentPoint.X + 0.375;
@@ -1285,6 +1305,7 @@ namespace ElectricalCommands.SingleLine
 
         LineData conduitLine2 = new LineData();
         conduitLine2.Layer = "E-CND1";
+        conduitLine2.ColorIndex = service.IsExisting() ? 8 : 256;
         conduitLine2.StartPoint = new SimpleVector3d();
         conduitLine2.EndPoint = new SimpleVector3d();
         conduitLine2.StartPoint.X = currentPoint.X + 0.375;
@@ -1295,6 +1316,7 @@ namespace ElectricalCommands.SingleLine
 
         LineData feederLine = new LineData();
         feederLine.Layer = "E-CND1";
+        feederLine.ColorIndex = service.IsExisting() ? 8 : 256;
         feederLine.StartPoint = new SimpleVector3d();
         feederLine.EndPoint = new SimpleVector3d();
         feederLine.StartPoint.X = currentPoint.X + 0.375;
@@ -1310,6 +1332,7 @@ namespace ElectricalCommands.SingleLine
           )
         )
         {
+          acBlkRef.Layer = service.IsExisting() ? "E-SYM-EXISTING" : "E-SYM1";
           BlockTableRecord acCurSpaceBlkTblRec;
           acCurSpaceBlkTblRec =
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -1324,6 +1347,7 @@ namespace ElectricalCommands.SingleLine
           )
         )
         {
+          acBlkRef.Layer = service.IsExisting() ? "E-SYM-EXISTING" : "E-SYM1";
           BlockTableRecord acCurSpaceBlkTblRec;
           acCurSpaceBlkTblRec =
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -1338,6 +1362,7 @@ namespace ElectricalCommands.SingleLine
           )
         )
         {
+          acBlkRef.Layer = service.IsExisting() ? "E-SYM-EXISTING" : "E-SYM1";
           BlockTableRecord acCurSpaceBlkTblRec;
           acCurSpaceBlkTblRec =
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -1353,6 +1378,7 @@ namespace ElectricalCommands.SingleLine
           )
         )
         {
+          acBlkRef.Layer = service.IsExisting() ? "E-SYM-EXISTING" : "E-SYM1";
           BlockTableRecord acCurSpaceBlkTblRec;
           acCurSpaceBlkTblRec =
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -1410,7 +1436,7 @@ namespace ElectricalCommands.SingleLine
           "E-TXT1",
           new Point3d(currentPoint.X + 0.4, currentPoint.Y + 0.38, 0)
         );
-        GeneralCommands.CreateAndPositionText( // HERE test making single line
+        GeneralCommands.CreateAndPositionText(
           tr,
           "PULL SECTION",
           "gmep",
@@ -1437,9 +1463,14 @@ namespace ElectricalCommands.SingleLine
         }
         tr.Commit();
       }
+      if (service.IsExisting())
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 0.4739, currentPoint.Y + 0.76, 0));
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X - 0.1433, currentPoint.Y - 2.6941, 0));
+      }
     }
 
-    public static void MakeMainSection(Point3d currentPoint)
+    public static void MakeMainSection(Point3d currentPoint, bool existing)
     {
       Document doc = Autodesk
         .AutoCAD
@@ -1456,6 +1487,7 @@ namespace ElectricalCommands.SingleLine
 
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = existing ? 8 : 256;
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
         conduitLine1.StartPoint.X = currentPoint.X + 1.25;
@@ -1466,6 +1498,7 @@ namespace ElectricalCommands.SingleLine
 
         LineData conduitLine2 = new LineData();
         conduitLine2.Layer = "E-CND1";
+        conduitLine2.ColorIndex = existing ? 8 : 256;
         conduitLine2.StartPoint = new SimpleVector3d();
         conduitLine2.EndPoint = new SimpleVector3d();
         conduitLine2.StartPoint.X = currentPoint.X;
@@ -1476,6 +1509,7 @@ namespace ElectricalCommands.SingleLine
 
         LineData conduitLine3 = new LineData();
         conduitLine3.Layer = "E-CND1";
+        conduitLine3.ColorIndex = existing ? 8 : 256;
         conduitLine3.StartPoint = new SimpleVector3d();
         conduitLine3.EndPoint = new SimpleVector3d();
         conduitLine3.StartPoint.X = currentPoint.X + 0.5;
@@ -1486,6 +1520,7 @@ namespace ElectricalCommands.SingleLine
 
         LineData conduitLine4 = new LineData();
         conduitLine4.Layer = "E-CND1";
+        conduitLine4.ColorIndex = existing ? 8 : 256;
         conduitLine4.StartPoint = new SimpleVector3d();
         conduitLine4.EndPoint = new SimpleVector3d();
         conduitLine4.StartPoint.X = currentPoint.X + 1.25;
@@ -1515,8 +1550,8 @@ namespace ElectricalCommands.SingleLine
 
     public static void MakeMainMeterSection(ElectricalEntity.Meter meter, Point3d currentPoint)
     {
-      MakeGroundingBus(currentPoint);
-      MakeMainSection(currentPoint);
+      MakeGroundingBus(currentPoint, meter.IsExisting());
+      MakeMainSection(currentPoint, meter.IsExisting());
       MakeMeter(meter, new Point3d(currentPoint.X + 0.5, currentPoint.Y - 0.8907, 0));
       Document doc = Autodesk
         .AutoCAD
@@ -1532,6 +1567,7 @@ namespace ElectricalCommands.SingleLine
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = meter.IsExisting() ? 8 : 256;
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
         conduitLine1.StartPoint.X = currentPoint.X + 0.5;
@@ -1542,6 +1578,7 @@ namespace ElectricalCommands.SingleLine
 
         LineData conduitLine2 = new LineData();
         conduitLine2.Layer = "E-CND1";
+        conduitLine2.ColorIndex = meter.IsExisting() ? 8 : 256;
         conduitLine2.StartPoint = new SimpleVector3d();
         conduitLine2.EndPoint = new SimpleVector3d();
         conduitLine2.StartPoint.X = currentPoint.X + 0.5;
@@ -1573,6 +1610,10 @@ namespace ElectricalCommands.SingleLine
 
         tr.Commit();
       }
+      if (meter.IsExisting())
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 1.0646, currentPoint.Y + 0.7600, 0));
+      }
     }
 
     public static void MakeMainBreakerSection(
@@ -1580,8 +1621,8 @@ namespace ElectricalCommands.SingleLine
       Point3d currentPoint
     )
     {
-      MakeGroundingBus(currentPoint);
-      MakeMainSection(currentPoint);
+      MakeGroundingBus(currentPoint, mainBreaker.IsExisting());
+      MakeMainSection(currentPoint, mainBreaker.IsExisting());
       MakeMainBreaker(mainBreaker, new Point3d(currentPoint.X + 0.5, currentPoint.Y - 0.7636, 0));
       Document doc = Autodesk
         .AutoCAD
@@ -1597,6 +1638,7 @@ namespace ElectricalCommands.SingleLine
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = mainBreaker.IsExisting() ? 8 : 256;
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
         conduitLine1.StartPoint.X = currentPoint.X + 0.5;
@@ -1607,6 +1649,7 @@ namespace ElectricalCommands.SingleLine
 
         LineData conduitLine2 = new LineData();
         conduitLine2.Layer = "E-CND1";
+        conduitLine2.ColorIndex = mainBreaker.IsExisting() ? 8 : 256;
         conduitLine2.StartPoint = new SimpleVector3d();
         conduitLine2.EndPoint = new SimpleVector3d();
         conduitLine2.StartPoint.X = currentPoint.X + 0.5;
@@ -1648,6 +1691,10 @@ namespace ElectricalCommands.SingleLine
 
         tr.Commit();
       }
+      if (mainBreaker.IsExisting())
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 1.0646, currentPoint.Y + 0.7600, 0));
+      }
     }
 
     public static void MakeMainMeterAndBreakerSection(
@@ -1656,8 +1703,8 @@ namespace ElectricalCommands.SingleLine
       Point3d currentPoint
     )
     {
-      MakeGroundingBus(currentPoint);
-      MakeMainSection(currentPoint);
+      MakeGroundingBus(currentPoint, meter.IsExisting());
+      MakeMainSection(currentPoint, meter.IsExisting());
       if (meter.HasCts)
       {
         MakeCtsMeter(meter, new Point3d(currentPoint.X + 0.5, currentPoint.Y - 0.6238, 0));
@@ -1683,6 +1730,7 @@ namespace ElectricalCommands.SingleLine
         {
           LineData conduitLine1 = new LineData();
           conduitLine1.Layer = "E-CND1";
+          conduitLine1.ColorIndex = meter.IsExisting() ? 8 : 256;
           conduitLine1.StartPoint = new SimpleVector3d();
           conduitLine1.EndPoint = new SimpleVector3d();
           conduitLine1.StartPoint.X = currentPoint.X + 0.5;
@@ -1692,6 +1740,7 @@ namespace ElectricalCommands.SingleLine
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
           LineData conduitLine2 = new LineData();
           conduitLine2.Layer = "E-CND1";
+          conduitLine2.ColorIndex = mainBreaker.IsExisting() ? 8 : 256;
           conduitLine2.StartPoint = new SimpleVector3d();
           conduitLine2.EndPoint = new SimpleVector3d();
           conduitLine2.StartPoint.X = currentPoint.X + 0.5;
@@ -1704,6 +1753,7 @@ namespace ElectricalCommands.SingleLine
         {
           LineData conduitLine1 = new LineData();
           conduitLine1.Layer = "E-CND1";
+          conduitLine1.ColorIndex = meter.IsExisting() ? 8 : 256;
           conduitLine1.StartPoint = new SimpleVector3d();
           conduitLine1.EndPoint = new SimpleVector3d();
           conduitLine1.StartPoint.X = currentPoint.X + 0.5;
@@ -1713,6 +1763,7 @@ namespace ElectricalCommands.SingleLine
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
           LineData conduitLine2 = new LineData();
           conduitLine2.Layer = "E-CND1";
+          conduitLine2.ColorIndex = mainBreaker.IsExisting() ? 8 : 256;
           conduitLine2.StartPoint = new SimpleVector3d();
           conduitLine2.EndPoint = new SimpleVector3d();
           conduitLine2.StartPoint.X = currentPoint.X + 0.5;
@@ -1722,6 +1773,7 @@ namespace ElectricalCommands.SingleLine
           CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine2, 1);
           LineData conduitLine3 = new LineData();
           conduitLine3.Layer = "E-CND1";
+          conduitLine3.ColorIndex = mainBreaker.IsExisting() ? 8 : 256;
           conduitLine3.StartPoint = new SimpleVector3d();
           conduitLine3.EndPoint = new SimpleVector3d();
           conduitLine3.StartPoint.X = currentPoint.X + 0.5;
@@ -1764,9 +1816,13 @@ namespace ElectricalCommands.SingleLine
 
         tr.Commit();
       }
+      if (meter.IsExisting())
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 1.0646, currentPoint.Y + 0.7600, 0));
+      }
     }
 
-    public static void MakeGroundingBus(Point3d currentPoint)
+    public static void MakeGroundingBus(Point3d currentPoint, bool existing)
     {
       Document doc = Autodesk
         .AutoCAD
@@ -1776,7 +1832,7 @@ namespace ElectricalCommands.SingleLine
         .MdiActiveDocument;
       Database db = doc.Database;
       using (Transaction tr = db.TransactionManager.StartTransaction())
-      { // HERE test
+      {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord btr = (BlockTableRecord)
           tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
@@ -1788,15 +1844,17 @@ namespace ElectricalCommands.SingleLine
           )
         )
         {
+          acBlkRef.Layer = existing ? "E-SYM-EXISTING" : "E-SYM1";
           BlockTableRecord acCurSpaceBlkTblRec;
           acCurSpaceBlkTblRec =
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
           acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
           tr.AddNewlyCreatedDBObject(acBlkRef, true);
         }
+        string statusText = existing ? "(E)" : "(N)";
         GeneralCommands.CreateAndPositionText(
           tr,
-          "(N)GND BUS",
+          statusText + "GND BUS",
           "gmep",
           0.0938,
           0.85,
@@ -1806,7 +1864,7 @@ namespace ElectricalCommands.SingleLine
         );
         GeneralCommands.CreateAndPositionText(
           tr,
-          "(N)1#3/0 CU.",
+          statusText + "1#3/0 CU.",
           "gmep",
           0.0938,
           0.85,
@@ -1826,7 +1884,7 @@ namespace ElectricalCommands.SingleLine
         );
         GeneralCommands.CreateAndPositionText(
           tr,
-          "(N)1#3/0 CU.",
+          statusText + "1#3/0 CU.",
           "gmep",
           0.0938,
           0.85,
@@ -1873,6 +1931,12 @@ namespace ElectricalCommands.SingleLine
           tr.AddNewlyCreatedDBObject(acBlkRef, true);
         }
         tr.Commit();
+      }
+      if (existing)
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 1.0933, currentPoint.Y - 1.7003, 0));
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 1.7042, currentPoint.Y + -2.1189, 0));
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 1.4716, currentPoint.Y - 2.5207, 0));
       }
     }
 
@@ -1967,7 +2031,7 @@ namespace ElectricalCommands.SingleLine
 
         GeneralCommands.CreateAndPositionText(
           tr,
-          distributionBus.AmpRating.ToString() + "A BUS",
+          distributionBus.GetStatusAbbr() + distributionBus.AmpRating.ToString() + "A BUS",
           "gmep",
           0.0938,
           0.85,
@@ -1978,17 +2042,18 @@ namespace ElectricalCommands.SingleLine
 
         Polyline2dData polyData = new Polyline2dData();
         polyData.Layer = "E-CND1";
+        polyData.ColorIndex = distributionBus.IsExisting() ? 8 : 256;
         polyData.Vertices.Add(new SimpleVector3d(busBarPoint.X, busBarPoint.Y, 0));
         polyData.Vertices.Add(new SimpleVector3d(busBarPoint.X + width - 0.5, busBarPoint.Y, 0));
         polyData.Vertices.Add(
           new SimpleVector3d(busBarPoint.X + width - 0.5, busBarPoint.Y - 0.0625, 0)
         );
         polyData.Vertices.Add(new SimpleVector3d(busBarPoint.X, busBarPoint.Y - 0.0625, 0));
-        polyData.Vertices.Add(new SimpleVector3d(busBarPoint.X, busBarPoint.Y, 0));
         polyData.Closed = true;
         CADObjectCommands.CreatePolyline2d(new Point3d(), tr, btr, polyData, 1);
         LineData conduitLine1 = new LineData();
         conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = distributionBus.IsExisting() ? 8 : 256;
         conduitLine1.StartPoint = new SimpleVector3d();
         conduitLine1.EndPoint = new SimpleVector3d();
         conduitLine1.StartPoint.X = currentPoint.X;
@@ -1997,6 +2062,11 @@ namespace ElectricalCommands.SingleLine
         conduitLine1.EndPoint.Y = currentPoint.Y - 0.2813;
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
         tr.Commit();
+      }
+      if (distributionBus.IsExisting())
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 0.6721, currentPoint.Y + 0.7600, 0));
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 1.2965, currentPoint.Y - 0.1295, 0));
       }
     }
 
@@ -2018,7 +2088,7 @@ namespace ElectricalCommands.SingleLine
         ObjectId aicMarker = bt["AIC MARKER (AUTO SINGLE LINE)"];
         using (
           BlockReference acBlkRef = new BlockReference(
-            new Point3d(currentPoint.X, currentPoint.Y + 0.125, 0),
+            new Point3d(currentPoint.X, currentPoint.Y + 0.1647, 0),
             aicMarker
           )
         )
@@ -2037,7 +2107,7 @@ namespace ElectricalCommands.SingleLine
           0.85,
           2,
           "E-TXT1",
-          new Point3d(currentPoint.X + 0.0678, currentPoint.Y + 0.08, 0)
+          new Point3d(currentPoint.X + 0.0678, currentPoint.Y + 0.1197, 0)
         );
         tr.Commit();
       }
@@ -2051,7 +2121,7 @@ namespace ElectricalCommands.SingleLine
       double maxVoltageDropPercent,
       int phase,
       Point3d currentPoint,
-      ElectricalEntity.ElectricalEntity entity
+      ElectricalEntity.PlaceableElectricalEntity entity
     )
     {
       Document doc = Autodesk
@@ -2061,7 +2131,6 @@ namespace ElectricalCommands.SingleLine
         .DocumentManager
         .MdiActiveDocument;
       Database db = doc.Database;
-
       (
         string firstLine,
         string secondLine,
@@ -2077,6 +2146,11 @@ namespace ElectricalCommands.SingleLine
         maxVoltageDropPercent,
         phase
       );
+      if (entity.IsExisting() && entity.LoadAmperage == 0 && entity.Kva == 0)
+      {
+        int i = thirdLine.IndexOf(";");
+        thirdLine = thirdLine.Substring(0, i);
+      }
       CADObjectCommands.AddWireAndConduitTextToPlan(
         db,
         new Point3d(currentPoint.X, currentPoint.Y + 0.3333, 0),
@@ -2099,6 +2173,59 @@ namespace ElectricalCommands.SingleLine
         .Groups[0]
         .Value;
       return (feederWireSize, feederWireCount);
+    }
+
+    public static void InsertKeyedNoteMarker(int index, Point3d location)
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+
+        ObjectId keyedNoteBlockId = bt["KEYED NOTE (AUTO SINGLE LINE)"];
+        using (BlockReference acBlkRef = new BlockReference(location, keyedNoteBlockId))
+        {
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+          TextStyleTable textStyleTable = (TextStyleTable)
+            tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+          ObjectId gmepTextStyleId;
+          gmepTextStyleId = textStyleTable["gmep"];
+
+          AttributeDefinition attrDef = new AttributeDefinition();
+          attrDef.Position = location;
+          attrDef.LockPositionInBlock = true;
+          attrDef.Tag = index.ToString();
+          attrDef.IsMTextAttributeDefinition = false;
+          attrDef.TextString = index.ToString();
+          attrDef.Justify = AttachmentPoint.MiddleCenter;
+          attrDef.Visible = true;
+          attrDef.Invisible = false;
+          attrDef.Constant = false;
+          attrDef.Height = 0.0938;
+          attrDef.WidthFactor = 0.85;
+          attrDef.TextStyleId = gmepTextStyleId;
+          attrDef.Layer = "0";
+
+          AttributeReference attrRef = new AttributeReference();
+          attrRef.SetAttributeFromBlock(attrDef, acBlkRef.BlockTransform);
+          acBlkRef.AttributeCollection.AppendAttribute(attrRef);
+          acBlkRef.Layer = "E-TEXT";
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+        }
+        tr.Commit();
+      }
     }
   }
 }

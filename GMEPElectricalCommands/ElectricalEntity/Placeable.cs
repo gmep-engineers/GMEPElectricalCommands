@@ -800,6 +800,7 @@ namespace ElectricalCommands.ElectricalEntity
     public int BusAmpRating;
     public int MainAmpRating;
     public bool IsMlo;
+    public bool IsRecessed;
     public List<PanelBreaker> Breakers;
 
     public Panel(
@@ -812,6 +813,7 @@ namespace ElectricalCommands.ElectricalEntity
       int BusAmpRating,
       int MainAmpRating,
       bool IsMlo,
+      bool IsRecessed,
       string Voltage,
       double LoadAmperage,
       double Kva,
@@ -831,6 +833,7 @@ namespace ElectricalCommands.ElectricalEntity
       AmpRating = BusAmpRating;
       this.MainAmpRating = MainAmpRating;
       this.IsMlo = IsMlo;
+      this.IsRecessed = IsRecessed;
       this.Voltage = Voltage;
       this.AicRating = AicRating;
       this.IsHidden = IsHidden;
@@ -838,7 +841,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.Status = Status;
       NodeType = NodeType.Panel;
       this.NodePosition = NodePosition;
-      BlockName = $"A$C26441056";
+      BlockName = IsRecessed ? "GMEP RECESSED PANEL" : "GMEP SURFACE PANEL";
       Rotate = true;
       TableName = "electrical_panels";
       this.LoadAmperage = LoadAmperage;

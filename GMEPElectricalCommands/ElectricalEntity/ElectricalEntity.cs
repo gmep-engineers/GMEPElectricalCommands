@@ -24,6 +24,11 @@ namespace ElectricalCommands.ElectricalEntity
     {
       return "(" + Status[0].ToString().ToUpper() + ")";
     }
+
+    public bool IsExisting()
+    {
+      return Status[0] == 'E';
+    }
   }
 
   public class DistributionBreaker : ElectricalEntity

@@ -2718,7 +2718,10 @@ namespace ElectricalCommands
       arc.Radius = arcData.Radius * scaleFactor;
       arc.StartAngle = arcData.StartAngle;
       arc.EndAngle = arcData.EndAngle;
-
+      if (arcData.ColorIndex != null)
+      {
+        arc.ColorIndex = (Int32)arcData.ColorIndex;
+      }
       acBlkTblRec.AppendEntity(arc);
       acTrans.AddNewlyCreatedDBObject(arc, true);
       return basePoint;
@@ -2802,6 +2805,10 @@ namespace ElectricalCommands
       if (!String.IsNullOrEmpty(lineType))
       {
         line.Linetype = lineType;
+      }
+      if (lineData.ColorIndex != null)
+      {
+        line.ColorIndex = (Int32)lineData.ColorIndex;
       }
 
       acBlkTblRec.AppendEntity(line);
@@ -2907,6 +2914,14 @@ namespace ElectricalCommands
         null
       );
       polyline.Layer = polylineData.Layer;
+      if (polylineData.ColorIndex != null)
+      {
+        polyline.ColorIndex = (Int32)polylineData.ColorIndex;
+      }
+      if (polylineData.Closed)
+      {
+        polyline.Closed = true;
+      }
 
       // Append the Polyline2d to the BlockTableRecord
       acBlkTblRec.AppendEntity(polyline);
@@ -4005,6 +4020,8 @@ namespace ElectricalCommands
   public class BaseData
   {
     public string Layer { get; set; }
+
+    public int? ColorIndex { get; set; }
   }
 
   public class SimpleVector3d
