@@ -23,6 +23,8 @@ using Newtonsoft.Json;
 using TriangleNet.Meshing.Algorithm;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 using System.Threading.Tasks;
+using System.Buffers;
+using DocumentFormat.OpenXml.Drawing.Charts;
 
 namespace ElectricalCommands.Lighting
 {
@@ -713,10 +715,12 @@ namespace ElectricalCommands.Lighting
 
                 tr.AddNewlyCreatedDBObject(br, true);
                 blockId = br.Id;
+
+                //Setting Attributes
                 foreach (ObjectId objId in block) {
                   DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
                   AttributeDefinition attDef = obj as AttributeDefinition;
-                  if (attDef != null && !attDef.Constant) // Check if it's an attribute and not constant
+                  if (attDef != null && !attDef.Constant) 
                   {
                     using (AttributeReference attRef = new AttributeReference()) {
                       attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
@@ -756,26 +760,24 @@ namespace ElectricalCommands.Lighting
                 if (prop.PropertyName == "gmep_lighting_name" && prop.Value as string == "0") {
                   prop.Value = fixture.Name;
                 }
-                if (prop.PropertyName == "LIGHTING_NAME" && prop.Value as string == "0") {
-                  ed.WriteMessage("Moew");
-                }
               }
               tr.Commit();
             }
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
-              TextStyleTable textStyleTable = (TextStyleTable)
-                tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
-              ObjectId gmepTextStyleId;
-              if (textStyleTable.Has("gmep"))
-              {
-                gmepTextStyleId = textStyleTable["gmep"];
-              }
-              else
-              {
-                ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
-                gmepTextStyleId = doc.Database.Textstyle;
-              }
+              BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+              /* TextStyleTable textStyleTable = (TextStyleTable)
+                 tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+               ObjectId gmepTextStyleId;
+               if (textStyleTable.Has("gmep"))
+               {
+                 gmepTextStyleId = textStyleTable["gmep"];
+               }
+               else
+               {
+                 ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+                 gmepTextStyleId = doc.Database.Textstyle;
+               }*/
               Point3d position = new Point3d(
                 point.X + fixture.LabelTransformVX,
                 point.Y
@@ -801,7 +803,20 @@ namespace ElectricalCommands.Lighting
                   0
                 );
               }
-              var text = new DBText
+
+              foreach (ObjectId id in br.AttributeCollection) {
+                AttributeReference attRef = (AttributeReference)tr.GetObject(id, OpenMode.ForWrite);
+                if (attRef.Tag == "LIGHTING_NAME") {
+                  attRef.Position = position;
+                  attRef.Rotation = attRef.Rotation - rotation;
+                  attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;
+                  attRef.WidthFactor = 0.85;
+                  attRef.HorizontalMode = TextHorizontalMode.TextLeft;
+                  attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
+                  attRef.Justify = AttachmentPoint.BaseLeft;
+                }
+              }
+              /*var text = new DBText
               {
                 TextString = fixture.Name,
                 Position = position,
@@ -817,7 +832,7 @@ namespace ElectricalCommands.Lighting
               var currentSpace = (BlockTableRecord)
                 tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
               currentSpace.AppendEntity(text);
-              tr.AddNewlyCreatedDBObject(text, true);
+              tr.AddNewlyCreatedDBObject(text, true);*/
               tr.Commit();
             }
           }
@@ -2039,7 +2054,7 @@ namespace ElectricalCommands.Lighting
       bool noOverride = false
     )
     {
-      string jsonData = JsonConvert.SerializeObject(data, Formatting.Indented);
+      string jsonData = JsonConvert.SerializeObject(data, Newtonsoft.Json.Formatting.Indented);
       string desktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
       string fullPath = Path.Combine(desktopPath, fileName);
 
