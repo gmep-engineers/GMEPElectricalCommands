@@ -484,8 +484,7 @@ namespace ElectricalCommands.Lighting
       pso.MessageForAdding = "\nSelect lighting fixtures: ";
       PromptSelectionResult psr = ed.GetSelection(pso);
 
-      string controlId = "";
-      string controlTag = "";
+      string control = "";
 
       if (psr2.Status == PromptStatus.OK) {
         SelectionSet ss = psr2.Value;
@@ -494,11 +493,8 @@ namespace ElectricalCommands.Lighting
             DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
             if (obj is BlockReference block) {
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
-                if (property.PropertyName == "gmep_lighting_control_id") {
-                 controlId = property.Value as string;
-                }
                 if (property.PropertyName == "gmep_lighting_control_tag") {
-                  controlTag = property.Value as string;
+                  control = property.Value as string;
                 }
               }
             }
@@ -513,19 +509,19 @@ namespace ElectricalCommands.Lighting
           foreach (ObjectId id in ss.GetObjectIds()) {
             DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
             if (obj is BlockReference block) {
-              string lightingName = "";
+              string circuit = "";
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
-                if (property.PropertyName == "gmep_lighting_control_id") {
-                  property.Value = controlId;
+                if (property.PropertyName == "gmep_lighting_control") {
+                  property.Value = control;
                 }
-                if (property.PropertyName == "gmep_lighting_name") {
-                  lightingName = property.Value as string;
+                if (property.PropertyName == "gmep_lighting_circuit") {
+                  circuit = property.Value as string;
                 }
               }
               foreach (ObjectId id2 in block.AttributeCollection) {
                 AttributeReference attRef = tr.GetObject(id2, OpenMode.ForWrite) as AttributeReference;
-                if (attRef.Tag == "LIGHTING_NAME") {
-                  attRef.TextString = lightingName + controlTag;
+                if (attRef.Tag == "LIGHTING_CIRCUIT") {
+                  attRef.TextString = circuit + control;
                 }
               }
             }
@@ -609,9 +605,11 @@ namespace ElectricalCommands.Lighting
       if (psr.Status == PromptStatus.OK) {
         SelectionSet ss = psr.Value;
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
-          foreach(ObjectId id in ss.GetObjectIds()) {
+          foreach (ObjectId id in ss.GetObjectIds()) {
             DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
             if (obj is BlockReference block) {
+              string circuit = "";
+              string control = "";
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_fixture_id") {
                   var fixtureId = property.Value as string;
@@ -626,16 +624,29 @@ namespace ElectricalCommands.Lighting
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_circuit") {
                   property.Value = chosenCircuit;
+                  circuit = property.Value as string;
                 }
-                
+              }
+              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+                if (property.PropertyName == "gmep_lighting_control") {
+                  control = property.Value as string;
+                }
+              }
+              foreach (ObjectId id3 in block.AttributeCollection) {
+                AttributeReference attRef = (AttributeReference)tr.GetObject(id3, OpenMode.ForWrite);
+                if (attRef.Tag == "LIGHTING_CIRCUIT") {
+                  attRef.TextString = circuit + control;
+                }
               }
             }
           }
+
           gmepDb.InsertLightingEquipment(lightings, chosenPanel, chosenCircuit, projectId);
           tr.Commit();
         }
       }
       }
+
     
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
@@ -721,7 +732,12 @@ namespace ElectricalCommands.Lighting
                     using (AttributeReference attRef = new AttributeReference()) {
                       attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
                       attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
-                      attRef.TextString = fixture.Name;
+                      if (attDef.Tag == "LIGHTING_NAME") {
+                        attRef.TextString = fixture.Name;
+                      }
+                      if (attDef.Tag== "LIGHTING_CIRCUIT") {
+                        attRef.TextString = "#~";
+                      }
                       br.AttributeCollection.AppendAttribute(attRef);
                       tr.AddNewlyCreatedDBObject(attRef, true);
                     }
@@ -762,18 +778,6 @@ namespace ElectricalCommands.Lighting
             using (Transaction tr = db.TransactionManager.StartTransaction())
             {
               BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
-              /* TextStyleTable textStyleTable = (TextStyleTable)
-                 tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
-               ObjectId gmepTextStyleId;
-               if (textStyleTable.Has("gmep"))
-               {
-                 gmepTextStyleId = textStyleTable["gmep"];
-               }
-               else
-               {
-                 ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
-                 gmepTextStyleId = doc.Database.Textstyle;
-               }*/
               Point3d position = new Point3d(
                 point.X + fixture.LabelTransformVX,
                 point.Y
@@ -785,6 +789,16 @@ namespace ElectricalCommands.Lighting
                   ),
                 0
               );
+              Point3d position2 = new Point3d(
+                point.X + fixture.LabelTransformVX,
+                point.Y
+                  - fixture.LabelTransformVY
+                  - (
+                    (CADObjectCommands.Scale - 0.25)
+                    * 12
+                    * Math.Pow(0.25 / CADObjectCommands.Scale, 1.5)
+                  ) - (16 * CADObjectCommands.Scale),
+                0);
               if (Math.Round(rotation, 1) == 1.6 || Math.Round(rotation, 1) == 4.7)
               {
                 position = new Point3d(
@@ -796,6 +810,17 @@ namespace ElectricalCommands.Lighting
                       * 12
                       * Math.Pow(0.25 / CADObjectCommands.Scale, 1.5)
                     ),
+                  0
+                );
+                position2 = new Point3d(
+                  point.X + fixture.LabelTransformHX,
+                  point.Y
+                    - fixture.LabelTransformHY
+                    - (
+                      (CADObjectCommands.Scale - 0.25)
+                      * 12
+                      * Math.Pow(0.25 / CADObjectCommands.Scale, 1.5)
+                    ) - (16 * CADObjectCommands.Scale),
                   0
                 );
               }
@@ -811,24 +836,16 @@ namespace ElectricalCommands.Lighting
                   attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
                   attRef.Justify = AttachmentPoint.BaseLeft;
                 }
+                if (attRef.Tag == "LIGHTING_CIRCUIT") {
+                  attRef.Position = position2;
+                  attRef.Rotation = attRef.Rotation - rotation;
+                  attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;
+                  attRef.WidthFactor = 0.85;
+                  attRef.HorizontalMode = TextHorizontalMode.TextLeft;
+                  attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
+                  attRef.Justify = AttachmentPoint.BaseLeft;
+                }
               }
-              /*var text = new DBText
-              {
-                TextString = fixture.Name,
-                Position = position,
-                Height = 0.0938 / CADObjectCommands.Scale * 12,
-                WidthFactor = 0.85,
-                Layer = "E-TEXT",
-                TextStyleId = gmepTextStyleId,
-                HorizontalMode = TextHorizontalMode.TextLeft,
-                VerticalMode = TextVerticalMode.TextVerticalMid,
-                Justify = AttachmentPoint.BaseLeft,
-                Rotation = 0,
-              };
-              var currentSpace = (BlockTableRecord)
-                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-              currentSpace.AppendEntity(text);
-              tr.AddNewlyCreatedDBObject(text, true);*/
               tr.Commit();
             }
           }
