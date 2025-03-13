@@ -39,6 +39,7 @@ namespace ElectricalCommands.SingleLine
     private List<ElectricalEntity.PanelBreaker> panelBreakerList;
     private List<ElectricalEntity.Disconnect> disconnectList;
     private List<ElectricalEntity.Transformer> transformerList;
+    private List<ElectricalEntity.Equipment> equipmentList;
     private List<ElectricalEntity.NodeLink> nodeLinkList;
     private List<ElectricalEntity.GroupNode> groupList;
     private Dictionary<string, List<string>> groupDict;
@@ -65,6 +66,7 @@ namespace ElectricalCommands.SingleLine
       panelBreakerList = gmepDb.GetPanelBreakers(projectId);
       disconnectList = gmepDb.GetDisconnects(projectId);
       transformerList = gmepDb.GetTransformers(projectId);
+      equipmentList = gmepDb.GetEquipment(projectId, true);
       nodeLinkList = gmepDb.GetNodeLinks(projectId);
       groupList = gmepDb.GetGroupNodes(projectId);
 
@@ -271,6 +273,10 @@ namespace ElectricalCommands.SingleLine
 
     public void SetTreeNodeColor(TreeNode node, PlaceableElectricalEntity entity)
     {
+      if (entity.NodeType == NodeType.Equipment)
+      {
+        return;
+      }
       if (entity.Location.X == 0 && entity.Location.Y == 0)
       {
         node.ForeColor = Color.White;
@@ -583,6 +589,20 @@ namespace ElectricalCommands.SingleLine
           transformerNode.Tag = transformer;
           SetTreeNodeColor(transformerNode, transformer);
           PopulateFromTransformer(transformerNode, transformer);
+        }
+      }
+      foreach (ElectricalEntity.Equipment equipment in equipmentList)
+      {
+        Console.WriteLine("from disconnect");
+        Console.WriteLine("equip id " + equipment.NodeId);
+        Console.WriteLine("disc id " + disconnect.NodeId);
+        if (VerifyNodeLink(disconnect.NodeId, equipment.NodeId))
+        {
+          Console.WriteLine("link");
+          InheritElectricalAttributes(disconnect, equipment);
+          TreeNode equipmentNode = node.Nodes.Add(equipment.Id, equipment.Name);
+          equipmentNode.Tag = equipment;
+          SetTreeNodeColor(equipmentNode, equipment);
         }
       }
     }
@@ -981,14 +1001,8 @@ namespace ElectricalCommands.SingleLine
         SingleLine.MakePanel(panel, currentPoint);
 
         (string feederWireSize, int feederWireCount) = SingleLine.AddConduitSpec(
-          panel.LoadAmperage,
-          panel.AmpRating,
-          panel.ParentDistance + 10,
-          panel.LineVoltage,
-          1,
-          panel.Phase,
-          currentPoint,
-          panel
+          panel,
+          currentPoint
         );
         double aicRating;
         if (parentEntity.NodeType == NodeType.Transformer)
@@ -1079,14 +1093,8 @@ namespace ElectricalCommands.SingleLine
         ElectricalEntity.Disconnect disconnect = (ElectricalEntity.Disconnect)childEntity;
         SingleLine.MakeDisconnect(disconnect, currentPoint);
         (string feederWireSize, int feederWireCount) = SingleLine.AddConduitSpec(
-          disconnect.LoadAmperage,
-          disconnect.AmpRating,
-          disconnect.ParentDistance,
-          disconnect.LineVoltage,
-          1,
-          disconnect.Phase,
-          currentPoint,
-          disconnect
+          disconnect,
+          currentPoint
         );
         double aicRating;
         if (parentEntity.NodeType == NodeType.Transformer)
@@ -1115,7 +1123,7 @@ namespace ElectricalCommands.SingleLine
           );
         }
         disconnect.AicRating = Math.Round(aicRating, 0);
-        ;
+
         SingleLine.MakeAicRating(aicRating, currentPoint);
 
         currentPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.1201, 0);
@@ -1133,14 +1141,8 @@ namespace ElectricalCommands.SingleLine
         ElectricalEntity.Transformer transformer = (ElectricalEntity.Transformer)childEntity;
         SingleLine.MakeTransformer(transformer, currentPoint);
         (string feederWireSize, int feederWireCount) = SingleLine.AddConduitSpec(
-          transformer.LoadAmperage,
-          transformer.AmpRating,
-          transformer.ParentDistance,
-          transformer.LineVoltage,
-          1,
-          transformer.Phase,
-          currentPoint,
-          transformer
+          transformer,
+          currentPoint
         );
 
         double aicRating = CADObjectCommands.GetAicRating(
@@ -1164,6 +1166,24 @@ namespace ElectricalCommands.SingleLine
           );
           MakeFieldEntity(childNode, currentPoint);
         }
+      }
+      if (childEntity.NodeType == NodeType.Equipment)
+      {
+        ElectricalEntity.Equipment equipment = (ElectricalEntity.Equipment)childEntity;
+        SingleLine.MakeEquipment(equipment, currentPoint);
+
+        (string feederWireSize, int feederWireCount) = SingleLine.AddConduitSpec(
+          equipment,
+          currentPoint
+        );
+        double aicRating = CADObjectCommands.GetAicRating(
+          parentEntity.AicRating,
+          equipment.ParentDistance,
+          feederWireCount,
+          equipment.LineVoltage,
+          feederWireSize,
+          equipment.Is3Phase
+        );
       }
     }
 

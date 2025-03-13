@@ -362,30 +362,30 @@ namespace GMEPElectricalCommands.GmepDatabase
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
-          panels.Add(
-            new Panel(
-              reader.GetString("id"),
-              reader.GetString("parent_id"),
-              reader.GetString("name"),
-              reader.GetInt32("parent_distance"),
-              reader.GetFloat("loc_x"),
-              reader.GetFloat("loc_y"),
-              reader.GetInt32("bus_amp_rating"),
-              reader.GetInt32("main_amp_rating"),
-              reader.GetBoolean("is_mlo"),
-              reader.GetBoolean("is_recessed"),
-              reader.GetString("voltage"),
-              reader.GetFloat("load_amperage"),
-              reader.GetFloat("kva"),
-              reader.GetFloat("aic_rating"),
-              reader.GetBoolean("is_hidden_on_plan"),
-              reader.IsDBNull(reader.GetOrdinal("node_id")) ? string.Empty : reader.GetString("node_id"),
-              reader.GetString("status"),
-              new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y")),
-              reader.GetInt32("num_breakers"),
-              reader.GetInt32("circuit_no")
-            )
-          );
+        panels.Add(
+          new Panel(
+            GetSafeString(reader, "id"),
+            GetSafeString(reader, "parent_id"),
+            GetSafeString(reader, "name"),
+            GetSafeInt(reader, "parent_distance"),
+            GetSafeFloat(reader, "loc_x"),
+            GetSafeFloat(reader, "loc_y"),
+            GetSafeInt(reader, "bus_amp_rating"),
+            GetSafeInt(reader, "main_amp_rating"),
+            GetSafeBoolean(reader, "is_mlo"),
+            GetSafeBoolean(reader, "is_recessed"),
+            GetSafeString(reader, "voltage"),
+            GetSafeFloat(reader, "load_amperage"),
+            GetSafeFloat(reader, "kva"),
+            GetSafeFloat(reader, "aic_rating"),
+            GetSafeBoolean(reader, "is_hidden_on_plan"),
+            GetSafeString(reader, "node_id"),
+            GetSafeString(reader, "status"),
+            new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y")),
+            GetSafeInt(reader, "num_breakers"),
+            GetSafeInt(reader, "circuit_no")
+          )
+        );
       }
       CloseConnection();
       reader.Close();
@@ -618,7 +618,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return groupNodes;
     }
 
-    public List<Equipment> GetEquipment(string projectId)
+    public List<Equipment> GetEquipment(string projectId, bool singleLineOnly = false)
     {
       List<Equipment> equip = new List<Equipment>();
       string query =
@@ -641,7 +641,9 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_equipment.mounting_height,
         electrical_equipment.circuit_no,
         electrical_equipment.has_plug,
-        electrical_equipment.is_hidden_on_plan
+        electrical_equipment.node_id,
+        electrical_equipment.is_hidden_on_plan,
+        statuses.status
         FROM electrical_equipment
         LEFT JOIN electrical_panels
         ON electrical_panels.id = electrical_equipment.parent_id
@@ -649,41 +651,49 @@ namespace GMEPElectricalCommands.GmepDatabase
         ON electrical_equipment.category_id = electrical_equipment_categories.id
         LEFT JOIN electrical_equipment_voltages
         ON electrical_equipment_voltages.id = electrical_equipment.voltage_id
-        WHERE electrical_equipment.project_id = @projectId
-        ORDER BY electrical_equipment.equip_no ASC";
+        LEFT JOIN statuses ON statuses.id = electrical_equipment.status_id
+        WHERE electrical_equipment.project_id = @projectId";
+      if (singleLineOnly)
+      {
+        query +=
+          @"
+          AND electrical_equipment.node_id IS NOT NULL        
+          ";
+      }
+      query +=
+        @"
+        ORDER BY electrical_equipment.equip_no ASC    
+        ";
       this.OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("projectId", projectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
-        bool is3Phase = reader.GetInt32("is_three_phase") == 1;
-        try
-        {
-          equip.Add(
-            new Equipment(
-              reader.GetString("id"),
-              reader.GetString("parent_id"),
-              reader.GetString("name"),
-              reader.GetString("equip_no"),
-              reader.GetString("description"),
-              reader.GetString("category"),
-              reader.GetInt32("voltage"),
-              reader.GetFloat("fla"),
-              is3Phase,
-              reader.GetInt32("parent_distance"),
-              reader.GetFloat("loc_x"),
-              reader.GetFloat("loc_y"),
-              reader.GetFloat("mca"),
-              reader.GetString("hp"),
-              reader.GetInt32("mounting_height"),
-              reader.GetInt32("circuit_no"),
-              reader.GetBoolean("has_plug"),
-              reader.GetBoolean("is_hidden_on_plan")
-            )
-          );
-        }
-        catch { }
+        equip.Add(
+          new Equipment(
+            GetSafeString(reader, "id"),
+            GetSafeString(reader, "node_id"),
+            GetSafeString(reader, "parent_id"),
+            GetSafeString(reader, "name"),
+            GetSafeString(reader, "equip_no"),
+            GetSafeString(reader, "description"),
+            GetSafeString(reader, "category"),
+            GetSafeInt(reader, "voltage"),
+            GetSafeFloat(reader, "fla"),
+            GetSafeBoolean(reader, "is_three_phase"),
+            GetSafeInt(reader, "parent_distance"),
+            GetSafeFloat(reader, "loc_x"),
+            GetSafeFloat(reader, "loc_y"),
+            GetSafeFloat(reader, "mca"),
+            GetSafeString(reader, "hp"),
+            GetSafeInt(reader, "mounting_height"),
+            GetSafeInt(reader, "circuit_no"),
+            GetSafeBoolean(reader, "has_plug"),
+            GetSafeBoolean(reader, "is_hidden_on_plan"),
+            GetSafeString(reader, "status")
+          )
+        );
       }
       CloseConnection();
       reader.Close();
@@ -817,7 +827,9 @@ namespace GMEPElectricalCommands.GmepDatabase
       reader.Close();
       return id;
     }
-    public void UpdateEquipment(Equipment equip) {
+
+    public void UpdateEquipment(Equipment equip)
+    {
       string query =
         @"
           UPDATE electrical_equipment
@@ -837,8 +849,13 @@ namespace GMEPElectricalCommands.GmepDatabase
       CloseConnection();
     }
 
-    public void InsertLightingEquipment(List<string> lightings, string panelId, int circuitNo, string projectId) {
-
+    public void InsertLightingEquipment(
+      List<string> lightings,
+      string panelId,
+      int circuitNo,
+      string projectId
+    )
+    {
       float newWattage = 0;
       string query =
         @"
@@ -848,11 +865,13 @@ namespace GMEPElectricalCommands.GmepDatabase
         WHERE electrical_lighting.id = @id";
 
       this.OpenConnection();
-      foreach (var id in lightings) {
+      foreach (var id in lightings)
+      {
         MySqlCommand command = new MySqlCommand(query, Connection);
         command.Parameters.AddWithValue("@id", id);
         MySqlDataReader reader = command.ExecuteReader();
-        while (reader.Read()) {
+        while (reader.Read())
+        {
           newWattage += reader.GetInt32("wattage");
         }
         reader.Close();
@@ -863,14 +882,17 @@ namespace GMEPElectricalCommands.GmepDatabase
         fla, is_three_phase, circuit_no, spec_sheet_from_client, aic_rating, color_code, connection_type_id, va, load_type) VALUES (@id, @projectId, @parentId, @description, @category, 
         @voltage, @fla, @isThreePhase, @circuit, @specFromClient, @aicRating, @colorCode, @connectionId, @va, @loadType)";
 
-      MySqlCommand  command2 = new MySqlCommand(query, Connection);
+      MySqlCommand command2 = new MySqlCommand(query, Connection);
       command2.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
       command2.Parameters.AddWithValue("@projectId", projectId);
       command2.Parameters.AddWithValue("@parentId", panelId);
       command2.Parameters.AddWithValue("@description", "Lighting");
       command2.Parameters.AddWithValue("@category", 5);
       command2.Parameters.AddWithValue("@voltage", 1);
-      command2.Parameters.AddWithValue("@fla", Math.Round(newWattage / 115, 1, MidpointRounding.AwayFromZero));
+      command2.Parameters.AddWithValue(
+        "@fla",
+        Math.Round(newWattage / 115, 1, MidpointRounding.AwayFromZero)
+      );
       command2.Parameters.AddWithValue("@va", newWattage);
       command2.Parameters.AddWithValue("@isThreePhase", false);
       command2.Parameters.AddWithValue("@circuit", circuitNo);

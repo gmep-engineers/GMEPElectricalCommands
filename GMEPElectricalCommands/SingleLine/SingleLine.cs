@@ -30,6 +30,7 @@ namespace ElectricalCommands.SingleLine
     PanelBreaker,
     Transformer,
     Disconnect,
+    Equipment,
   }
 
   public class SingleLine
@@ -242,7 +243,7 @@ namespace ElectricalCommands.SingleLine
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine2, 1);
         tr.Commit();
       }
-      MakeCtsMeter(meter, currentPoint);
+      MakeCtsMeter(meter, new Point3d(currentPoint.X, currentPoint.Y - 0.5, 0));
       MakeDistributionBreaker(
         distributionBreaker,
         new Point3d(currentPoint.X, currentPoint.Y - 1, 0)
@@ -468,7 +469,7 @@ namespace ElectricalCommands.SingleLine
           0.85,
           2,
           "E-TXT1",
-          new Point3d(currentPoint.X + 0.33, currentPoint.Y - 0.369, 0)
+          new Point3d(currentPoint.X + 0.33, currentPoint.Y + 0.1611, 0)
         );
         string blockName = "METER CTS (AUTO SINGLE LINE)";
         if (meter.IsSpace)
@@ -478,7 +479,7 @@ namespace ElectricalCommands.SingleLine
         ObjectId meterSymbol = bt[blockName];
         using (
           BlockReference acBlkRef = new BlockReference(
-            new Point3d(currentPoint.X, currentPoint.Y - 0.5, 0),
+            new Point3d(currentPoint.X, currentPoint.Y, 0),
             meterSymbol
           )
         )
@@ -494,7 +495,7 @@ namespace ElectricalCommands.SingleLine
       }
       if (meter.IsExisting())
       {
-        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 0.4627, currentPoint.Y + 0.1462, 0));
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 0.5, currentPoint.Y, 0));
       }
     }
 
@@ -1940,6 +1941,112 @@ namespace ElectricalCommands.SingleLine
       }
     }
 
+    public static void MakeEquipment(ElectricalEntity.Equipment equipment, Point3d currentPoint)
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      string topText;
+      string bottomText;
+      int hyphenIndex = equipment.Name.IndexOf('-');
+      Console.WriteLine(equipment.Name);
+      if (hyphenIndex == -1)
+      {
+        topText = equipment.Name;
+        bottomText = "-";
+      }
+      else
+      {
+        topText = equipment.Name.Substring(0, hyphenIndex);
+        bottomText = equipment.Name.Substring(hyphenIndex + 1);
+      }
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+
+        ObjectId tagBlockId = bt["4CFM"];
+        using (
+          BlockReference acBlkRef = new BlockReference(
+            new Point3d(currentPoint.X - 0.2694, currentPoint.Y - 0.2333, 0),
+            tagBlockId
+          )
+        )
+        {
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+
+          acBlkRef.Layer = "E-TXT1";
+          TextStyleTable textStyleTable = (TextStyleTable)
+            tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+          ObjectId gmepTextStyleId;
+          if (textStyleTable.Has("gmep"))
+          {
+            gmepTextStyleId = textStyleTable["gmep"];
+          }
+          else
+          {
+            ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+            gmepTextStyleId = doc.Database.Textstyle;
+          }
+          AttributeDefinition attrDef = new AttributeDefinition();
+          attrDef.Position = new Point3d(currentPoint.X, currentPoint.Y - 0.1302, 0);
+          attrDef.LockPositionInBlock = false;
+          attrDef.Tag = "tag";
+          attrDef.IsMTextAttributeDefinition = false;
+          attrDef.TextString = topText;
+          attrDef.Justify = AttachmentPoint.MiddleCenter;
+          attrDef.Visible = true;
+          attrDef.Invisible = false;
+          attrDef.Constant = false;
+          attrDef.Height = 0.0938;
+          attrDef.WidthFactor = 0.85;
+          attrDef.TextStyleId = gmepTextStyleId;
+          attrDef.Layer = "0";
+
+          AttributeReference attrRef = new AttributeReference();
+          attrRef.SetAttributeFromBlock(
+            attrDef,
+            Matrix3d.Displacement(new Vector3d(attrDef.Position.X, attrDef.Position.Y, 0))
+          );
+          acBlkRef.AttributeCollection.AppendAttribute(attrRef);
+
+          AttributeDefinition attrDef2 = new AttributeDefinition();
+          attrDef2.Position = new Point3d(currentPoint.X, currentPoint.Y - 0.3602, 0);
+          attrDef2.LockPositionInBlock = false;
+          attrDef2.Tag = "number";
+          attrDef2.IsMTextAttributeDefinition = false;
+          attrDef2.TextString = bottomText;
+          attrDef2.Justify = AttachmentPoint.MiddleCenter;
+          attrDef2.Visible = true;
+          attrDef2.Invisible = false;
+          attrDef2.Constant = false;
+          attrDef2.Height = 0.0938;
+          attrDef2.WidthFactor = 0.85;
+          attrDef2.TextStyleId = gmepTextStyleId;
+          attrDef2.Layer = "0";
+
+          AttributeReference attrRef2 = new AttributeReference();
+          attrRef2.SetAttributeFromBlock(
+            attrDef2,
+            Matrix3d.Displacement(new Vector3d(attrDef2.Position.X, attrDef2.Position.Y, 0))
+          );
+          acBlkRef.AttributeCollection.AppendAttribute(attrRef2);
+          acBlkRef.Layer = "E-TXT1";
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+          tr.Commit();
+        }
+      }
+    }
+
     public static void MakeDistributionBus(
       ElectricalEntity.DistributionBus distributionBus,
       bool isMultimeter,
@@ -2066,7 +2173,7 @@ namespace ElectricalCommands.SingleLine
       if (distributionBus.IsExisting())
       {
         InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 0.6721, currentPoint.Y + 0.7600, 0));
-        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 1.2965, currentPoint.Y - 0.1295, 0));
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 0.1603, currentPoint.Y - 0.14, 0));
       }
     }
 
@@ -2114,14 +2221,8 @@ namespace ElectricalCommands.SingleLine
     }
 
     public static (string, int) AddConduitSpec(
-      double loadAmperage,
-      double mocp,
-      double distance,
-      double voltage,
-      double maxVoltageDropPercent,
-      int phase,
-      Point3d currentPoint,
-      ElectricalEntity.PlaceableElectricalEntity entity
+      ElectricalEntity.PlaceableElectricalEntity entity,
+      Point3d currentPoint
     )
     {
       Document doc = Autodesk
@@ -2139,12 +2240,12 @@ namespace ElectricalCommands.SingleLine
         string supplemental2,
         string supplemental3
       ) = CADObjectCommands.GetWireAndConduitSizeText(
-        loadAmperage,
-        mocp,
-        distance,
-        voltage,
-        maxVoltageDropPercent,
-        phase
+        entity.LoadAmperage,
+        entity.AmpRating,
+        entity.ParentDistance,
+        entity.LineVoltage,
+        3,
+        entity.Phase
       );
       if (entity.IsExisting() && entity.LoadAmperage == 0 && entity.Kva == 0)
       {
