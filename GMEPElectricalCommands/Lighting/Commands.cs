@@ -693,20 +693,17 @@ namespace ElectricalCommands.Lighting
 
               PromptResult res = blockJig.DragMe(block.ObjectId, out point);
 
-              if (res.Status == PromptStatus.OK)
-              {
+              if (res.Status == PromptStatus.OK) {
                 BlockTableRecord curSpace = (BlockTableRecord)
                   tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
                 BlockReference br = new BlockReference(point, block.ObjectId);
 
-                if (fixture.Rotate)
-                {
+                if (fixture.Rotate) {
                   RotateJig rotateJig = new RotateJig(br);
                   PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
-                  if (rotatePromptResult.Status != PromptStatus.OK)
-                  {
+                  if (rotatePromptResult.Status != PromptStatus.OK) {
                     return;
                   }
                   rotation = br.Rotation;
@@ -716,9 +713,22 @@ namespace ElectricalCommands.Lighting
 
                 tr.AddNewlyCreatedDBObject(br, true);
                 blockId = br.Id;
+                foreach (ObjectId objId in block) {
+                  DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
+                  AttributeDefinition attDef = obj as AttributeDefinition;
+                  if (attDef != null && !attDef.Constant) // Check if it's an attribute and not constant
+                  {
+                    using (AttributeReference attRef = new AttributeReference()) {
+                      attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
+                      attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
+                      attRef.TextString = fixture.Name;
+                      br.AttributeCollection.AppendAttribute(attRef);
+                      tr.AddNewlyCreatedDBObject(attRef, true);
+                    }
+                  }
+                }
               }
-              else
-              {
+              else {
                 return;
               }
 
@@ -732,6 +742,7 @@ namespace ElectricalCommands.Lighting
               BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
               DynamicBlockReferencePropertyCollection pc =
                 br.DynamicBlockReferencePropertyCollection;
+           
               foreach (DynamicBlockReferenceProperty prop in pc)
               {
                 if (prop.PropertyName == "gmep_lighting_id" && prop.Value as string == "0")
@@ -744,6 +755,9 @@ namespace ElectricalCommands.Lighting
                 }
                 if (prop.PropertyName == "gmep_lighting_name" && prop.Value as string == "0") {
                   prop.Value = fixture.Name;
+                }
+                if (prop.PropertyName == "LIGHTING_NAME" && prop.Value as string == "0") {
+                  ed.WriteMessage("Moew");
                 }
               }
               tr.Commit();
