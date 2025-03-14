@@ -785,11 +785,11 @@ namespace GMEPElectricalCommands.GmepDatabase
         SELECT
         electrical_lighting_controls.id,
         electrical_lighting_controls.name,
-        electrical_lighting_control_types.control,
+        electrical_lighting_driver_types.driver_type,
         electrical_lighting_controls.occupancy
         FROM electrical_lighting_controls
-        LEFT JOIN electrical_lighting_control_types
-        ON electrical_lighting_control_types.id = electrical_lighting_controls.control_type_id
+        LEFT JOIN electrical_lighting_driver_types
+        ON electrical_lighting_driver_types.id = electrical_lighting_controls.driver_type_id
         WHERE project_id = @projectId
         ORDER BY name ASC";
       this.OpenConnection();
@@ -802,7 +802,7 @@ namespace GMEPElectricalCommands.GmepDatabase
           new LightingControl(
             reader.GetString("id"),
             reader.GetString("name"),
-            reader.GetString("control_type"),
+            reader.GetString("driver_type"),
             reader.GetBoolean("occupancy")
           )
         );
