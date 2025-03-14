@@ -497,7 +497,6 @@ namespace ElectricalCommands.Lighting
         SelectionSet ss = psr2.Value;
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           foreach (ObjectId id in ss.GetObjectIds()) {
-            ed.WriteMessage("MEOW");
             string circuit = "";
             string control = "";
             string em = "";
