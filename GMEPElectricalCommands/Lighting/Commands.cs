@@ -25,6 +25,7 @@ using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 using System.Threading.Tasks;
 using System.Buffers;
 using DocumentFormat.OpenXml.Drawing.Charts;
+using Emgu.CV.ML;
 
 namespace ElectricalCommands.Lighting
 {
@@ -481,6 +482,55 @@ namespace ElectricalCommands.Lighting
         }
       }
     }
+    [CommandMethod("ToggleEMLighting")]
+    public static void ToggleEMLighting() {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      GmepDatabase gmepDb = new GmepDatabase();
+
+      PromptSelectionOptions pso2 = new PromptSelectionOptions();
+      pso2.MessageForAdding = "\nSelect Lighting:";
+      PromptSelectionResult psr2 = ed.GetSelection(pso2);
+
+      if (psr2.Status == PromptStatus.OK) {
+        SelectionSet ss = psr2.Value;
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          foreach (ObjectId id in ss.GetObjectIds()) {
+            ed.WriteMessage("MEOW");
+            string circuit = "";
+            string control = "";
+            string em = "";
+            DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
+            BlockReference block = tr.GetObject(id, OpenMode.ForWrite) as BlockReference;
+            foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+              if (property.PropertyName == "gmep_lighting_control") {
+                control = property.Value as string;
+              }
+              if (property.PropertyName == "gmep_lighting_circuit") {
+                circuit = property.Value as string;
+              }
+              if (property.PropertyName == "Visibility1") {
+                if (property.Value as string == "EM") {
+                  property.Value = "Non-EM";
+                }
+                else {
+                  property.Value = "EM";
+                  em = ", EM";
+                }
+              }
+            }
+            foreach (ObjectId id2 in block.AttributeCollection) {
+              AttributeReference attRef = tr.GetObject(id2, OpenMode.ForWrite) as AttributeReference;
+              if (attRef.Tag == "LIGHTING_CIRCUIT") {
+                attRef.TextString = circuit + control + em;
+              }
+            }
+          }
+          tr.Commit();
+        }
+      }
+    }
     [CommandMethod("AssignLightingControl")]
     public static void AssignLightingControl() {
       Document doc = Application.DocumentManager.MdiActiveDocument;
@@ -523,6 +573,7 @@ namespace ElectricalCommands.Lighting
             DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
             if (obj is BlockReference block) {
               string circuit = "";
+              string em = "";
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_control") {
                   property.Value = control;
@@ -530,11 +581,16 @@ namespace ElectricalCommands.Lighting
                 if (property.PropertyName == "gmep_lighting_circuit") {
                   circuit = property.Value as string;
                 }
+                if (property.PropertyName == "Visibility1") {
+                  if (property.Value as string == "EM") {
+                    em = ", EM";
+                  }
+                }
               }
               foreach (ObjectId id2 in block.AttributeCollection) {
                 AttributeReference attRef = tr.GetObject(id2, OpenMode.ForWrite) as AttributeReference;
                 if (attRef.Tag == "LIGHTING_CIRCUIT") {
-                  attRef.TextString = circuit + control;
+                  attRef.TextString = circuit + control + em;
                 }
               }
             }
@@ -623,6 +679,7 @@ namespace ElectricalCommands.Lighting
             if (obj is BlockReference block) {
               string circuit = "";
               string control = "";
+              string em = "";
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_fixture_id") {
                   var fixtureId = property.Value as string;
@@ -644,11 +701,16 @@ namespace ElectricalCommands.Lighting
                 if (property.PropertyName == "gmep_lighting_control") {
                   control = property.Value as string;
                 }
+                if (property.PropertyName == "Visibility1") {
+                  if (property.Value as string == "EM") {
+                    em = ", EM";
+                  }
+                }
               }
               foreach (ObjectId id3 in block.AttributeCollection) {
                 AttributeReference attRef = (AttributeReference)tr.GetObject(id3, OpenMode.ForWrite);
                 if (attRef.Tag == "LIGHTING_CIRCUIT") {
-                  attRef.TextString = circuit + control;
+                  attRef.TextString = circuit + control + em;
                 }
               }
             }
