@@ -400,21 +400,34 @@ namespace ElectricalCommands.Lighting
               tr.AddNewlyCreatedDBObject(br, true);
               blockId = br.Id;
 
-              foreach (ObjectId objId in block) {
+              foreach (ObjectId objId in block) {  
                 DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
                 AttributeDefinition attDef = obj as AttributeDefinition;
                 if (attDef != null && !attDef.Constant) {
                   using (AttributeReference attRef = new AttributeReference()) {
                     attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
-                    attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
-                    attRef.TextString = control.Name;
-                    attRef.Height = 0.0938 / scale * 6;
-                    attRef.WidthFactor = 0.85;
-                    attRef.HorizontalMode = TextHorizontalMode.TextLeft;
-                    attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
-                    attRef.Justify = AttachmentPoint.BaseLeft;
-                    attRef.Rotation = attRef.Rotation - rotation;
-
+                    if (attRef.Tag == "CONTROL_NAME") {
+                      attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
+                      attRef.TextString = control.Name;
+                      attRef.Height = 0.0938 / scale * 6;
+                      attRef.WidthFactor = 0.85;
+                      attRef.HorizontalMode = TextHorizontalMode.TextLeft;
+                      attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
+                      attRef.Justify = AttachmentPoint.BaseLeft;
+                      attRef.Rotation = attRef.Rotation - rotation;
+                    }
+                    if (attRef.Tag == "D") {
+                      attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
+                      attRef.Height = 0.0938 / scale * 6;
+                      attRef.WidthFactor = 0.85;
+                      attRef.TextString = attRef.Tag;
+                      attRef.HorizontalMode = TextHorizontalMode.TextLeft;
+                      attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
+                      attRef.Justify = AttachmentPoint.BaseLeft;
+                    
+                      Matrix3d rotationMatrix = Matrix3d.Rotation(-rotation, Vector3d.ZAxis, br.Position);
+                      attRef.TransformBy(rotationMatrix);
+                    }
                     br.AttributeCollection.AppendAttribute(attRef);
                     tr.AddNewlyCreatedDBObject(attRef, true);
                   }
