@@ -553,11 +553,11 @@ namespace ElectricalCommands.ElectricalEntity
     public string ControlType;
     public bool HasOccupancy;
 
-    public LightingControl(string Id, string Name, string ControlTypeId, bool HasOccupancy)
+    public LightingControl(string Id, string Name, string ControlType, bool HasOccupancy)
     {
       this.Id = Id;
       this.Name = Name;
-      this.ControlType = ControlTypeId;
+      this.ControlType = ControlType;
       this.HasOccupancy = HasOccupancy;
     }
   }
