@@ -593,12 +593,8 @@ namespace ElectricalCommands.SingleLine
       }
       foreach (ElectricalEntity.Equipment equipment in equipmentList)
       {
-        Console.WriteLine("from disconnect");
-        Console.WriteLine("equip id " + equipment.NodeId);
-        Console.WriteLine("disc id " + disconnect.NodeId);
         if (VerifyNodeLink(disconnect.NodeId, equipment.NodeId))
         {
-          Console.WriteLine("link");
           InheritElectricalAttributes(disconnect, equipment);
           TreeNode equipmentNode = node.Nodes.Add(equipment.Id, equipment.Name);
           equipmentNode.Tag = equipment;
@@ -783,6 +779,23 @@ namespace ElectricalCommands.SingleLine
           InfoTextBox.AppendText($"KVA:     {transformer.Kva} KVA");
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"Voltage: {transformer.Voltage}");
+          break;
+        case NodeType.Equipment:
+          ElectricalEntity.Equipment equipment = (ElectricalEntity.Equipment)entity;
+          InfoTextBox.AppendText($"Fed From: {GetParentName(equipment.ParentId)}");
+          InfoTextBox.AppendText(Environment.NewLine);
+          InfoTextBox.AppendText("-------------------Equipment--------------------");
+          InfoTextBox.AppendText(Environment.NewLine);
+          InfoTextBox.AppendText($"MCA:      {equipment.Mca}A");
+          InfoTextBox.AppendText(Environment.NewLine);
+          InfoTextBox.AppendText($"FLA:      {equipment.Fla}A");
+          InfoTextBox.AppendText(Environment.NewLine);
+          InfoTextBox.AppendText($"HP:       {equipment.Hp}HP");
+          InfoTextBox.AppendText(Environment.NewLine);
+          InfoTextBox.AppendText($"Voltage:  {equipment.Voltage}");
+          InfoTextBox.AppendText(Environment.NewLine);
+          InfoTextBox.AppendText($"Category: {equipment.Category}");
+          InfoTextBox.AppendText(Environment.NewLine);
           break;
       }
     }

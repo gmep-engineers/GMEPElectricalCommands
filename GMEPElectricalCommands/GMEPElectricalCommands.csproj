@@ -349,6 +349,7 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings1.Designer.cs</LastGenOutput>
     </None>
+    <None Include="Release.ps1" />
     <None Include="Symbols\BlockData\ar.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
