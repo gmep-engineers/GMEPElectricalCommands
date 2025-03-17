@@ -308,31 +308,76 @@ namespace ElectricalCommands.ElectricalEntity
                 0
               );
             }
-            ObjectId textId = GeneralCommands.CreateAndPositionText(
+            //ObjectId textId = GeneralCommands.CreateAndPositionText(
+            //  tr,
+            //  GetStatusAbbr(),
+            //  "gmep",
+            //  0.0938 * 12 / scale,
+            //  0.85,
+            //  2,
+            //  "E-TXT1",
+            //  new Point3d(
+            //    labelInsertionPoint.X - (0.85 / scale),
+            //    labelInsertionPoint.Y + (1.25 / scale),
+            //    0
+            //  ),
+            //  TextHorizontalMode.TextCenter,
+            //  TextVerticalMode.TextBase,
+            //  AttachmentPoint.BaseLeft
+            //);
+            ObjectId statusAndAmpTextId = GeneralCommands.CreateAndPositionText(
               tr,
-              GetStatusAbbr(),
+              GetStatusAbbr() + AmpRating.ToString() + "A",
               "gmep",
               0.0938 * 12 / scale,
               0.85,
               2,
               "E-TXT1",
-              new Point3d(
-                labelInsertionPoint.X - (0.85 / scale),
-                labelInsertionPoint.Y + (1.25 / scale),
-                0
-              ),
+              new Point3d(labelInsertionPoint.X, labelInsertionPoint.Y - (1.5 * 1.5 / scale), 0),
               TextHorizontalMode.TextCenter,
               TextVerticalMode.TextBase,
-              AttachmentPoint.BaseLeft
+              AttachmentPoint.BaseCenter
+            );
+            string voltageString = Voltage.Substring(0, 7) + "V";
+            ObjectId voltageTextId = GeneralCommands.CreateAndPositionText(
+              tr,
+              voltageString,
+              "gmep",
+              0.0938 * 12 / scale,
+              0.85,
+              2,
+              "E-TXT1",
+              new Point3d(labelInsertionPoint.X, labelInsertionPoint.Y - (2.5 * 1.5 / scale), 0),
+              TextHorizontalMode.TextCenter,
+              TextVerticalMode.TextBase,
+              AttachmentPoint.BaseCenter
+            );
+            string phaseWireString = Phase == 3 ? "3\u0081-4W" : "1\u0081-3W";
+            ObjectId phaseWireTextId = GeneralCommands.CreateAndPositionText(
+              tr,
+              phaseWireString,
+              "gmep",
+              0.0938 * 12 / scale,
+              0.85,
+              2,
+              "E-TXT1",
+              new Point3d(labelInsertionPoint.X, labelInsertionPoint.Y - (3.5 * 1.5 / scale), 0),
+              TextHorizontalMode.TextCenter,
+              TextVerticalMode.TextBase,
+              AttachmentPoint.BaseCenter
             );
 
             // set hyperlink
-            var text = (DBText)tr.GetObject(textId, OpenMode.ForWrite);
+            var statusAndAmpTextObj = (DBText)tr.GetObject(statusAndAmpTextId, OpenMode.ForWrite);
+            var voltageTextObj = (DBText)tr.GetObject(voltageTextId, OpenMode.ForWrite);
+            var phaseWireTextObj = (DBText)tr.GetObject(phaseWireTextId, OpenMode.ForWrite);
             // this is the quickest way to add a custom attribute to DBText without
             // having to do a bunch of bloated AutoCAD database nonsense
             HyperLink customAttr = new HyperLink();
             customAttr.SubLocation = Id;
-            text.Hyperlinks.Add(customAttr);
+            statusAndAmpTextObj.Hyperlinks.Add(customAttr);
+            voltageTextObj.Hyperlinks.Add(customAttr);
+            phaseWireTextObj.Hyperlinks.Add(customAttr);
 
             BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
             ObjectId locatorBlockId = bt["EQUIP_MARKER"];
@@ -865,8 +910,11 @@ namespace ElectricalCommands.ElectricalEntity
       this.ParentDistance = ParentDistance;
       Location = new Point3d(LocationX, LocationY, 0);
       this.BusAmpRating = BusAmpRating;
-      AmpRating = BusAmpRating;
       this.MainAmpRating = MainAmpRating;
+      AmpRating =
+        IsMlo ? BusAmpRating
+        : MainAmpRating < BusAmpRating ? MainAmpRating
+        : BusAmpRating;
       this.IsMlo = IsMlo;
       this.IsRecessed = IsRecessed;
       this.Voltage = Voltage;
