@@ -958,10 +958,15 @@ namespace ElectricalCommands.SingleLine
             distributionBusChild.Nodes[0],
             new Point3d(currentPoint.X, currentPoint.Y - 4.1875, 0)
           );
-          SingleLine.MakeDistributionChildConduit(
-            new Point3d(currentPoint.X, currentPoint.Y - 1.6875, 0),
-            distributionBreaker.IsExisting()
-          );
+          if (distributionBusChild.Nodes[0].Nodes.Count > 0)
+          {
+            ElectricalEntity.ElectricalEntity nextChildEntity = (ElectricalEntity.ElectricalEntity)
+              distributionBusChild.Nodes[0].Nodes[0].Tag;
+            SingleLine.MakeDistributionChildConduit(
+              new Point3d(currentPoint.X, currentPoint.Y - 1.6875, 0),
+              nextChildEntity.IsExisting()
+            );
+          }
         }
       }
       else
@@ -972,10 +977,15 @@ namespace ElectricalCommands.SingleLine
           distributionBusChild,
           new Point3d(currentPoint.X, currentPoint.Y - 4.1875, 0)
         );
-        SingleLine.MakeDistributionChildConduit(
-          new Point3d(currentPoint.X, currentPoint.Y - 1.6875, 0),
-          distributionBreaker.IsExisting()
-        );
+        if (distributionBusChild.Nodes[0].Nodes.Count > 0)
+        {
+          ElectricalEntity.ElectricalEntity nextChildEntity = (ElectricalEntity.ElectricalEntity)
+            distributionBusChild.Nodes[0].Nodes[0].Tag;
+          SingleLine.MakeDistributionChildConduit(
+            new Point3d(currentPoint.X, currentPoint.Y - 1.6875, 0),
+            nextChildEntity.IsExisting()
+          );
+        }
       }
     }
 
@@ -1055,49 +1065,70 @@ namespace ElectricalCommands.SingleLine
           {
             Point3d breakerPoint = new Point3d(currentPoint.X + 0.3125, currentPoint.Y - 0.9333, 0);
             SingleLine.MakeRightPanelBreaker(panelBreakers[i], breakerPoint);
-            currentPoint = SingleLine.MakePanelChildConduit(
-              i,
-              breakerPoint,
-              panelBreakers[i].IsExisting()
-            );
             TreeNode breakerNode = SingleLineTreeView.Nodes.Find(panelBreakers[i].Id, true)[0];
-            MakeFieldEntity(breakerNode, currentPoint);
+            if (breakerNode.Nodes.Count > 0)
+            {
+              ElectricalEntity.ElectricalEntity nextChildEntity =
+                (ElectricalEntity.ElectricalEntity)breakerNode.Nodes[0].Tag;
+              Console.WriteLine(nextChildEntity.IsExisting());
+              currentPoint = SingleLine.MakePanelChildConduit(
+                i,
+                breakerPoint,
+                nextChildEntity.IsExisting()
+              );
+              MakeFieldEntity(breakerNode, currentPoint);
+            }
           }
           if (i == 1)
           {
             Point3d breakerPoint = new Point3d(currentPoint.X - 0.3125, currentPoint.Y - 0.9333, 0);
             SingleLine.MakeLeftPanelBreaker(panelBreakers[i], breakerPoint);
-            currentPoint = SingleLine.MakePanelChildConduit(
-              i,
-              breakerPoint,
-              panelBreakers[i].IsExisting()
-            );
             TreeNode breakerNode = SingleLineTreeView.Nodes.Find(panelBreakers[i].Id, true)[0];
-            MakeFieldEntity(breakerNode, currentPoint);
+            if (breakerNode.Nodes.Count > 0)
+            {
+              ElectricalEntity.ElectricalEntity nextChildEntity =
+                (ElectricalEntity.ElectricalEntity)breakerNode.Nodes[0].Tag;
+              currentPoint = SingleLine.MakePanelChildConduit(
+                i,
+                breakerPoint,
+                nextChildEntity.IsExisting()
+              );
+              MakeFieldEntity(breakerNode, currentPoint);
+            }
           }
           if (i == 2)
           {
             Point3d breakerPoint = new Point3d(currentPoint.X + 0.3125, currentPoint.Y - 0.2333, 0);
             SingleLine.MakeRightPanelBreaker(panelBreakers[i], breakerPoint);
-            currentPoint = SingleLine.MakePanelChildConduit(
-              i,
-              breakerPoint,
-              panelBreakers[i].IsExisting()
-            );
             TreeNode breakerNode = SingleLineTreeView.Nodes.Find(panelBreakers[i].Id, true)[0];
-            MakeFieldEntity(breakerNode, currentPoint);
+            if (breakerNode.Nodes.Count > 0)
+            {
+              ElectricalEntity.ElectricalEntity nextChildEntity =
+                (ElectricalEntity.ElectricalEntity)breakerNode.Nodes[0].Tag;
+              currentPoint = SingleLine.MakePanelChildConduit(
+                i,
+                breakerPoint,
+                nextChildEntity.IsExisting()
+              );
+              MakeFieldEntity(breakerNode, currentPoint);
+            }
           }
           if (i == 3)
           {
             Point3d breakerPoint = new Point3d(currentPoint.X - 0.3125, currentPoint.Y - 0.2333, 0);
             SingleLine.MakeLeftPanelBreaker(panelBreakers[i], breakerPoint);
-            currentPoint = SingleLine.MakePanelChildConduit(
-              i,
-              breakerPoint,
-              panelBreakers[i].IsExisting()
-            );
             TreeNode breakerNode = SingleLineTreeView.Nodes.Find(panelBreakers[i].Id, true)[0];
-            MakeFieldEntity(breakerNode, currentPoint);
+            if (breakerNode.Nodes.Count > 0)
+            {
+              ElectricalEntity.ElectricalEntity nextChildEntity =
+                (ElectricalEntity.ElectricalEntity)breakerNode.Nodes[0].Tag;
+              currentPoint = SingleLine.MakePanelChildConduit(
+                i,
+                breakerPoint,
+                nextChildEntity.IsExisting()
+              );
+              MakeFieldEntity(breakerNode, currentPoint);
+            }
           }
         }
       }
@@ -1142,9 +1173,11 @@ namespace ElectricalCommands.SingleLine
         currentPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.1201, 0);
         if (childNode.Nodes.Count > 0)
         {
+          ElectricalEntity.ElectricalEntity nextChildEntity = (ElectricalEntity.ElectricalEntity)
+            childNode.Nodes[0].Tag;
           currentPoint = SingleLine.MakeConduitFromDisconnect(
             currentPoint,
-            disconnect.IsExisting()
+            nextChildEntity.IsExisting()
           );
           MakeFieldEntity(childNode, currentPoint);
         }
@@ -1173,9 +1206,11 @@ namespace ElectricalCommands.SingleLine
         currentPoint = new Point3d(currentPoint.X, currentPoint.Y - 0.3739, 0);
         if (childNode.Nodes.Count > 0)
         {
-          currentPoint = SingleLine.MakeConduitFromTransformer(
+          ElectricalEntity.ElectricalEntity nextChildEntity = (ElectricalEntity.ElectricalEntity)
+            childNode.Nodes[0].Tag;
+          currentPoint = SingleLine.MakeConduitFromDisconnect(
             currentPoint,
-            transformer.IsExisting()
+            nextChildEntity.IsExisting()
           );
           MakeFieldEntity(childNode, currentPoint);
         }
@@ -1407,6 +1442,7 @@ namespace ElectricalCommands.SingleLine
       string distributionBusId = String.Empty;
       ElectricalEntity.DistributionBus distributionBus;
       bool existing = false;
+      bool groundExisting = false;
       foreach (string groupId in groupDict.Keys)
       {
         if (String.IsNullOrEmpty(groupId))
@@ -1444,6 +1480,7 @@ namespace ElectricalCommands.SingleLine
           // get meter from section
           ElectricalEntity.Meter meter = GetMeterFromMainSection(groupId);
           existing = meter.Status.ToLower() == "existing";
+          groundExisting = existing;
           groupWidth = 1.75;
           SingleLine.MakeMainMeterSection(meter, currentPoint);
         }
@@ -1452,6 +1489,7 @@ namespace ElectricalCommands.SingleLine
           // get breaker from section
           ElectricalEntity.MainBreaker mainBreaker = GetMainBreakerFromMainSection(groupId);
           existing = mainBreaker.Status.ToLower() == "existing";
+          groundExisting = existing;
           groupWidth = 1.75;
           SingleLine.MakeMainBreakerSection(mainBreaker, currentPoint);
         }
@@ -1462,6 +1500,7 @@ namespace ElectricalCommands.SingleLine
           ElectricalEntity.MainBreaker mainBreaker = GetMainBreakerFromMainSection(groupId);
           existing =
             (meter.Status.ToLower() == "existing") && (mainBreaker.Status.ToLower() == "existing");
+          groundExisting = existing;
           groupWidth = 1.75;
           SingleLine.MakeMainMeterAndBreakerSection(meter, mainBreaker, currentPoint);
         }
@@ -1547,6 +1586,8 @@ namespace ElectricalCommands.SingleLine
         }
         currentPoint = new Point3d(currentPoint.X + groupWidth, currentPoint.Y, 0);
       }
+      currentPoint = new Point3d(currentPoint.X + 0.25, currentPoint.Y, 0);
+      SingleLine.InsertNotes(currentPoint, groundExisting);
     }
 
     private void SingleLineDialogWindow_Load(object sender, EventArgs e) { }

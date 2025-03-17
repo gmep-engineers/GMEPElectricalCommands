@@ -2328,5 +2328,88 @@ namespace ElectricalCommands.SingleLine
         tr.Commit();
       }
     }
+
+    public static void InsertNotes(Point3d currentPoint, bool existing)
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+        ObjectId generalNotes = bt["GMEP SINGLE-LINE DIAGRAM GENERAL NOTES"];
+        using (
+          BlockReference acBlkRef = new BlockReference(
+            new Point3d(currentPoint.X, currentPoint.Y, 0),
+            generalNotes
+          )
+        )
+        {
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+        }
+        if (existing)
+        {
+          ObjectId keyedNotes = bt["GMEP SINGLE-LINE DIAGRAM KEYED NOTES - EXISTING"];
+          using (
+            BlockReference acBlkRef = new BlockReference(
+              new Point3d(currentPoint.X, currentPoint.Y - 6.86, 0),
+              keyedNotes
+            )
+          )
+          {
+            BlockTableRecord acCurSpaceBlkTblRec;
+            acCurSpaceBlkTblRec =
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+            acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+            tr.AddNewlyCreatedDBObject(acBlkRef, true);
+          }
+          currentPoint = new Point3d(currentPoint.X - 7.8062, currentPoint.Y - 8.2372, 0);
+        }
+        else
+        {
+          ObjectId keyedNotes = bt["GMEP SINGLE-LINE DIAGRAM KEYED NOTES - NEW"];
+          using (
+            BlockReference acBlkRef = new BlockReference(
+              new Point3d(currentPoint.X, currentPoint.Y - 6.86, 0),
+              keyedNotes
+            )
+          )
+          {
+            BlockTableRecord acCurSpaceBlkTblRec;
+            acCurSpaceBlkTblRec =
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+            acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+            tr.AddNewlyCreatedDBObject(acBlkRef, true);
+          }
+          currentPoint = new Point3d(currentPoint.X - 7.8062, currentPoint.Y - 8.2372, 0);
+        }
+        ObjectId label = bt["SINGLE LINE LABEL"];
+        using (
+          BlockReference acBlkRef = new BlockReference(
+            new Point3d(currentPoint.X + 32.7757, currentPoint.Y - 2.1543, 0),
+            label
+          )
+        )
+        {
+          BlockTableRecord acCurSpaceBlkTblRec;
+          acCurSpaceBlkTblRec =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+          tr.AddNewlyCreatedDBObject(acBlkRef, true);
+        }
+        tr.Commit();
+      }
+    }
   }
 }
