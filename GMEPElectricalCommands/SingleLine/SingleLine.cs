@@ -2329,7 +2329,7 @@ namespace ElectricalCommands.SingleLine
       }
     }
 
-    public static void InsertNotes(Point3d currentPoint, bool existing)
+    public static void InsertNotes(Point3d currentPoint, bool existing, double height)
     {
       Document doc = Autodesk
         .AutoCAD
@@ -2374,7 +2374,6 @@ namespace ElectricalCommands.SingleLine
             acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
             tr.AddNewlyCreatedDBObject(acBlkRef, true);
           }
-          currentPoint = new Point3d(currentPoint.X - 7.8062, currentPoint.Y - 8.2372, 0);
         }
         else
         {
@@ -2392,8 +2391,12 @@ namespace ElectricalCommands.SingleLine
             acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
             tr.AddNewlyCreatedDBObject(acBlkRef, true);
           }
-          currentPoint = new Point3d(currentPoint.X - 7.8062, currentPoint.Y - 8.2372, 0);
         }
+        currentPoint = new Point3d(
+          currentPoint.X - 7.8062,
+          currentPoint.Y - 8.2372 - height + 6.2 - 3,
+          0
+        );
         ObjectId label = bt["SINGLE LINE LABEL"];
         using (
           BlockReference acBlkRef = new BlockReference(

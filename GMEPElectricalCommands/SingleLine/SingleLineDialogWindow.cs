@@ -11,7 +11,6 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
-using DocumentFormat.OpenXml.Drawing.Charts;
 using ElectricalCommands.ElectricalEntity;
 using GMEPElectricalCommands.GmepDatabase;
 
@@ -44,6 +43,8 @@ namespace ElectricalCommands.SingleLine
     private List<ElectricalEntity.GroupNode> groupList;
     private Dictionary<string, List<string>> groupDict;
     private List<ObjectId> dynamicBlockIds;
+    private double totalHeight;
+    private double totalWidth;
 
     private List<PlaceableElectricalEntity> placeables;
     public GmepDatabase gmepDb;
@@ -71,11 +72,6 @@ namespace ElectricalCommands.SingleLine
       groupList = gmepDb.GetGroupNodes(projectId);
 
       MakeGroupDict();
-
-      SingleLineTreeView.BeginUpdate();
-      PopulateTreeView();
-      SingleLineTreeView.ExpandAll();
-      SingleLineTreeView.EndUpdate();
       if (serviceList.Count > 0)
       {
         SetInfoBoxText(serviceList[0]);
@@ -89,6 +85,11 @@ namespace ElectricalCommands.SingleLine
       dynamicBlockIds = new List<ObjectId>();
       SetDynamicBlockIds();
       placeables.ForEach(placeable => placeable.SetBlockId(dynamicBlockIds));
+      RefreshLocations();
+      SingleLineTreeView.BeginUpdate();
+      PopulateTreeView();
+      SingleLineTreeView.ExpandAll();
+      SingleLineTreeView.EndUpdate();
       foreach (TreeNode node in SingleLineTreeView.Nodes)
       {
         if (node != null)
@@ -100,6 +101,50 @@ namespace ElectricalCommands.SingleLine
           docMenu.Items.Add(placeLabel);
           node.ContextMenuStrip = docMenu;
           SetTreeContextMenu(node);
+        }
+      }
+    }
+
+    private void RefreshLocations()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      Transaction tr = db.TransactionManager.StartTransaction();
+      using (tr)
+      {
+        foreach (PlaceableElectricalEntity placeable in placeables)
+        {
+          placeable.Location = new Point3d();
+          foreach (ObjectId id in dynamicBlockIds)
+          {
+            try
+            {
+              BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
+              if (
+                br != null
+                && br.IsDynamicBlock
+                && br.DynamicBlockReferencePropertyCollection.Count > 0
+              )
+              {
+                DynamicBlockReferencePropertyCollection pc =
+                  br.DynamicBlockReferencePropertyCollection;
+                foreach (DynamicBlockReferenceProperty prop in pc)
+                {
+                  if (prop.PropertyName == "gmep_equip_id" && prop.Value as string == placeable.Id)
+                  {
+                    placeable.Location = br.Position;
+                  }
+                }
+              }
+            }
+            catch { }
+          }
         }
       }
     }
@@ -899,11 +944,15 @@ namespace ElectricalCommands.SingleLine
       return GroupType.MainMeterSection;
     }
 
-    private void MakeEntityFromDistributionBus(TreeNode distributionBusChild, Point3d currentPoint)
+    private double MakeEntityFromDistributionBus(
+      TreeNode distributionBusChild,
+      Point3d currentPoint
+    )
     {
+      double height = 2.5;
       if (distributionBusChild == null)
       {
-        return;
+        return 0;
       }
       ElectricalEntity.ElectricalEntity distributionBusChildEntity =
         (ElectricalEntity.ElectricalEntity)distributionBusChild.Tag;
@@ -932,7 +981,7 @@ namespace ElectricalCommands.SingleLine
       }
       else if (distributionBusChild.Nodes.Count == 0)
       {
-        return;
+        return 0;
       }
       else if (distributionBusChildEntity.NodeType == NodeType.Meter)
       {
@@ -954,7 +1003,7 @@ namespace ElectricalCommands.SingleLine
         }
         if (childNode.Nodes.Count > 0)
         {
-          MakeFieldEntity(
+          height += MakeFieldEntity(
             distributionBusChild.Nodes[0],
             new Point3d(currentPoint.X, currentPoint.Y - 4.1875, 0)
           );
@@ -973,20 +1022,21 @@ namespace ElectricalCommands.SingleLine
       {
         DistributionBreaker distributionBreaker = (DistributionBreaker)distributionBusChildEntity;
         SingleLine.MakeDistributionBreakerCombo(distributionBreaker, currentPoint);
-        MakeFieldEntity(
+        height += MakeFieldEntity(
           distributionBusChild,
           new Point3d(currentPoint.X, currentPoint.Y - 4.1875, 0)
         );
-        if (distributionBusChild.Nodes[0].Nodes.Count > 0)
+        if (distributionBusChild.Nodes.Count > 0)
         {
           ElectricalEntity.ElectricalEntity nextChildEntity = (ElectricalEntity.ElectricalEntity)
-            distributionBusChild.Nodes[0].Nodes[0].Tag;
+            distributionBusChild.Nodes[0].Tag;
           SingleLine.MakeDistributionChildConduit(
             new Point3d(currentPoint.X, currentPoint.Y - 1.6875, 0),
             nextChildEntity.IsExisting()
           );
         }
       }
+      return height;
     }
 
     private List<ElectricalEntity.PanelBreaker> GetPanelBreakersFromPanel(TreeNode panelNode)
@@ -1005,11 +1055,13 @@ namespace ElectricalCommands.SingleLine
       return panelBreakers;
     }
 
-    private void MakeFieldEntity(TreeNode parentNode, Point3d currentPoint)
+    private double MakeFieldEntity(TreeNode parentNode, Point3d currentPoint)
     {
+      Point3d startingPoint = currentPoint;
+      double height = 0;
       if (parentNode == null || parentNode.Nodes.Count == 0)
       {
-        return;
+        return 0;
       }
       ElectricalEntity.ElectricalEntity parentEntity = (ElectricalEntity.ElectricalEntity)
         parentNode.Tag;
@@ -1070,13 +1122,13 @@ namespace ElectricalCommands.SingleLine
             {
               ElectricalEntity.ElectricalEntity nextChildEntity =
                 (ElectricalEntity.ElectricalEntity)breakerNode.Nodes[0].Tag;
-              Console.WriteLine(nextChildEntity.IsExisting());
               currentPoint = SingleLine.MakePanelChildConduit(
                 i,
                 breakerPoint,
                 nextChildEntity.IsExisting()
               );
-              MakeFieldEntity(breakerNode, currentPoint);
+              height = startingPoint.Y - currentPoint.Y;
+              height += MakeFieldEntity(breakerNode, currentPoint);
             }
           }
           if (i == 1)
@@ -1093,7 +1145,8 @@ namespace ElectricalCommands.SingleLine
                 breakerPoint,
                 nextChildEntity.IsExisting()
               );
-              MakeFieldEntity(breakerNode, currentPoint);
+              height = startingPoint.Y - currentPoint.Y;
+              height += MakeFieldEntity(breakerNode, currentPoint);
             }
           }
           if (i == 2)
@@ -1110,7 +1163,8 @@ namespace ElectricalCommands.SingleLine
                 breakerPoint,
                 nextChildEntity.IsExisting()
               );
-              MakeFieldEntity(breakerNode, currentPoint);
+              height = startingPoint.Y - currentPoint.Y;
+              height += MakeFieldEntity(breakerNode, currentPoint);
             }
           }
           if (i == 3)
@@ -1127,7 +1181,8 @@ namespace ElectricalCommands.SingleLine
                 breakerPoint,
                 nextChildEntity.IsExisting()
               );
-              MakeFieldEntity(breakerNode, currentPoint);
+              height = startingPoint.Y - currentPoint.Y;
+              height += MakeFieldEntity(breakerNode, currentPoint);
             }
           }
         }
@@ -1179,7 +1234,8 @@ namespace ElectricalCommands.SingleLine
             currentPoint,
             nextChildEntity.IsExisting()
           );
-          MakeFieldEntity(childNode, currentPoint);
+          height = startingPoint.Y - currentPoint.Y;
+          height += MakeFieldEntity(childNode, currentPoint);
         }
       }
       if (childEntity.NodeType == NodeType.Transformer)
@@ -1212,7 +1268,8 @@ namespace ElectricalCommands.SingleLine
             currentPoint,
             nextChildEntity.IsExisting()
           );
-          MakeFieldEntity(childNode, currentPoint);
+          height = startingPoint.Y - currentPoint.Y;
+          height += MakeFieldEntity(childNode, currentPoint);
         }
       }
       if (childEntity.NodeType == NodeType.Equipment)
@@ -1233,9 +1290,10 @@ namespace ElectricalCommands.SingleLine
           equipment.Is3Phase
         );
       }
+      return height;
     }
 
-    private string MakeDistributionSection(
+    private (string, double) MakeDistributionSection(
       string groupId,
       Point3d groupPoint,
       bool isMultimeter,
@@ -1264,9 +1322,11 @@ namespace ElectricalCommands.SingleLine
       double totalBusBarWidth = 0;
       TreeNode distributionBusNode = SingleLineTreeView.Nodes.Find(distributionBusId, true)[0];
       bool groupMembersAdded = false;
+      double highest = 0;
       foreach (TreeNode distributionBusChild in distributionBusNode.Nodes)
       {
         double width = 0;
+        double height = 0;
         NodeType nodeType = NodeType.DistributionBreaker;
         if (!groupDict[groupId].Contains(distributionBusChild.Name))
         {
@@ -1286,7 +1346,7 @@ namespace ElectricalCommands.SingleLine
           distributionBusChildPoint.Y,
           distributionBusChildPoint.Z
         );
-        MakeEntityFromDistributionBus(distributionBusChild, distributionBusChildPoint);
+        height = MakeEntityFromDistributionBus(distributionBusChild, distributionBusChildPoint);
         // move to end of width
         distributionBusChildPoint = new Point3d(
           distributionBusChildPoint.X + (width / 2),
@@ -1294,6 +1354,11 @@ namespace ElectricalCommands.SingleLine
           distributionBusChildPoint.Z
         );
         groupMembersAdded = true;
+
+        if (height > highest)
+        {
+          highest = height;
+        }
       }
       if (!groupMembersAdded)
       {
@@ -1316,7 +1381,7 @@ namespace ElectricalCommands.SingleLine
       {
         // todo: add label above section
       }
-      return distributionBusId;
+      return (distributionBusId, highest);
     }
 
     private ElectricalEntity.Meter GetMeterFromMainSection(string groupId)
@@ -1443,6 +1508,7 @@ namespace ElectricalCommands.SingleLine
       ElectricalEntity.DistributionBus distributionBus;
       bool existing = false;
       bool groundExisting = false;
+      double highest = 0;
       foreach (string groupId in groupDict.Keys)
       {
         if (String.IsNullOrEmpty(groupId))
@@ -1453,13 +1519,18 @@ namespace ElectricalCommands.SingleLine
         {
           groupWidth = AggregateGroupWidth(groupId);
           string groupName = GetGroupNameFromId(groupId);
-          distributionBusId = MakeDistributionSection(
+          double height;
+          (distributionBusId, height) = MakeDistributionSection(
             groupId,
             currentPoint,
             groupType == GroupType.MultimeterSection,
             groupName,
             distributionBusId
           );
+          if (height > highest)
+          {
+            highest = height;
+          }
           ElectricalEntity.DistributionBus thisDistributionBus =
             GetDistributionBusFromDistributionSection(groupId);
           if (thisDistributionBus.NodeType != NodeType.Undefined)
@@ -1587,7 +1658,7 @@ namespace ElectricalCommands.SingleLine
         currentPoint = new Point3d(currentPoint.X + groupWidth, currentPoint.Y, 0);
       }
       currentPoint = new Point3d(currentPoint.X + 0.25, currentPoint.Y, 0);
-      SingleLine.InsertNotes(currentPoint, groundExisting);
+      SingleLine.InsertNotes(currentPoint, groundExisting, highest);
     }
 
     private void SingleLineDialogWindow_Load(object sender, EventArgs e) { }
@@ -1780,6 +1851,13 @@ namespace ElectricalCommands.SingleLine
           SetTreeContextMenu(node);
         }
       }
+    }
+
+    public void RefreshButton_Click(object sender, EventArgs e)
+    {
+      SingleLineTreeView.Nodes.Clear();
+      RefreshLocations();
+      InitializeModal();
     }
   }
 }
