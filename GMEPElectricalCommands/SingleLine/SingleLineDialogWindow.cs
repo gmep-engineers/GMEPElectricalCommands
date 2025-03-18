@@ -43,8 +43,6 @@ namespace ElectricalCommands.SingleLine
     private List<ElectricalEntity.GroupNode> groupList;
     private Dictionary<string, List<string>> groupDict;
     private List<ObjectId> dynamicBlockIds;
-    private double totalHeight;
-    private double totalWidth;
 
     private List<PlaceableElectricalEntity> placeables;
     public GmepDatabase gmepDb;
@@ -85,7 +83,8 @@ namespace ElectricalCommands.SingleLine
       dynamicBlockIds = new List<ObjectId>();
       SetDynamicBlockIds();
       placeables.ForEach(placeable => placeable.SetBlockId(dynamicBlockIds));
-      RefreshLocations();
+      RefreshEquipment();
+      CalculateDistances();
       SingleLineTreeView.BeginUpdate();
       PopulateTreeView();
       SingleLineTreeView.ExpandAll();
@@ -105,7 +104,13 @@ namespace ElectricalCommands.SingleLine
       }
     }
 
-    private void RefreshLocations()
+    private void ReadAndUpdateAttributes(
+      Transaction tr,
+      PlaceableElectricalEntity placeable,
+      ObjectId id
+    ) { }
+
+    private void RefreshEquipment()
     {
       Document doc = Autodesk
         .AutoCAD
@@ -114,37 +119,83 @@ namespace ElectricalCommands.SingleLine
         .DocumentManager
         .MdiActiveDocument;
       Database db = doc.Database;
-      Editor ed = doc.Editor;
-      Transaction tr = db.TransactionManager.StartTransaction();
-      using (tr)
+      using (
+        DocumentLock docLock =
+          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
+      )
       {
-        foreach (PlaceableElectricalEntity placeable in placeables)
+        using (Transaction tr = db.TransactionManager.StartTransaction())
         {
-          placeable.Location = new Point3d();
-          foreach (ObjectId id in dynamicBlockIds)
+          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+          BlockTableRecord btr = (BlockTableRecord)
+            tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+          foreach (PlaceableElectricalEntity placeable in placeables)
           {
-            try
+            placeable.Location = new Point3d();
+            foreach (ObjectId id in dynamicBlockIds)
             {
-              BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
-              if (
-                br != null
-                && br.IsDynamicBlock
-                && br.DynamicBlockReferencePropertyCollection.Count > 0
-              )
+              try
               {
-                DynamicBlockReferencePropertyCollection pc =
-                  br.DynamicBlockReferencePropertyCollection;
-                foreach (DynamicBlockReferenceProperty prop in pc)
+                BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
+                if (
+                  br != null
+                  && br.IsDynamicBlock
+                  && br.DynamicBlockReferencePropertyCollection.Count > 0
+                )
                 {
-                  if (prop.PropertyName == "gmep_equip_id" && prop.Value as string == placeable.Id)
+                  DynamicBlockReferencePropertyCollection pc =
+                    br.DynamicBlockReferencePropertyCollection;
+                  foreach (DynamicBlockReferenceProperty prop in pc)
                   {
-                    placeable.Location = br.Position;
+                    if (
+                      prop.PropertyName == "gmep_equip_id"
+                      && prop.Value as string == placeable.Id
+                    )
+                    {
+                      placeable.Location = br.Position;
+                    }
                   }
                 }
               }
+              catch { }
             }
-            catch { }
+            if (placeable.Location.X != 0 || placeable.Location.Y != 0)
+            {
+              foreach (ObjectId id in btr)
+              {
+                try
+                {
+                  DBText text = (DBText)tr.GetObject(id, OpenMode.ForWrite, false, true);
+                  if (text != null)
+                  {
+                    if (
+                      text.Hyperlinks.Count > 0
+                      && text.Hyperlinks[0].SubLocation.Contains(placeable.Id)
+                    )
+                    {
+                      if (
+                        text.Hyperlinks[0].SubLocation.Contains("gmep_equip_panel_status_and_amp")
+                      )
+                      {
+                        text.TextString =
+                          placeable.GetStatusAbbr() + placeable.AmpRating.ToString() + "A";
+                      }
+                      if (text.Hyperlinks[0].SubLocation.Contains("gmep_equip_panel_voltage"))
+                      {
+                        text.TextString = placeable.Voltage.Substring(0, 7) + "V";
+                      }
+                      if (text.Hyperlinks[0].SubLocation.Contains("gmep_equip_panel_phase_wire"))
+                      {
+                        text.TextString = placeable.Phase == 3 ? "3\u0081-4W" : "1\u0081-3W";
+                      }
+                    }
+                  }
+                }
+                catch { }
+              }
+            }
           }
+          tr.Commit();
         }
       }
     }
@@ -327,10 +378,15 @@ namespace ElectricalCommands.SingleLine
         node.ForeColor = Color.White;
         node.BackColor = Color.Crimson;
       }
-      else
+      else if (!entity.IsExisting())
       {
-        node.ForeColor = Color.White;
-        node.BackColor = Color.DarkCyan;
+        node.ForeColor = Color.Black;
+        node.BackColor = Color.FromArgb(255, 253, 176, 253);
+      }
+      else if (entity.IsExisting())
+      {
+        node.ForeColor = Color.Black;
+        node.BackColor = Color.LightGray;
       }
     }
 
@@ -350,7 +406,7 @@ namespace ElectricalCommands.SingleLine
       {
         TreeNode serviceNode = SingleLineTreeView.Nodes.Add(
           service.Id,
-          service.Name.Replace("\u0081", "\u03A6")
+          service.GetStatusAndName().Replace("\u0081", "\u03A6")
         );
         serviceNode.Tag = service;
         SetTreeNodeColor(serviceNode, service);
@@ -365,7 +421,7 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(service.NodeId, meter.NodeId))
         {
           InheritElectricalAttributes(service, meter);
-          TreeNode meterNode = node.Nodes.Add(meter.Id, meter.Name);
+          TreeNode meterNode = node.Nodes.Add(meter.Id, meter.GetStatusAndName());
           meterNode.Tag = meter;
           PopulateFromMainMeter(meterNode, meter);
         }
@@ -375,7 +431,7 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(service.NodeId, mainBreaker.NodeId))
         {
           InheritElectricalAttributes(service, mainBreaker);
-          TreeNode mainBreakerNode = node.Nodes.Add(mainBreaker.Id, mainBreaker.Name);
+          TreeNode mainBreakerNode = node.Nodes.Add(mainBreaker.Id, mainBreaker.GetStatusAndName());
           mainBreakerNode.Tag = mainBreaker;
           PopulateFromMainBreaker(mainBreakerNode, mainBreaker);
         }
@@ -389,7 +445,7 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(meter.NodeId, mainBreaker.NodeId))
         {
           InheritElectricalAttributes(meter, mainBreaker);
-          TreeNode mainBreakerNode = node.Nodes.Add(mainBreaker.Id, mainBreaker.Name);
+          TreeNode mainBreakerNode = node.Nodes.Add(mainBreaker.Id, mainBreaker.GetStatusAndName());
           mainBreakerNode.Tag = mainBreaker;
           PopulateFromMainBreaker(mainBreakerNode, mainBreaker);
         }
@@ -399,7 +455,10 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(meter.NodeId, distributionBus.NodeId))
         {
           InheritElectricalAttributes(meter, distributionBus);
-          TreeNode distributionBusNode = node.Nodes.Add(distributionBus.Id, distributionBus.Name);
+          TreeNode distributionBusNode = node.Nodes.Add(
+            distributionBus.Id,
+            distributionBus.GetStatusAndName()
+          );
           distributionBusNode.Tag = distributionBus;
           SetTreeNodeColor(distributionBusNode, distributionBus);
           PopulateFromDistributionBus(distributionBusNode, distributionBus);
@@ -414,7 +473,10 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(mainBreaker.NodeId, distributionBus.NodeId))
         {
           InheritElectricalAttributes(mainBreaker, distributionBus);
-          TreeNode distributionBusNode = node.Nodes.Add(distributionBus.Id, distributionBus.Name);
+          TreeNode distributionBusNode = node.Nodes.Add(
+            distributionBus.Id,
+            distributionBus.GetStatusAndName()
+          );
           distributionBusNode.Tag = distributionBus;
           SetTreeNodeColor(distributionBusNode, distributionBus);
           PopulateFromDistributionBus(distributionBusNode, distributionBus);
@@ -432,7 +494,7 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(distributionBus.NodeId, meter.NodeId))
         {
           InheritElectricalAttributes(distributionBus, meter);
-          TreeNode distributionMeterNode = node.Nodes.Add(meter.Id, meter.Name);
+          TreeNode distributionMeterNode = node.Nodes.Add(meter.Id, meter.GetStatusAndName());
           distributionMeterNode.Tag = meter;
           PopulateFromDistributionMeter(distributionMeterNode, meter);
         }
@@ -444,7 +506,7 @@ namespace ElectricalCommands.SingleLine
           InheritElectricalAttributes(distributionBus, distributionBreaker);
           TreeNode distributionBreakerNode = node.Nodes.Add(
             distributionBreaker.Id,
-            distributionBreaker.Name
+            distributionBreaker.GetStatusAndName()
           );
           distributionBreakerNode.Tag = distributionBreaker;
           PopulateFromDistributionBreaker(distributionBreakerNode, distributionBreaker);
@@ -461,7 +523,7 @@ namespace ElectricalCommands.SingleLine
           InheritElectricalAttributes(meter, distributionBreaker);
           TreeNode distributionBreakerNode = node.Nodes.Add(
             distributionBreaker.Id,
-            distributionBreaker.Name
+            distributionBreaker.GetStatusAndName()
           );
           distributionBreakerNode.Tag = distributionBreaker;
           PopulateFromDistributionBreaker(distributionBreakerNode, distributionBreaker);
@@ -479,7 +541,10 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(distributionBreaker.NodeId, panel.NodeId))
         {
           InheritElectricalAttributes(distributionBreaker, panel);
-          TreeNode panelNode = node.Nodes.Add(panel.Id, "Panel " + panel.Name);
+          TreeNode panelNode = node.Nodes.Add(
+            panel.Id,
+            panel.GetStatusAbbr() + "Panel " + panel.Name
+          );
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
           PopulateFromPanel(panelNode, panel);
@@ -490,7 +555,7 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(distributionBreaker.NodeId, disconnect.NodeId))
         {
           InheritElectricalAttributes(distributionBreaker, disconnect);
-          TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
+          TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.GetStatusAndName());
           disconnectNode.Tag = disconnect;
           SetTreeNodeColor(disconnectNode, disconnect);
           PopulateFromDisconnect(disconnectNode, disconnect);
@@ -502,7 +567,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode transformerNode = node.Nodes.Add(
             transformer.Id,
-            transformer.Name.Replace("\u0081", "\u03A6")
+            transformer.GetStatusAndName().Replace("\u0081", "\u03A6")
           );
           transformerNode.Tag = transformer;
           SetTreeNodeColor(transformerNode, transformer);
@@ -518,7 +583,10 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(panel.NodeId, panelBreaker.NodeId))
         {
           InheritElectricalAttributes(panel, panelBreaker);
-          TreeNode panelBreakerNode = node.Nodes.Add(panelBreaker.Id, panelBreaker.Name);
+          TreeNode panelBreakerNode = node.Nodes.Add(
+            panelBreaker.Id,
+            panelBreaker.GetStatusAndName()
+          );
           panelBreakerNode.Tag = panelBreaker;
           PopulateFromPanelBreaker(panelBreakerNode, panelBreaker);
         }
@@ -528,7 +596,10 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(panel.NodeId, childPanel.NodeId))
         {
           InheritElectricalAttributes(panel, childPanel);
-          TreeNode childPanelNode = node.Nodes.Add(childPanel.Id, "Panel " + childPanel.Name);
+          TreeNode childPanelNode = node.Nodes.Add(
+            childPanel.Id,
+            childPanel.GetStatusAbbr() + "Panel " + childPanel.Name
+          );
           childPanelNode.Tag = childPanel;
           SetTreeNodeColor(childPanelNode, childPanel);
           PopulateFromPanel(childPanelNode, childPanel);
@@ -539,7 +610,7 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(panel.NodeId, disconnect.NodeId))
         {
           InheritElectricalAttributes(panel, disconnect);
-          TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
+          TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.GetStatusAndName());
           disconnectNode.Tag = disconnect;
           SetTreeNodeColor(disconnectNode, disconnect);
           PopulateFromDisconnect(disconnectNode, disconnect);
@@ -551,7 +622,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode transformerNode = node.Nodes.Add(
             transformer.Id,
-            transformer.Name.Replace("\u0081", "\u03A6")
+            transformer.GetStatusAndName().Replace("\u0081", "\u03A6")
           );
           transformerNode.Tag = transformer;
           SetTreeNodeColor(transformerNode, transformer);
@@ -567,7 +638,10 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(panelBreaker.NodeId, panel.NodeId))
         {
           InheritElectricalAttributes(panelBreaker, panel);
-          TreeNode panelNode = node.Nodes.Add(panel.Id, "Panel " + panel.Name);
+          TreeNode panelNode = node.Nodes.Add(
+            panel.Id,
+            panel.GetStatusAbbr() + "Panel " + panel.Name
+          );
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
           PopulateFromPanel(panelNode, panel);
@@ -578,7 +652,7 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(panelBreaker.NodeId, disconnect.NodeId))
         {
           InheritElectricalAttributes(panelBreaker, disconnect);
-          TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
+          TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.GetStatusAndName());
           disconnectNode.Tag = disconnect;
           SetTreeNodeColor(disconnectNode, disconnect);
           PopulateFromDisconnect(disconnectNode, disconnect);
@@ -606,7 +680,10 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(disconnect.NodeId, panel.NodeId))
         {
           InheritElectricalAttributes(disconnect, panel);
-          TreeNode panelNode = node.Nodes.Add(panel.Id, "Panel " + panel.Name);
+          TreeNode panelNode = node.Nodes.Add(
+            panel.Id,
+            panel.GetStatusAbbr() + "Panel " + panel.Name
+          );
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
           PopulateFromPanel(panelNode, panel);
@@ -617,7 +694,10 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(disconnect.NodeId, childDisconnect.NodeId))
         {
           InheritElectricalAttributes(disconnect, childDisconnect);
-          TreeNode childDisconnectNode = node.Nodes.Add(childDisconnect.Id, childDisconnect.Name);
+          TreeNode childDisconnectNode = node.Nodes.Add(
+            childDisconnect.Id,
+            childDisconnect.GetStatusAndName()
+          );
           childDisconnectNode.Tag = childDisconnect;
           SetTreeNodeColor(childDisconnectNode, childDisconnect);
           PopulateFromDisconnect(childDisconnectNode, childDisconnect);
@@ -629,7 +709,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode transformerNode = node.Nodes.Add(
             transformer.Id,
-            transformer.Name.Replace("\u0081", "\u03A6")
+            transformer.GetStatusAndName().Replace("\u0081", "\u03A6")
           );
           transformerNode.Tag = transformer;
           SetTreeNodeColor(transformerNode, transformer);
@@ -641,7 +721,7 @@ namespace ElectricalCommands.SingleLine
         if (VerifyNodeLink(disconnect.NodeId, equipment.NodeId))
         {
           InheritElectricalAttributes(disconnect, equipment);
-          TreeNode equipmentNode = node.Nodes.Add(equipment.Id, equipment.Name);
+          TreeNode equipmentNode = node.Nodes.Add(equipment.Id, equipment.GetStatusAndName());
           equipmentNode.Tag = equipment;
           SetTreeNodeColor(equipmentNode, equipment);
         }
@@ -656,7 +736,10 @@ namespace ElectricalCommands.SingleLine
         {
           panel.LineVoltage = transformer.OutputLineVoltage;
           panel.Phase = transformer.Phase; // todo: account for phase change
-          TreeNode panelNode = node.Nodes.Add(panel.Id, "Panel " + panel.Name);
+          TreeNode panelNode = node.Nodes.Add(
+            panel.Id,
+            panel.GetStatusAbbr() + "Panel " + panel.Name
+          );
           panelNode.Tag = panel;
           SetTreeNodeColor(panelNode, panel);
           PopulateFromPanel(panelNode, panel);
@@ -668,7 +751,7 @@ namespace ElectricalCommands.SingleLine
         {
           disconnect.LineVoltage = transformer.OutputLineVoltage;
           disconnect.Phase = transformer.Phase; // todo: account for phase change
-          TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.Name);
+          TreeNode disconnectNode = node.Nodes.Add(disconnect.Id, disconnect.GetStatusAndName());
           disconnectNode.Tag = disconnect;
           SetTreeNodeColor(disconnectNode, disconnect);
           PopulateFromDisconnect(disconnectNode, disconnect);
@@ -823,7 +906,7 @@ namespace ElectricalCommands.SingleLine
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"KVA:     {transformer.Kva} KVA");
           InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"Voltage: {transformer.Voltage}");
+          InfoTextBox.AppendText($"Voltage: {transformer.Voltage.Replace("\u0081", "\u03A6")}");
           break;
         case NodeType.Equipment:
           ElectricalEntity.Equipment equipment = (ElectricalEntity.Equipment)entity;
@@ -1856,7 +1939,6 @@ namespace ElectricalCommands.SingleLine
     public void RefreshButton_Click(object sender, EventArgs e)
     {
       SingleLineTreeView.Nodes.Clear();
-      RefreshLocations();
       InitializeModal();
     }
   }

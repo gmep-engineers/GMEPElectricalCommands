@@ -101,7 +101,7 @@ namespace ElectricalCommands.ElectricalEntity
             DBText text = (DBText)tr.GetObject(id, OpenMode.ForWrite);
             if (text != null)
             {
-              if (text.Hyperlinks.Count > 0 && text.Hyperlinks[0].SubLocation == Id)
+              if (text.Hyperlinks.Count > 0 && text.Hyperlinks[0].SubLocation.Contains(Id))
               {
                 text.Erase();
               }
@@ -325,9 +325,10 @@ namespace ElectricalCommands.ElectricalEntity
             //  TextVerticalMode.TextBase,
             //  AttachmentPoint.BaseLeft
             //);
+            string statusAndAmpString = GetStatusAbbr() + AmpRating.ToString() + "A";
             ObjectId statusAndAmpTextId = GeneralCommands.CreateAndPositionText(
               tr,
-              GetStatusAbbr() + AmpRating.ToString() + "A",
+              statusAndAmpString,
               "gmep",
               0.0938 * 12 / scale,
               0.85,
@@ -373,11 +374,19 @@ namespace ElectricalCommands.ElectricalEntity
             var phaseWireTextObj = (DBText)tr.GetObject(phaseWireTextId, OpenMode.ForWrite);
             // this is the quickest way to add a custom attribute to DBText without
             // having to do a bunch of bloated AutoCAD database nonsense
-            HyperLink customAttr = new HyperLink();
-            customAttr.SubLocation = Id;
-            statusAndAmpTextObj.Hyperlinks.Add(customAttr);
-            voltageTextObj.Hyperlinks.Add(customAttr);
-            phaseWireTextObj.Hyperlinks.Add(customAttr);
+
+
+            HyperLink statusAndAmpAttr = new HyperLink();
+            statusAndAmpAttr.SubLocation = Id + "gmep_equip_panel_status_and_amp";
+            statusAndAmpTextObj.Hyperlinks.Add(statusAndAmpAttr);
+
+            HyperLink voltageAttr = new HyperLink();
+            voltageAttr.SubLocation = Id + "gmep_equip_panel_voltage";
+            voltageTextObj.Hyperlinks.Add(voltageAttr);
+
+            HyperLink phaseWireAttr = new HyperLink();
+            phaseWireAttr.SubLocation = Id + "gmep_equip_panel_phase_wire";
+            phaseWireTextObj.Hyperlinks.Add(phaseWireAttr);
 
             BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
             ObjectId locatorBlockId = bt["EQUIP_MARKER"];
@@ -932,6 +941,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.Pole = SetPole(Voltage);
       this.LoadAmperage = LoadAmperage;
       this.Kva = Kva;
+      Phase = Voltage.Contains("3") ? 3 : 1;
     }
 
     public int SetPole(string voltage)

@@ -1714,7 +1714,7 @@ namespace ElectricalCommands.SingleLine
       {
         MakeMeter(meter, new Point3d(currentPoint.X + 0.5, currentPoint.Y - 0.6238, 0));
       }
-      MakeMainBreaker(mainBreaker, new Point3d(currentPoint.X + 0.5, currentPoint.Y - 1.0194, 0));
+      MakeMainBreaker(mainBreaker, new Point3d(currentPoint.X + 0.5, currentPoint.Y - 1, 0));
       Document doc = Autodesk
         .AutoCAD
         .ApplicationServices
@@ -1938,6 +1938,11 @@ namespace ElectricalCommands.SingleLine
         InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 1.0933, currentPoint.Y - 1.7003, 0));
         InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 1.7042, currentPoint.Y + -2.1189, 0));
         InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 1.4716, currentPoint.Y - 2.5207, 0));
+      }
+      else
+      {
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X + 1.7042, currentPoint.Y + -2.1189, 0));
+        InsertKeyedNoteMarker(2, new Point3d(currentPoint.X + 1.4716, currentPoint.Y - 2.5207, 0));
       }
     }
 

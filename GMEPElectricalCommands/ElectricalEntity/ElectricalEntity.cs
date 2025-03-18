@@ -4,6 +4,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Autodesk.AutoCAD.DatabaseServices;
 using ElectricalCommands.SingleLine;
 
 namespace ElectricalCommands.ElectricalEntity
@@ -23,6 +24,11 @@ namespace ElectricalCommands.ElectricalEntity
     public string GetStatusAbbr()
     {
       return "(" + Status[0].ToString().ToUpper() + ")";
+    }
+
+    public string GetStatusAndName()
+    {
+      return GetStatusAbbr() + Name;
     }
 
     public bool IsExisting()
