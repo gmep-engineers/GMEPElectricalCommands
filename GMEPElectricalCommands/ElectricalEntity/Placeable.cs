@@ -426,7 +426,7 @@ namespace ElectricalCommands.ElectricalEntity
               AttributeDefinition attrDef = new AttributeDefinition();
               attrDef.Position = labelInsertionPoint;
               attrDef.LockPositionInBlock = true;
-              attrDef.Tag = Name;
+              attrDef.Tag = "TAG";
               attrDef.IsMTextAttributeDefinition = false;
               attrDef.TextString = Name;
               attrDef.Justify = AttachmentPoint.MiddleCenter;
@@ -494,7 +494,7 @@ namespace ElectricalCommands.ElectricalEntity
             // this is the quickest way to add a custom attribute to DBText without
             // having to do a bunch of bloated AutoCAD database nonsense
             HyperLink customAttr = new HyperLink();
-            customAttr.SubLocation = Id;
+            customAttr.SubLocation = Id + "gmep_equip_name";
             text.Hyperlinks.Add(customAttr);
             tr.Commit();
           }

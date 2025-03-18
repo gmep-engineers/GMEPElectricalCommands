@@ -104,12 +104,6 @@ namespace ElectricalCommands.SingleLine
       }
     }
 
-    private void ReadAndUpdateAttributes(
-      Transaction tr,
-      PlaceableElectricalEntity placeable,
-      ObjectId id
-    ) { }
-
     private void RefreshEquipment()
     {
       Document doc = Autodesk
@@ -136,7 +130,7 @@ namespace ElectricalCommands.SingleLine
             {
               try
               {
-                BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
+                BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForWrite);
                 if (
                   br != null
                   && br.IsDynamicBlock
@@ -153,6 +147,27 @@ namespace ElectricalCommands.SingleLine
                     )
                     {
                       placeable.Location = br.Position;
+                      if (placeable.IsExisting() && br.Layer == "E-SYM1")
+                      {
+                        br.Layer = "E-SYM-EXISTING";
+                      }
+                      else if (!placeable.IsExisting() && br.Layer == "E-SYM-EXISTING")
+                      {
+                        br.Layer = "E-SYM1";
+                      }
+                      var attributeCollection = br.AttributeCollection;
+                      foreach (ObjectId attId in attributeCollection)
+                      {
+                        var acAtt = tr.GetObject(attId, OpenMode.ForRead) as AttributeReference;
+                        if (acAtt == null)
+                          continue;
+
+                        if (!acAtt.Tag.Equals("TAG", StringComparison.CurrentCultureIgnoreCase))
+                          continue;
+
+                        acAtt.UpgradeOpen();
+                        acAtt.TextString = placeable.Name;
+                      }
                     }
                   }
                 }
@@ -187,6 +202,10 @@ namespace ElectricalCommands.SingleLine
                       if (text.Hyperlinks[0].SubLocation.Contains("gmep_equip_panel_phase_wire"))
                       {
                         text.TextString = placeable.Phase == 3 ? "3\u0081-4W" : "1\u0081-3W";
+                      }
+                      if (text.Hyperlinks[0].SubLocation.Contains("gmep_equip_name"))
+                      {
+                        text.TextString = placeable.GetStatusAbbr() + placeable.Name.ToUpper();
                       }
                     }
                   }

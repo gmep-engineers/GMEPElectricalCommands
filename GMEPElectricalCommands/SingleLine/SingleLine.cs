@@ -2405,7 +2405,7 @@ namespace ElectricalCommands.SingleLine
         ObjectId label = bt["SINGLE LINE LABEL"];
         using (
           BlockReference acBlkRef = new BlockReference(
-            new Point3d(currentPoint.X + 32.7757, currentPoint.Y - 2.1543, 0),
+            new Point3d(currentPoint.X, currentPoint.Y, 0),
             label
           )
         )
