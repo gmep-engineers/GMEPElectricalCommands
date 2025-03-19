@@ -29,9 +29,9 @@
             this.menuItem1 = new System.Windows.Forms.MenuItem();
             this.GenerateSldButton = new System.Windows.Forms.MenuItem();
             this.PlaceOnPlanButton = new System.Windows.Forms.MenuItem();
+            this.menuItem2 = new System.Windows.Forms.MenuItem();
             this.InfoGroupBox = new System.Windows.Forms.GroupBox();
             this.InfoTextBox = new System.Windows.Forms.TextBox();
-            this.menuItem2 = new System.Windows.Forms.MenuItem();
             this.InfoGroupBox.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -72,6 +72,12 @@
             this.PlaceOnPlanButton.Text = "Place equipment";
             this.PlaceOnPlanButton.Click += new System.EventHandler(this.PlaceOnPlanButton_Click);
             // 
+            // menuItem2
+            // 
+            this.menuItem2.Index = 2;
+            this.menuItem2.Text = "Refresh";
+            this.menuItem2.Click += new System.EventHandler(this.RefreshButton_Click);
+            // 
             // InfoGroupBox
             // 
             this.InfoGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
@@ -96,12 +102,6 @@
             this.InfoTextBox.ReadOnly = true;
             this.InfoTextBox.Size = new System.Drawing.Size(340, 720);
             this.InfoTextBox.TabIndex = 0;
-            // 
-            // menuItem2
-            // 
-            this.menuItem2.Index = 2;
-            this.menuItem2.Text = "Refresh";
-            this.menuItem2.Click += new System.EventHandler(this.RefreshButton_Click);
             // 
             // SingleLineDialogWindow
             // 

@@ -8,6 +8,7 @@ using Accord.Statistics.Distributions;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using DocumentFormat.OpenXml.Office2010.CustomUI;
+using ElectricalCommands;
 using ElectricalCommands.ElectricalEntity;
 using ElectricalCommands.Equipment;
 using ElectricalCommands.SingleLine;
@@ -313,6 +314,34 @@ namespace GMEPElectricalCommands.GmepDatabase
       CloseConnection();
       reader.Close();
       return distributionBreakers;
+    }
+
+    public List<PanelNote> GetPanelNotes(string projectId)
+    {
+      List<PanelNote> panelNotes = new List<PanelNote>();
+      string query = @"SELECT * FROM panel_notes WHERE project_id = @projectId";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read())
+      {
+        panelNotes.Add(
+          new PanelNote(
+            GetSafeString(reader, "id"),
+            GetSafeInt(reader, "number"),
+            GetSafeString(reader, "panel_id"),
+            GetSafeInt(reader, "circuit_no"),
+            GetSafeInt(reader, "length"),
+            GetSafeString(reader, "description"),
+            GetSafeString(reader, "group_id"),
+            GetSafeInt(reader, "stack")
+          )
+        );
+      }
+      CloseConnection();
+      reader.Close();
+      return panelNotes;
     }
 
     public List<Panel> GetPanels(string projectId)
