@@ -104,6 +104,23 @@ namespace ElectricalCommands.SingleLine
       }
     }
 
+    private void SwapDynamicBlockTableRecord(BlockReference br, BlockTableRecord btr)
+    {
+      Dictionary<string, string> oldProps = new Dictionary<string, string>();
+      DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+      foreach (DynamicBlockReferenceProperty prop in pc)
+      {
+        oldProps[prop.PropertyName] = prop.Value as string;
+      }
+      br.UpgradeOpen();
+      br.BlockTableRecord = btr.Id;
+      pc = br.DynamicBlockReferencePropertyCollection;
+      foreach (DynamicBlockReferenceProperty prop in pc)
+      {
+        prop.Value = oldProps[prop.PropertyName];
+      }
+    }
+
     private void RefreshEquipment()
     {
       Document doc = Autodesk
@@ -154,6 +171,24 @@ namespace ElectricalCommands.SingleLine
                       else if (!placeable.IsExisting() && br.Layer == "E-SYM-EXISTING")
                       {
                         br.Layer = "E-SYM1";
+                      }
+                      if (placeable.NodeType == NodeType.Panel)
+                      {
+                        ElectricalEntity.Panel panel = (ElectricalEntity.Panel)placeable;
+                        BlockTableRecord panelBtr = (BlockTableRecord)
+                          br.DynamicBlockTableRecord.GetObject(OpenMode.ForRead);
+                        if (panel.IsRecessed && panelBtr.Name == "GMEP SURFACE PANEL")
+                        {
+                          BlockTableRecord block = (BlockTableRecord)
+                            tr.GetObject(bt["GMEP RECESSED PANEL"], OpenMode.ForRead);
+                          SwapDynamicBlockTableRecord(br, block);
+                        }
+                        if (!panel.IsRecessed && panelBtr.Name == "GMEP RECESSED PANEL")
+                        {
+                          BlockTableRecord block = (BlockTableRecord)
+                            tr.GetObject(bt["GMEP SURFACE PANEL"], OpenMode.ForRead);
+                          SwapDynamicBlockTableRecord(br, block);
+                        }
                       }
                       var attributeCollection = br.AttributeCollection;
                       foreach (ObjectId attId in attributeCollection)
@@ -1783,44 +1818,36 @@ namespace ElectricalCommands.SingleLine
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         var modelSpace = (BlockTableRecord)
           tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
-        foreach (ObjectId id in modelSpace)
+        foreach (ObjectId id in dynamicBlockIds)
         {
-          try
+          BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
+          DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+          bool addEquip = false;
+          PlaceableElectricalEntity eq = new PlaceableElectricalEntity();
+          foreach (DynamicBlockReferenceProperty prop in pc)
           {
-            BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
-            if (br != null && br.IsDynamicBlock)
+            if (prop.PropertyName == "gmep_equip_locator" && prop.Value as string == "true")
             {
-              DynamicBlockReferencePropertyCollection pc =
-                br.DynamicBlockReferencePropertyCollection;
-              bool addEquip = false;
-              PlaceableElectricalEntity eq = new PlaceableElectricalEntity();
-              foreach (DynamicBlockReferenceProperty prop in pc)
-              {
-                if (prop.PropertyName == "gmep_equip_locator" && prop.Value as string == "true")
-                {
-                  addEquip = true;
-                }
-                if (prop.PropertyName == "gmep_equip_id" && prop.Value as string != "0")
-                {
-                  eq.Id = prop.Value as string;
-                }
-                if (prop.PropertyName == "gmep_equip_parent_id" && prop.Value as string != "0")
-                {
-                  eq.ParentId = prop.Value as string;
-                }
-              }
-              eq.Location = br.Position;
-              if (addEquip)
-              {
-                PlaceableElectricalEntity p = new PlaceableElectricalEntity();
-                p.Id = eq.Id;
-                p.ParentId = eq.ParentId;
-                p.Location = eq.Location;
-                pooledEquipment.Add(p);
-              }
+              addEquip = true;
+            }
+            if (prop.PropertyName == "gmep_equip_id" && prop.Value as string != "0")
+            {
+              eq.Id = prop.Value as string;
+            }
+            if (prop.PropertyName == "gmep_equip_parent_id" && prop.Value as string != "0")
+            {
+              eq.ParentId = prop.Value as string;
             }
           }
-          catch { }
+          eq.Location = br.Position;
+          if (addEquip)
+          {
+            PlaceableElectricalEntity p = new PlaceableElectricalEntity();
+            p.Id = eq.Id;
+            p.ParentId = eq.ParentId;
+            p.Location = eq.Location;
+            pooledEquipment.Add(p);
+          }
         }
       }
       for (int i = 0; i < pooledEquipment.Count; i++)
@@ -1875,8 +1902,8 @@ namespace ElectricalCommands.SingleLine
           }
         }
       }
+      SetDynamicBlockIds();
       CalculateDistances();
-
       SingleLineTreeView.BeginUpdate();
       SingleLineTreeView.Nodes.Clear();
       PopulateTreeView();
@@ -1928,6 +1955,7 @@ namespace ElectricalCommands.SingleLine
           placeable.Location = new Point3d(0, 0, 0);
         }
       }
+      SetDynamicBlockIds();
       CalculateDistances();
 
       SingleLineTreeView.BeginUpdate();
