@@ -1836,8 +1836,6 @@ namespace ElectricalCommands
       foreach (ElectricalEntity.Service service in services)
       {
         List<ElectricalEntity.Panel> panelLoads = new List<ElectricalEntity.Panel>();
-        List<ElectricalEntity.Transformer> tranformerLoads =
-          new List<ElectricalEntity.Transformer>();
         List<ElectricalEntity.Equipment> equipmentLoads = new List<ElectricalEntity.Equipment>();
         int count = 0;
         foreach (
@@ -1859,8 +1857,22 @@ namespace ElectricalCommands
             )
           )
           {
-            tranformerLoads.Add(transformer);
-            count++;
+            foreach (
+              ElectricalEntity.Panel panel in panels.FindAll(e => e.ParentId == transformer.Id)
+            )
+            {
+              panelLoads.Add(panel);
+              count++;
+            }
+            foreach (
+              ElectricalEntity.Equipment equip in equipment.FindAll(e =>
+                e.ParentId == transformer.Id
+              )
+            )
+            {
+              equipmentLoads.Add(equip);
+              count++;
+            }
           }
           foreach (
             ElectricalEntity.Equipment equip in equipment.FindAll(e =>
@@ -1922,18 +1934,6 @@ namespace ElectricalCommands
             tb.Cells[tableRowIndex, 0].TextString = loadRowIndex.ToString() + ".";
             tb.Cells[tableRowIndex, 1].TextString = "PANEL '" + panel.Name + "'";
             double kva = Math.Round(panel.Kva, 1);
-            kvaList.Add(kva);
-            tb.Cells[tableRowIndex, 2].TextString = kva.ToString() + " KVA";
-            tableRowIndex++;
-            loadRowIndex++;
-          }
-          foreach (ElectricalEntity.Transformer transformer in tranformerLoads)
-          {
-            tb.Cells[tableRowIndex, 0].TextString = loadRowIndex.ToString() + ".";
-            tb.Cells[tableRowIndex, 1].TextString = transformer
-              .Name.Replace(transformer.Voltage, "")
-              .Replace(", ", "");
-            double kva = Math.Round(transformer.Kva, 1);
             kvaList.Add(kva);
             tb.Cells[tableRowIndex, 2].TextString = kva.ToString() + " KVA";
             tableRowIndex++;
