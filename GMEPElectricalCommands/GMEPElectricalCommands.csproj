@@ -267,7 +267,9 @@
     </Compile>
     <Compile Include="Panel\PanelCommands.cs" />
     <Compile Include="GeneralCommands.cs" />
-    <Compile Include="Panel\DialogWindow.cs" />
+    <Compile Include="Panel\DialogWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
     <Compile Include="Panel\DialogWindow.Designer.cs">
       <DependentUpon>DialogWindow.cs</DependentUpon>
     </Compile>

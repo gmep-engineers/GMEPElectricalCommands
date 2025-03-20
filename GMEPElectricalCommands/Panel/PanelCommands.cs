@@ -14,6 +14,143 @@ using OfficeOpenXml;
 
 namespace ElectricalCommands
 {
+  public class PanelNote
+  {
+    public string Id;
+    public int Number;
+    public string PanelId;
+    public int CircuitNo;
+    public int Length;
+    public string Description;
+    public string GroupId;
+    public int Stack;
+
+    public PanelNote(
+      string Id,
+      int Number,
+      string PanelId,
+      int CircuitNo,
+      int Length,
+      string Description,
+      string GroupId,
+      int Stack
+    )
+    {
+      this.Id = Id;
+      this.Number = Number;
+      this.PanelId = PanelId;
+      this.CircuitNo = CircuitNo;
+      this.Length = Length;
+      this.Description = Description;
+      this.GroupId = GroupId;
+      this.Stack = Stack;
+    }
+  }
+
+  public class JsonPanel3P
+  {
+    public string id;
+    public bool read_only;
+    public string main;
+    public string panel;
+    public string location;
+    public string voltage1;
+    public string voltage2;
+    public string phase;
+    public string wire;
+    public string mounting;
+    public string existing;
+    public bool lcl_override;
+    public bool lml_override;
+    public string subtotal_a;
+    public string subtotal_b;
+    public string subtotal_c;
+    public string total_va;
+    public double lcl;
+    public double lcl125;
+    public double lml;
+    public double lml125;
+    public string kva;
+    public string feeder_amps;
+    public string custom_title;
+    public string bus_rating;
+    public bool[] description_left_highlights;
+    public bool[] description_right_highlights;
+    public bool[] breaker_left_highlights;
+    public bool[] breaker_right_highlights;
+    public string[] description_left;
+    public string[] description_right;
+    public string[] phase_a_left;
+    public string[] phase_a_right;
+    public string[] phase_b_left;
+    public string[] phase_b_right;
+    public string[] phase_c_left;
+    public string[] phase_c_right;
+    public string[] breaker_left;
+    public string[] breaker_right;
+    public string[] circuit_left;
+    public string[] circuit_right;
+    public string[] phase_a_left_tag;
+    public string[] phase_a_right_tag;
+    public string[] phase_b_left_tag;
+    public string[] phase_b_right_tag;
+    public string[] phase_c_left_tag;
+    public string[] phase_c_right_tag;
+    public string[] description_left_tags;
+    public string[] description_right_tags;
+    public string[] notes;
+  }
+
+  public class JsonPanel2P
+  {
+    public string id;
+    public bool read_only;
+    public string main;
+    public string panel;
+    public string location;
+    public string voltage1;
+    public string voltage2;
+    public string phase;
+    public string wire;
+    public string mounting;
+    public string existing;
+    public bool lcl_override;
+    public bool lml_override;
+    public string subtotal_a;
+    public string subtotal_b;
+    public string subtotal_c;
+    public string total_va;
+    public double lcl;
+    public double lcl125;
+    public double lml;
+    public double lml125;
+    public string kva;
+    public string feeder_amps;
+    public string custom_title;
+    public string bus_rating;
+    public bool[] description_left_highlights;
+    public bool[] description_right_highlights;
+    public bool[] breaker_left_highlights;
+    public bool[] breaker_right_highlights;
+    public string[] description_left;
+    public string[] description_right;
+    public string[] phase_a_left;
+    public string[] phase_a_right;
+    public string[] phase_b_left;
+    public string[] phase_b_right;
+    public string[] breaker_left;
+    public string[] breaker_right;
+    public string[] circuit_left;
+    public string[] circuit_right;
+    public string[] phase_a_left_tag;
+    public string[] phase_a_right_tag;
+    public string[] phase_b_left_tag;
+    public string[] phase_b_right_tag;
+    public string[] description_left_tags;
+    public string[] description_right_tags;
+    public string[] notes;
+  }
+
   public class PanelCommands
   {
     private MainForm myForm;

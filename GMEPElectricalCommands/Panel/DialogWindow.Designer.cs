@@ -40,6 +40,7 @@ namespace ElectricalCommands
             this.DUPLICATE_PANEL_BUTTON = new System.Windows.Forms.Button();
             this.LOAD_CALCULATIONS_BUTTON = new System.Windows.Forms.Button();
             this.LoadFromDesignTool_Button = new System.Windows.Forms.Button();
+            this.CreateCurrentPanelButton = new System.Windows.Forms.Button();
             this.PANEL_TABS.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -85,7 +86,7 @@ namespace ElectricalCommands
             // 
             // HELP_BUTTON
             // 
-            this.HELP_BUTTON.Location = new System.Drawing.Point(110, 84);
+            this.HELP_BUTTON.Location = new System.Drawing.Point(110, 139);
             this.HELP_BUTTON.Name = "HELP_BUTTON";
             this.HELP_BUTTON.Size = new System.Drawing.Size(51, 23);
             this.HELP_BUTTON.TabIndex = 180;
@@ -95,7 +96,7 @@ namespace ElectricalCommands
             // 
             // SAVE_BUTTON
             // 
-            this.SAVE_BUTTON.Location = new System.Drawing.Point(110, 113);
+            this.SAVE_BUTTON.Location = new System.Drawing.Point(110, 168);
             this.SAVE_BUTTON.Name = "SAVE_BUTTON";
             this.SAVE_BUTTON.Size = new System.Drawing.Size(51, 23);
             this.SAVE_BUTTON.TabIndex = 181;
@@ -105,7 +106,7 @@ namespace ElectricalCommands
             // 
             // LOAD_BUTTON
             // 
-            this.LOAD_BUTTON.Location = new System.Drawing.Point(110, 142);
+            this.LOAD_BUTTON.Location = new System.Drawing.Point(110, 197);
             this.LOAD_BUTTON.Name = "LOAD_BUTTON";
             this.LOAD_BUTTON.Size = new System.Drawing.Size(51, 23);
             this.LOAD_BUTTON.TabIndex = 182;
@@ -115,7 +116,7 @@ namespace ElectricalCommands
             // 
             // DUPLICATE_PANEL_BUTTON
             // 
-            this.DUPLICATE_PANEL_BUTTON.Location = new System.Drawing.Point(24, 171);
+            this.DUPLICATE_PANEL_BUTTON.Location = new System.Drawing.Point(24, 226);
             this.DUPLICATE_PANEL_BUTTON.Name = "DUPLICATE_PANEL_BUTTON";
             this.DUPLICATE_PANEL_BUTTON.Size = new System.Drawing.Size(137, 23);
             this.DUPLICATE_PANEL_BUTTON.TabIndex = 196;
@@ -125,7 +126,7 @@ namespace ElectricalCommands
             // 
             // LOAD_CALCULATIONS_BUTTON
             // 
-            this.LOAD_CALCULATIONS_BUTTON.Location = new System.Drawing.Point(24, 200);
+            this.LOAD_CALCULATIONS_BUTTON.Location = new System.Drawing.Point(24, 255);
             this.LOAD_CALCULATIONS_BUTTON.Name = "LOAD_CALCULATIONS_BUTTON";
             this.LOAD_CALCULATIONS_BUTTON.Size = new System.Drawing.Size(137, 23);
             this.LOAD_CALCULATIONS_BUTTON.TabIndex = 197;
@@ -135,18 +136,30 @@ namespace ElectricalCommands
             // 
             // LoadFromDesignTool_Button
             // 
-            this.LoadFromDesignTool_Button.Location = new System.Drawing.Point(24, 230);
+            this.LoadFromDesignTool_Button.Location = new System.Drawing.Point(24, 284);
             this.LoadFromDesignTool_Button.Name = "LoadFromDesignTool_Button";
             this.LoadFromDesignTool_Button.Size = new System.Drawing.Size(137, 23);
             this.LoadFromDesignTool_Button.TabIndex = 198;
             this.LoadFromDesignTool_Button.Text = "Load From Design Tool";
             this.LoadFromDesignTool_Button.UseVisualStyleBackColor = true;
+            this.LoadFromDesignTool_Button.Click += new System.EventHandler(this.LoadFromDesignTool_ButtonClick);
+            // 
+            // CreateCurrentPanelButton
+            // 
+            this.CreateCurrentPanelButton.Location = new System.Drawing.Point(13, 84);
+            this.CreateCurrentPanelButton.Name = "CreateCurrentPanelButton";
+            this.CreateCurrentPanelButton.Size = new System.Drawing.Size(148, 23);
+            this.CreateCurrentPanelButton.TabIndex = 199;
+            this.CreateCurrentPanelButton.Text = "Create Current Panel";
+            this.CreateCurrentPanelButton.UseVisualStyleBackColor = true;
+            this.CreateCurrentPanelButton.Click += new System.EventHandler(this.CreateCurrentPanel_Click);
             // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1586, 696);
+            this.Controls.Add(this.CreateCurrentPanelButton);
             this.Controls.Add(this.LoadFromDesignTool_Button);
             this.Controls.Add(this.LOAD_CALCULATIONS_BUTTON);
             this.Controls.Add(this.DUPLICATE_PANEL_BUTTON);
@@ -174,6 +187,7 @@ namespace ElectricalCommands
     private System.Windows.Forms.Button DUPLICATE_PANEL_BUTTON;
     private System.Windows.Forms.Button LOAD_CALCULATIONS_BUTTON;
     private System.Windows.Forms.Button LoadFromDesignTool_Button;
+    private System.Windows.Forms.Button CreateCurrentPanelButton;
   }
 }
 

@@ -14,92 +14,6 @@ using Newtonsoft.Json.Linq;
 
 namespace ElectricalCommands
 {
-  public class PanelNote
-  {
-    public string Id;
-    public int Number;
-    public string PanelId;
-    public int CircuitNo;
-    public int Length;
-    public string Description;
-    public string GroupId;
-    public int Stack;
-
-    public PanelNote(
-      string Id,
-      int Number,
-      string PanelId,
-      int CircuitNo,
-      int Length,
-      string Description,
-      string GroupId,
-      int Stack
-    )
-    {
-      this.Id = Id;
-      this.Number = Number;
-      this.PanelId = PanelId;
-      this.CircuitNo = CircuitNo;
-      this.Length = Length;
-      this.Description = Description;
-      this.GroupId = GroupId;
-      this.Stack = Stack;
-    }
-  }
-
-  public class JsonPanel
-  {
-    public string id;
-    public string main;
-    public string panel;
-    public string location;
-    public string voltage1;
-    public string voltage2;
-    public string phase;
-    public string wire;
-    public string mounting;
-    public string existing;
-    public bool lcl_override;
-    public bool lml_override;
-    public string subtotal_a;
-    public string subtotal_b;
-    public string subtotal_c;
-    public string total_va;
-    public double lcl;
-    public double lcl125;
-    public double lml;
-    public double lml125;
-    public string kva;
-    public string feeder_amps;
-    public string custom_title;
-    public string bus_rating;
-    public bool[] description_left_highlights;
-    public bool[] description_right_highlights;
-    public bool[] breaker_left_highlights;
-    public bool[] breaker_right_highlights;
-    public string[] description_left;
-    public string[] description_right;
-    public string[] phase_a_left;
-    public string[] phase_a_right;
-    public string[] phase_b_left;
-    public string[] phase_b_right;
-    public string[] phase_c_left;
-    public string[] phase_c_right;
-    public string[] breaker_left;
-    public string[] breaker_right;
-    public string[] circuit_left;
-    public string[] circuit_right;
-    public string[] phase_a_left_tag;
-    public string[] phase_a_right_tag;
-    public string[] phase_b_left_tag;
-    public string[] phase_b_right_tag;
-    public string[] phase_c_left_tag;
-    public string[] phase_c_right_tag;
-    public string[] description_left_tags;
-    public string[] description_right_tags;
-    public string[] notes;
-  }
-
   public partial class MainForm : Form
   {
     private readonly PanelCommands myCommandsInstance;
@@ -110,6 +24,7 @@ namespace ElectricalCommands
     private readonly string acDocFileName;
     private readonly string acDocName;
     public bool initialized = false;
+    public bool readOnly = false;
 
     public MainForm(PanelCommands myCommands)
     {
@@ -137,13 +52,16 @@ namespace ElectricalCommands
 
     private void DocBeginDocClose(object sender, DocumentBeginCloseEventArgs e)
     {
-      SavePanelDataToLocalJsonFile();
-      this.acDoc.Database.SaveAs(
-        acDocName,
-        true,
-        DwgVersion.Current,
-        this.acDoc.Database.SecurityParameters
-      );
+      if (!readOnly)
+      {
+        SavePanelDataToLocalJsonFile();
+        this.acDoc.Database.SaveAs(
+          acDocName,
+          true,
+          DwgVersion.Current,
+          this.acDoc.Database.SecurityParameters
+        );
+      }
     }
 
     public List<PanelUserControl> RetrieveUserControls()
@@ -328,6 +246,14 @@ namespace ElectricalCommands
         PanelUserControl userControl1 = CreateNewPanelTab(panelName, is3Ph);
         userControl1.ClearModalAndRemoveRows(panel);
         userControl1.PopulateModalWithPanelData(panel);
+        if (userControl1.readOnly)
+        {
+          readOnly = true;
+          NEW_PANEL_BUTTON.Enabled = !readOnly;
+          SAVE_BUTTON.Enabled = !readOnly;
+          LOAD_BUTTON.Enabled = !readOnly;
+          DUPLICATE_PANEL_BUTTON.Enabled = !readOnly;
+        }
         var notes = JsonConvert.DeserializeObject<List<string>>(panel["notes"].ToString());
         userControl1.UpdateNotesStorage(notes);
       }
@@ -563,7 +489,7 @@ namespace ElectricalCommands
     {
       List<Dictionary<string, object>> panelStorage = new List<Dictionary<string, object>>();
 
-      if (this.acDoc != null)
+      if (this.acDoc != null && !readOnly)
       {
         foreach (PanelUserControl userControl in this.userControls)
         {
@@ -576,6 +502,10 @@ namespace ElectricalCommands
 
     public void StoreDataInJsonFile(List<Dictionary<string, object>> saveData)
     {
+      if (readOnly)
+      {
+        return;
+      }
       string savesDirectory = Path.Combine(acDocPath, "Saves");
       string panelSavesDirectory = Path.Combine(savesDirectory, "Panel");
 
@@ -607,7 +537,10 @@ namespace ElectricalCommands
     private void MAINFORM_CLOSING(object sender, FormClosingEventArgs e)
     {
       this.acDoc.BeginDocumentClose -= new DocumentBeginCloseEventHandler(DocBeginDocClose);
-      SavePanelDataToLocalJsonFile();
+      if (!readOnly)
+      {
+        SavePanelDataToLocalJsonFile();
+      }
     }
 
     public void PANEL_NAME_INPUT_TextChanged(
@@ -703,6 +636,16 @@ namespace ElectricalCommands
       }
     }
 
+    private void CreateCurrentPanel_Click(object sender, EventArgs e)
+    {
+      string selectedTabName = PANEL_TABS.SelectedTab.Text;
+      PanelUserControl selectedUserControl = (PanelUserControl)FindUserControl(selectedTabName);
+      if (selectedUserControl != null)
+      {
+        selectedUserControl.CreatePanel();
+      }
+    }
+
     private void MAINFORM_SHOWN(object sender, EventArgs e)
     {
       // Check if the userControls list is empty
@@ -771,30 +714,199 @@ namespace ElectricalCommands
       }
     }
 
-    private void AddLoadToCircuit(
-      string[] phaseArr,
-      ElectricalEntity.Equipment equip,
-      int startIndex
+    private void AddLoadToCircuit3P(
+      JsonPanel3P jsonPanel,
+      string startPhase,
+      string side,
+      ElectricalEntity.Equipment equip
     )
     {
+      string[] circuitArr;
+      string[] descriptionArr;
+      string[] breakerArr;
+      if (side == "left")
+      {
+        circuitArr = jsonPanel.circuit_left;
+        descriptionArr = jsonPanel.description_left;
+        breakerArr = jsonPanel.breaker_left;
+      }
+      else
+      {
+        circuitArr = jsonPanel.circuit_right;
+        descriptionArr = jsonPanel.description_right;
+        breakerArr = jsonPanel.breaker_right;
+      }
+      int startIndex = 0;
+      foreach (string circuit in circuitArr)
+      {
+        if (circuit == equip.Circuit.ToString())
+        {
+          break;
+        }
+        else
+        {
+          startIndex++;
+        }
+      }
+      string[] firstPhaseArr;
+      string[] secondPhaseArr;
+      string[] thirdPhaseArr;
+
+      if (startPhase == "a")
+      {
+        if (side == "left")
+        {
+          firstPhaseArr = jsonPanel.phase_a_left;
+          secondPhaseArr = jsonPanel.phase_b_left;
+          thirdPhaseArr = jsonPanel.phase_c_left;
+        }
+        else
+        {
+          firstPhaseArr = jsonPanel.phase_a_right;
+          secondPhaseArr = jsonPanel.phase_b_right;
+          thirdPhaseArr = jsonPanel.phase_c_right;
+        }
+      }
+      else if (startPhase == "b")
+      {
+        if (side == "left")
+        {
+          firstPhaseArr = jsonPanel.phase_b_left;
+          secondPhaseArr = jsonPanel.phase_c_left;
+          thirdPhaseArr = jsonPanel.phase_a_left;
+        }
+        else
+        {
+          firstPhaseArr = jsonPanel.phase_b_right;
+          secondPhaseArr = jsonPanel.phase_c_right;
+          thirdPhaseArr = jsonPanel.phase_a_right;
+        }
+      }
+      else
+      {
+        if (side == "left")
+        {
+          firstPhaseArr = jsonPanel.phase_c_left;
+          secondPhaseArr = jsonPanel.phase_a_left;
+          thirdPhaseArr = jsonPanel.phase_b_left;
+        }
+        else
+        {
+          firstPhaseArr = jsonPanel.phase_c_right;
+          secondPhaseArr = jsonPanel.phase_a_right;
+          thirdPhaseArr = jsonPanel.phase_b_right;
+        }
+      }
       string phaseLoad = string.Empty;
       if (equip.Pole == 3)
       {
         phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 1.732, 0).ToString();
-        phaseArr[startIndex] = phaseLoad;
-        phaseArr[startIndex + 2] = phaseLoad;
-        phaseArr[startIndex + 4] = phaseLoad;
+        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        breakerArr[startIndex + 2] = "";
+        breakerArr[startIndex + 4] = "3";
+        firstPhaseArr[startIndex] = phaseLoad;
+        secondPhaseArr[startIndex + 2] = phaseLoad;
+        thirdPhaseArr[startIndex + 4] = phaseLoad;
       }
       else if (equip.Pole == 2)
       {
         phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 2, 0).ToString();
-        phaseArr[startIndex] = phaseLoad;
-        phaseArr[startIndex + 2] = phaseLoad;
+        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        breakerArr[startIndex + 2] = "2";
+        firstPhaseArr[startIndex] = phaseLoad;
+        secondPhaseArr[startIndex + 2] = phaseLoad;
       }
       else
       {
         phaseLoad = equip.Va.ToString();
-        phaseArr[startIndex] = phaseLoad;
+        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        firstPhaseArr[startIndex] = phaseLoad;
+      }
+    }
+
+    private void AddLoadToCircuit2P(
+      JsonPanel2P jsonPanel,
+      string startPhase,
+      string side,
+      ElectricalEntity.Equipment equip
+    )
+    {
+      string[] circuitArr;
+      string[] descriptionArr;
+      string[] breakerArr;
+      if (side == "left")
+      {
+        circuitArr = jsonPanel.circuit_left;
+        descriptionArr = jsonPanel.description_left;
+        breakerArr = jsonPanel.breaker_left;
+      }
+      else
+      {
+        circuitArr = jsonPanel.circuit_right;
+        descriptionArr = jsonPanel.description_right;
+        breakerArr = jsonPanel.breaker_right;
+      }
+      int startIndex = 0;
+      foreach (string circuit in circuitArr)
+      {
+        if (circuit == equip.Circuit.ToString())
+        {
+          break;
+        }
+        else
+        {
+          startIndex++;
+        }
+      }
+      string[] firstPhaseArr;
+      string[] secondPhaseArr;
+
+      if (startPhase == "a")
+      {
+        if (side == "left")
+        {
+          firstPhaseArr = jsonPanel.phase_a_left;
+          secondPhaseArr = jsonPanel.phase_b_left;
+        }
+        else
+        {
+          firstPhaseArr = jsonPanel.phase_a_right;
+          secondPhaseArr = jsonPanel.phase_b_right;
+        }
+      }
+      else
+      {
+        if (side == "left")
+        {
+          firstPhaseArr = jsonPanel.phase_b_left;
+          secondPhaseArr = jsonPanel.phase_a_left;
+        }
+        else
+        {
+          firstPhaseArr = jsonPanel.phase_b_right;
+          secondPhaseArr = jsonPanel.phase_a_right;
+        }
+      }
+
+      string phaseLoad = string.Empty;
+      if (equip.Pole == 2)
+      {
+        phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 2, 0).ToString();
+        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        breakerArr[startIndex + 2] = "2";
+        firstPhaseArr[startIndex] = phaseLoad;
+        secondPhaseArr[startIndex + 2] = phaseLoad;
+      }
+      else
+      {
+        phaseLoad = equip.Va.ToString();
+        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        firstPhaseArr[startIndex] = phaseLoad;
       }
     }
 
@@ -808,153 +920,292 @@ namespace ElectricalCommands
       List<ElectricalEntity.Panel> panels = gmepDb.GetPanels(projectId);
       List<ElectricalEntity.Equipment> equipment = gmepDb.GetEquipment(projectId);
       List<PanelNote> panelNotes = gmepDb.GetPanelNotes(projectId);
-      List<JsonPanel> jsonPanels = new List<JsonPanel>();
+      List<JsonPanel3P> jsonPanels3P = new List<JsonPanel3P>();
+      List<JsonPanel2P> jsonPanels2P = new List<JsonPanel2P>();
       List<string> serializedPanels = new List<string>();
       foreach (ElectricalEntity.Panel panel in panels)
       {
-        List<PanelNote> thisPanelNotes = panelNotes.FindAll(pn => pn.PanelId == panel.Id);
-        JsonPanel jsonPanel = new JsonPanel();
-        jsonPanel.id = panel.Id;
-        jsonPanel.main = panel.MainAmpRating.ToString();
-        jsonPanel.panel = "'" + panel.Name + "'";
-        jsonPanel.location = "";
-        jsonPanel.voltage1 = panel.Voltage.Substring(0, 3);
-        jsonPanel.voltage2 = panel.LineVoltage.ToString();
-        jsonPanel.phase = panel.Phase.ToString();
-        jsonPanel.wire = panel.Phase == 3 ? "4" : "3";
-        jsonPanel.mounting = panel.IsRecessed ? "RECESSED" : "SURFACE";
-        jsonPanel.existing = panel.Status.ToUpper();
-        jsonPanel.lcl_override = false;
-        jsonPanel.lml_override = false;
-        jsonPanel.subtotal_a = "0";
-        jsonPanel.subtotal_b = "0";
-        jsonPanel.subtotal_c = "0";
-        jsonPanel.total_va = "0";
-        jsonPanel.lcl = 0;
-        jsonPanel.lcl125 = 0;
-        jsonPanel.lml = 0;
-        jsonPanel.lml125 = 0;
-        jsonPanel.kva = "0";
-        jsonPanel.feeder_amps = "0";
-        jsonPanel.custom_title = "";
-        jsonPanel.bus_rating = panel.BusAmpRating.ToString();
-        jsonPanel.description_left_highlights = new bool[panel.NumBreakers * 2];
-        jsonPanel.description_right_highlights = new bool[panel.NumBreakers * 2];
-        jsonPanel.breaker_left_highlights = new bool[panel.NumBreakers * 2];
-        jsonPanel.breaker_right_highlights = new bool[panel.NumBreakers * 2];
-        jsonPanel.description_left = new string[panel.NumBreakers * 2];
-        jsonPanel.description_right = new string[panel.NumBreakers * 2];
-
-        jsonPanel.phase_a_left = new string[panel.NumBreakers * 2];
-        jsonPanel.phase_a_right = new string[panel.NumBreakers * 2];
-        jsonPanel.phase_b_left = new string[panel.NumBreakers * 2];
-        jsonPanel.phase_b_right = new string[panel.NumBreakers * 2];
-        jsonPanel.phase_c_left = new string[panel.NumBreakers * 2];
-        jsonPanel.phase_c_right = new string[panel.NumBreakers * 2];
-
-        jsonPanel.breaker_left = new string[panel.NumBreakers * 2];
-        jsonPanel.breaker_right = new string[panel.NumBreakers * 2];
-
-        jsonPanel.circuit_left = new string[panel.NumBreakers * 2];
-        jsonPanel.circuit_right = new string[panel.NumBreakers * 2];
-
-        jsonPanel.phase_a_left_tag = new string[panel.NumBreakers];
-        jsonPanel.phase_a_right_tag = new string[panel.NumBreakers];
-        jsonPanel.phase_b_left_tag = new string[panel.NumBreakers];
-        jsonPanel.phase_b_right_tag = new string[panel.NumBreakers];
-        jsonPanel.phase_c_left_tag = new string[panel.NumBreakers];
-        jsonPanel.phase_c_right_tag = new string[panel.NumBreakers];
-
-        jsonPanel.description_left_tags = new string[panel.NumBreakers];
-        jsonPanel.description_right_tags = new string[panel.NumBreakers];
-        jsonPanel.notes = new string[thisPanelNotes.Count];
-        jsonPanels.Add(jsonPanel);
-        for (int i = 0; i < panel.NumBreakers * 2; i += 2)
+        if (panel.NumBreakers == 0)
         {
-          jsonPanel.circuit_left[i] = (i + 1).ToString();
-          jsonPanel.circuit_left[i + 1] = string.Empty;
-          jsonPanel.circuit_right[i] = (i + 2).ToString();
-          jsonPanel.circuit_right[i + 1] = string.Empty;
-
-          jsonPanel.description_left_highlights[i] = false;
-          jsonPanel.description_left_highlights[i + 1] = false;
-
-          jsonPanel.description_right_highlights[i] = false;
-          jsonPanel.description_right_highlights[i + 1] = false;
-
-          jsonPanel.breaker_left_highlights[i] = false;
-          jsonPanel.breaker_left_highlights[i + 1] = false;
-
-          jsonPanel.breaker_right_highlights[i] = false;
-          jsonPanel.breaker_right_highlights[i + 1] = false;
-
-          jsonPanel.description_left[i] = "SPARE";
-          jsonPanel.description_left[i + 1] = string.Empty;
-
-          jsonPanel.description_right[i] = "SPARE";
-          jsonPanel.description_right[i + 1] = string.Empty;
+          panel.NumBreakers = 42;
         }
-        foreach (ElectricalEntity.Equipment equip in equipment)
+        if (panel.Phase == 3)
         {
-          if (equip.ParentId == panel.Id)
+          List<PanelNote> thisPanelNotes = panelNotes.FindAll(pn => pn.PanelId == panel.Id);
+          JsonPanel3P jsonPanel = new JsonPanel3P();
+          jsonPanel.id = panel.Id;
+          jsonPanel.read_only = true;
+          jsonPanel.main = panel.MainAmpRating.ToString();
+          jsonPanel.panel = "'" + panel.Name + "'";
+          jsonPanel.location = "";
+          jsonPanel.voltage1 = panel.Voltage.Substring(0, 3);
+          jsonPanel.voltage2 = panel.LineVoltage.ToString();
+          jsonPanel.phase = panel.Phase.ToString();
+          jsonPanel.wire = panel.Phase == 3 ? "4" : "3";
+          jsonPanel.mounting = panel.IsRecessed ? "RECESSED" : "SURFACE";
+          jsonPanel.existing = panel.Status.ToUpper();
+          jsonPanel.lcl_override = false;
+          jsonPanel.lml_override = false;
+          jsonPanel.subtotal_a = "0";
+          jsonPanel.subtotal_b = "0";
+          jsonPanel.subtotal_c = "0";
+          jsonPanel.total_va = "0";
+          jsonPanel.lcl = 0;
+          jsonPanel.lcl125 = 0;
+          jsonPanel.lml = 0;
+          jsonPanel.lml125 = 0;
+          jsonPanel.kva = "0";
+          jsonPanel.feeder_amps = "0";
+          jsonPanel.custom_title = "";
+          jsonPanel.bus_rating = panel.BusAmpRating.ToString();
+          jsonPanel.description_left_highlights = new bool[panel.NumBreakers];
+          jsonPanel.description_right_highlights = new bool[panel.NumBreakers];
+          jsonPanel.breaker_left_highlights = new bool[panel.NumBreakers];
+          jsonPanel.breaker_right_highlights = new bool[panel.NumBreakers];
+          jsonPanel.description_left = new string[panel.NumBreakers];
+          jsonPanel.description_right = new string[panel.NumBreakers];
+
+          jsonPanel.phase_a_left = new string[panel.NumBreakers];
+          jsonPanel.phase_a_right = new string[panel.NumBreakers];
+          jsonPanel.phase_b_left = new string[panel.NumBreakers];
+          jsonPanel.phase_b_right = new string[panel.NumBreakers];
+          jsonPanel.phase_c_left = new string[panel.NumBreakers];
+          jsonPanel.phase_c_right = new string[panel.NumBreakers];
+
+          jsonPanel.breaker_left = new string[panel.NumBreakers];
+          jsonPanel.breaker_right = new string[panel.NumBreakers];
+
+          jsonPanel.circuit_left = new string[panel.NumBreakers];
+          jsonPanel.circuit_right = new string[panel.NumBreakers];
+
+          jsonPanel.phase_a_left_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_a_right_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_b_left_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_b_right_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_c_left_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_c_right_tag = new string[panel.NumBreakers / 2];
+
+          jsonPanel.description_left_tags = new string[panel.NumBreakers / 2];
+          jsonPanel.description_right_tags = new string[panel.NumBreakers / 2];
+          jsonPanel.notes = new string[thisPanelNotes.Count];
+          jsonPanels3P.Add(jsonPanel);
+          for (int i = 0; i < panel.NumBreakers; i++)
           {
-            if (equip.Circuit % 2 == 0)
+            jsonPanel.description_left_highlights[i] = false;
+
+            jsonPanel.description_right_highlights[i] = false;
+
+            jsonPanel.breaker_left_highlights[i] = false;
+
+            jsonPanel.breaker_right_highlights[i] = false;
+
+            jsonPanel.description_left[i] = "SPACE";
+
+            jsonPanel.description_right[i] = "SPACE";
+
+            jsonPanel.phase_a_left[i] = "0";
+            jsonPanel.phase_a_right[i] = "0";
+
+            jsonPanel.phase_b_left[i] = "0";
+            jsonPanel.phase_b_right[i] = "0";
+
+            jsonPanel.phase_c_left[i] = "0";
+            jsonPanel.phase_c_right[i] = "0";
+
+            jsonPanel.breaker_left[i] = string.Empty;
+            jsonPanel.breaker_right[i] = string.Empty;
+
+            if (i % 2 == 0)
             {
-              // right
-              if (panel.Phase == 3)
+              jsonPanel.circuit_left[i] = (i + 1).ToString();
+              jsonPanel.circuit_right[i] = (i + 2).ToString();
+            }
+            else
+            {
+              jsonPanel.circuit_left[i] = string.Empty;
+              jsonPanel.circuit_right[i] = string.Empty;
+            }
+          }
+          for (int i = 0; i < panel.NumBreakers / 2; i++)
+          {
+            jsonPanel.phase_a_left_tag[i] = string.Empty;
+            jsonPanel.phase_a_right_tag[i] = string.Empty;
+
+            jsonPanel.phase_b_left_tag[i] = string.Empty;
+            jsonPanel.phase_b_right_tag[i] = string.Empty;
+
+            jsonPanel.phase_c_left_tag[i] = string.Empty;
+            jsonPanel.phase_c_right_tag[i] = string.Empty;
+
+            jsonPanel.description_left_tags[i] = string.Empty;
+            jsonPanel.description_right_tags[i] = string.Empty;
+          }
+          foreach (ElectricalEntity.Equipment equip in equipment)
+          {
+            Console.WriteLine(equip.Circuit);
+            if (equip.ParentId == panel.Id)
+            {
+              if (equip.Circuit % 2 == 0)
               {
                 // right 3-phase
                 if (equip.Circuit % 3 == 2)
                 {
                   // phase a right
-                  AddLoadToCircuit(jsonPanel.phase_a_right, equip, equip.Circuit - 2);
+                  AddLoadToCircuit3P(jsonPanel, "a", "right", equip);
                 }
                 else if (equip.Circuit % 3 == 1)
                 {
                   // phase b right
-                  AddLoadToCircuit(jsonPanel.phase_b_right, equip, equip.Circuit - 2);
+                  AddLoadToCircuit3P(jsonPanel, "b", "right", equip);
                 }
                 else
                 {
                   // phase c right
-                  AddLoadToCircuit(jsonPanel.phase_c_right, equip, equip.Circuit - 2);
+                  AddLoadToCircuit3P(jsonPanel, "c", "right", equip);
                 }
               }
               else
-              {
-                // right 1-phase
-                if (equip.Circuit % 4 == 2)
-                {
-                  // phase a
-                  AddLoadToCircuit(jsonPanel.phase_a_right, equip, equip.Circuit - 2);
-                }
-                else
-                {
-                  // phase b
-                  AddLoadToCircuit(jsonPanel.phase_b_right, equip, equip.Circuit - 2);
-                }
-              }
-            }
-            else
-            {
-              // left
-              if (panel.Phase == 3)
               {
                 // left 3-phase
                 if (equip.Circuit % 3 == 1)
                 {
                   // phase a left
-                  AddLoadToCircuit(jsonPanel.phase_a_left, equip, equip.Circuit - 1);
+                  AddLoadToCircuit3P(jsonPanel, "a", "left", equip);
                 }
                 else if (equip.Circuit % 3 == 2)
                 {
                   // phase c left
-                  AddLoadToCircuit(jsonPanel.phase_c_left, equip, equip.Circuit - 1);
+                  AddLoadToCircuit3P(jsonPanel, "c", "left", equip);
                 }
                 else
                 {
                   // phase b left
-                  AddLoadToCircuit(jsonPanel.phase_b_left, equip, equip.Circuit - 1);
+                  AddLoadToCircuit3P(jsonPanel, "b", "left", equip);
+                }
+              }
+            }
+          }
+          string serializedPanel = JsonConvert.SerializeObject(jsonPanel, Formatting.Indented);
+          serializedPanels.Add(serializedPanel);
+        }
+        else
+        {
+          List<PanelNote> thisPanelNotes = panelNotes.FindAll(pn => pn.PanelId == panel.Id);
+          JsonPanel2P jsonPanel = new JsonPanel2P();
+          jsonPanel.id = panel.Id;
+          jsonPanel.read_only = true;
+          jsonPanel.main = panel.MainAmpRating.ToString();
+          jsonPanel.panel = "'" + panel.Name + "'";
+          jsonPanel.location = "";
+          jsonPanel.voltage1 = panel.Voltage.Substring(0, 3);
+          jsonPanel.voltage2 = panel.LineVoltage.ToString();
+          jsonPanel.phase = panel.Phase.ToString();
+          jsonPanel.wire = panel.Phase == 3 ? "4" : "3";
+          jsonPanel.mounting = panel.IsRecessed ? "RECESSED" : "SURFACE";
+          jsonPanel.existing = panel.Status.ToUpper();
+          jsonPanel.lcl_override = false;
+          jsonPanel.lml_override = false;
+          jsonPanel.subtotal_a = "0";
+          jsonPanel.subtotal_b = "0";
+          jsonPanel.subtotal_c = "0";
+          jsonPanel.total_va = "0";
+          jsonPanel.lcl = 0;
+          jsonPanel.lcl125 = 0;
+          jsonPanel.lml = 0;
+          jsonPanel.lml125 = 0;
+          jsonPanel.kva = "0";
+          jsonPanel.feeder_amps = "0";
+          jsonPanel.custom_title = "";
+          jsonPanel.bus_rating = panel.BusAmpRating.ToString();
+          jsonPanel.description_left_highlights = new bool[panel.NumBreakers];
+          jsonPanel.description_right_highlights = new bool[panel.NumBreakers];
+          jsonPanel.breaker_left_highlights = new bool[panel.NumBreakers];
+          jsonPanel.breaker_right_highlights = new bool[panel.NumBreakers];
+          jsonPanel.description_left = new string[panel.NumBreakers];
+          jsonPanel.description_right = new string[panel.NumBreakers];
+
+          jsonPanel.phase_a_left = new string[panel.NumBreakers];
+          jsonPanel.phase_a_right = new string[panel.NumBreakers];
+          jsonPanel.phase_b_left = new string[panel.NumBreakers];
+          jsonPanel.phase_b_right = new string[panel.NumBreakers];
+
+          jsonPanel.breaker_left = new string[panel.NumBreakers];
+          jsonPanel.breaker_right = new string[panel.NumBreakers];
+
+          jsonPanel.circuit_left = new string[panel.NumBreakers];
+          jsonPanel.circuit_right = new string[panel.NumBreakers];
+
+          jsonPanel.phase_a_left_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_a_right_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_b_left_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_b_right_tag = new string[panel.NumBreakers / 2];
+
+          jsonPanel.description_left_tags = new string[panel.NumBreakers / 2];
+          jsonPanel.description_right_tags = new string[panel.NumBreakers / 2];
+          jsonPanel.notes = new string[thisPanelNotes.Count];
+          jsonPanels2P.Add(jsonPanel);
+          for (int i = 0; i < panel.NumBreakers; i++)
+          {
+            jsonPanel.description_left_highlights[i] = false;
+
+            jsonPanel.description_right_highlights[i] = false;
+
+            jsonPanel.breaker_left_highlights[i] = false;
+
+            jsonPanel.breaker_right_highlights[i] = false;
+
+            jsonPanel.description_left[i] = "SPACE";
+
+            jsonPanel.description_right[i] = "SPACE";
+
+            jsonPanel.phase_a_left[i] = "0";
+            jsonPanel.phase_a_right[i] = "0";
+
+            jsonPanel.phase_b_left[i] = "0";
+            jsonPanel.phase_b_right[i] = "0";
+
+            jsonPanel.breaker_left[i] = string.Empty;
+            jsonPanel.breaker_right[i] = string.Empty;
+
+            if (i % 2 == 0)
+            {
+              jsonPanel.circuit_left[i] = (i + 1).ToString();
+              jsonPanel.circuit_right[i] = (i + 2).ToString();
+            }
+            else
+            {
+              jsonPanel.circuit_left[i] = string.Empty;
+              jsonPanel.circuit_right[i] = string.Empty;
+            }
+          }
+          for (int i = 0; i < panel.NumBreakers / 2; i++)
+          {
+            jsonPanel.phase_a_left_tag[i] = string.Empty;
+            jsonPanel.phase_a_right_tag[i] = string.Empty;
+
+            jsonPanel.phase_b_left_tag[i] = string.Empty;
+            jsonPanel.phase_b_right_tag[i] = string.Empty;
+
+            jsonPanel.description_left_tags[i] = string.Empty;
+            jsonPanel.description_right_tags[i] = string.Empty;
+          }
+          foreach (ElectricalEntity.Equipment equip in equipment)
+          {
+            Console.WriteLine(equip.Circuit);
+            if (equip.ParentId == panel.Id)
+            {
+              if (equip.Circuit % 2 == 0)
+              {
+                // right 1-phase
+                if (equip.Circuit % 4 == 2)
+                {
+                  // phase a
+                  AddLoadToCircuit2P(jsonPanel, "a", "right", equip);
+                }
+                else
+                {
+                  // phase b
+                  AddLoadToCircuit2P(jsonPanel, "b", "right", equip);
                 }
               }
               else
@@ -963,19 +1214,23 @@ namespace ElectricalCommands
                 if ((equip.Circuit + 1) % 4 == 2)
                 {
                   // phase a left
-                  AddLoadToCircuit(jsonPanel.phase_a_left, equip, equip.Circuit - 1);
+                  AddLoadToCircuit2P(jsonPanel, "a", "right", equip);
                 }
                 else
                 {
                   // phase b left
-                  AddLoadToCircuit(jsonPanel.phase_b_left, equip, equip.Circuit - 1);
+                  AddLoadToCircuit2P(jsonPanel, "b", "right", equip);
                 }
               }
             }
           }
+          string serializedPanel = JsonConvert.SerializeObject(jsonPanel, Formatting.Indented);
+          serializedPanels.Add(serializedPanel);
         }
-        string serializedPanel = JsonConvert.SerializeObject(panel);
-        serializedPanels.Add(serializedPanel);
+      }
+      if (serializedPanels.Count == 0)
+      {
+        return;
       }
       try
       {
@@ -1000,7 +1255,7 @@ namespace ElectricalCommands
         string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
         string jsonFileName = acDocFileName + "_" + timestamp + ".json";
         string jsonFilePath = Path.Combine(panelSavesDirectory, jsonFileName);
-        StreamWriter sw = new StreamWriter("C:\\Test.txt");
+        StreamWriter sw = new StreamWriter(jsonFilePath);
         sw.WriteLine("[");
         for (int i = 0; i < serializedPanels.Count - 1; i++)
         {
@@ -1010,6 +1265,24 @@ namespace ElectricalCommands
         sw.WriteLine(serializedPanels[serializedPanels.Count - 1]);
         sw.WriteLine("]");
         sw.Close();
+
+        // Read the JSON data from the file
+        string jsonData = File.ReadAllText(jsonFilePath);
+
+        // Deserialize the JSON data to a list of dictionaries
+        List<Dictionary<string, object>> panelData = JsonConvert.DeserializeObject<
+          List<Dictionary<string, object>>
+        >(jsonData);
+
+        // Save the panel data
+        readOnly = false;
+        StoreDataInJsonFile(panelData);
+        InitializeModal();
+        readOnly = true;
+        NEW_PANEL_BUTTON.Enabled = !readOnly;
+        SAVE_BUTTON.Enabled = !readOnly;
+        LOAD_BUTTON.Enabled = !readOnly;
+        DUPLICATE_PANEL_BUTTON.Enabled = !readOnly;
       }
       catch { }
     }
