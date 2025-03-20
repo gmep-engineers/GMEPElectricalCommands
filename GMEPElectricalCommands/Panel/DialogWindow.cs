@@ -1234,7 +1234,6 @@ namespace ElectricalCommands
       }
       try
       {
-        // HERE write to file
         string savesDirectory = Path.Combine(acDocPath, "Saves");
         string panelSavesDirectory = Path.Combine(savesDirectory, "Panel");
 

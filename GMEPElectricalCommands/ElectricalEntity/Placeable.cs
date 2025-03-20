@@ -691,6 +691,7 @@ namespace ElectricalCommands.ElectricalEntity
   {
     public DistributionBus(
       string Id,
+      string ParentId,
       string NodeId,
       string Status,
       int AmpRating,
@@ -700,6 +701,7 @@ namespace ElectricalCommands.ElectricalEntity
     )
     {
       this.Id = Id;
+      this.ParentId = ParentId;
       this.NodeId = NodeId;
       this.Status = Status;
       this.AmpRating = AmpRating;

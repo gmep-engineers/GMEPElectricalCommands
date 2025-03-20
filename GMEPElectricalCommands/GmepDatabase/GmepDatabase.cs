@@ -229,6 +229,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       string query =
         @"SELECT
         electrical_distribution_buses.id,
+        electrical_distribution_buses.parent_id,
         electrical_distribution_buses.node_id,
         electrical_distribution_buses.aic_rating,
         electrical_distribution_buses.loc_x,
@@ -255,6 +256,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         distributionBuses.Add(
           new DistributionBus(
             GetSafeString(reader, "id"),
+            GetSafeString(reader, "parent_id"),
             GetSafeString(reader, "node_id"),
             GetSafeString(reader, "status"),
             GetSafeInt(reader, "amp_rating"),
