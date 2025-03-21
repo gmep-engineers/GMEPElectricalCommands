@@ -720,8 +720,41 @@ namespace ElectricalCommands.Lighting
         }
       }
       }
+    [CommandMethod("DefineLightingLocation")]
+    public static void DefineLightingLocation() {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
 
-    
+      GmepDatabase gmepDb = new GmepDatabase();
+      PromptPointOptions ppo = new PromptPointOptions("\nSpecify start point: ");
+      PromptPointResult ppr = ed.GetPoint(ppo);
+      if (ppr.Status != PromptStatus.OK)
+        return;
+
+      Point3d startPoint = ppr.Value;
+      PolyLineJig jig = new PolyLineJig(startPoint);
+
+      // Loop to keep adding vertices until the polyline is closed
+      while (true) {
+        PromptResult res = ed.Drag(jig);
+        if (res.Status == PromptStatus.OK) {
+          jig.AddVertex(jig.CurrentPoint);
+        }
+        else if (res.Status == PromptStatus.Cancel) {
+          break;
+        }
+      }
+
+      //PolyLineJig lineJig = new PolyLineJig(polyline);
+     // PromptResult res = ed.Drag(lineJig);
+ 
+
+      
+
+
+    }
+
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
     {
