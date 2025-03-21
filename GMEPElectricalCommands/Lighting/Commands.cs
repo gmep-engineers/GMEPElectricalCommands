@@ -22,6 +22,7 @@ using GMEPElectricalCommands.GmepDatabase;
 using Newtonsoft.Json;
 using TriangleNet.Meshing.Algorithm;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
+using Group = Autodesk.AutoCAD.DatabaseServices.Group;
 using System.Threading.Tasks;
 using System.Buffers;
 using DocumentFormat.OpenXml.Drawing.Charts;
@@ -745,14 +746,48 @@ namespace ElectricalCommands.Lighting
           break;
         }
       }
-
-      //PolyLineJig lineJig = new PolyLineJig(polyline);
-     // PromptResult res = ed.Drag(lineJig);
- 
-
+      using (Transaction trans = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+        Polyline polyline = jig.GetPolyline();
+        if (polyline != null) {
+          btr.AppendEntity(polyline);
+          trans.AddNewlyCreatedDBObject(polyline, true);
+        }
+        trans.Commit();
+        SelectObjectsInsidePolyline(ed, db, polyline); 
+      }
       
 
+    }
+    private static void SelectObjectsInsidePolyline(Editor ed, Database db, Polyline polyline) {
+     SelectionFilter filter = new SelectionFilter(new TypedValue[]
+      {
+                new TypedValue((int)DxfCode.Start, "INSERT")
+      });
 
+      Extents3d extents = polyline.GeometricExtents;
+
+      PromptSelectionResult psr = ed.SelectCrossingWindow(extents.MinPoint, extents.MaxPoint, filter);
+      SelectionSet ss = psr.Value;
+      if (psr.Status == PromptStatus.OK) {
+        ed.WriteMessage($"\nNumber of objects selected: {ss.Count}");
+      }
+      else {
+        ed.WriteMessage("\nNo objects selected.");
+      }
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        /*DBDictionary groupDict = (DBDictionary)tr.GetObject(db.GroupDictionaryId, OpenMode.ForWrite);
+        Group group = new Group("MyGroup", true);
+        ObjectId groupId = groupDict.SetAt("MyGroup", group);
+        tr.AddNewlyCreatedDBObject(group, true);
+        foreach (ObjectId id in ss.GetObjectIds()) {
+          group.Append(id);
+        }
+        group.Append(polyline.ObjectId);*/
+
+        tr.Commit();
+      }
     }
 
     [CommandMethod("PlaceLighting")]
