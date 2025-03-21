@@ -686,8 +686,24 @@ namespace ElectricalCommands.ElectricalEntity
       this.Pole = 1;
     }
   }
+  public class LightingLocation : PlaceableElectricalEntity {
+    string LocationName;
+    bool Outdoor;
+    string timeclock;
+    public LightingLocation(
+      string id,
+      string location,
+      bool outdoor,
+      string timeclock_id
+    ) 
+    { 
+      this.Id = id;
+      this.Outdoor = outdoor;
+      this.LocationName = location;
+    }
+  }
 
-  public class DistributionBus : PlaceableElectricalEntity
+    public class DistributionBus : PlaceableElectricalEntity
   {
     public DistributionBus(
       string Id,

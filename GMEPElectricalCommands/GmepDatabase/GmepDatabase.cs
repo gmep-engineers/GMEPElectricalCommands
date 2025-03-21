@@ -811,7 +811,30 @@ namespace GMEPElectricalCommands.GmepDatabase
       reader.Close();
       return ltgCtrl;
     }
-
+    public List<LightingLocation> GetLightingLocations(string projectId) {
+      List<LightingLocation> locations = new List<LightingLocation>();
+      string query =
+        @"
+        SELECT * FROM electrical_lighting_locations WHERE project_id = @projectId
+        ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read()) {
+        locations.Add(
+          new LightingLocation(
+            GetSafeString(reader, "id"),
+            GetSafeString(reader, "location"),
+            GetSafeBoolean(reader, "outdoor"),
+            GetSafeString(reader, "timeclock_id")
+          )
+        );
+      }
+      CloseConnection();
+      reader.Close();
+      return locations;
+    }
     public string GetProjectId(string projectNo)
     {
       string query = @"SELECT id FROM projects WHERE gmep_project_no = @projectNo";
