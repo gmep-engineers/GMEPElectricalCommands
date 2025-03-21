@@ -2397,15 +2397,29 @@ namespace ElectricalCommands.SingleLine
             tr.AddNewlyCreatedDBObject(acBlkRef, true);
           }
         }
-        currentPoint = new Point3d(
-          currentPoint.X - 7.8062,
-          currentPoint.Y - 8.2372 - height + 6.2 - 3,
-          0
-        );
+        tr.Commit();
+      }
+    }
+
+    public static void InsertLabel(Point3d currentPoint, double height)
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
         ObjectId label = bt["SINGLE LINE LABEL"];
         using (
           BlockReference acBlkRef = new BlockReference(
-            new Point3d(currentPoint.X, currentPoint.Y, 0),
+            new Point3d(currentPoint.X, currentPoint.Y - height - 4, 0),
             label
           )
         )
@@ -2415,8 +2429,8 @@ namespace ElectricalCommands.SingleLine
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
           acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
           tr.AddNewlyCreatedDBObject(acBlkRef, true);
+          tr.Commit();
         }
-        tr.Commit();
       }
     }
   }

@@ -730,6 +730,7 @@ namespace ElectricalCommands.ElectricalEntity
     )
     {
       this.Id = Id;
+      this.ServiceId = Id;
       this.NodeId = NodeId;
       Name =
         $"{AmpRating}A {Voltage.Replace(" ", "V-")}"
