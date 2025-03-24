@@ -732,13 +732,17 @@ namespace ElectricalCommands.Lighting
       GmepDatabase gmepDb = new GmepDatabase();
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
       List<LightingLocation> locationList = gmepDb.GetLightingLocations(projectId);
+      List<LightingTimeClock> timeClockList = gmepDb.GetLightingTimeClocks(projectId);
       PromptKeywordOptions pko = new PromptKeywordOptions("");
+      PromptKeywordOptions pko2 = new PromptKeywordOptions("");
 
       foreach (LightingLocation location in locationList) {
         pko.Keywords.Add(location.LocationName + ":" + location.Id);
       }
+      foreach (LightingTimeClock clock in timeClockList) {
+        pko2.Keywords.Add(clock.Name + ":" + clock.Id);
+      }
 
-      //List<TimeClock> timeClockList = gmepDb.GetTimeClocks(projectId);
 
       PromptPointOptions ppo = new PromptPointOptions("\nSpecify start point: ");
       PromptPointResult ppr = ed.GetPoint(ppo);
@@ -764,6 +768,13 @@ namespace ElectricalCommands.Lighting
       string result = pr.StringResult;
       var locationId = result.Split(':')[1];
       var locationName = result.Split(':')[0];
+
+      pko2.Message = "\nWire To Time Clock:";
+      PromptResult pr2 = ed.GetKeywords(pko2);
+      string result2 = pr2.StringResult;
+      var timeClockId = result2.Split(':')[1];
+      var timeClockName = result2.Split(':')[0];
+
 
       Polyline polyline;
       using (Transaction trans = db.TransactionManager.StartTransaction()) {
@@ -847,6 +858,84 @@ namespace ElectricalCommands.Lighting
         }
         tr.Commit();
       }
+      //TimeClockPlacing
+      Point3d point2;
+      ObjectId blockId2;
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+        BlockTableRecord block = (BlockTableRecord)
+          tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
+        BlockJig blockJig = new BlockJig();
+
+        PromptResult res = blockJig.DragMe(block.ObjectId, out point2);
+
+        if (res.Status == PromptStatus.OK) {
+          BlockTableRecord curSpace = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+          BlockReference br = new BlockReference(point2, block.ObjectId);
+
+          curSpace.AppendEntity(br);
+          tr.AddNewlyCreatedDBObject(br, true);
+          blockId2 = br.Id;
+
+          //Setting Attributes
+          foreach (ObjectId objId in block) {
+            DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
+            AttributeDefinition attDef = obj as AttributeDefinition;
+            if (attDef != null && !attDef.Constant) {
+              using (AttributeReference attRef = new AttributeReference()) {
+                attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
+                attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
+                if (attDef.Tag == "NAME") {
+                  attRef.TextString = timeClockName;
+                }
+                br.AttributeCollection.AppendAttribute(attRef);
+                tr.AddNewlyCreatedDBObject(attRef, true);
+              }
+            }
+          }
+        }
+        else {
+          return;
+        }
+
+        tr.Commit();
+      }
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+        BlockReference br = (BlockReference)tr.GetObject(blockId2, OpenMode.ForWrite);
+        DynamicBlockReferencePropertyCollection pc =
+          br.DynamicBlockReferencePropertyCollection;
+
+        LightingTimeClock matchingClock = timeClockList.FirstOrDefault(x => x.Id == timeClockId);
+        foreach (DynamicBlockReferenceProperty prop in pc) {
+          if (prop.PropertyName == "id") {
+            prop.Value = timeClockId;
+          }
+          if (prop.PropertyName == "name") {
+            prop.Value = timeClockName;
+          }
+          if (prop.PropertyName == "bypass_switch_name") {
+            prop.Value = matchingClock.BypassSwitchName;
+          }
+          if (prop.PropertyName == "bypass_switch_location") {
+            prop.Value = matchingClock.BypassSwitchLocation;
+          }
+          if (prop.PropertyName == "adjacent_panel_id") {
+            prop.Value = matchingClock.BypassSwitchLocation;
+          }
+          if (prop.PropertyName == "voltage_id") {
+            prop.Value = matchingClock.VoltageId;
+          }
+        }
+        tr.Commit();
+      }
+
       SelectObjectsInsidePolyline(ed, db, polyline, locationId);
     }
     private static void SelectObjectsInsidePolyline(Editor ed, Database db, Polyline polyline, string locationId) {

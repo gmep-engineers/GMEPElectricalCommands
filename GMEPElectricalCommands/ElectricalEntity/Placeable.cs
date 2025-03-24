@@ -702,8 +702,29 @@ namespace ElectricalCommands.ElectricalEntity
       this.LocationName = location;
     }
   }
+  public class LightingTimeClock : PlaceableElectricalEntity {
+    public string BypassSwitchName;
+    public string BypassSwitchLocation;
+    public string AdjacentPanelId;
+    public int VoltageId;
 
-    public class DistributionBus : PlaceableElectricalEntity
+    public LightingTimeClock(
+      string id,
+      string name,
+      string bypassSwitchName,
+      string bypassSwitchLocation,
+      string adjacentPanelId,
+      int voltageId
+    ) {
+      this.Id = id;
+      this.BypassSwitchLocation = bypassSwitchLocation;
+      this.BypassSwitchName = bypassSwitchName;
+      this.AdjacentPanelId = adjacentPanelId;
+      this.VoltageId = voltageId;
+      this.Name = name;
+    }
+  }
+  public class DistributionBus : PlaceableElectricalEntity
   {
     public DistributionBus(
       string Id,

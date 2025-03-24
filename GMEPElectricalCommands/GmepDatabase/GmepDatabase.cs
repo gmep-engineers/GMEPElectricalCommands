@@ -835,6 +835,32 @@ namespace GMEPElectricalCommands.GmepDatabase
       reader.Close();
       return locations;
     }
+
+    public List<LightingTimeClock> GetLightingTimeClocks(string projectId) {
+      List<LightingTimeClock> clocks = new List<LightingTimeClock>();
+      string query =
+        @"
+        SELECT * FROM electrical_lighting_timeclocks WHERE project_id = @projectId";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read()) {
+        clocks.Add(
+          new LightingTimeClock(
+            GetSafeString(reader, "id"),
+            GetSafeString(reader, "name"),
+            GetSafeString(reader, "bypass_switch_name"),
+            GetSafeString(reader, "bypass_switch_location"),
+            GetSafeString(reader, "adjacent_panel_id"),
+            GetSafeInt(reader, "voltage_id")
+          )
+        );
+      }
+      CloseConnection();
+      reader.Close();
+      return clocks;
+    }
     public string GetProjectId(string projectNo)
     {
       string query = @"SELECT id FROM projects WHERE gmep_project_no = @projectNo";
