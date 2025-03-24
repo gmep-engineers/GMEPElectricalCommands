@@ -867,46 +867,64 @@ namespace ElectricalCommands.Lighting
 
 
       Point3d point2;
-      ObjectId blockId2;
+      ObjectId blockId2 = ObjectId.Null;
+      //bool timeClockPlaced = false;
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord btr = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead) as BlockTableRecord;
 
-        BlockTableRecord block = (BlockTableRecord)
-          tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
-        BlockJig blockJig = new BlockJig();
-
-        PromptResult res = blockJig.DragMe(block.ObjectId, out point2);
-
-        if (res.Status == PromptStatus.OK) {
-          BlockTableRecord curSpace = (BlockTableRecord)
-            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-
-          BlockReference br = new BlockReference(point2, block.ObjectId);
-
-          curSpace.AppendEntity(br);
-          tr.AddNewlyCreatedDBObject(br, true);
-          blockId2 = br.Id;
-
-          //Setting Attributes
-          foreach (ObjectId objId in block) {
-            DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
-            AttributeDefinition attDef = obj as AttributeDefinition;
-            if (attDef != null && !attDef.Constant) {
-              using (AttributeReference attRef = new AttributeReference()) {
-                attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
-                attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
-                if (attDef.Tag == "NAME") {
-                  attRef.TextString = timeClockName;
+        foreach (ObjectId objId in btr) {
+          Entity entity = tr.GetObject(objId, OpenMode.ForRead) as Entity;
+          if (entity is BlockReference blockRef) {
+            DynamicBlockReferencePropertyCollection pc = blockRef.DynamicBlockReferencePropertyCollection;
+            foreach (DynamicBlockReferenceProperty prop in pc) {
+                if (prop.PropertyName == "id") {
+                  if (prop.Value.ToString() == timeClockId) {
+                    blockId2 = blockRef.ObjectId;
+                    break;
+                  }
                 }
-                br.AttributeCollection.AppendAttribute(attRef);
-                tr.AddNewlyCreatedDBObject(attRef, true);
+              }
+            }
+        }
+        BlockTableRecord block = (BlockTableRecord)tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
+        if (blockId2 == ObjectId.Null) {
+
+          BlockJig blockJig = new BlockJig();
+
+          PromptResult res = blockJig.DragMe(block.ObjectId, out point2);
+
+          if (res.Status == PromptStatus.OK) {
+            BlockTableRecord curSpace = (BlockTableRecord)
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+            BlockReference br = new BlockReference(point2, block.ObjectId);
+
+            curSpace.AppendEntity(br);
+            tr.AddNewlyCreatedDBObject(br, true);
+            blockId2 = br.Id;
+
+            //Setting Attributes
+            foreach (ObjectId objId in block) {
+              DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
+              AttributeDefinition attDef = obj as AttributeDefinition;
+              if (attDef != null && !attDef.Constant) {
+                using (AttributeReference attRef = new AttributeReference()) {
+                  attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
+                  attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
+                  if (attDef.Tag == "NAME") {
+                    attRef.TextString = timeClockName;
+                  }
+                  br.AttributeCollection.AppendAttribute(attRef);
+                  tr.AddNewlyCreatedDBObject(attRef, true);
+                }
               }
             }
           }
-        }
-        else {
-          return;
+          else {
+            return;
+          }
         }
 
         tr.Commit();
