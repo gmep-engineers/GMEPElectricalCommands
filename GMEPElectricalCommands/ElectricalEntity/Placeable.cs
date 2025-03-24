@@ -687,9 +687,9 @@ namespace ElectricalCommands.ElectricalEntity
     }
   }
   public class LightingLocation : PlaceableElectricalEntity {
-    string LocationName;
-    bool Outdoor;
-    string timeclock;
+    public string LocationName;
+    public bool Outdoor;
+    public string timeclock;
     public LightingLocation(
       string id,
       string location,

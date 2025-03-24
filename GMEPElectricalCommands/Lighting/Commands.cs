@@ -27,6 +27,8 @@ using System.Threading.Tasks;
 using System.Buffers;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using Emgu.CV.ML;
+using DocumentFormat.OpenXml.Spreadsheet;
+using Color = System.Drawing.Color;
 
 namespace ElectricalCommands.Lighting
 {
@@ -728,6 +730,16 @@ namespace ElectricalCommands.Lighting
       Editor ed = doc.Editor;
 
       GmepDatabase gmepDb = new GmepDatabase();
+      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
+      List<LightingLocation> locationList = gmepDb.GetLightingLocations(projectId);
+      PromptKeywordOptions pko = new PromptKeywordOptions("");
+
+      foreach (LightingLocation location in locationList) {
+        pko.Keywords.Add(location.LocationName + ":" + location.Id);
+      }
+
+      //List<TimeClock> timeClockList = gmepDb.GetTimeClocks(projectId);
+
       PromptPointOptions ppo = new PromptPointOptions("\nSpecify start point: ");
       PromptPointResult ppr = ed.GetPoint(ppo);
       if (ppr.Status != PromptStatus.OK)
@@ -746,25 +758,102 @@ namespace ElectricalCommands.Lighting
           break;
         }
       }
+
+      pko.Message = "\nAssign Location:";
+      PromptResult pr = ed.GetKeywords(pko);
+      string result = pr.StringResult;
+      var locationId = result.Split(':')[1];
+      var locationName = result.Split(':')[0];
+
+      Polyline polyline;
       using (Transaction trans = db.TransactionManager.StartTransaction()) {
         BlockTable bt = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord btr = trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
-        Polyline polyline = jig.GetPolyline();
+        polyline = jig.GetPolyline();
         if (polyline != null) {
           btr.AppendEntity(polyline);
           trans.AddNewlyCreatedDBObject(polyline, true);
+          trans.Commit();
         }
-        trans.Commit();
-        SelectObjectsInsidePolyline(ed, db, polyline); 
       }
-      
 
+      Point3d point;
+      ObjectId blockId;
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+        BlockTableRecord block = (BlockTableRecord)
+          tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
+        BlockJig blockJig = new BlockJig();
+
+        PromptResult res = blockJig.DragMe(block.ObjectId, out point);
+
+        if (res.Status == PromptStatus.OK) {
+          BlockTableRecord curSpace = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+          BlockReference br = new BlockReference(point, block.ObjectId);
+
+          curSpace.AppendEntity(br);
+          tr.AddNewlyCreatedDBObject(br, true);
+          blockId = br.Id;
+
+          //Setting Attributes
+          foreach (ObjectId objId in block) {
+            DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
+            AttributeDefinition attDef = obj as AttributeDefinition;
+            if (attDef != null && !attDef.Constant) {
+              using (AttributeReference attRef = new AttributeReference()) {
+                attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
+                attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
+                if (attDef.Tag == "NAME") {
+                  attRef.TextString = locationName;
+                }
+                br.AttributeCollection.AppendAttribute(attRef);
+                tr.AddNewlyCreatedDBObject(attRef, true);
+              }
+            }
+          }
+        }
+        else {
+          return;
+        }
+
+        tr.Commit();
+      }
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+        BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+        DynamicBlockReferencePropertyCollection pc =
+          br.DynamicBlockReferencePropertyCollection;
+
+        LightingLocation matchingLocation = locationList.FirstOrDefault(x => x.Id == locationId);
+        foreach (DynamicBlockReferenceProperty prop in pc) {
+          if (prop.PropertyName == "lighting_location_id") {
+            prop.Value = locationId;
+          }
+          if (prop.PropertyName == "outdoor") {
+            if (matchingLocation.Outdoor)
+              prop.Value = "True";
+            else
+              prop.Value = "False";
+          }
+          if (prop.PropertyName == "lighting_location_name") {
+            prop.Value = locationName;
+          }
+        }
+        tr.Commit();
+      }
+      SelectObjectsInsidePolyline(ed, db, polyline, locationId);
     }
-    private static void SelectObjectsInsidePolyline(Editor ed, Database db, Polyline polyline) {
-     SelectionFilter filter = new SelectionFilter(new TypedValue[]
-      {
+    private static void SelectObjectsInsidePolyline(Editor ed, Database db, Polyline polyline, string locationId) {
+      SelectionFilter filter = new SelectionFilter(new TypedValue[]
+       {
                 new TypedValue((int)DxfCode.Start, "INSERT")
-      });
+       });
 
       Extents3d extents = polyline.GeometricExtents;
 
@@ -777,18 +866,20 @@ namespace ElectricalCommands.Lighting
         ed.WriteMessage("\nNo objects selected.");
       }
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
-        /*DBDictionary groupDict = (DBDictionary)tr.GetObject(db.GroupDictionaryId, OpenMode.ForWrite);
-        Group group = new Group("MyGroup", true);
-        ObjectId groupId = groupDict.SetAt("MyGroup", group);
-        tr.AddNewlyCreatedDBObject(group, true);
-        foreach (ObjectId id in ss.GetObjectIds()) {
-          group.Append(id);
+        foreach(ObjectId id in ss.GetObjectIds()) {
+          DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
+          if (obj is BlockReference block) {
+            foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+              if (property.PropertyName == "gmep_lighting_location_id") {
+                property.Value = locationId;
+              }
+            }
+          }
         }
-        group.Append(polyline.ObjectId);*/
-
         tr.Commit();
       }
     }
+
 
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
