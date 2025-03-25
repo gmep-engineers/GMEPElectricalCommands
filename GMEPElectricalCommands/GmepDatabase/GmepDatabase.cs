@@ -853,13 +853,43 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeString(reader, "bypass_switch_name"),
             GetSafeString(reader, "bypass_switch_location"),
             GetSafeString(reader, "adjacent_panel_id"),
-            GetSafeInt(reader, "voltage_id")
+            IdToVoltage(GetSafeInt(reader, "voltage_id"))
           )
         );
       }
       CloseConnection();
       reader.Close();
       return clocks;
+    }
+   public int IdToVoltage(int voltageId) {
+      int voltage = 0;
+      switch (voltageId) {
+        case (1):
+          voltage = 115;
+          break;
+        case (2):
+          voltage = 120;
+          break;
+        case (3):
+          voltage = 208;
+          break;
+        case (4):
+          voltage = 230;
+          break;
+        case (5):
+          voltage = 240;
+          break;
+        case (6):
+          voltage = 277;
+          break;
+        case (7):
+          voltage = 460;
+          break;
+        case (8):
+          voltage = 480;
+          break;
+      }
+      return voltage;
     }
     public string GetProjectId(string projectNo)
     {
