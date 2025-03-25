@@ -619,7 +619,7 @@ namespace ElectricalCommands.Lighting
 
       PromptKeywordOptions pko = new PromptKeywordOptions("");
 
-
+     
 
       foreach (Panel panel in panelList) {
           pko.Keywords.Add(panel.Name + ":" + panel.Id);
@@ -892,9 +892,7 @@ namespace ElectricalCommands.Lighting
 
         BlockTableRecord block = (BlockTableRecord)tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
         if (blockId2 == ObjectId.Null) {
-
           BlockJig blockJig = new BlockJig();
-
           PromptResult res = blockJig.DragMe(block.ObjectId, out point2);
 
           if (res.Status == PromptStatus.OK) {
@@ -974,8 +972,7 @@ namespace ElectricalCommands.Lighting
         var modelSpace = (BlockTableRecord)
           tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
         BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
-        DynamicBlockReferencePropertyCollection pc =
-          br.DynamicBlockReferencePropertyCollection;
+        DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
         foreach (DynamicBlockReferenceProperty prop in pc) {
           if (prop.PropertyName == "timeclock_id") {
             prop.Value = timeClockId;
@@ -1029,9 +1026,9 @@ namespace ElectricalCommands.Lighting
 
         foreach (ObjectId objId in btr) {
           Entity entity = tr.GetObject(objId, OpenMode.ForRead) as Entity;
-          if (entity is BlockReference blockRef) {
-            BlockTableRecord blockDef = tr.GetObject(blockRef.BlockTableRecord, OpenMode.ForRead) as BlockTableRecord;
-            if (blockDef.Name == "LTG CTRL BASE") {
+          if (entity is BlockReference blockRef && blockRef.IsDynamicBlock) {
+            BlockTableRecord blockDef = tr.GetObject(blockRef.DynamicBlockTableRecord, OpenMode.ForRead) as BlockTableRecord;
+            if (blockDef.Name == "LTG TIMECLOCK") {
               LightingTimeClock timeClock = new LightingTimeClock("", "", "", "", "", 0);
               DynamicBlockReferencePropertyCollection pc = blockRef.DynamicBlockReferencePropertyCollection;
               foreach (DynamicBlockReferenceProperty prop in pc) {
@@ -1070,9 +1067,8 @@ namespace ElectricalCommands.Lighting
       var timeClockId = result.Split(':')[1];
 
       LightingTimeClock chosenTimeClock = timeClocks.FirstOrDefault(x => x.Id == timeClockId);
-
-
-
+      LightingContolDiagram diagram = new LightingContolDiagram(chosenTimeClock);
+      diagram.InitializeDiagramBase();
 
     }
 
