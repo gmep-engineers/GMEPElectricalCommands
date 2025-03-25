@@ -1015,6 +1015,66 @@ namespace ElectricalCommands.Lighting
         tr.Commit();
       }
     }
+    [CommandMethod("LightingControlDiagram")]
+    public static void LightingControlDiagram() {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+
+      List<LightingTimeClock> timeClocks = new List<LightingTimeClock>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead) as BlockTableRecord;
+
+        foreach (ObjectId objId in btr) {
+          Entity entity = tr.GetObject(objId, OpenMode.ForRead) as Entity;
+          if (entity is BlockReference blockRef) {
+            BlockTableRecord blockDef = tr.GetObject(blockRef.BlockTableRecord, OpenMode.ForRead) as BlockTableRecord;
+            if (blockDef.Name == "LTG CTRL BASE") {
+              LightingTimeClock timeClock = new LightingTimeClock("", "", "", "", "", 0);
+              DynamicBlockReferencePropertyCollection pc = blockRef.DynamicBlockReferencePropertyCollection;
+              foreach (DynamicBlockReferenceProperty prop in pc) {
+                if (prop.PropertyName == "id") {
+                  timeClock.Id = prop.Value as string;
+                }
+                if (prop.PropertyName == "name") {
+                  timeClock.Name = prop.Value as string;
+                }
+                if (prop.PropertyName == "bypass_switch_name") {
+                  timeClock.BypassSwitchName = prop.Value as string;
+                }
+                if (prop.PropertyName == "bypass_switch_location") {
+                  timeClock.BypassSwitchLocation = prop.Value as string;
+                }
+                if (prop.PropertyName == "adjacent_panel_id") {
+                  timeClock.AdjacentPanelId = prop.Value as string;
+                }
+                if (prop.PropertyName == "voltage_id") {
+                  timeClock.VoltageId = (int)prop.Value;
+                }
+                timeClocks.Add(timeClock);
+              }
+            }
+          }
+        }
+        tr.Commit();
+      }
+      PromptKeywordOptions pko= new PromptKeywordOptions("");
+      foreach (LightingTimeClock timeclock in timeClocks) {
+        pko.Keywords.Add(timeclock.Name + ":" + timeclock.Id);
+      }
+      pko.Message = "\nSelect Time Clock For Diagram:";
+      PromptResult pr = ed.GetKeywords(pko);
+      string result = pr.StringResult;
+      var timeClockId = result.Split(':')[1];
+
+      LightingTimeClock chosenTimeClock = timeClocks.FirstOrDefault(x => x.Id == timeClockId);
+
+
+
+
+    }
 
 
     [CommandMethod("PlaceLighting")]

@@ -230,6 +230,7 @@
   <ItemGroup>
     <Compile Include="ElectricalEntity\ElectricalEntity.cs" />
     <Compile Include="ElectricalEntity\Placeable.cs" />
+    <Compile Include="Lighting\LightingContolDiagram.cs" />
     <Compile Include="SingleLine\SingleLine.cs" />
     <Compile Include="GmepDatabase\GmepDatabase.cs" />
     <Compile Include="Equipment\EquipmentCommands.cs" />
