@@ -1022,36 +1022,39 @@ namespace ElectricalCommands.Lighting
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord btr = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead) as BlockTableRecord;
-
-        foreach (ObjectId objId in btr) {
+        BlockTableRecord timeClockBlock = (BlockTableRecord)tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
+       
+        foreach (ObjectId id in timeClockBlock.GetAnonymousBlockIds()) {
+          var anonymousBtr = (BlockTableRecord)tr.GetObject(id, OpenMode.ForRead);
+          ObjectId objId = anonymousBtr.GetBlockReferenceIds(true, false)[0];
           Entity entity = tr.GetObject(objId, OpenMode.ForRead) as Entity;
-          if (entity is BlockReference blockRef && blockRef.IsDynamicBlock) {
-            BlockTableRecord blockDef = tr.GetObject(blockRef.DynamicBlockTableRecord, OpenMode.ForRead) as BlockTableRecord;
-            if (blockDef.Name == "LTG TIMECLOCK") {
-              LightingTimeClock timeClock = new LightingTimeClock("", "", "", "", "", 0);
-              DynamicBlockReferencePropertyCollection pc = blockRef.DynamicBlockReferencePropertyCollection;
-              foreach (DynamicBlockReferenceProperty prop in pc) {
-                if (prop.PropertyName == "id") {
-                  timeClock.Id = prop.Value as string;
-                }
-                if (prop.PropertyName == "name") {
-                  timeClock.Name = prop.Value as string;
-                }
-                if (prop.PropertyName == "bypass_switch_name") {
-                  timeClock.BypassSwitchName = prop.Value as string;
-                }
-                if (prop.PropertyName == "bypass_switch_location") {
-                  timeClock.BypassSwitchLocation = prop.Value as string;
-                }
-                if (prop.PropertyName == "adjacent_panel_id") {
-                  timeClock.AdjacentPanelId = prop.Value as string;
-                }
-                if (prop.PropertyName == "voltage_id") {
-                  timeClock.VoltageId = (int)prop.Value;
-                }
-                timeClocks.Add(timeClock);
+          if (entity is BlockReference blockRef) {
+            LightingTimeClock timeClock = new LightingTimeClock("", "", "", "", "", 0);
+            DynamicBlockReferencePropertyCollection pc = blockRef.DynamicBlockReferencePropertyCollection;
+            foreach (DynamicBlockReferenceProperty prop in pc) {
+              if (prop.PropertyName == "id") {
+                timeClock.Id = prop.Value as string;
               }
+              if (prop.PropertyName == "name") {
+                timeClock.Name = prop.Value as string;
+              }
+              if (prop.PropertyName == "bypass_switch_name") {
+                timeClock.BypassSwitchName = prop.Value as string;
+              }
+              if (prop.PropertyName == "bypass_switch_location") {
+                timeClock.BypassSwitchLocation = prop.Value as string;
+              }
+              if (prop.PropertyName == "adjacent_panel_id") {
+                timeClock.AdjacentPanelId = prop.Value as string;
+              }
+              if (prop.PropertyName == "voltage_id") {
+                if (int.TryParse(prop.Value as string, out int voltageId)) {
+                  timeClock.VoltageId = voltageId;
+                }
+              }
+            }
+            if (timeClock.Id != "0") {
+              timeClocks.Add(timeClock);
             }
           }
         }
