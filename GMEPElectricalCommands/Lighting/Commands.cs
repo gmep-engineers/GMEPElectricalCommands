@@ -874,6 +874,7 @@ namespace ElectricalCommands.Lighting
         BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
         BlockTableRecord btr = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead) as BlockTableRecord;
 
+        //Checking if timeclock is already placed
         foreach (ObjectId objId in btr) {
           Entity entity = tr.GetObject(objId, OpenMode.ForRead) as Entity;
           if (entity is BlockReference blockRef) {
@@ -888,6 +889,7 @@ namespace ElectricalCommands.Lighting
               }
             }
         }
+
         BlockTableRecord block = (BlockTableRecord)tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
         if (blockId2 == ObjectId.Null) {
 
