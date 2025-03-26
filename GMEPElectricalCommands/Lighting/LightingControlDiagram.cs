@@ -20,11 +20,16 @@ using DocumentFormat.OpenXml.Drawing;
 namespace ElectricalCommands.Lighting {
   class LightingControlDiagram {
     LightingTimeClock TimeClock;
+    Point3d InteriorPosition;
+    Point3d ExteriorPosition;
+    List<ElectricalEntity.LightingLocation> Locations;
+    List<ElectricalEntity.LightingFixture> Fixtures;
     public LightingControlDiagram(LightingTimeClock timeClock) {
       this.TimeClock = timeClock;
+      this.InitializeDiagram();
     }
 
-    public void InitializeDiagramBase() {
+    public void InitializeDiagram() {
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
@@ -93,8 +98,8 @@ namespace ElectricalCommands.Lighting {
               y2 = (double)property.Value;
             }      
           }
-          Point3d position = new Point3d(point.X + x, point.Y + y, 0);
-          Point3d position2 = new Point3d(point.X + x2, point.Y + y2, 0);
+          InteriorPosition = new Point3d(point.X + x, point.Y + y, 0);
+          ExteriorPosition = new Point3d(point.X + x2, point.Y + y2, 0);
           
 
           tr.Commit();
