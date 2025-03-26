@@ -93,8 +93,9 @@ namespace ElectricalCommands.Lighting {
               y2 = (double)property.Value;
             }      
           }
-          Point3d position = new Point3d(x, y, 0);
-          Point3d position2 = new Point3d(x2, y2, 0);
+          Point3d position = new Point3d(point.X + x, point.Y + y, 0);
+          Point3d position2 = new Point3d(point.X + x2, point.Y + y2, 0);
+          
 
           tr.Commit();
         }
