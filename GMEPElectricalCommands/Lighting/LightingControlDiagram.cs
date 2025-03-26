@@ -53,11 +53,8 @@ namespace ElectricalCommands.Lighting {
               using (AttributeReference attRef = new AttributeReference()) {
                 attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
                 attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
-                if (attDef.Tag == "NAME") {
-                  attRef.TextString = TimeClock.Name;
-                }
                 if (attDef.Tag == "VOLTAGE") {
-                  attRef.TextString = TimeClock.Voltage;
+                  attRef.TextString = TimeClock.Voltage + "V";
                 }
                 if (attDef.Tag == "SWITCH") {
                   attRef.TextString = TimeClock.BypassSwitchName;
@@ -65,15 +62,39 @@ namespace ElectricalCommands.Lighting {
                 if (attDef.Tag == "LOCATION") {
                   attRef.TextString = TimeClock.BypassSwitchLocation;
                 }
-                if (attDef.Tag == "PANEL") {
-                  attRef.TextString = panelName;
+                if (attDef.Tag == "DESCRIPTION") {
+                  attRef.TextString = "("+TimeClock.Voltage+"V) ASTRONOMICAL 365-DAY PROGRAMMABLE TIME SWITCH \""+TimeClock.Name+"\" LOCATED ADJACENT TO PANEL \""+panelName+"\" IN A NEMA 1 ENCLOSURE. (TORK #ELC74 OR APPROVED EQUAL)\r\n";
                 }
                 br.AttributeCollection.AppendAttribute(attRef);
                 tr.AddNewlyCreatedDBObject(attRef, true);
               }
             }
           }
-          br.ResetBlock();
+
+          double x = 0;
+          double y = 0;
+          double x2 = 0;
+          double y2 = 0;
+          foreach (DynamicBlockReferenceProperty property in br.DynamicBlockReferencePropertyCollection) {
+            if (property.PropertyName == "Position1 X") {
+             ed.WriteMessage(property.Value.ToString());
+              x = (double)property.Value;
+            }
+            if (property.PropertyName == "Position1 Y") {
+              ed.WriteMessage(property.Value.ToString());
+              y = (double)property.Value;
+            }
+            if (property.PropertyName == "Position2 X") {
+              ed.WriteMessage(property.Value.ToString());
+              x2 = (double)property.Value;
+            }
+            if (property.PropertyName == "Position2 Y") {
+              ed.WriteMessage(property.Value.ToString());
+              y2 = (double)property.Value;
+            }      
+          }
+          Point3d position = new Point3d(x, y, 0);
+          Point3d position2 = new Point3d(x2, y2, 0);
 
           tr.Commit();
         }

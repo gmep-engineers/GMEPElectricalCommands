@@ -706,7 +706,6 @@ namespace ElectricalCommands.ElectricalEntity
     public string BypassSwitchName;
     public string BypassSwitchLocation;
     public string AdjacentPanelId;
-    public int VoltageId;
 
     public LightingTimeClock(
       string id,
@@ -714,13 +713,13 @@ namespace ElectricalCommands.ElectricalEntity
       string bypassSwitchName,
       string bypassSwitchLocation,
       string adjacentPanelId,
-      int voltageId
+      string voltage
     ) {
       this.Id = id;
       this.BypassSwitchLocation = bypassSwitchLocation;
       this.BypassSwitchName = bypassSwitchName;
       this.AdjacentPanelId = adjacentPanelId;
-      this.VoltageId = voltageId;
+      this.Voltage = voltage;
       this.Name = name;
     }
   }

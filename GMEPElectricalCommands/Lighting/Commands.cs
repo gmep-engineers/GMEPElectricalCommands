@@ -959,8 +959,8 @@ namespace ElectricalCommands.Lighting
           if (prop.PropertyName == "adjacent_panel_id") {
             prop.Value = adjacentPanelId;
           }
-          if (prop.PropertyName == "voltage_id") {
-            prop.Value = matchingClock.VoltageId;
+          if (prop.PropertyName == "voltage") {
+            prop.Value = matchingClock.Voltage;
           }
         }
         tr.Commit();
@@ -1029,7 +1029,7 @@ namespace ElectricalCommands.Lighting
           ObjectId objId = anonymousBtr.GetBlockReferenceIds(true, false)[0];
           Entity entity = tr.GetObject(objId, OpenMode.ForRead) as Entity;
           if (entity is BlockReference blockRef) {
-            LightingTimeClock timeClock = new LightingTimeClock("", "", "", "", "", 0);
+            LightingTimeClock timeClock = new LightingTimeClock("", "", "", "", "", "");
             DynamicBlockReferencePropertyCollection pc = blockRef.DynamicBlockReferencePropertyCollection;
             foreach (DynamicBlockReferenceProperty prop in pc) {
               if (prop.PropertyName == "id") {
@@ -1047,15 +1047,14 @@ namespace ElectricalCommands.Lighting
               if (prop.PropertyName == "adjacent_panel_id") {
                 timeClock.AdjacentPanelId = prop.Value as string;
               }
-              if (prop.PropertyName == "voltage_id") {
-                if (int.TryParse(prop.Value as string, out int voltageId)) {
-                  timeClock.VoltageId = voltageId;
-                }
+              if (prop.PropertyName == "voltage") {
+                timeClock.Voltage = prop.Value as string;
               }
             }
             if (timeClock.Id != "0") {
               timeClocks.Add(timeClock);
             }
+
           }
         }
         tr.Commit();

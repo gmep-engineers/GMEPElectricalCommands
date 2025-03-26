@@ -861,32 +861,32 @@ namespace GMEPElectricalCommands.GmepDatabase
       reader.Close();
       return clocks;
     }
-   public int IdToVoltage(int voltageId) {
-      int voltage = 0;
+   public string IdToVoltage(int voltageId) {
+      string voltage = "0";
       switch (voltageId) {
         case (1):
-          voltage = 115;
+          voltage = "115";
           break;
         case (2):
-          voltage = 120;
+          voltage = "120";
           break;
         case (3):
-          voltage = 208;
+          voltage = "208";
           break;
         case (4):
-          voltage = 230;
+          voltage = "230";
           break;
         case (5):
-          voltage = 240;
+          voltage = "240";
           break;
         case (6):
-          voltage = 277;
+          voltage = "277";
           break;
         case (7):
-          voltage = 460;
+          voltage = "460";
           break;
         case (8):
-          voltage = 480;
+          voltage = "480";
           break;
       }
       return voltage;
