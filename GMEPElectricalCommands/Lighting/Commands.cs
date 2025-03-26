@@ -1070,7 +1070,7 @@ namespace ElectricalCommands.Lighting
       var timeClockId = result.Split(':')[1];
 
       LightingTimeClock chosenTimeClock = timeClocks.FirstOrDefault(x => x.Id == timeClockId);
-      LightingContolDiagram diagram = new LightingContolDiagram(chosenTimeClock);
+      LightingControlDiagram diagram = new LightingControlDiagram(chosenTimeClock);
       diagram.InitializeDiagramBase();
 
     }

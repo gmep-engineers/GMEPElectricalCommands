@@ -12,22 +12,20 @@ using GMEPElectricalCommands.GmepDatabase;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 using System.Collections.Generic;
 
-namespace ElectricalCommands.Lighting
-{
-  class LightingContolDiagram
-  {
+namespace ElectricalCommands.Lighting {
+  class LightingControlDiagram {
     LightingTimeClock TimeClock;
-    public LightingContolDiagram(LightingTimeClock timeClock) {
+    public LightingControlDiagram(LightingTimeClock timeClock) {
       this.TimeClock = timeClock;
     }
-      
+
     public void InitializeDiagramBase() {
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
       GmepDatabase gmepDb = new GmepDatabase();
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
-  
+
       Point3d point;
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
