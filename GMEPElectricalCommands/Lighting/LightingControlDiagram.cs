@@ -10,7 +10,12 @@ using Autodesk.AutoCAD.Geometry;
 using ElectricalCommands.ElectricalEntity;
 using GMEPElectricalCommands.GmepDatabase;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
+using Editor = Autodesk.AutoCAD.EditorInput.Editor;
 using System.Collections.Generic;
+using DocumentFormat.OpenXml.Bibliography;
+using Autodesk.AutoCAD.GraphicsInterface;
+using System.Security.Cryptography;
+using DocumentFormat.OpenXml.Drawing;
 
 namespace ElectricalCommands.Lighting {
   class LightingControlDiagram {
@@ -25,6 +30,9 @@ namespace ElectricalCommands.Lighting {
       Editor ed = doc.Editor;
       GmepDatabase gmepDb = new GmepDatabase();
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
+      List<ElectricalEntity.Panel> panels = gmepDb.GetPanels(projectId);
+      ElectricalEntity.Panel panel = panels.Find(p => p.Id == TimeClock.AdjacentPanelId);
+      string panelName = panel.Name;
 
       Point3d point;
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -37,8 +45,38 @@ namespace ElectricalCommands.Lighting {
           BlockReference br = new BlockReference(point, baseBlock.ObjectId);
           curSpace.AppendEntity(br);
           tr.AddNewlyCreatedDBObject(br, true);
+
+          foreach (ObjectId objId in baseBlock) {
+            DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
+            AttributeDefinition attDef = obj as AttributeDefinition;
+            if (attDef != null && !attDef.Constant) {
+              using (AttributeReference attRef = new AttributeReference()) {
+                attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
+                attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
+                if (attDef.Tag == "NAME") {
+                  attRef.TextString = TimeClock.Name;
+                }
+                if (attDef.Tag == "VOLTAGE") {
+                  attRef.TextString = TimeClock.Voltage;
+                }
+                if (attDef.Tag == "SWITCH") {
+                  attRef.TextString = TimeClock.BypassSwitchName;
+                }
+                if (attDef.Tag == "LOCATION") {
+                  attRef.TextString = TimeClock.BypassSwitchLocation;
+                }
+                if (attDef.Tag == "PANEL") {
+                  attRef.TextString = panelName;
+                }
+                br.AttributeCollection.AppendAttribute(attRef);
+                tr.AddNewlyCreatedDBObject(attRef, true);
+              }
+            }
+          }
+          br.ResetBlock();
+
+          tr.Commit();
         }
-        tr.Commit();
       }
 
     }
