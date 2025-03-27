@@ -1003,6 +1003,7 @@ namespace ElectricalCommands.Lighting
       }
       else {
         ed.WriteMessage("\nNo objects selected.");
+        return;
       }
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         foreach(ObjectId id in ss.GetObjectIds()) {
