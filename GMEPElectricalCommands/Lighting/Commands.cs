@@ -1140,7 +1140,6 @@ namespace ElectricalCommands.Lighting
         tr.Commit();
       }
 
-
       PromptKeywordOptions pko= new PromptKeywordOptions("");
       foreach (LightingTimeClock timeclock in timeClocks) {
         pko.Keywords.Add(timeclock.Name + ":" + timeclock.Id);
@@ -1151,6 +1150,9 @@ namespace ElectricalCommands.Lighting
       var timeClockId = result.Split(':')[1];
 
       LightingTimeClock chosenTimeClock = timeClocks.FirstOrDefault(x => x.Id == timeClockId);
+      List<LightingLocation> newLocations = locations.Where(loc => loc.timeclock == chosenTimeClock.Id).ToList();
+      List<LightingFixture> newLightings = lightings.Where(lighting => newLocations.Any(loc => loc.Id == lighting.LocationId)).ToList();
+
       LightingControlDiagram diagram = new LightingControlDiagram(chosenTimeClock);
 
     }
