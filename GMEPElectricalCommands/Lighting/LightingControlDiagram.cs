@@ -123,13 +123,29 @@ namespace ElectricalCommands.Lighting {
         BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
         foreach (LightingLocation location in indoorLocations) {
-          // GraphLocationSection
+          //GraphLocationSection(location)
           try {
             Point3d startPoint = InteriorPosition;
-            Point3d endPoint = new Point3d(startPoint.X, startPoint.Y - 1, startPoint.Z);
+            Point3d endPoint = new Point3d(startPoint.X, startPoint.Y - 2, startPoint.Z);
             Line verticalLine = new Line(startPoint, endPoint);
             curSpace.AppendEntity(verticalLine);
             tr.AddNewlyCreatedDBObject(verticalLine, true);
+
+            Circle circle = new Circle(endPoint, Vector3d.ZAxis, .020);
+            curSpace.AppendEntity(circle);
+            tr.AddNewlyCreatedDBObject(circle, true);
+
+            Hatch hatch = new Hatch();
+            curSpace.AppendEntity(hatch);
+            tr.AddNewlyCreatedDBObject(hatch, true);
+
+            // Set the properties of the hatch
+            hatch.SetDatabaseDefaults();
+            hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
+            hatch.Associative = true;
+            hatch.AppendLoop(HatchLoopTypes.Default, new ObjectIdCollection { circle.ObjectId });
+            hatch.EvaluateHatch(true);
+
             InteriorPosition = endPoint;
           }
           catch (Autodesk.AutoCAD.Runtime.Exception ex) {

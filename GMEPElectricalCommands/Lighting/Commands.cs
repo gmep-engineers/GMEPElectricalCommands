@@ -1071,7 +1071,7 @@ namespace ElectricalCommands.Lighting
                   var pc = entity.DynamicBlockReferencePropertyCollection;
                   foreach (DynamicBlockReferenceProperty prop in pc) {
                     if (prop.PropertyName == "lighting_location_id") location.Id = prop.Value as string;
-                    if (prop.PropertyName == "outdoor") location.Outdoor = (prop.Value as string == "true");
+                    if (prop.PropertyName == "outdoor") location.Outdoor = (prop.Value as string == "True");
                     if (prop.PropertyName == "lighting_location_name") location.LocationName = prop.Value as string;
                     if (prop.PropertyName == "timeclock_id") location.timeclock = prop.Value as string;
                   }
