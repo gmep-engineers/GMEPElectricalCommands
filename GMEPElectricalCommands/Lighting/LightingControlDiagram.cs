@@ -34,7 +34,7 @@ namespace ElectricalCommands.Lighting {
     public void CreateDiagram() {
       InitializeDiagram();
       GraphInteriorLighting();
-      //GraphExteriorLighting();
+      GraphExteriorLighting();
     }
     public void InitializeDiagram() {
       Document doc = Application.DocumentManager.MdiActiveDocument;
@@ -123,10 +123,10 @@ namespace ElectricalCommands.Lighting {
         BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
         foreach (LightingLocation location in indoorLocations) {
-          //GraphLocationSection(location)
+          //GraphInteriorLocationSection(location)
           try {
             Point3d startPoint = InteriorPosition;
-            Point3d endPoint = new Point3d(startPoint.X, startPoint.Y - 2, startPoint.Z);
+            Point3d endPoint = new Point3d(startPoint.X, startPoint.Y - 1.75, startPoint.Z);
             Line verticalLine = new Line(startPoint, endPoint);
             curSpace.AppendEntity(verticalLine);
             tr.AddNewlyCreatedDBObject(verticalLine, true);
@@ -156,6 +156,50 @@ namespace ElectricalCommands.Lighting {
         tr.Commit();
       }
     }
-    
+    public void GraphExteriorLighting() {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      List<LightingLocation> indoorLocations = Locations.Where(location => location.Outdoor).ToList();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+        foreach (LightingLocation location in indoorLocations) {
+          //GraphExteriorLocationSection(location)
+          try {
+            Point3d startPoint = ExteriorPosition;
+            Point3d endPoint = new Point3d(startPoint.X, startPoint.Y - 1.75, startPoint.Z);
+            Line verticalLine = new Line(startPoint, endPoint);
+            curSpace.AppendEntity(verticalLine);
+            tr.AddNewlyCreatedDBObject(verticalLine, true);
+
+            Circle circle = new Circle(endPoint, Vector3d.ZAxis, .020);
+            curSpace.AppendEntity(circle);
+            tr.AddNewlyCreatedDBObject(circle, true);
+
+            Hatch hatch = new Hatch();
+            curSpace.AppendEntity(hatch);
+            tr.AddNewlyCreatedDBObject(hatch, true);
+
+            // Set the properties of the hatch
+            hatch.SetDatabaseDefaults();
+            hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
+            hatch.Associative = true;
+            hatch.AppendLoop(HatchLoopTypes.Default, new ObjectIdCollection { circle.ObjectId });
+            hatch.EvaluateHatch(true);
+
+            ExteriorPosition = endPoint;
+          }
+          catch (Autodesk.AutoCAD.Runtime.Exception ex) {
+            ed.WriteMessage($"\nError: {ex.Message}");
+          }
+        }
+
+        tr.Commit();
+      }
+    }
+
   }
 }
