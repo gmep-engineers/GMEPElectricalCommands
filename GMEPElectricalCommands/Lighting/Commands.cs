@@ -1065,7 +1065,7 @@ namespace ElectricalCommands.Lighting
             if (timeClock.Id != "0") {
               timeClocks.Add(timeClock);
             }
-
+            
           }
         }
         //Locations
@@ -1120,7 +1120,9 @@ namespace ElectricalCommands.Lighting
                 lighting.LocationId = prop.Value as string;
               }
               if (prop.PropertyName == "gmep_lighting_circuit") {
-                lighting.Circuit = (int)prop.Value;
+                if (int.TryParse(prop.Value.ToString(), out int circuit)) {
+                  lighting.Circuit = circuit;
+                }
               }
           
             }
@@ -1152,9 +1154,7 @@ namespace ElectricalCommands.Lighting
       LightingTimeClock chosenTimeClock = timeClocks.FirstOrDefault(x => x.Id == timeClockId);
       List<LightingLocation> newLocations = locations.Where(loc => loc.timeclock == chosenTimeClock.Id).ToList();
       List<LightingFixture> newLightings = lightings.Where(lighting => newLocations.Any(loc => loc.Id == lighting.LocationId)).ToList();
-
-      LightingControlDiagram diagram = new LightingControlDiagram(chosenTimeClock);
-
+      LightingControlDiagram diagram = new LightingControlDiagram(chosenTimeClock, newLocations, newLightings);
     }
 
 

@@ -16,6 +16,7 @@ using DocumentFormat.OpenXml.Bibliography;
 using Autodesk.AutoCAD.GraphicsInterface;
 using System.Security.Cryptography;
 using DocumentFormat.OpenXml.Drawing;
+using System.Linq;
 
 namespace ElectricalCommands.Lighting {
   class LightingControlDiagram {
@@ -24,8 +25,10 @@ namespace ElectricalCommands.Lighting {
     Point3d ExteriorPosition;
     List<ElectricalEntity.LightingLocation> Locations;
     List<ElectricalEntity.LightingFixture> Fixtures;
-    public LightingControlDiagram(LightingTimeClock timeClock) {
+    public LightingControlDiagram(LightingTimeClock timeClock, List<ElectricalEntity.LightingLocation> locations, List<ElectricalEntity.LightingFixture> fixtures) {
       this.TimeClock = timeClock;
+      this.Fixtures = fixtures;
+      this.Locations = locations;
       this.CreateDiagram();
     }
     public void CreateDiagram() {
@@ -113,19 +116,30 @@ namespace ElectricalCommands.Lighting {
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
-     /* using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      List<LightingLocation> indoorLocations = Locations.Where(location => !location.Outdoor).ToList();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-        DBText text1 = new DBText {
-          Position = InteriorPosition,
-          Height = 1.0,
-          TextString = "Interior Position"
-        };
-        curSpace.AppendEntity(text1);
-        tr.AddNewlyCreatedDBObject(text1, true);
-        tr.Commit();
-      }*/
 
+        foreach (LightingLocation location in indoorLocations) {
+          // GraphLocationSection
+          try {
+            Point3d startPoint = InteriorPosition;
+            Point3d endPoint = new Point3d(startPoint.X, startPoint.Y - 12, startPoint.Z);
+            Line verticalLine = new Line(startPoint, endPoint);
+            curSpace.AppendEntity(verticalLine);
+            tr.AddNewlyCreatedDBObject(verticalLine, true);
+            InteriorPosition = endPoint;
+          }
+          catch (Autodesk.AutoCAD.Runtime.Exception ex) {
+            ed.WriteMessage($"\nError: {ex.Message}");
+          }
+        }
+
+        tr.Commit();
+      }
     }
+    
   }
 }
