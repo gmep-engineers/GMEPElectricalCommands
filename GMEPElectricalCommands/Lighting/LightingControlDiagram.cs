@@ -26,9 +26,13 @@ namespace ElectricalCommands.Lighting {
     List<ElectricalEntity.LightingFixture> Fixtures;
     public LightingControlDiagram(LightingTimeClock timeClock) {
       this.TimeClock = timeClock;
-      this.InitializeDiagram();
+      this.CreateDiagram();
     }
-
+    public void CreateDiagram() {
+      InitializeDiagram();
+      //GraphInteriorLighting();
+      //GraphExteriorLighting();
+    }
     public void InitializeDiagram() {
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
@@ -100,8 +104,6 @@ namespace ElectricalCommands.Lighting {
           }
           InteriorPosition = new Point3d(point.X + x, point.Y + y, 0);
           ExteriorPosition = new Point3d(point.X + x2, point.Y + y2, 0);
-          
-
           tr.Commit();
         }
       }
