@@ -1033,109 +1033,96 @@ namespace ElectricalCommands.Lighting
         BlockTableRecord timeClockBlock = (BlockTableRecord)tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
         BlockTableRecord locationBlock = (BlockTableRecord)tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
         BlockTableRecord lightingBlock = (BlockTableRecord)tr.GetObject(bt["GMEP LTG 2X4"], OpenMode.ForRead);
+        ed.WriteMessage($"\nTime Clock Block: {timeClockBlock.Name}");
 
         //Timeclocks
         foreach (ObjectId id in timeClockBlock.GetAnonymousBlockIds()) {
-          var anonymousBtr = (BlockTableRecord)tr.GetObject(id, OpenMode.ForRead);
-          ObjectId objId = anonymousBtr.GetBlockReferenceIds(true, false)[0];
-          Entity entity = tr.GetObject(objId, OpenMode.ForRead) as Entity;
-          if (entity is BlockReference blockRef) {
-            LightingTimeClock timeClock = new LightingTimeClock("", "", "", "", "", "");
-            DynamicBlockReferencePropertyCollection pc = blockRef.DynamicBlockReferencePropertyCollection;
+          try {
+            var anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord;
+            if (anonymousBtr == null || anonymousBtr.IsErased) continue;
+
+            ObjectId objId = anonymousBtr.GetBlockReferenceIds(true, false)[0];
+            if (objId == ObjectId.Null) continue;
+
+            var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+            if (entity == null || entity.IsErased) continue;
+
+            var timeClock = new LightingTimeClock("", "", "", "", "", "");
+            var pc = entity.DynamicBlockReferencePropertyCollection;
             foreach (DynamicBlockReferenceProperty prop in pc) {
-              if (prop.PropertyName == "id") {
-                timeClock.Id = prop.Value as string;
-              }
-              if (prop.PropertyName == "name") {
-                timeClock.Name = prop.Value as string;
-              }
-              if (prop.PropertyName == "bypass_switch_name") {
-                timeClock.BypassSwitchName = prop.Value as string;
-              }
-              if (prop.PropertyName == "bypass_switch_location") {
-                timeClock.BypassSwitchLocation = prop.Value as string;
-              }
-              if (prop.PropertyName == "adjacent_panel_id") {
-                timeClock.AdjacentPanelId = prop.Value as string;
-              }
-              if (prop.PropertyName == "voltage") {
-                timeClock.Voltage = prop.Value as string;
-              }
+              if (prop.PropertyName == "id") timeClock.Id = prop.Value as string;
+              if (prop.PropertyName == "name") timeClock.Name = prop.Value as string;
+              if (prop.PropertyName == "bypass_switch_name") timeClock.BypassSwitchName = prop.Value as string;
+              if (prop.PropertyName == "bypass_switch_location") timeClock.BypassSwitchLocation = prop.Value as string;
+              if (prop.PropertyName == "adjacent_panel_id") timeClock.AdjacentPanelId = prop.Value as string;
+              if (prop.PropertyName == "voltage") timeClock.Voltage = prop.Value as string;
             }
-            if (timeClock.Id != "0") {
-              timeClocks.Add(timeClock);
-            }
-            
+            if (timeClock.Id != "0") timeClocks.Add(timeClock);
+          }
+          catch (Autodesk.AutoCAD.Runtime.Exception ex) {
+            ed.WriteMessage($"\nError retrieving time clock: {ex.Message}");
           }
         }
         //Locations
         foreach (ObjectId id in locationBlock.GetAnonymousBlockIds()) {
-          var anonymousBtr = (BlockTableRecord)tr.GetObject(id, OpenMode.ForRead);
-          ObjectId objId = anonymousBtr.GetBlockReferenceIds(true, false)[0];
-          Entity entity = tr.GetObject(objId, OpenMode.ForRead) as Entity;
-          if (entity is BlockReference blockRef) {
-            LightingLocation location= new LightingLocation("", "", false, "");
-            DynamicBlockReferencePropertyCollection pc = blockRef.DynamicBlockReferencePropertyCollection;
-            foreach (DynamicBlockReferenceProperty prop in pc) {
-              if (prop.PropertyName == "lighting_location_id") {
-                location.Id = prop.Value as string;
-              }
-              if (prop.PropertyName == "outdoor") {
-                if (prop.Value as string == "true") {
-                  location.Outdoor = true;
-                }
-                else {
-                  location.Outdoor = false;
-                }
-              }
-              if (prop.PropertyName == "lighting_location_name") {
-                location.LocationName = prop.Value as string;
-              }
-              if (prop.PropertyName == "timeclock_id") {
-                location.timeclock = prop.Value as string;
-              }
-            }
-            if (location.Id != "0") {
-              locations.Add(location);
-            }
+          try {
+            var anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord;
+            if (anonymousBtr == null || anonymousBtr.IsErased) continue;
 
+            ObjectId objId = anonymousBtr.GetBlockReferenceIds(true, false)[0];
+            if (objId == ObjectId.Null) continue;
+
+            var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+            if (entity == null || entity.IsErased) continue;
+
+            var location = new LightingLocation("", "", false, "");
+            var pc = entity.DynamicBlockReferencePropertyCollection;
+            foreach (DynamicBlockReferenceProperty prop in pc) {
+              if (prop.PropertyName == "lighting_location_id") location.Id = prop.Value as string;
+              if (prop.PropertyName == "outdoor") location.Outdoor = (prop.Value as string == "true");
+              if (prop.PropertyName == "lighting_location_name") location.LocationName = prop.Value as string;
+              if (prop.PropertyName == "timeclock_id") location.timeclock = prop.Value as string;
+            }
+            if (location.Id != "0") locations.Add(location);
+          }
+          catch (Autodesk.AutoCAD.Runtime.Exception ex) {
+            ed.WriteMessage($"\nError retrieving location: {ex.Message}");
           }
         }
         //Lighting
         foreach (ObjectId id in lightingBlock.GetAnonymousBlockIds()) {
-          var anonymousBtr = (BlockTableRecord)tr.GetObject(id, OpenMode.ForRead);
-          ObjectId objId = anonymousBtr.GetBlockReferenceIds(true, false)[0];
-          Entity entity = tr.GetObject(objId, OpenMode.ForRead) as Entity;
-          if (entity is BlockReference blockRef) {
-            ElectricalEntity.LightingFixture lighting = new ElectricalEntity.LightingFixture("", "", "", "", "", "", "", 0, 0, "", 1, "", "", "", "", false, 0, false, 0, 0, 0, 0, 0);
-            DynamicBlockReferencePropertyCollection pc = blockRef.DynamicBlockReferencePropertyCollection;
+          try {
+            var anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord;
+            if (anonymousBtr == null || anonymousBtr.IsErased) continue;
+
+            ObjectId objId = anonymousBtr.GetBlockReferenceIds(true, false)[0];
+            if (objId == ObjectId.Null) continue;
+
+            var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+            if (entity == null || entity.IsErased) continue;
+
+            var lighting = new LightingFixture("", "", "", "", "", "", "", 0, 0, "", 1, "", "", "", "", false, 0, false, 0, 0, 0, 0, 0);
+            var pc = entity.DynamicBlockReferencePropertyCollection;
             foreach (DynamicBlockReferenceProperty prop in pc) {
-              if (prop.PropertyName == "gmep_lighting_fixture_id") {
-                lighting.Id = prop.Value as string;
-              }
-              if (prop.PropertyName == "gmep_lighting_parent_name") {
-                lighting.ParentName = prop.Value as string;
-              }
-              if (prop.PropertyName == "gmep_lighting_location_id") {
-                lighting.LocationId = prop.Value as string;
-              }
+              if (prop.PropertyName == "gmep_lighting_fixture_id") lighting.Id = prop.Value as string;
+              if (prop.PropertyName == "gmep_lighting_parent_name") lighting.ParentName = prop.Value as string;
+              if (prop.PropertyName == "gmep_lighting_location_id") lighting.LocationId = prop.Value as string;
               if (prop.PropertyName == "gmep_lighting_circuit") {
                 if (int.TryParse(prop.Value.ToString(), out int circuit)) {
                   lighting.Circuit = circuit;
                 }
               }
-          
             }
-            foreach (ObjectId attId in blockRef.AttributeCollection) {
-              AttributeReference attRef = (AttributeReference)tr.GetObject(attId, OpenMode.ForWrite);
-              if (attRef.Tag == "LIGHTING_NAME") {
+            foreach (ObjectId attId in entity.AttributeCollection) {
+              var attRef = tr.GetObject(attId, OpenMode.ForWrite) as AttributeReference;
+              if (attRef != null && attRef.Tag == "LIGHTING_NAME") {
                 lighting.Name = attRef.TextString;
               }
             }
-            if (lighting.Id != "0") {
-              lightings.Add(lighting);
-            }
-
+            if (lighting.Id != "0") lightings.Add(lighting);
+          }
+          catch (Autodesk.AutoCAD.Runtime.Exception ex) {
+            ed.WriteMessage($"\nError retrieving lighting: {ex.Message}");
           }
         }
 

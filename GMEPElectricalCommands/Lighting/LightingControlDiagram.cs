@@ -126,7 +126,7 @@ namespace ElectricalCommands.Lighting {
           // GraphLocationSection
           try {
             Point3d startPoint = InteriorPosition;
-            Point3d endPoint = new Point3d(startPoint.X, startPoint.Y - 12, startPoint.Z);
+            Point3d endPoint = new Point3d(startPoint.X, startPoint.Y - 1, startPoint.Z);
             Line verticalLine = new Line(startPoint, endPoint);
             curSpace.AppendEntity(verticalLine);
             tr.AddNewlyCreatedDBObject(verticalLine, true);
