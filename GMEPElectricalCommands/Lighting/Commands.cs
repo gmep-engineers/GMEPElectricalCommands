@@ -662,6 +662,7 @@ namespace ElectricalCommands.Lighting
       PromptResult pr = ed.GetKeywords(pko);
       string result = pr.StringResult;
       var chosenPanel = result.Split(':')[1];
+      var chosenPanelName = result.Split(':')[0];
 
       //Prompt user for circuit
       PromptKeywordOptions pko2 = new PromptKeywordOptions("");
@@ -691,6 +692,11 @@ namespace ElectricalCommands.Lighting
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_parent_id") {
                   property.Value = chosenPanel;
+                }
+              }
+              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+                if (property.PropertyName == "gmep_lighting_parent_name") {
+                  property.Value = chosenPanelName;
                 }
               }
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
@@ -1019,11 +1025,15 @@ namespace ElectricalCommands.Lighting
       Editor ed = doc.Editor;
 
       List<LightingTimeClock> timeClocks = new List<LightingTimeClock>();
+      List<LightingLocation> locations = new List<LightingLocation>();
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord timeClockBlock = (BlockTableRecord)tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
-       
+        BlockTableRecord locationBlock = (BlockTableRecord)tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
+        BlockTableRecord lightingBlock = (BlockTableRecord)tr.GetObject(bt["GMEP LTG 2X4"], OpenMode.ForRead);
+
+        //Timeclocks
         foreach (ObjectId id in timeClockBlock.GetAnonymousBlockIds()) {
           var anonymousBtr = (BlockTableRecord)tr.GetObject(id, OpenMode.ForRead);
           ObjectId objId = anonymousBtr.GetBlockReferenceIds(true, false)[0];
@@ -1057,8 +1067,71 @@ namespace ElectricalCommands.Lighting
 
           }
         }
+        //Locations
+        foreach (ObjectId id in locationBlock.GetAnonymousBlockIds()) {
+          var anonymousBtr = (BlockTableRecord)tr.GetObject(id, OpenMode.ForRead);
+          ObjectId objId = anonymousBtr.GetBlockReferenceIds(true, false)[0];
+          Entity entity = tr.GetObject(objId, OpenMode.ForRead) as Entity;
+          if (entity is BlockReference blockRef) {
+            LightingLocation location= new LightingLocation("", "", false, "");
+            DynamicBlockReferencePropertyCollection pc = blockRef.DynamicBlockReferencePropertyCollection;
+            foreach (DynamicBlockReferenceProperty prop in pc) {
+              if (prop.PropertyName == "lighting_location_id") {
+                location.Id = prop.Value as string;
+              }
+              if (prop.PropertyName == "outdoor") {
+                if (prop.Value as string == "true") {
+                  location.Outdoor = true;
+                }
+                else {
+                  location.Outdoor = false;
+                }
+              }
+              if (prop.PropertyName == "lighting_location_name") {
+                location.LocationName = prop.Value as string;
+              }
+              if (prop.PropertyName == "timeclock_id") {
+                location.timeclock = prop.Value as string;
+              }
+            }
+            if (location.Id != "0") {
+              locations.Add(location);
+            }
+
+          }
+        }
+        //Lighting
+        /*foreach (ObjectId id in lightingBlock.GetAnonymousBlockIds()) {
+          var anonymousBtr = (BlockTableRecord)tr.GetObject(id, OpenMode.ForRead);
+          ObjectId objId = anonymousBtr.GetBlockReferenceIds(true, false)[0];
+          Entity entity = tr.GetObject(objId, OpenMode.ForRead) as Entity;
+          if (entity is BlockReference blockRef) {
+            DynamicBlockReferencePropertyCollection pc = blockRef.DynamicBlockReferencePropertyCollection;
+            foreach (DynamicBlockReferenceProperty prop in pc) {
+              if (prop.PropertyName == "gmep_lighting_id") {
+                lighting.Id = prop.Value as string;
+              }
+              if (prop.PropertyName == "gmep_lighting_parent__id") {
+                lighting.Id = prop.Value as string;
+              }
+              if (prop.PropertyName == "lighting_location_name") {
+                location.LocationName = prop.Value as string;
+              }
+              if (prop.PropertyName == "timeclock_id") {
+                location.timeclock = prop.Value as string;
+              }
+            }
+            if (location.Id != "0") {
+              locations.Add(location);
+            }
+
+          }
+        }*/
+
         tr.Commit();
       }
+
+
       PromptKeywordOptions pko= new PromptKeywordOptions("");
       foreach (LightingTimeClock timeclock in timeClocks) {
         pko.Keywords.Add(timeclock.Name + ":" + timeclock.Id);

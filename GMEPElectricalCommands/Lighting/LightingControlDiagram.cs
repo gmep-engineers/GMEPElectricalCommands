@@ -30,7 +30,7 @@ namespace ElectricalCommands.Lighting {
     }
     public void CreateDiagram() {
       InitializeDiagram();
-      //GraphInteriorLighting();
+      GraphInteriorLighting();
       //GraphExteriorLighting();
     }
     public void InitializeDiagram() {
@@ -72,7 +72,7 @@ namespace ElectricalCommands.Lighting {
                   attRef.TextString = TimeClock.BypassSwitchLocation;
                 }
                 if (attDef.Tag == "DESCRIPTION") {
-                  attRef.TextString = "("+TimeClock.Voltage+"V) ASTRONOMICAL 365-DAY PROGRAMMABLE TIME SWITCH \""+TimeClock.Name+"\" LOCATED ADJACENT TO PANEL \""+panelName+"\" IN A NEMA 1 ENCLOSURE. (TORK #ELC74 OR APPROVED EQUAL)\r\n";
+                  attRef.TextString = "(" + TimeClock.Voltage + "V) ASTRONOMICAL 365-DAY PROGRAMMABLE TIME SWITCH \"" + TimeClock.Name + "\" LOCATED ADJACENT TO PANEL \"" + panelName + "\" IN A NEMA 1 ENCLOSURE. (TORK #ELC74 OR APPROVED EQUAL)\r\n";
                 }
                 br.AttributeCollection.AppendAttribute(attRef);
                 tr.AddNewlyCreatedDBObject(attRef, true);
@@ -86,7 +86,7 @@ namespace ElectricalCommands.Lighting {
           double y2 = 0;
           foreach (DynamicBlockReferenceProperty property in br.DynamicBlockReferencePropertyCollection) {
             if (property.PropertyName == "Position1 X") {
-             ed.WriteMessage(property.Value.ToString());
+              ed.WriteMessage(property.Value.ToString());
               x = (double)property.Value;
             }
             if (property.PropertyName == "Position1 Y") {
@@ -100,13 +100,31 @@ namespace ElectricalCommands.Lighting {
             if (property.PropertyName == "Position2 Y") {
               ed.WriteMessage(property.Value.ToString());
               y2 = (double)property.Value;
-            }      
+            }
           }
           InteriorPosition = new Point3d(point.X + x, point.Y + y, 0);
           ExteriorPosition = new Point3d(point.X + x2, point.Y + y2, 0);
           tr.Commit();
         }
       }
+
+    }
+    public void GraphInteriorLighting() {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+     /* using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+        DBText text1 = new DBText {
+          Position = InteriorPosition,
+          Height = 1.0,
+          TextString = "Interior Position"
+        };
+        curSpace.AppendEntity(text1);
+        tr.AddNewlyCreatedDBObject(text1, true);
+        tr.Commit();
+      }*/
 
     }
   }
