@@ -711,6 +711,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_panels.name,
         electrical_lighting.control_id,
         electrical_lighting.description,
+        electrical_lighting.location_id,
         electrical_lighting.circuit_no,
         electrical_equipment_voltages.voltage,
         electrical_lighting.wattage,
@@ -749,6 +750,7 @@ namespace GMEPElectricalCommands.GmepDatabase
           new LightingFixture(
             reader.GetString("id"),
             reader.GetString("parent_id"),
+            reader.GetString("location_id"),
             reader.IsDBNull(reader.GetOrdinal("name")) ? string.Empty : reader.GetString("name"),
             reader.GetString("tag"),
             reader.GetString("control_id"),

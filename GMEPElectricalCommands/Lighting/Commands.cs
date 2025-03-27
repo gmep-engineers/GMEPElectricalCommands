@@ -1026,6 +1026,7 @@ namespace ElectricalCommands.Lighting
 
       List<LightingTimeClock> timeClocks = new List<LightingTimeClock>();
       List<LightingLocation> locations = new List<LightingLocation>();
+      List<LightingFixture> lightings = new List<LightingFixture>();
 
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -1101,32 +1102,40 @@ namespace ElectricalCommands.Lighting
           }
         }
         //Lighting
-        /*foreach (ObjectId id in lightingBlock.GetAnonymousBlockIds()) {
+        foreach (ObjectId id in lightingBlock.GetAnonymousBlockIds()) {
           var anonymousBtr = (BlockTableRecord)tr.GetObject(id, OpenMode.ForRead);
           ObjectId objId = anonymousBtr.GetBlockReferenceIds(true, false)[0];
           Entity entity = tr.GetObject(objId, OpenMode.ForRead) as Entity;
           if (entity is BlockReference blockRef) {
+            ElectricalEntity.LightingFixture lighting = new ElectricalEntity.LightingFixture("", "", "", "", "", "", "", 0, 0, "", 1, "", "", "", "", false, 0, false, 0, 0, 0, 0, 0);
             DynamicBlockReferencePropertyCollection pc = blockRef.DynamicBlockReferencePropertyCollection;
             foreach (DynamicBlockReferenceProperty prop in pc) {
-              if (prop.PropertyName == "gmep_lighting_id") {
+              if (prop.PropertyName == "gmep_lighting_fixture_id") {
                 lighting.Id = prop.Value as string;
               }
-              if (prop.PropertyName == "gmep_lighting_parent__id") {
-                lighting.Id = prop.Value as string;
+              if (prop.PropertyName == "gmep_lighting_parent_name") {
+                lighting.ParentName = prop.Value as string;
               }
-              if (prop.PropertyName == "lighting_location_name") {
-                location.LocationName = prop.Value as string;
+              if (prop.PropertyName == "gmep_lighting_location_id") {
+                lighting.LocationId = prop.Value as string;
               }
-              if (prop.PropertyName == "timeclock_id") {
-                location.timeclock = prop.Value as string;
+              if (prop.PropertyName == "gmep_lighting_circuit") {
+                lighting.Circuit = (int)prop.Value;
+              }
+          
+            }
+            foreach (ObjectId attId in blockRef.AttributeCollection) {
+              AttributeReference attRef = (AttributeReference)tr.GetObject(attId, OpenMode.ForWrite);
+              if (attRef.Tag == "LIGHTING_NAME") {
+                lighting.Name = attRef.TextString;
               }
             }
-            if (location.Id != "0") {
-              locations.Add(location);
+            if (lighting.Id != "0") {
+              lightings.Add(lighting);
             }
 
           }
-        }*/
+        }
 
         tr.Commit();
       }

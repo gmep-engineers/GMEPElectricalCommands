@@ -628,7 +628,7 @@ namespace ElectricalCommands.ElectricalEntity
       LabelTransformHY,
       LabelTransformVX,
       LabelTransformVY;
-    public string ControlId,
+    public string ControlId, LocationId,
       Description,
       Mounting,
       Manufacturer,
@@ -639,6 +639,7 @@ namespace ElectricalCommands.ElectricalEntity
     public LightingFixture(
       string Id,
       string ParentId,
+      string LocationId,
       string ParentName,
       string Name,
       string ControlId,
@@ -684,6 +685,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.LabelTransformVY = LabelTransformVY;
       this.Circuit = Circuit;
       this.Pole = 1;
+      this.LocationId = LocationId;
     }
   }
   public class LightingLocation : PlaceableElectricalEntity {
