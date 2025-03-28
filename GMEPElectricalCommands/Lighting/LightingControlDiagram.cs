@@ -361,8 +361,8 @@ namespace ElectricalCommands.Lighting {
 
         // Set the linetype to dotted
         LinetypeTable linetypeTable = tr.GetObject(db.LinetypeTableId, OpenMode.ForRead) as LinetypeTable;
-        if (linetypeTable.Has("DASHED")) {
-          rectangle.Linetype = "DASHED";
+        if (linetypeTable.Has("DASHED2")) {
+          rectangle.Linetype = "DASHED2";
         }
         else {
           ed.WriteMessage("\nLinetype 'DASHED' not found. Using continuous line.");
