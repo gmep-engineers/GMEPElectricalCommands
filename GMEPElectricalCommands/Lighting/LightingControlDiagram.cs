@@ -17,6 +17,8 @@ using Autodesk.AutoCAD.GraphicsInterface;
 using System.Security.Cryptography;
 using DocumentFormat.OpenXml.Drawing;
 using System.Linq;
+using DocumentFormat.OpenXml.Drawing.Wordprocessing;
+
 
 namespace ElectricalCommands.Lighting {
   class LightingControlDiagram {
@@ -123,7 +125,6 @@ namespace ElectricalCommands.Lighting {
         BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
         bool isFirstFlag = true;
         foreach (LightingLocation location in indoorLocations) {
-          //GraphInteriorLocationSection(location)
           if (!isFirstFlag) {
             try {
               Point3d startPoint = InteriorPosition;
@@ -140,7 +141,6 @@ namespace ElectricalCommands.Lighting {
               curSpace.AppendEntity(hatch);
               tr.AddNewlyCreatedDBObject(hatch, true);
 
-              // Set the properties of the hatch
               hatch.SetDatabaseDefaults();
               hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
               hatch.Associative = true;
@@ -154,6 +154,9 @@ namespace ElectricalCommands.Lighting {
             }
           }
           isFirstFlag = false;
+
+          GraphInteriorLocationSection(location);
+
         }
 
         tr.Commit();
@@ -170,8 +173,7 @@ namespace ElectricalCommands.Lighting {
         BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
         bool isFirstFlag = true;
-        foreach (LightingLocation location in indoorLocations) {
-          //GraphExteriorLocationSection(location)
+        foreach (LightingLocation location in indoorLocations) { 
           if (!isFirstFlag) {
             try {
               Point3d startPoint = ExteriorPosition;
@@ -188,7 +190,6 @@ namespace ElectricalCommands.Lighting {
               curSpace.AppendEntity(hatch);
               tr.AddNewlyCreatedDBObject(hatch, true);
 
-              // Set the properties of the hatch
               hatch.SetDatabaseDefaults();
               hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
               hatch.Associative = true;
@@ -202,11 +203,128 @@ namespace ElectricalCommands.Lighting {
             }
           }
           isFirstFlag = false;
+
+          //GraphExteriorLocationSection(location)
+
         }
 
         tr.Commit();
       }
     }
+    private void GraphInteriorLocationSection(LightingLocation location) {
+
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      List<LightingFixture> fixturesAtLocation = Fixtures.Where(fixture => fixture.LocationId == location.Id).ToList();
+      // This method will graph the section for each interior lighting location
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+        TextStyleTable textStyleTable = tr.GetObject(db.TextStyleTableId, OpenMode.ForRead) as TextStyleTable;
+        ObjectId textStyleId = textStyleTable["Standard"];
+
+        //Graphing Conduit Loop
+        Point3d startPoint = InteriorPosition;
+        Point3d endPoint = new Point3d(startPoint.X + 1, startPoint.Y, startPoint.Z);
+        Line horizontalLine = new Line(startPoint, endPoint);
+        curSpace.AppendEntity(horizontalLine);
+        tr.AddNewlyCreatedDBObject(horizontalLine, true);
+
+        startPoint = endPoint;
+        endPoint = new Point3d(endPoint.X, endPoint.Y - .1, endPoint.Z);
+        Line verticalLine = new Line(startPoint, endPoint);
+        curSpace.AppendEntity(verticalLine);
+        tr.AddNewlyCreatedDBObject(verticalLine, true);
+
+        double radius = .09;
+        Point3d circleCenter = new Point3d(endPoint.X, endPoint.Y - radius, endPoint.Z);
+        Circle circle = new Circle(circleCenter, Vector3d.ZAxis, radius);
+        circle.Layer = "E-TEXT";
+        curSpace.AppendEntity(circle); 
+        tr.AddNewlyCreatedDBObject(circle, true);
+
+        DBText text = new DBText();
+        text.Position = circleCenter;
+        text.Height = radius;
+        text.TextString = "C";
+        text.HorizontalMode = TextHorizontalMode.TextCenter;
+        text.VerticalMode = TextVerticalMode.TextVerticalMid;
+        text.AlignmentPoint = circleCenter;
+        text.TextStyleId = textStyleId;
+        text.Justify = AttachmentPoint.MiddleCenter;
+        text.Layer = "E-TEXT";
+        curSpace.AppendEntity(text);
+        tr.AddNewlyCreatedDBObject(text, true);
+
+
+        startPoint = new Point3d(endPoint.X, endPoint.Y - radius*2, endPoint.Z);
+        endPoint = new Point3d(startPoint.X, startPoint.Y -.1, startPoint.Z);
+        Line verticalLine2 = new Line(startPoint, endPoint);
+        curSpace.AppendEntity(verticalLine2);
+        tr.AddNewlyCreatedDBObject(verticalLine2, true);
+
+        startPoint = endPoint;
+        endPoint = new Point3d(endPoint.X - .4, endPoint.Y, endPoint.Z);
+        Line horizontalLine2 = new Line(startPoint, endPoint);
+        curSpace.AppendEntity(horizontalLine2);
+        tr.AddNewlyCreatedDBObject(horizontalLine2, true);
+
+        Point3d textCenter = new Point3d(endPoint.X - .06, endPoint.Y, endPoint.Z);
+
+        DBText text2 = new DBText();
+        text2.Position = textCenter;
+        text2.Height = radius;
+        text2.TextString = "N";
+        text2.HorizontalMode = TextHorizontalMode.TextCenter;
+        text2.VerticalMode = TextVerticalMode.TextVerticalMid;
+        text2.AlignmentPoint = textCenter;
+        text2.TextStyleId = textStyleId;
+        text2.Justify = AttachmentPoint.MiddleCenter;
+        text2.Layer = "E-TEXT";
+        curSpace.AppendEntity(text2);
+        tr.AddNewlyCreatedDBObject(text2, true);
+
+        //Graph Circuits
+        Point3d arrowPosition = new Point3d(InteriorPosition.X + 1.3, InteriorPosition.Y + .9, endPoint.Z);
+        foreach (LightingFixture fixture in fixturesAtLocation) {
+          startPoint = arrowPosition;
+          endPoint = new Point3d(startPoint.X, startPoint.Y - 1.06, startPoint.Z);
+          Line beginArrow = new Line(startPoint, endPoint);
+          curSpace.AppendEntity(beginArrow);
+          tr.AddNewlyCreatedDBObject(beginArrow, true);
+          //Draw Horizontal lines
+
+          Line separator = new Line(new Point3d(endPoint.X - .07, endPoint.Y, endPoint.Z), new Point3d(endPoint.X + .07, endPoint.Y, endPoint.Z));
+          separator.Layer = "E-TEXT";
+          curSpace.AppendEntity(separator);
+          tr.AddNewlyCreatedDBObject(separator, true);
+
+          startPoint = new Point3d(endPoint.X, endPoint.Y - .05, endPoint.Z);
+          endPoint = new Point3d(startPoint.X, startPoint.Y -.4, startPoint.Z);
+
+          Line separator2 = new Line(new Point3d(startPoint.X - .07, startPoint.Y, startPoint.Z), new Point3d(startPoint.X + .07, startPoint.Y, startPoint.Z));
+          separator2.Layer = "E-TEXT";
+          curSpace.AppendEntity(separator2);
+          tr.AddNewlyCreatedDBObject(separator2, true);
+
+
+          Leader leader = new Leader();
+          leader.AppendVertex(endPoint);
+          leader.AppendVertex(startPoint);
+          leader.HasArrowHead = true;
+          leader.Dimasz = 0.11;
+
+          curSpace.AppendEntity(leader);
+          tr.AddNewlyCreatedDBObject(leader, true);
+
+          arrowPosition = new Point3d(arrowPosition.X + .2, arrowPosition.Y, endPoint.Z);
+        }
+
+        tr.Commit();
+      }
+    }
+
 
   }
 }
