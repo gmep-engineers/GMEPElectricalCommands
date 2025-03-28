@@ -298,6 +298,8 @@ namespace ElectricalCommands.Lighting {
 
         //Graph Circuits
         Point3d arrowPosition = new Point3d(InteriorPosition.X + 1.3, InteriorPosition.Y + .9, endPoint.Z);
+        Point3d? emStartPosition = null;
+
         foreach (LightingFixture fixture in uniqueFixtures) {
           //Begin Arrow
           startPoint = arrowPosition;
@@ -305,6 +307,30 @@ namespace ElectricalCommands.Lighting {
           Line beginArrow = new Line(startPoint, endPoint);
           curSpace.AppendEntity(beginArrow);
           tr.AddNewlyCreatedDBObject(beginArrow, true);
+
+          //EM Circle
+          if (fixture.EmCapable) {
+            Point3d emStartPoint = new Point3d(arrowPosition.X, arrowPosition.Y - .31, -1); // Start point for the EM section
+            Circle EmCircle = new Circle(emStartPoint, Vector3d.ZAxis, .030);
+            curSpace.AppendEntity(EmCircle);
+            tr.AddNewlyCreatedDBObject(EmCircle, true);
+
+            Hatch hatch = new Hatch();
+            curSpace.AppendEntity(hatch);
+            tr.AddNewlyCreatedDBObject(hatch, true);
+            hatch.SetDatabaseDefaults();
+            hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
+            hatch.Associative = true;
+            hatch.AppendLoop(HatchLoopTypes.Default, new ObjectIdCollection { EmCircle.ObjectId });
+            hatch.EvaluateHatch(true);
+
+            if (emStartPosition == null) {
+              emStartPosition = emStartPoint; 
+            }
+
+
+          }
+
 
           //Panel & Circuit Label
           DBText label = new DBText();
@@ -348,42 +374,31 @@ namespace ElectricalCommands.Lighting {
           arrowPosition = new Point3d(arrowPosition.X + .2, arrowPosition.Y, endPoint.Z);
         }
 
-        //EM Section
-        Point3d emStartPoint = new Point3d(InteriorPosition.X + 1.3, InteriorPosition.Y + .59, -1); // Start point for the EM section
-        Circle EmCircle = new Circle(emStartPoint, Vector3d.ZAxis, .030);
-        curSpace.AppendEntity(EmCircle);
-        tr.AddNewlyCreatedDBObject(EmCircle, true);
+        if (emStartPosition != null) {
+          Point3d emStartPosition2 = (Point3d)emStartPosition; // Use the last EM start position for the leader line
+          Point3d leaderEndPoint = new Point3d(arrowPosition.X + .3, emStartPosition2.Y, 0);
+          Leader emLeader = new Leader();
+          emLeader.AppendVertex(leaderEndPoint);
+          emLeader.AppendVertex(emStartPosition2);
+          emLeader.HasArrowHead = true;
+          emLeader.Dimasz = 0.11;
+          emLeader.Layer = "E-TEXT";
+          curSpace.AppendEntity(emLeader);
+          tr.AddNewlyCreatedDBObject(emLeader, true);
 
-        Hatch hatch = new Hatch();
-        curSpace.AppendEntity(hatch);
-        tr.AddNewlyCreatedDBObject(hatch, true);
-        hatch.SetDatabaseDefaults();
-        hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
-        hatch.Associative = true;
-        hatch.AppendLoop(HatchLoopTypes.Default, new ObjectIdCollection { EmCircle.ObjectId });
-        hatch.EvaluateHatch(true);
 
-        Point3d leaderEndPoint = new Point3d(arrowPosition.X + .3, emStartPoint.Y, 0);
-        Leader emLeader = new Leader();
-        emLeader.AppendVertex(leaderEndPoint);
-        emLeader.AppendVertex(emStartPoint);
-        emLeader.HasArrowHead = true;
-        emLeader.Dimasz = 0.11;
-        emLeader.Layer = "E-TEXT";
-        curSpace.AppendEntity(emLeader);
-        tr.AddNewlyCreatedDBObject(emLeader, true);
-
-        DBText EmLabel = new DBText();
-        EmLabel.Position = new Point3d(leaderEndPoint.X + .05, leaderEndPoint.Y, leaderEndPoint.Z);
-        EmLabel.Height = radius * .9;
-        EmLabel.TextString = "TO EM LIGHT";
-        EmLabel.HorizontalMode = TextHorizontalMode.TextCenter;
-        EmLabel.VerticalMode = TextVerticalMode.TextVerticalMid;
-        EmLabel.AlignmentPoint = new Point3d(leaderEndPoint.X + .05, leaderEndPoint.Y, leaderEndPoint.Z);
-        EmLabel.Justify = AttachmentPoint.TopLeft;
-        EmLabel.Layer = "E-TEXT";
-        curSpace.AppendEntity(EmLabel);
-        tr.AddNewlyCreatedDBObject(EmLabel, true);
+          DBText EmLabel = new DBText();
+          EmLabel.Position = new Point3d(leaderEndPoint.X + .05, leaderEndPoint.Y, leaderEndPoint.Z);
+          EmLabel.Height = radius * .9;
+          EmLabel.TextString = "TO EM LIGHT";
+          EmLabel.HorizontalMode = TextHorizontalMode.TextCenter;
+          EmLabel.VerticalMode = TextVerticalMode.TextVerticalMid;
+          EmLabel.AlignmentPoint = new Point3d(leaderEndPoint.X + .05, leaderEndPoint.Y, leaderEndPoint.Z);
+          EmLabel.Justify = AttachmentPoint.TopLeft;
+          EmLabel.Layer = "E-TEXT";
+          curSpace.AppendEntity(EmLabel);
+          tr.AddNewlyCreatedDBObject(EmLabel, true);
+        }
 
 
         // Create a rectangle with a dotted line

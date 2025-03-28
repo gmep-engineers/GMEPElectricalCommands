@@ -1099,6 +1099,15 @@ namespace ElectricalCommands.Lighting
                         lighting.Circuit = circuit;
                       }
                     }
+                    if (prop.PropertyName == "Visibility1") {
+                      //Note: Technically this should be a bool like IsEM/IsNotEm, but using EMCapable bool to determine if EM is toggled.
+                      if (prop.Value as string == "EM") { 
+                        lighting.EmCapable = true; 
+                      }
+                      else {
+                        lighting.EmCapable = false; 
+                      }
+                    }
                   }
                   foreach (ObjectId attId in entity.AttributeCollection) {
                     var attRef = tr.GetObject(attId, OpenMode.ForWrite) as AttributeReference;
