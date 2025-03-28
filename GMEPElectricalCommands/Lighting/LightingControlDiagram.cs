@@ -363,14 +363,27 @@ namespace ElectricalCommands.Lighting {
         hatch.AppendLoop(HatchLoopTypes.Default, new ObjectIdCollection { EmCircle.ObjectId });
         hatch.EvaluateHatch(true);
 
+        Point3d leaderEndPoint = new Point3d(arrowPosition.X + .3, emStartPoint.Y, 0);
         Leader emLeader = new Leader();
-        emLeader.AppendVertex(new Point3d(arrowPosition.X + .3, emStartPoint.Y, 0)); // Start point for the leader line
+        emLeader.AppendVertex(leaderEndPoint);
         emLeader.AppendVertex(emStartPoint);
         emLeader.HasArrowHead = true;
         emLeader.Dimasz = 0.11;
         emLeader.Layer = "E-TEXT";
         curSpace.AppendEntity(emLeader);
         tr.AddNewlyCreatedDBObject(emLeader, true);
+
+        DBText EmLabel = new DBText();
+        EmLabel.Position = new Point3d(leaderEndPoint.X + .05, leaderEndPoint.Y, leaderEndPoint.Z);
+        EmLabel.Height = radius * .9;
+        EmLabel.TextString = "TO EM LIGHT";
+        EmLabel.HorizontalMode = TextHorizontalMode.TextCenter;
+        EmLabel.VerticalMode = TextVerticalMode.TextVerticalMid;
+        EmLabel.AlignmentPoint = new Point3d(leaderEndPoint.X + .05, leaderEndPoint.Y, leaderEndPoint.Z);
+        EmLabel.Justify = AttachmentPoint.TopLeft;
+        EmLabel.Layer = "E-TEXT";
+        curSpace.AppendEntity(EmLabel);
+        tr.AddNewlyCreatedDBObject(EmLabel, true);
 
 
         // Create a rectangle with a dotted line
@@ -392,9 +405,21 @@ namespace ElectricalCommands.Lighting {
         else {
           ed.WriteMessage("\nLinetype 'DASHED2' not found. Using continuous line.");
         }
-
         curSpace.AppendEntity(rectangle);
         tr.AddNewlyCreatedDBObject(rectangle, true);
+
+        //Append Location Text
+        DBText locationLabel = new DBText();
+        locationLabel.Position = new Point3d(InteriorPosition.X + 1.1, InteriorPosition.Y - .65, InteriorPosition.Z);
+        locationLabel.Height = radius * .9;
+        locationLabel.TextString = location.LocationName;
+        locationLabel.HorizontalMode = TextHorizontalMode.TextCenter;
+        locationLabel.VerticalMode = TextVerticalMode.TextVerticalMid;
+        locationLabel.AlignmentPoint = new Point3d(InteriorPosition.X + 1.1, InteriorPosition.Y - .65, InteriorPosition.Z);
+        locationLabel.Justify = AttachmentPoint.TopLeft;
+        locationLabel.Layer = "E-TEXT";
+        curSpace.AppendEntity(locationLabel);
+        tr.AddNewlyCreatedDBObject(locationLabel, true);
 
         tr.Commit();
       }
