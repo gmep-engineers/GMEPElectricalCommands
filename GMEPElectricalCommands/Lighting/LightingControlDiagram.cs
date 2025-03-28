@@ -348,6 +348,30 @@ namespace ElectricalCommands.Lighting {
           arrowPosition = new Point3d(arrowPosition.X + .2, arrowPosition.Y, endPoint.Z);
         }
 
+        //EM Section
+        Point3d emStartPoint = new Point3d(InteriorPosition.X + 1.3, InteriorPosition.Y + .59, -1); // Start point for the EM section
+        Circle EmCircle = new Circle(emStartPoint, Vector3d.ZAxis, .030);
+        curSpace.AppendEntity(EmCircle);
+        tr.AddNewlyCreatedDBObject(EmCircle, true);
+
+        Hatch hatch = new Hatch();
+        curSpace.AppendEntity(hatch);
+        tr.AddNewlyCreatedDBObject(hatch, true);
+        hatch.SetDatabaseDefaults();
+        hatch.SetHatchPattern(HatchPatternType.PreDefined, "SOLID");
+        hatch.Associative = true;
+        hatch.AppendLoop(HatchLoopTypes.Default, new ObjectIdCollection { EmCircle.ObjectId });
+        hatch.EvaluateHatch(true);
+
+        Leader emLeader = new Leader();
+        emLeader.AppendVertex(new Point3d(arrowPosition.X + .3, emStartPoint.Y, 0)); // Start point for the leader line
+        emLeader.AppendVertex(emStartPoint);
+        emLeader.HasArrowHead = true;
+        emLeader.Dimasz = 0.11;
+        emLeader.Layer = "E-TEXT";
+        curSpace.AppendEntity(emLeader);
+        tr.AddNewlyCreatedDBObject(emLeader, true);
+
 
         // Create a rectangle with a dotted line
         Point3d rectStart = new Point3d(InteriorPosition.X + .7, InteriorPosition.Y+.09, 0);
@@ -357,6 +381,7 @@ namespace ElectricalCommands.Lighting {
         rectangle.AddVertexAt(1, new Point2d(rectEnd.X, rectStart.Y), 0, 0, 0);
         rectangle.AddVertexAt(2, new Point2d(rectEnd.X, rectEnd.Y), 0, 0, 0);
         rectangle.AddVertexAt(3, new Point2d(rectStart.X, rectEnd.Y), 0, 0, 0);
+        rectangle.Layer = "E-TEXT";
         rectangle.Closed = true;
 
         // Set the linetype to dotted
@@ -365,7 +390,7 @@ namespace ElectricalCommands.Lighting {
           rectangle.Linetype = "DASHED2";
         }
         else {
-          ed.WriteMessage("\nLinetype 'DASHED' not found. Using continuous line.");
+          ed.WriteMessage("\nLinetype 'DASHED2' not found. Using continuous line.");
         }
 
         curSpace.AppendEntity(rectangle);
