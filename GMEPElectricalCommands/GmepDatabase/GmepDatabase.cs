@@ -318,26 +318,43 @@ namespace GMEPElectricalCommands.GmepDatabase
       return distributionBreakers;
     }
 
-    public List<PanelNote> GetPanelNotes(string projectId)
+    public List<PanelNote> GetPanelNotes(string panelId)
     {
       List<PanelNote> panelNotes = new List<PanelNote>();
-      string query = @"SELECT * FROM panel_notes WHERE project_id = @projectId";
+      string query =
+        @"
+        SELECT
+        electrical_panel_note_panel_rel.panel_id,
+        electrical_panel_note_panel_rel.circuit_no,
+        electrical_panel_note_panel_rel.length,
+        electrical_panel_note_panel_rel.note_id,
+        electrical_panel_notes.note
+        FROM electrical_panel_note_panel_rel
+        LEFT JOIN electrical_panel_notes ON electrical_panel_notes.id = electrical_panel_note_panel_rel.note_id
+        WHERE electrical_panel_note_panel_rel.panel_id = @panelId
+        ORDER BY electrical_panel_note_panel_rel.note_id, electrical_panel_notes.date
+      ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("panelId", panelId);
       MySqlDataReader reader = command.ExecuteReader();
+      List<string> noteIds = new List<string>();
+      int number = 0;
       while (reader.Read())
       {
+        string noteId = GetSafeString(reader, "note_id");
+        if (!noteIds.Contains(noteId))
+        {
+          number++;
+          noteIds.Add(noteId);
+        }
         panelNotes.Add(
           new PanelNote(
-            GetSafeString(reader, "id"),
-            GetSafeInt(reader, "number"),
+            number,
             GetSafeString(reader, "panel_id"),
             GetSafeInt(reader, "circuit_no"),
             GetSafeInt(reader, "length"),
-            GetSafeString(reader, "description"),
-            GetSafeString(reader, "group_id"),
-            GetSafeInt(reader, "stack")
+            GetSafeString(reader, "note").ToUpper()
           )
         );
       }

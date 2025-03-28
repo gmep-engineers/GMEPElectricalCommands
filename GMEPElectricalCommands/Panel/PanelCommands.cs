@@ -16,34 +16,19 @@ namespace ElectricalCommands
 {
   public class PanelNote
   {
-    public string Id;
     public int Number;
     public string PanelId;
     public int CircuitNo;
     public int Length;
-    public string Description;
-    public string GroupId;
-    public int Stack;
+    public string Note;
 
-    public PanelNote(
-      string Id,
-      int Number,
-      string PanelId,
-      int CircuitNo,
-      int Length,
-      string Description,
-      string GroupId,
-      int Stack
-    )
+    public PanelNote(int Number, string PanelId, int CircuitNo, int Length, string Note)
     {
-      this.Id = Id;
       this.Number = Number;
       this.PanelId = PanelId;
       this.CircuitNo = CircuitNo;
       this.Length = Length;
-      this.Description = Description;
-      this.GroupId = GroupId;
-      this.Stack = Stack;
+      this.Note = Note;
     }
   }
 
@@ -2478,7 +2463,7 @@ namespace ElectricalCommands
             // Create the number
             CreateAndPositionCenteredText(
               tr,
-              number.ToString(),
+              number.ToString(), // TODO add check for custom note number i.e. one from the database/design tool
               "ROMANS",
               0.09375,
               1,

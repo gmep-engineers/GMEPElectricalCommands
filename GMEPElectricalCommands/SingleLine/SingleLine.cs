@@ -1959,7 +1959,6 @@ namespace ElectricalCommands.SingleLine
       string topText;
       string bottomText;
       int hyphenIndex = equipment.Name.IndexOf('-');
-      Console.WriteLine(equipment.Name);
       if (hyphenIndex == -1)
       {
         topText = equipment.Name;

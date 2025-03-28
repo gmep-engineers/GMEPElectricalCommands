@@ -3469,8 +3469,8 @@ namespace ElectricalCommands
               }
             }
           }
-          side = "right";
         }
+        side = "right";
       }
       return lml;
     }
@@ -3515,12 +3515,10 @@ namespace ElectricalCommands
       double phB = Convert.ToDouble(PHASE_SUM_GRID.Rows[0].Cells[1].Value ?? 0);
       double phC = 0;
       sum = phA + phB;
-      int poles = 2;
       if (PHASE_SUM_GRID.ColumnCount > 2)
       {
         phC = Convert.ToDouble(PHASE_SUM_GRID.Rows[0].Cells[2].Value ?? 0);
         sum += phC;
-        poles = 3;
       }
       mainForm.UpdateLclLml();
 

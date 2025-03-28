@@ -919,7 +919,6 @@ namespace ElectricalCommands
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
       List<ElectricalEntity.Panel> panels = gmepDb.GetPanels(projectId);
       List<ElectricalEntity.Equipment> equipment = gmepDb.GetEquipment(projectId);
-      List<PanelNote> panelNotes = gmepDb.GetPanelNotes(projectId);
       List<JsonPanel3P> jsonPanels3P = new List<JsonPanel3P>();
       List<JsonPanel2P> jsonPanels2P = new List<JsonPanel2P>();
       List<string> serializedPanels = new List<string>();
@@ -931,7 +930,7 @@ namespace ElectricalCommands
         }
         if (panel.Phase == 3)
         {
-          List<PanelNote> thisPanelNotes = panelNotes.FindAll(pn => pn.PanelId == panel.Id);
+          List<PanelNote> panelNotes = gmepDb.GetPanelNotes(panel.Id);
           JsonPanel3P jsonPanel = new JsonPanel3P();
           jsonPanel.id = panel.Id;
           jsonPanel.read_only = true;
@@ -987,7 +986,15 @@ namespace ElectricalCommands
 
           jsonPanel.description_left_tags = new string[panel.NumBreakers / 2];
           jsonPanel.description_right_tags = new string[panel.NumBreakers / 2];
-          jsonPanel.notes = new string[thisPanelNotes.Count];
+          int numNotes = 0;
+          foreach (PanelNote note in panelNotes)
+          {
+            if (note.Number > numNotes)
+            {
+              numNotes = note.Number;
+            }
+          }
+          jsonPanel.notes = new string[numNotes];
           jsonPanels3P.Add(jsonPanel);
           for (int i = 0; i < panel.NumBreakers; i++)
           {
@@ -1026,6 +1033,7 @@ namespace ElectricalCommands
               jsonPanel.circuit_right[i] = string.Empty;
             }
           }
+          int noteIndex = 0;
           for (int i = 0; i < panel.NumBreakers / 2; i++)
           {
             jsonPanel.phase_a_left_tag[i] = string.Empty;
@@ -1040,9 +1048,48 @@ namespace ElectricalCommands
             jsonPanel.description_left_tags[i] = string.Empty;
             jsonPanel.description_right_tags[i] = string.Empty;
           }
+          for (int i = 0; i < panel.NumBreakers / 2; i++)
+          {
+            List<PanelNote> leftNotes = panelNotes.FindAll(n =>
+              n.CircuitNo % 2 == 1 && n.CircuitNo == i + 1
+            );
+            foreach (PanelNote leftNote in leftNotes)
+            {
+              for (int j = 0; j < leftNote.Length; j++)
+              {
+                jsonPanel.description_left_tags[i + j] += "|" + leftNote.Note;
+                jsonPanel.description_left_tags[i + j] = jsonPanel
+                  .description_left_tags[i + j]
+                  .Trim('|');
+              }
+              if (!jsonPanel.notes.Contains(leftNote.Note))
+              {
+                jsonPanel.notes[noteIndex] = leftNote.Note;
+                noteIndex++;
+              }
+            }
+
+            List<PanelNote> rightNotes = panelNotes.FindAll(n =>
+              n.CircuitNo % 2 == 0 && n.CircuitNo == i + 2
+            );
+            foreach (PanelNote rightNote in rightNotes)
+            {
+              for (int j = 0; j < rightNote.Length; j++)
+              {
+                jsonPanel.description_right_tags[i + j] += "|" + rightNote.Note;
+                jsonPanel.description_right_tags[i + j] = jsonPanel
+                  .description_right_tags[i + j]
+                  .Trim('|');
+              }
+              if (!jsonPanel.notes.Contains(rightNote.Note))
+              {
+                jsonPanel.notes[noteIndex] = rightNote.Note;
+                noteIndex++;
+              }
+            }
+          }
           foreach (ElectricalEntity.Equipment equip in equipment)
           {
-            Console.WriteLine(equip.Circuit);
             if (equip.ParentId == panel.Id)
             {
               if (equip.Circuit % 2 == 0)
@@ -1090,7 +1137,7 @@ namespace ElectricalCommands
         }
         else
         {
-          List<PanelNote> thisPanelNotes = panelNotes.FindAll(pn => pn.PanelId == panel.Id);
+          List<PanelNote> thisPanelNotes = gmepDb.GetPanelNotes(panel.Id);
           JsonPanel2P jsonPanel = new JsonPanel2P();
           jsonPanel.id = panel.Id;
           jsonPanel.read_only = true;
@@ -1191,7 +1238,6 @@ namespace ElectricalCommands
           }
           foreach (ElectricalEntity.Equipment equip in equipment)
           {
-            Console.WriteLine(equip.Circuit);
             if (equip.ParentId == panel.Id)
             {
               if (equip.Circuit % 2 == 0)
