@@ -348,6 +348,29 @@ namespace ElectricalCommands.Lighting {
           arrowPosition = new Point3d(arrowPosition.X + .2, arrowPosition.Y, endPoint.Z);
         }
 
+
+        // Create a rectangle with a dotted line
+        Point3d rectStart = new Point3d(InteriorPosition.X + .7, InteriorPosition.Y+.09, 0);
+        Point3d rectEnd = new Point3d(arrowPosition.X, rectStart.Y - .57, 0);
+        Autodesk.AutoCAD.DatabaseServices.Polyline rectangle = new Autodesk.AutoCAD.DatabaseServices.Polyline();
+        rectangle.AddVertexAt(0, new Point2d(rectStart.X, rectStart.Y), 0, 0, 0);
+        rectangle.AddVertexAt(1, new Point2d(rectEnd.X, rectStart.Y), 0, 0, 0);
+        rectangle.AddVertexAt(2, new Point2d(rectEnd.X, rectEnd.Y), 0, 0, 0);
+        rectangle.AddVertexAt(3, new Point2d(rectStart.X, rectEnd.Y), 0, 0, 0);
+        rectangle.Closed = true;
+
+        // Set the linetype to dotted
+        LinetypeTable linetypeTable = tr.GetObject(db.LinetypeTableId, OpenMode.ForRead) as LinetypeTable;
+        if (linetypeTable.Has("DASHED")) {
+          rectangle.Linetype = "DASHED";
+        }
+        else {
+          ed.WriteMessage("\nLinetype 'DASHED' not found. Using continuous line.");
+        }
+
+        curSpace.AppendEntity(rectangle);
+        tr.AddNewlyCreatedDBObject(rectangle, true);
+
         tr.Commit();
       }
     }
