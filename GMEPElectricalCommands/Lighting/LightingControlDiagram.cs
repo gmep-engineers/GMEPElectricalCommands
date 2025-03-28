@@ -217,6 +217,7 @@ namespace ElectricalCommands.Lighting {
       Database db = doc.Database;
       Editor ed = doc.Editor;
       List<LightingFixture> fixturesAtLocation = Fixtures.Where(fixture => fixture.LocationId == location.Id).ToList();
+
       // This method will graph the section for each interior lighting location
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -288,13 +289,28 @@ namespace ElectricalCommands.Lighting {
         //Graph Circuits
         Point3d arrowPosition = new Point3d(InteriorPosition.X + 1.3, InteriorPosition.Y + .9, endPoint.Z);
         foreach (LightingFixture fixture in fixturesAtLocation) {
+          //Begin Arrow
           startPoint = arrowPosition;
           endPoint = new Point3d(startPoint.X, startPoint.Y - 1.06, startPoint.Z);
           Line beginArrow = new Line(startPoint, endPoint);
           curSpace.AppendEntity(beginArrow);
           tr.AddNewlyCreatedDBObject(beginArrow, true);
-          //Draw Horizontal lines
 
+          //Panel & Circuit Label
+          DBText label = new DBText();
+          label.Position = new Point3d(startPoint.X, startPoint.Y, startPoint.Z);
+          label.Rotation = (Math.PI / 2);
+          label.Height = radius * .9;
+          label.TextString = fixture.ParentName + "-" + fixture.Circuit.ToString();
+          label.HorizontalMode = TextHorizontalMode.TextCenter;
+          label.VerticalMode = TextVerticalMode.TextVerticalMid;
+          label.AlignmentPoint = new Point3d(startPoint.X, startPoint.Y, startPoint.Z);
+          label.Justify = AttachmentPoint.BottomRight;
+          label.Layer = "E-TEXT";
+          curSpace.AppendEntity(label);
+          tr.AddNewlyCreatedDBObject(label, true);
+
+          //Draw Horizontal lines
           Line separator = new Line(new Point3d(endPoint.X - .07, endPoint.Y, endPoint.Z), new Point3d(endPoint.X + .07, endPoint.Y, endPoint.Z));
           separator.Layer = "E-TEXT";
           curSpace.AppendEntity(separator);
@@ -308,7 +324,7 @@ namespace ElectricalCommands.Lighting {
           curSpace.AppendEntity(separator2);
           tr.AddNewlyCreatedDBObject(separator2, true);
 
-
+          //Ending Arrow
           Leader leader = new Leader();
           leader.AppendVertex(endPoint);
           leader.AppendVertex(startPoint);
