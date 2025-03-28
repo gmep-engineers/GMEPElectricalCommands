@@ -218,7 +218,17 @@ namespace ElectricalCommands.Lighting {
       Editor ed = doc.Editor;
       List<LightingFixture> fixturesAtLocation = Fixtures.Where(fixture => fixture.LocationId == location.Id).ToList();
 
-      // This method will graph the section for each interior lighting location
+      List<LightingFixture> uniqueFixtures = new List<LightingFixture>();
+      var seenCombinations = new HashSet<(string ParentName, int Circuit)>();
+      foreach (var fixture in fixturesAtLocation) {
+        var combination = (fixture.ParentName, fixture.Circuit);
+        if (!seenCombinations.Contains(combination)) {
+          seenCombinations.Add(combination);
+          uniqueFixtures.Add(fixture);
+        }
+      }
+
+      //This method will graph the section for each interior lighting location
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord curSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
@@ -288,7 +298,7 @@ namespace ElectricalCommands.Lighting {
 
         //Graph Circuits
         Point3d arrowPosition = new Point3d(InteriorPosition.X + 1.3, InteriorPosition.Y + .9, endPoint.Z);
-        foreach (LightingFixture fixture in fixturesAtLocation) {
+        foreach (LightingFixture fixture in uniqueFixtures) {
           //Begin Arrow
           startPoint = arrowPosition;
           endPoint = new Point3d(startPoint.X, startPoint.Y - 1.06, startPoint.Z);
@@ -323,6 +333,7 @@ namespace ElectricalCommands.Lighting {
           separator2.Layer = "E-TEXT";
           curSpace.AppendEntity(separator2);
           tr.AddNewlyCreatedDBObject(separator2, true);
+
 
           //Ending Arrow
           Leader leader = new Leader();
