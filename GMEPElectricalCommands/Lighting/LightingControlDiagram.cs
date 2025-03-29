@@ -219,14 +219,23 @@ namespace ElectricalCommands.Lighting {
       List<LightingFixture> fixturesAtLocation = Fixtures.Where(fixture => fixture.LocationId == location.Id).ToList();
 
       List<LightingFixture> uniqueFixtures = new List<LightingFixture>();
-      var seenCombinations = new HashSet<(string ParentName, int Circuit)>();
+      var fixtureDict = new Dictionary<(string ParentName, int Circuit), LightingFixture>();
+
       foreach (var fixture in fixturesAtLocation) {
         var combination = (fixture.ParentName, fixture.Circuit);
-        if (!seenCombinations.Contains(combination)) {
-          seenCombinations.Add(combination);
-          uniqueFixtures.Add(fixture);
+        if (fixtureDict.ContainsKey(combination)) {
+          // If a duplicate is found and it has EmCapable = true, replace the existing entry
+          if (fixture.EmCapable) {
+            fixtureDict[combination] = fixture;
+          }
+        }
+        else {
+          fixtureDict[combination] = fixture;
         }
       }
+
+      // Convert the dictionary values to a list
+      uniqueFixtures = fixtureDict.Values.ToList();
 
       //This method will graph the section for each interior lighting location
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
@@ -314,7 +323,6 @@ namespace ElectricalCommands.Lighting {
             Circle EmCircle = new Circle(emStartPoint, Vector3d.ZAxis, .030);
             curSpace.AppendEntity(EmCircle);
             tr.AddNewlyCreatedDBObject(EmCircle, true);
-
             Hatch hatch = new Hatch();
             curSpace.AppendEntity(hatch);
             tr.AddNewlyCreatedDBObject(hatch, true);
@@ -323,14 +331,10 @@ namespace ElectricalCommands.Lighting {
             hatch.Associative = true;
             hatch.AppendLoop(HatchLoopTypes.Default, new ObjectIdCollection { EmCircle.ObjectId });
             hatch.EvaluateHatch(true);
-
             if (emStartPosition == null) {
               emStartPosition = emStartPoint; 
             }
-
-
           }
-
 
           //Panel & Circuit Label
           DBText label = new DBText();
@@ -360,7 +364,6 @@ namespace ElectricalCommands.Lighting {
           curSpace.AppendEntity(separator2);
           tr.AddNewlyCreatedDBObject(separator2, true);
 
-
           //Ending Arrow
           Leader leader = new Leader();
           leader.AppendVertex(endPoint);
@@ -374,8 +377,9 @@ namespace ElectricalCommands.Lighting {
           arrowPosition = new Point3d(arrowPosition.X + .2, arrowPosition.Y, endPoint.Z);
         }
 
+        // Draw the final EM leader line if applicable
         if (emStartPosition != null) {
-          Point3d emStartPosition2 = (Point3d)emStartPosition; // Use the last EM start position for the leader line
+          Point3d emStartPosition2 = (Point3d)emStartPosition; 
           Point3d leaderEndPoint = new Point3d(arrowPosition.X + .3, emStartPosition2.Y, 0);
           Leader emLeader = new Leader();
           emLeader.AppendVertex(leaderEndPoint);
@@ -385,7 +389,6 @@ namespace ElectricalCommands.Lighting {
           emLeader.Layer = "E-TEXT";
           curSpace.AppendEntity(emLeader);
           tr.AddNewlyCreatedDBObject(emLeader, true);
-
 
           DBText EmLabel = new DBText();
           EmLabel.Position = new Point3d(leaderEndPoint.X + .05, leaderEndPoint.Y, leaderEndPoint.Z);
