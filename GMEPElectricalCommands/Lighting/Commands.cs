@@ -920,7 +920,7 @@ namespace ElectricalCommands.Lighting
                   attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
                   attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
                   if (attDef.Tag == "NAME") {
-                    attRef.TextString = timeClockName;
+                    attRef.TextString ="TIMECLOCK " + timeClockName;
                   }
                   br.AttributeCollection.AppendAttribute(attRef);
                   tr.AddNewlyCreatedDBObject(attRef, true);
