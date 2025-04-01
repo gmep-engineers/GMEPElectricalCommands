@@ -2474,7 +2474,11 @@ namespace ElectricalCommands
               )
               {
                 gridRow.Cells[cellName].Value = cellValues[i];
-                if (i == phases.Count - 1)
+                if (
+                  i == phases.Count - 1
+                  && gridRow.Cells[$"description_{side}"].Value as string
+                    != "PANEL " + panelName.ToUpper()
+                )
                 {
                   gridRow.Cells[$"breaker_{side}"].Value = phases.Count.ToString();
                 }
@@ -2667,8 +2671,8 @@ namespace ElectricalCommands
               }
             }
             else if (
-              row.Cells[$"description_{side}"].Value as string == "2"
-              || row.Cells[$"description_{side}"].Value as string == "3"
+              row.Cells[$"breaker_{side}"].Value as string == "2"
+              || row.Cells[$"breaker_{side}"].Value as string == "3"
             )
             {
               row.Cells[$"description_{side}"].Value = "";
