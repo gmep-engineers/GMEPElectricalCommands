@@ -428,12 +428,12 @@ namespace ElectricalCommands.Lighting {
 
         //Append Location Text
         DBText locationLabel = new DBText();
-        locationLabel.Position = new Point3d(InteriorPosition.X + 1.1, InteriorPosition.Y - .65, InteriorPosition.Z);
+        locationLabel.Position = new Point3d(InteriorPosition.X + 1.2, InteriorPosition.Y - .65, InteriorPosition.Z);
         locationLabel.Height = radius * .9;
         locationLabel.TextString = location.LocationName;
         locationLabel.HorizontalMode = TextHorizontalMode.TextCenter;
         locationLabel.VerticalMode = TextVerticalMode.TextVerticalMid;
-        locationLabel.AlignmentPoint = new Point3d(InteriorPosition.X + 1.1, InteriorPosition.Y - .65, InteriorPosition.Z);
+        locationLabel.AlignmentPoint = new Point3d(InteriorPosition.X + 1.2, InteriorPosition.Y - .65, InteriorPosition.Z);
         locationLabel.Justify = AttachmentPoint.TopLeft;
         locationLabel.Layer = "E-TEXT";
         curSpace.AppendEntity(locationLabel);
