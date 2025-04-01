@@ -740,12 +740,44 @@ namespace ElectricalCommands.Lighting
       List<LightingLocation> locationList = gmepDb.GetLightingLocations(projectId);
       List<LightingTimeClock> timeClockList = gmepDb.GetLightingTimeClocks(projectId);
       List<Panel> panelList = gmepDb.GetPanels(projectId);
+      List<string> existingLocationIds = new List<string>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+        BlockTableRecord locationBlock = (BlockTableRecord)tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
+        //Searching for existing locations
+        foreach (ObjectId id in locationBlock.GetAnonymousBlockIds()) {
+          if (id.IsValid) {
+            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+              if (anonymousBtr != null) {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                  var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                  if (entity != null) {
+                    foreach (DynamicBlockReferenceProperty prop in entity.DynamicBlockReferencePropertyCollection) {
+                      if (prop.PropertyName == "lighting_location_id") {
+                        existingLocationIds.Add(prop.Value as string);
+                      }
+                    }
+                  }
+
+                }
+              }
+            }
+          }
+        }
+      }
+
+
       PromptKeywordOptions pko = new PromptKeywordOptions("");
       PromptKeywordOptions pko2 = new PromptKeywordOptions("");
       PromptKeywordOptions pko3 = new PromptKeywordOptions("");
 
       foreach (LightingLocation location in locationList) {
-        pko.Keywords.Add(location.LocationName + ":" + location.Id);
+          if (!existingLocationIds.Contains(location.Id)) {
+            pko.Keywords.Add(location.LocationName + ":" + location.Id);
+          }
       }
       foreach (LightingTimeClock clock in timeClockList) {
         pko2.Keywords.Add(clock.Name + ":" + clock.Id);
@@ -780,6 +812,7 @@ namespace ElectricalCommands.Lighting
         BlockTable bt = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord btr = trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
         polyline = jig.GetPolyline();
+        
         if (polyline != null) {
           btr.AppendEntity(polyline);
           trans.AddNewlyCreatedDBObject(polyline, true);
