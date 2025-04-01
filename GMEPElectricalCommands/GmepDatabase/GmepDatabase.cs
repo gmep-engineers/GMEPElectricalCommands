@@ -711,6 +711,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_panels.name,
         electrical_lighting.control_id,
         electrical_lighting.description,
+        electrical_lighting.location_id,
         electrical_lighting.circuit_no,
         electrical_equipment_voltages.voltage,
         electrical_lighting.wattage,
@@ -749,6 +750,7 @@ namespace GMEPElectricalCommands.GmepDatabase
           new LightingFixture(
             reader.GetString("id"),
             reader.GetString("parent_id"),
+            reader.GetString("location_id"),
             reader.IsDBNull(reader.GetOrdinal("name")) ? string.Empty : reader.GetString("name"),
             reader.GetString("tag"),
             reader.GetString("control_id"),
@@ -811,7 +813,86 @@ namespace GMEPElectricalCommands.GmepDatabase
       reader.Close();
       return ltgCtrl;
     }
+    public List<LightingLocation> GetLightingLocations(string projectId) {
+      List<LightingLocation> locations = new List<LightingLocation>();
+      string query =
+        @"
+        SELECT * FROM electrical_lighting_locations WHERE project_id = @projectId
+        ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read()) {
+        locations.Add(
+          new LightingLocation(
+            GetSafeString(reader, "id"),
+            GetSafeString(reader, "location"),
+            GetSafeBoolean(reader, "outdoor"),
+            GetSafeString(reader, "timeclock_id")
+          )
+        );
+      }
+      CloseConnection();
+      reader.Close();
+      return locations;
+    }
 
+    public List<LightingTimeClock> GetLightingTimeClocks(string projectId) {
+      List<LightingTimeClock> clocks = new List<LightingTimeClock>();
+      string query =
+        @"
+        SELECT * FROM electrical_lighting_timeclocks WHERE project_id = @projectId";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read()) {
+        clocks.Add(
+          new LightingTimeClock(
+            GetSafeString(reader, "id"),
+            GetSafeString(reader, "name"),
+            GetSafeString(reader, "bypass_switch_name"),
+            GetSafeString(reader, "bypass_switch_location"),
+            GetSafeString(reader, "adjacent_panel_id"),
+            IdToVoltage(GetSafeInt(reader, "voltage_id"))
+          )
+        );
+      }
+      CloseConnection();
+      reader.Close();
+      return clocks;
+    }
+   public string IdToVoltage(int voltageId) {
+      string voltage = "0";
+      switch (voltageId) {
+        case (1):
+          voltage = "115";
+          break;
+        case (2):
+          voltage = "120";
+          break;
+        case (3):
+          voltage = "208";
+          break;
+        case (4):
+          voltage = "230";
+          break;
+        case (5):
+          voltage = "240";
+          break;
+        case (6):
+          voltage = "277";
+          break;
+        case (7):
+          voltage = "460";
+          break;
+        case (8):
+          voltage = "480";
+          break;
+      }
+      return voltage;
+    }
     public string GetProjectId(string projectNo)
     {
       string query = @"SELECT id FROM projects WHERE gmep_project_no = @projectNo";

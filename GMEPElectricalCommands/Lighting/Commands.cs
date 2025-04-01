@@ -22,10 +22,13 @@ using GMEPElectricalCommands.GmepDatabase;
 using Newtonsoft.Json;
 using TriangleNet.Meshing.Algorithm;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
+using Group = Autodesk.AutoCAD.DatabaseServices.Group;
 using System.Threading.Tasks;
 using System.Buffers;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using Emgu.CV.ML;
+using DocumentFormat.OpenXml.Spreadsheet;
+using Color = System.Drawing.Color;
 
 namespace ElectricalCommands.Lighting
 {
@@ -616,7 +619,7 @@ namespace ElectricalCommands.Lighting
 
       PromptKeywordOptions pko = new PromptKeywordOptions("");
 
-
+     
 
       foreach (Panel panel in panelList) {
           pko.Keywords.Add(panel.Name + ":" + panel.Id);
@@ -659,6 +662,7 @@ namespace ElectricalCommands.Lighting
       PromptResult pr = ed.GetKeywords(pko);
       string result = pr.StringResult;
       var chosenPanel = result.Split(':')[1];
+      var chosenPanelName = result.Split(':')[0];
 
       //Prompt user for circuit
       PromptKeywordOptions pko2 = new PromptKeywordOptions("");
@@ -691,6 +695,11 @@ namespace ElectricalCommands.Lighting
                 }
               }
               foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+                if (property.PropertyName == "gmep_lighting_parent_name") {
+                  property.Value = chosenPanelName;
+                }
+              }
+              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
                 if (property.PropertyName == "gmep_lighting_circuit") {
                   property.Value = chosenCircuit;
                   circuit = property.Value as string;
@@ -720,8 +729,417 @@ namespace ElectricalCommands.Lighting
         }
       }
       }
+    [CommandMethod("DefineLightingLocation")]
+    public static void DefineLightingLocation() {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
 
-    
+      GmepDatabase gmepDb = new GmepDatabase();
+      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
+      List<LightingLocation> locationList = gmepDb.GetLightingLocations(projectId);
+      List<LightingTimeClock> timeClockList = gmepDb.GetLightingTimeClocks(projectId);
+      List<Panel> panelList = gmepDb.GetPanels(projectId);
+      PromptKeywordOptions pko = new PromptKeywordOptions("");
+      PromptKeywordOptions pko2 = new PromptKeywordOptions("");
+      PromptKeywordOptions pko3 = new PromptKeywordOptions("");
+
+      foreach (LightingLocation location in locationList) {
+        pko.Keywords.Add(location.LocationName + ":" + location.Id);
+      }
+      foreach (LightingTimeClock clock in timeClockList) {
+        pko2.Keywords.Add(clock.Name + ":" + clock.Id);
+      }
+      foreach (Panel panel in panelList) {
+        pko3.Keywords.Add(panel.Name + ":" + panel.Id);
+      }
+
+
+      PromptPointOptions ppo = new PromptPointOptions("\nSpecify start point: ");
+      PromptPointResult ppr = ed.GetPoint(ppo);
+      if (ppr.Status != PromptStatus.OK)
+        return;
+
+      Point3d startPoint = ppr.Value;
+      PolyLineJig jig = new PolyLineJig(startPoint);
+
+      // Loop to keep adding vertices until the polyline is closed
+      while (true) {
+        PromptResult res = ed.Drag(jig);
+        if (res.Status == PromptStatus.OK) {
+          jig.AddVertex(jig.CurrentPoint);
+        }
+        else if (res.Status == PromptStatus.Cancel) {
+          break;
+        }
+      }
+
+
+      Polyline polyline;
+      using (Transaction trans = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+        polyline = jig.GetPolyline();
+        if (polyline != null) {
+          btr.AppendEntity(polyline);
+          trans.AddNewlyCreatedDBObject(polyline, true);
+          trans.Commit();
+        }
+      }
+
+      pko.Message = "\nAssign Location:";
+      PromptResult pr = ed.GetKeywords(pko);
+      string result = pr.StringResult;
+      var locationId = result.Split(':')[1];
+      var locationName = result.Split(':')[0];
+
+      Point3d point;
+      ObjectId blockId;
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+        BlockTableRecord block = (BlockTableRecord)
+          tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
+        BlockJig blockJig = new BlockJig();
+
+        PromptResult res = blockJig.DragMe(block.ObjectId, out point);
+
+        if (res.Status == PromptStatus.OK) {
+          BlockTableRecord curSpace = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+          BlockReference br = new BlockReference(point, block.ObjectId);
+
+          curSpace.AppendEntity(br);
+          tr.AddNewlyCreatedDBObject(br, true);
+          blockId = br.Id;
+
+          //Setting Attributes
+          foreach (ObjectId objId in block) {
+            DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
+            AttributeDefinition attDef = obj as AttributeDefinition;
+            if (attDef != null && !attDef.Constant) {
+              using (AttributeReference attRef = new AttributeReference()) {
+                attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
+                attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
+                if (attDef.Tag == "NAME") {
+                  attRef.TextString = locationName;
+                }
+                br.AttributeCollection.AppendAttribute(attRef);
+                tr.AddNewlyCreatedDBObject(attRef, true);
+              }
+            }
+          }
+        }
+        else {
+          return;
+        }
+
+        tr.Commit();
+      }
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+        BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+        DynamicBlockReferencePropertyCollection pc =
+          br.DynamicBlockReferencePropertyCollection;
+
+        LightingLocation matchingLocation = locationList.FirstOrDefault(x => x.Id == locationId);
+        foreach (DynamicBlockReferenceProperty prop in pc) {
+          if (prop.PropertyName == "lighting_location_id") {
+            prop.Value = locationId;
+          }
+          if (prop.PropertyName == "outdoor") {
+            if (matchingLocation.Outdoor)
+              prop.Value = "True";
+            else
+              prop.Value = "False";
+          }
+          if (prop.PropertyName == "lighting_location_name") {
+            prop.Value = locationName;
+          }
+        }
+        tr.Commit();
+      }
+
+      //TimeClockPlacing
+      pko2.Message = "\nWire To Time Clock:";
+      PromptResult pr2 = ed.GetKeywords(pko2);
+      string result2 = pr2.StringResult;
+      var timeClockId = result2.Split(':')[1];
+      var timeClockName = result2.Split(':')[0];
+
+
+      Point3d point2;
+      ObjectId blockId2 = ObjectId.Null;
+      //bool timeClockPlaced = false;
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        BlockTableRecord btr = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead) as BlockTableRecord;
+
+        //Checking if timeclock is already placed
+        foreach (ObjectId objId in btr) {
+          Entity entity = tr.GetObject(objId, OpenMode.ForRead) as Entity;
+          if (entity is BlockReference blockRef) {
+            DynamicBlockReferencePropertyCollection pc = blockRef.DynamicBlockReferencePropertyCollection;
+            foreach (DynamicBlockReferenceProperty prop in pc) {
+                if (prop.PropertyName == "id") {
+                  if (prop.Value.ToString() == timeClockId) {
+                    blockId2 = blockRef.ObjectId;
+                    break;
+                  }
+                }
+              }
+            }
+        }
+
+        BlockTableRecord block = (BlockTableRecord)tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
+        if (blockId2 == ObjectId.Null) {
+          BlockJig blockJig = new BlockJig();
+          PromptResult res = blockJig.DragMe(block.ObjectId, out point2);
+
+          if (res.Status == PromptStatus.OK) {
+            BlockTableRecord curSpace = (BlockTableRecord)
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+            BlockReference br = new BlockReference(point2, block.ObjectId);
+
+            curSpace.AppendEntity(br);
+            tr.AddNewlyCreatedDBObject(br, true);
+            blockId2 = br.Id;
+
+            //Setting Attributes
+            foreach (ObjectId objId in block) {
+              DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
+              AttributeDefinition attDef = obj as AttributeDefinition;
+              if (attDef != null && !attDef.Constant) {
+                using (AttributeReference attRef = new AttributeReference()) {
+                  attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
+                  attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
+                  if (attDef.Tag == "NAME") {
+                    attRef.TextString ="TIMECLOCK " + timeClockName;
+                  }
+                  br.AttributeCollection.AppendAttribute(attRef);
+                  tr.AddNewlyCreatedDBObject(attRef, true);
+                }
+              }
+            }
+          }
+          else {
+            return;
+          }
+        }
+
+        tr.Commit();
+      }
+      pko3.Message = "\nPick Adjacent Panel For Time Clock:";
+      PromptResult pr3 = ed.GetKeywords(pko3);
+      string result3 = pr3.StringResult;
+      var adjacentPanelId = result3.Split(':')[1];
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+        BlockReference br = (BlockReference)tr.GetObject(blockId2, OpenMode.ForWrite);
+        DynamicBlockReferencePropertyCollection pc =
+          br.DynamicBlockReferencePropertyCollection;
+
+        LightingTimeClock matchingClock = timeClockList.FirstOrDefault(x => x.Id == timeClockId);
+        foreach (DynamicBlockReferenceProperty prop in pc) {
+          if (prop.PropertyName == "id") {
+            prop.Value = timeClockId;
+          }
+          if (prop.PropertyName == "name") {
+            prop.Value = timeClockName;
+          }
+          if (prop.PropertyName == "bypass_switch_name") {
+            prop.Value = matchingClock.BypassSwitchName;
+          }
+          if (prop.PropertyName == "bypass_switch_location") {
+            prop.Value = matchingClock.BypassSwitchLocation;
+          }
+          if (prop.PropertyName == "adjacent_panel_id") {
+            prop.Value = adjacentPanelId;
+          }
+          if (prop.PropertyName == "voltage") {
+            prop.Value = matchingClock.Voltage;
+          }
+        }
+        tr.Commit();
+      }
+
+      //Assigning Timeclockid to location
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+        BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+        DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+        foreach (DynamicBlockReferenceProperty prop in pc) {
+          if (prop.PropertyName == "timeclock_id") {
+            prop.Value = timeClockId;
+          }
+        }
+        tr.Commit();
+      }
+        SelectObjectsInsidePolyline(ed, db, polyline, locationId);
+    }
+    private static void SelectObjectsInsidePolyline(Editor ed, Database db, Polyline polyline, string locationId) {
+      SelectionFilter filter = new SelectionFilter(new TypedValue[]
+       {
+                new TypedValue((int)DxfCode.Start, "INSERT")
+       });
+
+      Extents3d extents = polyline.GeometricExtents;
+
+      PromptSelectionResult psr = ed.SelectCrossingWindow(extents.MinPoint, extents.MaxPoint, filter);
+      SelectionSet ss = psr.Value;
+      if (psr.Status == PromptStatus.OK) {
+        ed.WriteMessage($"\nNumber of objects selected: {ss.Count}");
+      }
+      else {
+        ed.WriteMessage("\nNo objects selected.");
+        return;
+      }
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        foreach(ObjectId id in ss.GetObjectIds()) {
+          DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
+          if (obj is BlockReference block) {
+            foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
+              if (property.PropertyName == "gmep_lighting_location_id") {
+                property.Value = locationId;
+              }
+            }
+          }
+        }
+        tr.Commit();
+      }
+    }
+    [CommandMethod("LightingControlDiagram")]
+    public static void LightingControlDiagram() {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+
+      List<LightingTimeClock> timeClocks = new List<LightingTimeClock>();
+      List<LightingLocation> locations = new List<LightingLocation>();
+      List<LightingFixture> lightings = new List<LightingFixture>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord timeClockBlock = (BlockTableRecord)tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
+        BlockTableRecord locationBlock = (BlockTableRecord)tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
+        BlockTableRecord lightingBlock = (BlockTableRecord)tr.GetObject(bt["GMEP LTG 2X4"], OpenMode.ForRead);
+
+        //Timeclocks
+        foreach (ObjectId id in timeClockBlock.GetAnonymousBlockIds()) {
+          if (id.IsValid) {
+            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+              if (anonymousBtr != null) {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)){
+
+                  var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+
+                  var timeClock = new LightingTimeClock("0", "", "", "", "", "");
+                  var pc = entity.DynamicBlockReferencePropertyCollection;
+                  foreach (DynamicBlockReferenceProperty prop in pc) {
+                    if (prop.PropertyName == "id") timeClock.Id = prop.Value as string;
+                    if (prop.PropertyName == "name") timeClock.Name = prop.Value as string;
+                    if (prop.PropertyName == "bypass_switch_name") timeClock.BypassSwitchName = prop.Value as string;
+                    if (prop.PropertyName == "bypass_switch_location") timeClock.BypassSwitchLocation = prop.Value as string;
+                    if (prop.PropertyName == "adjacent_panel_id") timeClock.AdjacentPanelId = prop.Value as string;
+                    if (prop.PropertyName == "voltage") timeClock.Voltage = prop.Value as string;
+                  }
+                  if (timeClock.Id != "0") timeClocks.Add(timeClock);
+                }
+              }
+            }
+          }
+        }
+        //Locations
+        foreach (ObjectId id in locationBlock.GetAnonymousBlockIds()) {
+          if (id.IsValid) {
+            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+              if (anonymousBtr != null) {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                  var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                  var location = new LightingLocation("", "", false, "");
+                  var pc = entity.DynamicBlockReferencePropertyCollection;
+                  foreach (DynamicBlockReferenceProperty prop in pc) {
+                    if (prop.PropertyName == "lighting_location_id") location.Id = prop.Value as string;
+                    if (prop.PropertyName == "outdoor") location.Outdoor = (prop.Value as string == "True");
+                    if (prop.PropertyName == "lighting_location_name") location.LocationName = prop.Value as string;
+                    if (prop.PropertyName == "timeclock_id") location.timeclock = prop.Value as string;
+                  }
+                  if (location.Id != "0") locations.Add(location);
+                }
+              }
+            }
+          }
+        }
+        //Lighting
+        foreach (ObjectId id in lightingBlock.GetAnonymousBlockIds()) {
+          if (id.IsValid) {
+            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+              if (anonymousBtr != null) {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                  var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                  var lighting = new LightingFixture("", "", "", "", "", "", "", 0, 0, "", 1, "", "", "", "", false, 0, false, 0, 0, 0, 0, 0);
+                  var pc = entity.DynamicBlockReferencePropertyCollection;
+                  foreach (DynamicBlockReferenceProperty prop in pc) {
+                    if (prop.PropertyName == "gmep_lighting_fixture_id") lighting.Id = prop.Value as string;
+                    if (prop.PropertyName == "gmep_lighting_parent_name") lighting.ParentName = prop.Value as string;
+                    if (prop.PropertyName == "gmep_lighting_location_id") lighting.LocationId = prop.Value as string;
+                    if (prop.PropertyName == "gmep_lighting_circuit") {
+                      if (int.TryParse(prop.Value.ToString(), out int circuit)) {
+                        lighting.Circuit = circuit;
+                      }
+                    }
+                    if (prop.PropertyName == "Visibility1") {
+                      //Note: Technically this should be a bool like IsEM/IsNotEm, but using EMCapable bool to determine if EM is toggled.
+                      if (prop.Value as string == "EM") { 
+                        lighting.EmCapable = true; 
+                      }
+                      else {
+                        lighting.EmCapable = false; 
+                      }
+                    }
+                  }
+                  foreach (ObjectId attId in entity.AttributeCollection) {
+                    var attRef = tr.GetObject(attId, OpenMode.ForWrite) as AttributeReference;
+                    if (attRef != null && attRef.Tag == "LIGHTING_NAME") {
+                      lighting.Name = attRef.TextString;
+                    }
+                  }
+                  if (lighting.Id != "0") lightings.Add(lighting);
+                }
+              }
+            }
+          }
+        }
+        tr.Commit();
+      }
+
+      PromptKeywordOptions pko= new PromptKeywordOptions("");
+      foreach (LightingTimeClock timeclock in timeClocks) {
+        pko.Keywords.Add(timeclock.Name + ":" + timeclock.Id);
+      }
+      pko.Message = "\nSelect Time Clock For Diagram:";
+      PromptResult pr = ed.GetKeywords(pko);
+      string result = pr.StringResult;
+      var timeClockId = result.Split(':')[1];
+
+      LightingTimeClock chosenTimeClock = timeClocks.FirstOrDefault(x => x.Id == timeClockId);
+      List<LightingLocation> newLocations = locations.Where(loc => loc.timeclock == chosenTimeClock.Id).ToList();
+      List<LightingFixture> newLightings = lightings.Where(lighting => newLocations.Any(loc => loc.Id == lighting.LocationId)).ToList();
+      LightingControlDiagram diagram = new LightingControlDiagram(chosenTimeClock, newLocations, newLightings);
+    }
+
+
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
     {
