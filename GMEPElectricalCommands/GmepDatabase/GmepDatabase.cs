@@ -817,7 +817,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       List<LightingLocation> locations = new List<LightingLocation>();
       string query =
         @"
-        SELECT * FROM electrical_lighting_locations WHERE project_id = @projectId
+        SELECT * FROM electrical_lighting_timeclock_control_relays WHERE project_id = @projectId
         ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
@@ -827,7 +827,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         locations.Add(
           new LightingLocation(
             GetSafeString(reader, "id"),
-            GetSafeString(reader, "location"),
+            GetSafeString(reader, "name"),
             GetSafeBoolean(reader, "outdoor"),
             GetSafeString(reader, "timeclock_id")
           )
