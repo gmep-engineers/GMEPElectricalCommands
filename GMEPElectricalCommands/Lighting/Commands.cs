@@ -619,17 +619,15 @@ namespace ElectricalCommands.Lighting
 
       PromptKeywordOptions pko = new PromptKeywordOptions("");
 
-     
-
       foreach (Panel panel in panelList) {
+        if (panel.NumBreakers > 0) {
           pko.Keywords.Add(panel.Name + ":" + panel.Id);
+          panelCircuits.Add(panel.Id, new List<string>());
           for (int i = 1; i <= panel.NumBreakers; i++) {
-            if (!panelCircuits.ContainsKey(panel.Id)) {
-            panelCircuits.Add(panel.Id, new List<string>());
+            panelCircuits[panel.Id].Add(i.ToString());
           }
-          panelCircuits[panel.Id].Add(i.ToString());
-          }
-       }
+        }
+      }
 
       //Start removing Circuits from the dictionary, accounting for circuitnumber and pole.
       foreach (Panel panel in panelList) {
@@ -731,6 +729,20 @@ namespace ElectricalCommands.Lighting
       }
     [CommandMethod("DefineLightingLocation")]
     public static void DefineLightingLocation() {
+      // Define the scale
+      double scale = 12;
+      if (
+        CADObjectCommands.Scale <= 0
+        && (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
+      ) {
+        CADObjectCommands.SetScale();
+        if (CADObjectCommands.Scale <= 0)
+          return;
+      }
+      if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport()) {
+        scale = CADObjectCommands.Scale;
+      }
+
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
@@ -740,12 +752,44 @@ namespace ElectricalCommands.Lighting
       List<LightingLocation> locationList = gmepDb.GetLightingLocations(projectId);
       List<LightingTimeClock> timeClockList = gmepDb.GetLightingTimeClocks(projectId);
       List<Panel> panelList = gmepDb.GetPanels(projectId);
+      List<string> existingLocationIds = new List<string>();
+
+      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+
+        BlockTableRecord locationBlock = (BlockTableRecord)tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
+        //Searching for existing locations
+        foreach (ObjectId id in locationBlock.GetAnonymousBlockIds()) {
+          if (id.IsValid) {
+            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+              if (anonymousBtr != null) {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                  var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+                  if (entity != null) {
+                    foreach (DynamicBlockReferenceProperty prop in entity.DynamicBlockReferencePropertyCollection) {
+                      if (prop.PropertyName == "lighting_location_id") {
+                        existingLocationIds.Add(prop.Value as string);
+                      }
+                    }
+                  }
+
+                }
+              }
+            }
+          }
+        }
+      }
+
+
       PromptKeywordOptions pko = new PromptKeywordOptions("");
       PromptKeywordOptions pko2 = new PromptKeywordOptions("");
       PromptKeywordOptions pko3 = new PromptKeywordOptions("");
 
       foreach (LightingLocation location in locationList) {
-        pko.Keywords.Add(location.LocationName + ":" + location.Id);
+          if (!existingLocationIds.Contains(location.Id)) {
+            pko.Keywords.Add(location.LocationName + ":" + location.Id);
+          }
       }
       foreach (LightingTimeClock clock in timeClockList) {
         pko2.Keywords.Add(clock.Name + ":" + clock.Id);
@@ -780,6 +824,7 @@ namespace ElectricalCommands.Lighting
         BlockTable bt = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord btr = trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
         polyline = jig.GetPolyline();
+        
         if (polyline != null) {
           btr.AppendEntity(polyline);
           trans.AddNewlyCreatedDBObject(polyline, true);
@@ -805,11 +850,13 @@ namespace ElectricalCommands.Lighting
 
         PromptResult res = blockJig.DragMe(block.ObjectId, out point);
 
+
         if (res.Status == PromptStatus.OK) {
           BlockTableRecord curSpace = (BlockTableRecord)
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
           BlockReference br = new BlockReference(point, block.ObjectId);
+          br.ScaleFactors = new Scale3d(0.25 / scale);
 
           curSpace.AppendEntity(br);
           tr.AddNewlyCreatedDBObject(br, true);
@@ -906,6 +953,7 @@ namespace ElectricalCommands.Lighting
               tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
             BlockReference br = new BlockReference(point2, block.ObjectId);
+            br.ScaleFactors = new Scale3d(0.25 / scale);
 
             curSpace.AppendEntity(br);
             tr.AddNewlyCreatedDBObject(br, true);

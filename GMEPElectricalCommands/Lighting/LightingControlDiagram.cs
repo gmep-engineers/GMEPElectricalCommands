@@ -33,7 +33,7 @@ namespace ElectricalCommands.Lighting {
       this.TimeClock = timeClock;
       this.Fixtures = fixtures;
       this.Locations = locations;
-      this.SectionSeparation = 0;
+      this.SectionSeparation = 0.4;
       this.CreateDiagram();
     }
     public void CreateDiagram() {
@@ -133,14 +133,17 @@ namespace ElectricalCommands.Lighting {
               Point3d startPoint = InteriorPosition;
               Point3d endPoint = new Point3d(startPoint.X, startPoint.Y - 1.75, startPoint.Z);
               Line verticalLine = new Line(startPoint, endPoint);
+              verticalLine.Layer = "E-CND1";
               curSpace.AppendEntity(verticalLine);
               tr.AddNewlyCreatedDBObject(verticalLine, true);
 
               Circle circle = new Circle(endPoint, Vector3d.ZAxis, .020);
+              circle.Layer = "E-CND1";
               curSpace.AppendEntity(circle);
               tr.AddNewlyCreatedDBObject(circle, true);
 
               Hatch hatch = new Hatch();
+              hatch.Layer = "E-CND1";
               curSpace.AppendEntity(hatch);
               tr.AddNewlyCreatedDBObject(hatch, true);
 
@@ -178,14 +181,17 @@ namespace ElectricalCommands.Lighting {
         //Setting Starting Circle and Starting point based on section separator
         Point3d NewExteriorPosition = new Point3d(ExteriorPosition.X + SectionSeparation, ExteriorPosition.Y, ExteriorPosition.Z);
         Line line = new Line(ExteriorPosition, NewExteriorPosition);
+        line.Layer = "E-CND1";
         curSpace.AppendEntity(line);
         tr.AddNewlyCreatedDBObject(line, true);
 
         Circle circle1 = new Circle(NewExteriorPosition, Vector3d.ZAxis, .020);
+        circle1.Layer = "E-CND1";
         curSpace.AppendEntity(circle1);
         tr.AddNewlyCreatedDBObject(circle1, true);
 
         Hatch hatch1 = new Hatch();
+        hatch1.Layer = "E-CND1";
         curSpace.AppendEntity(hatch1);
         tr.AddNewlyCreatedDBObject(hatch1, true);
         hatch1.SetDatabaseDefaults();
@@ -205,14 +211,17 @@ namespace ElectricalCommands.Lighting {
               Point3d startPoint = ExteriorPosition;
               Point3d endPoint = new Point3d(startPoint.X, startPoint.Y - 1.75, startPoint.Z);
               Line verticalLine = new Line(startPoint, endPoint);
+              verticalLine.Layer = "E-CND1";
               curSpace.AppendEntity(verticalLine);
               tr.AddNewlyCreatedDBObject(verticalLine, true);
 
               Circle circle = new Circle(endPoint, Vector3d.ZAxis, .020);
+              circle.Layer = "E-CND1";
               curSpace.AppendEntity(circle);
               tr.AddNewlyCreatedDBObject(circle, true);
 
               Hatch hatch = new Hatch();
+              hatch.Layer = "E-CND1";
               curSpace.AppendEntity(hatch);
               tr.AddNewlyCreatedDBObject(hatch, true);
 
@@ -274,12 +283,14 @@ namespace ElectricalCommands.Lighting {
         Point3d startPoint = InteriorPosition;
         Point3d endPoint = new Point3d(startPoint.X + 1, startPoint.Y, startPoint.Z);
         Line horizontalLine = new Line(startPoint, endPoint);
+        horizontalLine.Layer = "E-CND1";
         curSpace.AppendEntity(horizontalLine);
         tr.AddNewlyCreatedDBObject(horizontalLine, true);
 
         startPoint = endPoint;
         endPoint = new Point3d(endPoint.X, endPoint.Y - .1, endPoint.Z);
         Line verticalLine = new Line(startPoint, endPoint);
+        verticalLine.Layer = "E-CND1";
         curSpace.AppendEntity(verticalLine);
         tr.AddNewlyCreatedDBObject(verticalLine, true);
 
@@ -307,12 +318,14 @@ namespace ElectricalCommands.Lighting {
         startPoint = new Point3d(endPoint.X, endPoint.Y - radius*2, endPoint.Z);
         endPoint = new Point3d(startPoint.X, startPoint.Y -.1, startPoint.Z);
         Line verticalLine2 = new Line(startPoint, endPoint);
+        verticalLine2.Layer = "E-CND1";
         curSpace.AppendEntity(verticalLine2);
         tr.AddNewlyCreatedDBObject(verticalLine2, true);
 
         startPoint = endPoint;
         endPoint = new Point3d(endPoint.X - .4, endPoint.Y, endPoint.Z);
         Line horizontalLine2 = new Line(startPoint, endPoint);
+        horizontalLine2.Layer = "E-CND1";
         curSpace.AppendEntity(horizontalLine2);
         tr.AddNewlyCreatedDBObject(horizontalLine2, true);
 
@@ -342,6 +355,7 @@ namespace ElectricalCommands.Lighting {
           startPoint = arrowPosition;
           endPoint = new Point3d(startPoint.X, startPoint.Y - 1.06, startPoint.Z);
           Line beginArrow = new Line(startPoint, endPoint);
+          beginArrow.Layer = "E-CND1";
           curSpace.AppendEntity(beginArrow);
           tr.AddNewlyCreatedDBObject(beginArrow, true);
 
@@ -349,9 +363,11 @@ namespace ElectricalCommands.Lighting {
           if (fixture.EmCapable) {
             Point3d emStartPoint = new Point3d(arrowPosition.X, arrowPosition.Y - .31, -1); // Start point for the EM section
             Circle EmCircle = new Circle(emStartPoint, Vector3d.ZAxis, .030);
+            EmCircle.Layer = "E-CND1";
             curSpace.AppendEntity(EmCircle);
             tr.AddNewlyCreatedDBObject(EmCircle, true);
             Hatch hatch = new Hatch();
+            hatch.Layer = "E-CND1";
             curSpace.AppendEntity(hatch);
             tr.AddNewlyCreatedDBObject(hatch, true);
             hatch.SetDatabaseDefaults();
@@ -394,6 +410,7 @@ namespace ElectricalCommands.Lighting {
 
           //Ending Arrow
           Leader leader = new Leader();
+          leader.Layer = "E-CND1";
           leader.AppendVertex(endPoint);
           leader.AppendVertex(startPoint);
           leader.HasArrowHead = true;
@@ -407,9 +424,7 @@ namespace ElectricalCommands.Lighting {
           //Adjust Separator
           tempSeparator += .2;
         }
-        if (tempSeparator > SectionSeparation) {
-          SectionSeparation = tempSeparator;
-        }
+     
 
         // Draw the final EM leader line if applicable
         if (emStartPosition != null) {
@@ -435,6 +450,12 @@ namespace ElectricalCommands.Lighting {
           EmLabel.Layer = "E-TEXT";
           curSpace.AppendEntity(EmLabel);
           tr.AddNewlyCreatedDBObject(EmLabel, true);
+
+          //Adjust Separator
+          tempSeparator += 1;
+        }
+        if (tempSeparator > SectionSeparation) {
+          SectionSeparation = tempSeparator;
         }
 
 
@@ -513,6 +534,7 @@ namespace ElectricalCommands.Lighting {
         Point3d startPoint = ExteriorPosition;
         Point3d endPoint = new Point3d(startPoint.X + 1, startPoint.Y, startPoint.Z);
         Line horizontalLine = new Line(startPoint, endPoint);
+        horizontalLine.Layer = "E-CND1";
         curSpace.AppendEntity(horizontalLine);
         tr.AddNewlyCreatedDBObject(horizontalLine, true);
 
@@ -546,12 +568,14 @@ namespace ElectricalCommands.Lighting {
         startPoint = new Point3d(endPoint.X + radius, endPoint.Y - radius, endPoint.Z);
         endPoint = new Point3d(startPoint.X, startPoint.Y - .1, startPoint.Z);
         Line verticalLine2 = new Line(startPoint, endPoint);
+        verticalLine2.Layer = "E-CND1";
         curSpace.AppendEntity(verticalLine2);
         tr.AddNewlyCreatedDBObject(verticalLine2, true);
 
         startPoint = endPoint;
         endPoint = new Point3d(endPoint.X - .4, endPoint.Y, endPoint.Z);
         Line horizontalLine2 = new Line(startPoint, endPoint);
+        horizontalLine2.Layer = "E-CND1";
         curSpace.AppendEntity(horizontalLine2);
         tr.AddNewlyCreatedDBObject(horizontalLine2, true);
 
@@ -579,6 +603,7 @@ namespace ElectricalCommands.Lighting {
           startPoint = arrowPosition;
           endPoint = new Point3d(startPoint.X, startPoint.Y - 1, startPoint.Z);
           Line beginArrow = new Line(startPoint, endPoint);
+          beginArrow.Layer = "E-CND1";
           curSpace.AppendEntity(beginArrow);
           tr.AddNewlyCreatedDBObject(beginArrow, true);
 
@@ -586,9 +611,11 @@ namespace ElectricalCommands.Lighting {
           if (fixture.EmCapable) {
             Point3d emStartPoint = new Point3d(arrowPosition.X, arrowPosition.Y - .31, -1); // Start point for the EM section
             Circle EmCircle = new Circle(emStartPoint, Vector3d.ZAxis, .030);
+            EmCircle.Layer = "E-CND1";
             curSpace.AppendEntity(EmCircle);
             tr.AddNewlyCreatedDBObject(EmCircle, true);
             Hatch hatch = new Hatch();
+            hatch.Layer = "E-CND1";
             curSpace.AppendEntity(hatch);
             tr.AddNewlyCreatedDBObject(hatch, true);
             hatch.SetDatabaseDefaults();
@@ -631,6 +658,7 @@ namespace ElectricalCommands.Lighting {
 
           //Ending Arrow
           Leader leader = new Leader();
+          leader.Layer = "E-CND1";
           leader.AppendVertex(endPoint);
           leader.AppendVertex(startPoint);
           leader.HasArrowHead = true;
