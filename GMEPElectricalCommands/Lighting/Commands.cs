@@ -619,17 +619,15 @@ namespace ElectricalCommands.Lighting
 
       PromptKeywordOptions pko = new PromptKeywordOptions("");
 
-     
-
       foreach (Panel panel in panelList) {
+        if (panel.NumBreakers > 0) {
           pko.Keywords.Add(panel.Name + ":" + panel.Id);
+          panelCircuits.Add(panel.Id, new List<string>());
           for (int i = 1; i <= panel.NumBreakers; i++) {
-            if (!panelCircuits.ContainsKey(panel.Id)) {
-            panelCircuits.Add(panel.Id, new List<string>());
+            panelCircuits[panel.Id].Add(i.ToString());
           }
-          panelCircuits[panel.Id].Add(i.ToString());
-          }
-       }
+        }
+      }
 
       //Start removing Circuits from the dictionary, accounting for circuitnumber and pole.
       foreach (Panel panel in panelList) {

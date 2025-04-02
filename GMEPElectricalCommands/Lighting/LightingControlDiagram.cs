@@ -33,7 +33,7 @@ namespace ElectricalCommands.Lighting {
       this.TimeClock = timeClock;
       this.Fixtures = fixtures;
       this.Locations = locations;
-      this.SectionSeparation = 0;
+      this.SectionSeparation = 0.4;
       this.CreateDiagram();
     }
     public void CreateDiagram() {
@@ -424,9 +424,7 @@ namespace ElectricalCommands.Lighting {
           //Adjust Separator
           tempSeparator += .2;
         }
-        if (tempSeparator > SectionSeparation) {
-          SectionSeparation = tempSeparator;
-        }
+     
 
         // Draw the final EM leader line if applicable
         if (emStartPosition != null) {
@@ -452,6 +450,12 @@ namespace ElectricalCommands.Lighting {
           EmLabel.Layer = "E-TEXT";
           curSpace.AppendEntity(EmLabel);
           tr.AddNewlyCreatedDBObject(EmLabel, true);
+
+          //Adjust Separator
+          tempSeparator += 1;
+        }
+        if (tempSeparator > SectionSeparation) {
+          SectionSeparation = tempSeparator;
         }
 
 
