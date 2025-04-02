@@ -731,6 +731,20 @@ namespace ElectricalCommands.Lighting
       }
     [CommandMethod("DefineLightingLocation")]
     public static void DefineLightingLocation() {
+      // Define the scale
+      double scale = 12;
+      if (
+        CADObjectCommands.Scale <= 0
+        && (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
+      ) {
+        CADObjectCommands.SetScale();
+        if (CADObjectCommands.Scale <= 0)
+          return;
+      }
+      if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport()) {
+        scale = CADObjectCommands.Scale;
+      }
+
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
@@ -838,11 +852,13 @@ namespace ElectricalCommands.Lighting
 
         PromptResult res = blockJig.DragMe(block.ObjectId, out point);
 
+
         if (res.Status == PromptStatus.OK) {
           BlockTableRecord curSpace = (BlockTableRecord)
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
           BlockReference br = new BlockReference(point, block.ObjectId);
+          br.ScaleFactors = new Scale3d(0.25 / scale);
 
           curSpace.AppendEntity(br);
           tr.AddNewlyCreatedDBObject(br, true);
@@ -939,6 +955,7 @@ namespace ElectricalCommands.Lighting
               tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
             BlockReference br = new BlockReference(point2, block.ObjectId);
+            br.ScaleFactors = new Scale3d(0.25 / scale);
 
             curSpace.AppendEntity(br);
             tr.AddNewlyCreatedDBObject(br, true);
