@@ -3,8 +3,8 @@
 1. During install, select **.NET desktop development**
 1. Open Visual Studio
 1. Select *Clone a Repository*
-1. Clone this repository
-1. Open the project in Windows Explorer
+1. Clone this repository.
+1. Follow the instructions here https://www.dropbox.com/work/GMEP%20Software%20Dependencies/GMEPElectricalCommands%20Deps/GMEPElectricalCommands%20Deps
 1. In the `GMEPElectricalCommands` folder, right-click `create_load_dll.ps1` and click *Run with PowerShell*.
 1. Open blank file in AutoCAD and run the `APPLOAD` command.
 1. Under *Startup Suite*, click *Contents*.
