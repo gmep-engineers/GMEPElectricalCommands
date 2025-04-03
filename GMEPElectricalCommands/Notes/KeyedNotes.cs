@@ -14,27 +14,54 @@ namespace ElectricalCommands.Notes
     public partial class KeyedNotes: Form
     {
     // This is a placeholder for the DataTable that will hold the keyed notes
-    public List<ElectricalKeyedNote> KeyedNotesCollection { get; set; } = new List<ElectricalKeyedNote>();
+
     public KeyedNotes()
     { 
         InitializeComponent();
-        this.Load += new EventHandler(KeyedNotes_Load);
+        this.Load += new EventHandler(TabControl_Load);
     }
-    public void KeyedNotes_Load(object sender, EventArgs e) {
-      // Initialize the DataTable with some sample data
-      KeyedNotesGridView.AutoGenerateColumns = true;
-      KeyedNotesCollection.Add(new ElectricalKeyedNote() { Id = "1", TableId = "Table1", DateCreated = DateTime.Now, Note = "Sample Note 1", Index = 1 });
-      KeyedNotesCollection.Add(new ElectricalKeyedNote() { Id = "2", TableId = "Table2", DateCreated = DateTime.Now, Note = "Sample Note 2", Index = 2 });
-      KeyedNotesCollection.Add(new ElectricalKeyedNote() { Id = "3", TableId = "Table3", DateCreated = DateTime.Now, Note = "Sample Note 3", Index = 3 });
-      KeyedNotesGridView.DataSource = KeyedNotesCollection;
-    }
-  }
-  public class ElectricalKeyedNote {
-    public string Id { get; set; }
-    public string TableId { get; set; }
-    public DateTime DateCreated { get; set; } = DateTime.Now;
-    public string Note { get; set; }
-    public int Index { get; set; }
-  }
 
+    public void TabControl_Load(object sender, EventArgs e) {
+      //Add All Existing Tabs
+      //TableTabControl.TabPages.Add(new TabPage("MEOW"));
+      //Add 'New' Tab
+      AddNewTabButton();
+      // Set the initial selected tab to the last one (the "ADD NEW" tab)
+      TableTabControl.SelectedIndex = TableTabControl.TabCount - 2;
+    }
+
+    private void AddNewTabButton() {
+      TabPage addNewTabPage = new TabPage("ADD NEW") {
+        BackColor = Color.AliceBlue
+      };
+      TableTabControl.TabPages.Add(addNewTabPage);
+      TableTabControl.SelectedIndexChanged += TableTabControl_SelectedIndexChanged;
+    }
+
+    private void TableTabControl_SelectedIndexChanged(object sender, EventArgs e) {
+      if (TableTabControl.SelectedTab != null && TableTabControl.SelectedTab.Text == "ADD NEW") {
+        // Add a new tab before the "ADD NEW" tab
+        int newIndex = TableTabControl.TabCount;
+        TabPage newTab = new TabPage($"Tab {newIndex}");
+        newTab.Controls.Add(new NoteTableUserControl());
+        TableTabControl.TabPages.Insert(TableTabControl.TabCount - 1, newTab);
+        TableTabControl.SelectedTab = newTab;
+      }
+    }
+
+    /*private void TableTabControl_DrawItem(object sender, DrawItemEventArgs e) {
+      TabPage tabPage = TableTabControl.TabPages[e.Index];
+      Rectangle tabRect = TableTabControl.GetTabRect(e.Index);
+      Brush textBrush = Brushes.Black;
+      Brush backBrush = Brushes.White;
+
+      if (tabPage.Text == "ADD NEW") {
+        textBrush = Brushes.Black;
+        backBrush = Brushes.AliceBlue;
+      }
+
+      e.Graphics.FillRectangle(backBrush, tabRect);
+      e.Graphics.DrawString(tabPage.Text, e.Font, textBrush, tabRect, new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
+    }*/
+  }
 }

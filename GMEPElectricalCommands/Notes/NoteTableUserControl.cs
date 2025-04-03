@@ -10,11 +10,27 @@ using System.Windows.Forms;
 
 namespace ElectricalCommands.Notes
 {
+
     public partial class NoteTableUserControl: UserControl
     {
-        public NoteTableUserControl()
-        {
-            InitializeComponent();
-        }
+    public List<ElectricalKeyedNote> KeyedNotesCollection { get; set; } = new List<ElectricalKeyedNote>();
+      public NoteTableUserControl()
+      {
+         InitializeComponent();
+         // Initialize the DataGridView
+         this.Load += new EventHandler(NoteTableUserControl_Load);
+    }
+
+    private void NoteTableUserControl_Load(object sender, EventArgs e) {
+      TableGridView.AutoGenerateColumns = true;
+      TableGridView.DataSource = KeyedNotesCollection;
+    }
+  }
+  public class ElectricalKeyedNote {
+      public string Id { get; set; }
+      public string TableId { get; set; }
+      public DateTime DateCreated { get; set; } = DateTime.Now;
+      public string Note { get; set; }
+      public int Index { get; set; }
     }
 }
