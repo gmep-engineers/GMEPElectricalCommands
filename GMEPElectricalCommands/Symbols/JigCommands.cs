@@ -10,6 +10,8 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.GraphicsInterface;
 using Autodesk.AutoCAD.Runtime;
 using DocumentFormat.OpenXml.Drawing.Wordprocessing;
+using MySqlX.XDevAPI.Common;
+using Polyline = Autodesk.AutoCAD.DatabaseServices.Polyline;
 
 namespace ElectricalCommands
 {
@@ -197,6 +199,70 @@ namespace ElectricalCommands
 
       return SamplerStatus.OK;
     }
+  }
+  public class PolyLineJig : DrawJig {
+    private Polyline polyline;
+    public Point3d CurrentPoint;
+    private List<Point3d> vertices;
+
+
+    public PolyLineJig(Point3d startPoint) {
+      polyline = new Polyline();
+      vertices = new List<Point3d> { startPoint };
+      polyline.AddVertexAt(0, new Point2d(startPoint.X, startPoint.Y), 0, 0, 0);
+      CurrentPoint = startPoint;
+
+    }
+
+    protected override bool WorldDraw(WorldDraw draw) {
+      if (polyline != null) {
+        draw.Geometry.Draw(polyline);
+      }
+      return true;
+    }
+
+    protected override SamplerStatus Sampler(JigPrompts prompts) {
+      JigPromptPointOptions options = new JigPromptPointOptions("\nSelect next point or [Close]:");
+      options.UserInputControls = UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
+      options.Keywords.Add("Close");
+      PromptPointResult result = prompts.AcquirePoint(options);
+
+      if (result.Status == PromptStatus.Keyword && result.StringResult == "Close") {
+        if (vertices.Count > 2) {
+          polyline.Closed = true;
+          return SamplerStatus.Cancel;
+        }
+        else {
+          Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nA polyline must have at least 3 vertices to be closed.");
+          return SamplerStatus.NoChange;
+        }
+      }
+      if (result.Status == PromptStatus.Cancel || result.Status == PromptStatus.Error) {
+        return SamplerStatus.Cancel;
+      }
+      options.BasePoint = CurrentPoint;
+      options.UseBasePoint = true;
+      options.Cursor = CursorType.RubberBand;
+
+
+      if (result.Status != PromptStatus.OK)
+        return SamplerStatus.Cancel;
+
+      if (CurrentPoint.DistanceTo(result.Value) < Tolerance.Global.EqualPoint)
+        return SamplerStatus.NoChange;
+
+     CurrentPoint = result.Value;
+
+      return SamplerStatus.OK;
+    }
+    public void AddVertex(Point3d point) {
+      vertices.Add(point);
+      polyline.AddVertexAt(vertices.Count - 1, new Point2d(point.X, point.Y), 0, 0, 0);
+    }
+    public Polyline GetPolyline() {
+      return polyline;
+    }
+
   }
 
   public class SpoonJig : DrawJig

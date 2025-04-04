@@ -628,7 +628,7 @@ namespace ElectricalCommands.ElectricalEntity
       LabelTransformHY,
       LabelTransformVX,
       LabelTransformVY;
-    public string ControlId,
+    public string ControlId, LocationId,
       Description,
       Mounting,
       Manufacturer,
@@ -639,6 +639,7 @@ namespace ElectricalCommands.ElectricalEntity
     public LightingFixture(
       string Id,
       string ParentId,
+      string LocationId,
       string ParentName,
       string Name,
       string ControlId,
@@ -684,9 +685,46 @@ namespace ElectricalCommands.ElectricalEntity
       this.LabelTransformVY = LabelTransformVY;
       this.Circuit = Circuit;
       this.Pole = 1;
+      this.LocationId = LocationId;
     }
   }
+  public class LightingLocation : PlaceableElectricalEntity {
+    public string LocationName;
+    public bool Outdoor;
+    public string timeclock;
+    public LightingLocation(
+      string id,
+      string location,
+      bool outdoor,
+      string timeclock_id
+    ) 
+    { 
+      this.Id = id;
+      this.Outdoor = outdoor;
+      this.LocationName = location;
+    }
+  }
+  public class LightingTimeClock : PlaceableElectricalEntity {
+    public string BypassSwitchName;
+    public string BypassSwitchLocation;
+    public string AdjacentPanelId;
 
+    public LightingTimeClock(
+      string id,
+      string name,
+      string bypassSwitchName,
+      string bypassSwitchLocation,
+      string adjacentPanelId,
+      string voltage
+    ) {
+      this.Id = id;
+      this.BypassSwitchLocation = bypassSwitchLocation;
+      this.BypassSwitchName = bypassSwitchName;
+      this.AdjacentPanelId = adjacentPanelId;
+      this.Voltage = voltage;
+      this.Name = name;
+    }
+  }
   public class DistributionBus : PlaceableElectricalEntity
   {
     public DistributionBus(
