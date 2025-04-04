@@ -798,29 +798,29 @@ namespace GMEPElectricalCommands.GmepDatabase
       {
         ltg.Add(
           new LightingFixture(
-            reader.GetString("id"),
-            reader.GetString("parent_id"),
-            reader.GetString("location_id"),
-            reader.IsDBNull(reader.GetOrdinal("name")) ? string.Empty : reader.GetString("name"),
-            reader.GetString("tag"),
-            reader.GetString("control_id"),
-            reader.GetString("block_name"),
-            reader.GetInt32("voltage"),
-            reader.GetFloat("wattage"),
-            reader.GetString("description"),
-            reader.GetInt32("qty"),
-            reader.GetString("mounting"),
-            reader.GetString("manufacturer"),
-            reader.GetString("model_no"),
-            reader.GetString("notes"),
-            reader.GetBoolean("rotate"),
-            reader.GetFloat("paper_space_scale"),
-            reader.GetBoolean("em_capable"),
-            reader.GetFloat("label_transform_h_x"),
-            reader.GetFloat("label_transform_h_y"),
-            reader.GetFloat("label_transform_v_x"),
-            reader.GetFloat("label_transform_v_y"),
-            reader.GetInt32("circuit_no")
+            GetSafeString(reader, "id"),
+            GetSafeString(reader, "parent_id"),
+            GetSafeString(reader, "location_id"),
+            GetSafeString(reader, "name"),
+            GetSafeString(reader, "tag"),
+            GetSafeString(reader, "control_id"),
+            GetSafeString(reader, "block_name"),
+            GetSafeInt(reader, "voltage"),
+            GetSafeFloat(reader, "wattage"),
+            GetSafeString(reader, "description"),
+            GetSafeInt(reader, "qty"),
+            GetSafeString(reader, "mounting"),
+            GetSafeString(reader, "manufacturer"),
+            GetSafeString(reader, "model_no"),
+            GetSafeString(reader, "notes"),
+            GetSafeBoolean(reader, "rotate"),
+            GetSafeFloat(reader, "paper_space_scale"),
+            GetSafeBoolean(reader, "em_capable"),
+            GetSafeFloat(reader, "label_transform_h_x"),
+            GetSafeFloat(reader, "label_transform_h_y"),
+            GetSafeFloat(reader, "label_transform_v_x"),
+            GetSafeFloat(reader, "label_transform_v_y"),
+            GetSafeInt(reader, "circuit_no")
           )
         );
       }
@@ -852,10 +852,10 @@ namespace GMEPElectricalCommands.GmepDatabase
       {
         ltgCtrl.Add(
           new LightingControl(
-            reader.GetString("id"),
-            reader.GetString("name"),
-            reader.GetString("driver_type"),
-            reader.GetBoolean("occupancy")
+            GetSafeString(reader, "id"),
+            GetSafeString(reader, "name"),
+            GetSafeString(reader, "driver_type"),
+            GetSafeBoolean(reader, "occupancy")
           )
         );
       }
@@ -863,7 +863,9 @@ namespace GMEPElectricalCommands.GmepDatabase
       reader.Close();
       return ltgCtrl;
     }
-    public List<LightingLocation> GetLightingLocations(string projectId) {
+
+    public List<LightingLocation> GetLightingLocations(string projectId)
+    {
       List<LightingLocation> locations = new List<LightingLocation>();
       string query =
         @"
@@ -873,7 +875,8 @@ namespace GMEPElectricalCommands.GmepDatabase
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("projectId", projectId);
       MySqlDataReader reader = command.ExecuteReader();
-      while (reader.Read()) {
+      while (reader.Read())
+      {
         locations.Add(
           new LightingLocation(
             GetSafeString(reader, "id"),
@@ -888,7 +891,8 @@ namespace GMEPElectricalCommands.GmepDatabase
       return locations;
     }
 
-    public List<LightingTimeClock> GetLightingTimeClocks(string projectId) {
+    public List<LightingTimeClock> GetLightingTimeClocks(string projectId)
+    {
       List<LightingTimeClock> clocks = new List<LightingTimeClock>();
       string query =
         @"
@@ -897,7 +901,8 @@ namespace GMEPElectricalCommands.GmepDatabase
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("projectId", projectId);
       MySqlDataReader reader = command.ExecuteReader();
-      while (reader.Read()) {
+      while (reader.Read())
+      {
         clocks.Add(
           new LightingTimeClock(
             GetSafeString(reader, "id"),
@@ -913,9 +918,12 @@ namespace GMEPElectricalCommands.GmepDatabase
       reader.Close();
       return clocks;
     }
-   public string IdToVoltage(int voltageId) {
+
+    public string IdToVoltage(int voltageId)
+    {
       string voltage = "0";
-      switch (voltageId) {
+      switch (voltageId)
+      {
         case (1):
           voltage = "115";
           break;
@@ -943,6 +951,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       }
       return voltage;
     }
+
     public string GetProjectId(string projectNo)
     {
       string query = @"SELECT id FROM projects WHERE gmep_project_no = @projectNo";
