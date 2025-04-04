@@ -19,7 +19,6 @@ namespace ElectricalCommands.Notes
     public partial class TableForm: Form
     {
         public string tableName { get; set; } = string.Empty;
-        public string tableType { get; set; } = string.Empty;
         public string sheetId { get; set; } = string.Empty;
         public KeyedNotes keynotes { get; set; } = null;
         public TableForm(KeyedNotes keynotes)
@@ -56,14 +55,12 @@ namespace ElectricalCommands.Notes
               }
             }
         }
-
-        private void TableType_SelectedIndexChanged(object sender, EventArgs e) {
-              tableType = TableType.SelectedItem.ToString();
-        }
         private void button1_Click(object sender, EventArgs e) {
-          keynotes.AddTab(tableName, tableType, sheetId);
+          keynotes.AddTab(tableName, sheetId);
           this.Close();
         }
+
+
   }
   public class SheetItem {
     public string Name { get; set; }

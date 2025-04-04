@@ -29,9 +29,11 @@ namespace ElectricalCommands.Notes
       //Add All Existing Tabs
       //TableTabControl.TabPages.Add(new TabPage("MEOW"));
       //Add 'New' Tab
+
       AddNewTabButton();
       // Set the initial selected tab to the last one (the one before "ADD NEW" tab)
       TableTabControl.SelectedIndex = TableTabControl.TabCount - 2;
+
     }
 
     private void AddNewTabButton() {
@@ -46,9 +48,10 @@ namespace ElectricalCommands.Notes
       if (TableTabControl.SelectedTab != null && TableTabControl.SelectedTab.Text == "ADD NEW") {
         TableForm tabForm = new TableForm(this);
         tabForm.Show();
+        TableTabControl.SelectedIndex = TableTabControl.SelectedIndex - 1;
       }
     }
-    public void AddTab(string tableName, string tableType, string sheetId) {
+    public void AddTab(string tableName, string sheetId) {
       string sheetName = GetSheetName(sheetId);
       string title = sheetName + " - " + tableName;
 
@@ -61,9 +64,9 @@ namespace ElectricalCommands.Notes
       ElectricalKeyedNoteTable newTable = new ElectricalKeyedNoteTable {
         Id = Guid.NewGuid().ToString(),
         Title = tableName,
-        TableType = tableType,
         SheetId = sheetId
       };
+
       NoteTableUserControl noteTableUserControl = new NoteTableUserControl(newTable);
       noteTableUserControl.Dock = DockStyle.Fill;
       newTabPage.Controls.Add(noteTableUserControl);
@@ -99,8 +102,7 @@ namespace ElectricalCommands.Notes
   public class ElectricalKeyedNoteTable {
     public string Id { get; set; }
     public string Title { get; set; }
-    public string TableType { get; set; }
     public string SheetId { get; set; }
-    public List<ElectricalKeyedNote> KeyedNotes { get; set; } = new List<ElectricalKeyedNote>();
+    public BindingList<ElectricalKeyedNote> KeyedNotes { get; set; } = new BindingList<ElectricalKeyedNote>();
   }
 }

@@ -10,22 +10,31 @@ using System.Windows.Forms;
 
 namespace ElectricalCommands.Notes
 {
-
-    public partial class NoteTableUserControl: UserControl
-    {
+  public partial class NoteTableUserControl : UserControl {
     public ElectricalKeyedNoteTable KeyedNoteTable { get; set; } = new ElectricalKeyedNoteTable();
-    public NoteTableUserControl( ElectricalKeyedNoteTable keyedNoteTable)
-      {
-         InitializeComponent();
-        // Initialize the DataGridView
-        KeyedNoteTable = keyedNoteTable;
-        this.Load += new EventHandler(NoteTableUserControl_Load);
+    public NoteTableUserControl(ElectricalKeyedNoteTable keyedNoteTable) {
+      InitializeComponent();
+      KeyedNoteTable = keyedNoteTable;
+      KeyedNoteTable.KeyedNotes.ListChanged += KeyedNotes_listChanged;
     }
-
     private void NoteTableUserControl_Load(object sender, EventArgs e) {
-      TableGridView.AutoGenerateColumns = true;
+      TableGridView.AutoGenerateColumns = false;
+      TableGridView.Columns.Add(CreateTextBoxColumn("Number", "Number"));
+      TableGridView.Columns.Add(CreateTextBoxColumn("Note", "Note Text"));
+      TableGridView.Columns.Add(CreateTextBoxColumn("TableId", "Table Id"));
       TableGridView.DataSource = KeyedNoteTable.KeyedNotes;
     }
+    private DataGridViewTextBoxColumn CreateTextBoxColumn(string dataPropertyName, string headerText) {
+      return new DataGridViewTextBoxColumn {
+        DataPropertyName = dataPropertyName,
+        HeaderText = headerText,
+        AutoSizeMode = DataGridViewAutoSizeColumnMode.Fill
+      };
+    }
+    private void KeyedNotes_listChanged(object sender, ListChangedEventArgs e) {
+      if (e.ListChangedType == ListChangedType.ItemAdded) {
+        KeyedNoteTable.KeyedNotes[e.NewIndex].TableId = KeyedNoteTable.Id;
+      }
+    }
   }
- 
 }
