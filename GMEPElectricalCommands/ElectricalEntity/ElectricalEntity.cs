@@ -13,7 +13,8 @@ namespace ElectricalCommands.ElectricalEntity
   {
     public string Id,
       Name,
-      NodeId;
+      NodeId,
+      ServiceId;
     public string Status;
     public double AicRating;
     public NodeType NodeType;

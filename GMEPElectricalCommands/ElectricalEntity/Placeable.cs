@@ -729,6 +729,7 @@ namespace ElectricalCommands.ElectricalEntity
   {
     public DistributionBus(
       string Id,
+      string ParentId,
       string NodeId,
       string Status,
       int AmpRating,
@@ -738,6 +739,7 @@ namespace ElectricalCommands.ElectricalEntity
     )
     {
       this.Id = Id;
+      this.ParentId = ParentId;
       this.NodeId = NodeId;
       this.Status = Status;
       this.AmpRating = AmpRating;
@@ -766,6 +768,7 @@ namespace ElectricalCommands.ElectricalEntity
     )
     {
       this.Id = Id;
+      this.ServiceId = Id;
       this.NodeId = NodeId;
       Name =
         $"{AmpRating}A {Voltage.Replace(" ", "V-")}"
@@ -806,7 +809,8 @@ namespace ElectricalCommands.ElectricalEntity
 
     public int MountingHeight,
       Circuit,
-      Pole;
+      Pole,
+      Va;
     public double Fla,
       Mca;
     public bool Is3Phase,
@@ -828,6 +832,7 @@ namespace ElectricalCommands.ElectricalEntity
       double LocationY,
       float Mca,
       string Hp,
+      int Va,
       int MountingHeight,
       int Circuit,
       bool HasPlug,
@@ -855,6 +860,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.IsHidden = Hidden;
       this.Status = Status;
       this.NodeType = NodeType.Equipment;
+      this.Va = Va;
       TableName = "electrical_equipment";
       Pole = SetPole(Is3Phase, Voltage);
     }

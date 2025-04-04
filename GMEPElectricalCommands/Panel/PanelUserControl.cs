@@ -26,6 +26,7 @@ namespace ElectricalCommands
     private object oldValue;
     private bool isLoading;
     private bool contains3PhEquip;
+    public bool readOnly;
 
     public PanelUserControl(
       PanelCommands myCommands,
@@ -46,6 +47,7 @@ namespace ElectricalCommands
       this.is3Ph = is3Ph;
       this.highLegPhase = highLegPhase;
       this.contains3PhEquip = false;
+      this.readOnly = false;
 
       INFO_LABEL.Text = "";
 
@@ -279,7 +281,7 @@ namespace ElectricalCommands
       }
 
       panel.Add("id", id);
-
+      panel.Add("read_only", readOnly);
       // Get the value from the main input
       string mainInput = MAIN_INPUT.Text.ToLower();
 
@@ -2058,6 +2060,11 @@ namespace ElectricalCommands
           }
         }
       }
+      readOnly = GetSafeBoolean("read_only");
+      if (readOnly)
+      {
+        this.Enabled = false;
+      }
       isLoading = false;
     }
 
@@ -2467,7 +2474,11 @@ namespace ElectricalCommands
               )
               {
                 gridRow.Cells[cellName].Value = cellValues[i];
-                if (i == phases.Count - 1)
+                if (
+                  i == phases.Count - 1
+                  && gridRow.Cells[$"description_{side}"].Value as string
+                    != "PANEL " + panelName.ToUpper()
+                )
                 {
                   gridRow.Cells[$"breaker_{side}"].Value = phases.Count.ToString();
                 }
@@ -2660,8 +2671,8 @@ namespace ElectricalCommands
               }
             }
             else if (
-              row.Cells[$"description_{side}"].Value as string == "2"
-              || row.Cells[$"description_{side}"].Value as string == "3"
+              row.Cells[$"breaker_{side}"].Value as string == "2"
+              || row.Cells[$"breaker_{side}"].Value as string == "3"
             )
             {
               row.Cells[$"description_{side}"].Value = "";
@@ -2697,6 +2708,64 @@ namespace ElectricalCommands
       }
     }
 
+    public static string GetBreakerSize(double mocp)
+    {
+      switch (mocp)
+      {
+        case var _ when mocp <= 20:
+          return "20";
+        case var _ when mocp <= 25:
+          return "25";
+        case var _ when mocp <= 30:
+          return "30";
+        case var _ when mocp <= 35:
+          return "35";
+        case var _ when mocp <= 40:
+          return "40";
+        case var _ when mocp <= 45:
+          return "45";
+        case var _ when mocp <= 50:
+          return "50";
+        case var _ when mocp <= 60:
+          return "60";
+        case var _ when mocp <= 70:
+          return "70";
+        case var _ when mocp <= 80:
+          return "80";
+        case var _ when mocp <= 90:
+          return "90";
+        case var _ when mocp <= 100:
+          return "100";
+        case var _ when mocp <= 110:
+          return "110";
+        case var _ when mocp <= 125:
+          return "125";
+        case var _ when mocp <= 150:
+          return "150";
+        case var _ when mocp <= 175:
+          return "175";
+        case var _ when mocp <= 200:
+          return "200";
+        case var _ when mocp <= 225:
+          return "225";
+        case var _ when mocp <= 250:
+          return "250";
+        case var _ when mocp <= 300:
+          return "300";
+        case var _ when mocp <= 350:
+          return "350";
+        case var _ when mocp <= 400:
+          return "400";
+        case var _ when mocp <= 450:
+          return "450";
+        case var _ when mocp <= 500:
+          return "500";
+        case var _ when mocp <= 600:
+          return "600";
+      }
+      return string.Empty;
+    }
+
     private void AutoSetBreakerSize(string cellValue, DataGridViewRow row, DataGridViewColumn col)
     {
       string side = "left";
@@ -2719,81 +2788,7 @@ namespace ElectricalCommands
                 if (val / pv * 1.25 > 20)
                 {
                   double mocp = Math.Round(val / pv * 1.25, 0);
-                  switch (mocp)
-                  {
-                    case var _ when mocp <= 25:
-                      row.Cells[$"breaker_{side}"].Value = "25";
-                      break;
-                    case var _ when mocp <= 30:
-                      row.Cells[$"breaker_{side}"].Value = "30";
-                      break;
-                    case var _ when mocp <= 35:
-                      row.Cells[$"breaker_{side}"].Value = "35";
-                      break;
-                    case var _ when mocp <= 40:
-                      row.Cells[$"breaker_{side}"].Value = "40";
-                      break;
-                    case var _ when mocp <= 45:
-                      row.Cells[$"breaker_{side}"].Value = "45";
-                      break;
-                    case var _ when mocp <= 50:
-                      row.Cells[$"breaker_{side}"].Value = "50";
-                      break;
-                    case var _ when mocp <= 60:
-                      row.Cells[$"breaker_{side}"].Value = "60";
-                      break;
-                    case var _ when mocp <= 70:
-                      row.Cells[$"breaker_{side}"].Value = "70";
-                      break;
-                    case var _ when mocp <= 80:
-                      row.Cells[$"breaker_{side}"].Value = "80";
-                      break;
-                    case var _ when mocp <= 90:
-                      row.Cells[$"breaker_{side}"].Value = "90";
-                      break;
-                    case var _ when mocp <= 100:
-                      row.Cells[$"breaker_{side}"].Value = "100";
-                      break;
-                    case var _ when mocp <= 110:
-                      row.Cells[$"breaker_{side}"].Value = "110";
-                      break;
-                    case var _ when mocp <= 125:
-                      row.Cells[$"breaker_{side}"].Value = "125";
-                      break;
-                    case var _ when mocp <= 150:
-                      row.Cells[$"breaker_{side}"].Value = "150";
-                      break;
-                    case var _ when mocp <= 175:
-                      row.Cells[$"breaker_{side}"].Value = "175";
-                      break;
-                    case var _ when mocp <= 200:
-                      row.Cells[$"breaker_{side}"].Value = "200";
-                      break;
-                    case var _ when mocp <= 225:
-                      row.Cells[$"breaker_{side}"].Value = "225";
-                      break;
-                    case var _ when mocp <= 250:
-                      row.Cells[$"breaker_{side}"].Value = "250";
-                      break;
-                    case var _ when mocp <= 300:
-                      row.Cells[$"breaker_{side}"].Value = "300";
-                      break;
-                    case var _ when mocp <= 350:
-                      row.Cells[$"breaker_{side}"].Value = "350";
-                      break;
-                    case var _ when mocp <= 400:
-                      row.Cells[$"breaker_{side}"].Value = "400";
-                      break;
-                    case var _ when mocp <= 450:
-                      row.Cells[$"breaker_{side}"].Value = "450";
-                      break;
-                    case var _ when mocp <= 500:
-                      row.Cells[$"breaker_{side}"].Value = "500";
-                      break;
-                    case var _ when mocp <= 600:
-                      row.Cells[$"breaker_{side}"].Value = "600";
-                      break;
-                  }
+                  row.Cells[$"breaker_{side}"].Value = GetBreakerSize(mocp);
                 }
               }
             }
@@ -3478,8 +3473,8 @@ namespace ElectricalCommands
               }
             }
           }
-          side = "right";
         }
+        side = "right";
       }
       return lml;
     }
@@ -3524,12 +3519,10 @@ namespace ElectricalCommands
       double phB = Convert.ToDouble(PHASE_SUM_GRID.Rows[0].Cells[1].Value ?? 0);
       double phC = 0;
       sum = phA + phB;
-      int poles = 2;
       if (PHASE_SUM_GRID.ColumnCount > 2)
       {
         phC = Convert.ToDouble(PHASE_SUM_GRID.Rows[0].Cells[2].Value ?? 0);
         sum += phC;
-        poles = 3;
       }
       mainForm.UpdateLclLml();
 
@@ -3699,6 +3692,11 @@ namespace ElectricalCommands
     }
 
     private void CREATE_PANEL_BUTTON_Click(object sender, EventArgs e)
+    {
+      CreatePanel();
+    }
+
+    public void CreatePanel()
     {
       Dictionary<string, object> panelDataList = RetrieveDataFromModal();
 

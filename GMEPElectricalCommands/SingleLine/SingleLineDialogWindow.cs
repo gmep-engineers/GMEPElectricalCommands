@@ -24,6 +24,7 @@ namespace ElectricalCommands.SingleLine
     MainBreakerSection,
     MainMeterSection,
     MainMeterAndBreakerSection,
+    Undefined,
   }
 
   public partial class SingleLineDialogWindow : Form
@@ -42,6 +43,7 @@ namespace ElectricalCommands.SingleLine
     private List<ElectricalEntity.NodeLink> nodeLinkList;
     private List<ElectricalEntity.GroupNode> groupList;
     private Dictionary<string, List<string>> groupDict;
+
     private List<ObjectId> dynamicBlockIds;
 
     private List<PlaceableElectricalEntity> placeables;
@@ -103,6 +105,11 @@ namespace ElectricalCommands.SingleLine
         }
       }
     }
+
+    private void SetServiceAssociation(
+      ElectricalEntity.ElectricalEntity entity,
+      string serviceId
+    ) { }
 
     private void SwapDynamicBlockTableRecord(BlockReference br, BlockTableRecord btr)
     {
@@ -452,6 +459,7 @@ namespace ElectricalCommands.SingleLine
       child.LineVoltage = parent.LineVoltage;
       child.Phase = parent.Phase;
       child.AicRating = parent.AicRating;
+      child.ServiceId = parent.ServiceId;
     }
 
     public void PopulateTreeView()
@@ -1038,47 +1046,81 @@ namespace ElectricalCommands.SingleLine
       }
     }
 
-    private GroupType InferGroupType(List<string> groupMembers)
+    private GroupType InferGroupType(List<string> groupMembers, string serviceId)
     {
-      bool hasMeter = false;
-      bool hasMainBreaker = false;
-      bool hasDistributionBreaker = false;
+      string meterId = string.Empty;
+      string mainBreakerId = string.Empty;
+      string distributionBreakerId = string.Empty;
       foreach (string groupMember in groupMembers)
       {
         if (serviceList.Select(entity => entity.Id).ToArray().Contains(groupMember))
         {
-          return GroupType.PullSection;
+          ElectricalEntity.Service service = serviceList.Find(s => s.Id == groupMember);
+          if (service.ServiceId == serviceId)
+          {
+            return GroupType.PullSection;
+          }
         }
         if (meterList.Select(entity => entity.Id).ToArray().Contains(groupMember))
         {
-          hasMeter = true;
+          meterId = groupMember;
         }
         if (mainBreakerList.Select(entity => entity.Id).ToArray().Contains(groupMember))
         {
-          hasMainBreaker = true;
+          mainBreakerId = groupMember;
         }
         if (distributionBreakerList.Select(entity => entity.Id).ToArray().Contains(groupMember))
         {
-          hasDistributionBreaker = true;
+          distributionBreakerId = groupMember;
         }
       }
-      if (hasMeter && hasMainBreaker)
+      if (!String.IsNullOrEmpty(meterId) && !String.IsNullOrEmpty(mainBreakerId))
       {
-        return GroupType.MainMeterAndBreakerSection;
+        ElectricalEntity.Meter meter = meterList.Find(m => m.Id == meterId);
+        ElectricalEntity.MainBreaker mainBreaker = mainBreakerList.Find(m => m.Id == mainBreakerId);
+        if (meter.ServiceId == serviceId && mainBreaker.ServiceId == serviceId)
+        {
+          return GroupType.MainMeterAndBreakerSection;
+        }
       }
-      if (hasDistributionBreaker && hasMeter)
+      if (!String.IsNullOrEmpty(distributionBreakerId) && !String.IsNullOrEmpty(meterId))
       {
-        return GroupType.MultimeterSection;
+        ElectricalEntity.DistributionBreaker distributionBreaker = distributionBreakerList.Find(b =>
+          b.Id == distributionBreakerId
+        );
+        ElectricalEntity.Meter meter = meterList.Find(m => m.Id == meterId);
+        if (distributionBreaker.ServiceId == serviceId && meter.ServiceId == serviceId)
+        {
+          return GroupType.MultimeterSection;
+        }
       }
-      if (hasDistributionBreaker)
+      if (!String.IsNullOrEmpty(distributionBreakerId))
       {
-        return GroupType.DistributionSection;
+        ElectricalEntity.DistributionBreaker distributionBreaker = distributionBreakerList.Find(b =>
+          b.Id == distributionBreakerId
+        );
+        if (distributionBreaker.ServiceId == serviceId)
+        {
+          return GroupType.DistributionSection;
+        }
       }
-      if (!hasMeter && hasMainBreaker)
+      if (String.IsNullOrEmpty(meterId) && !String.IsNullOrEmpty(mainBreakerId))
       {
-        return GroupType.MainBreakerSection;
+        ElectricalEntity.MainBreaker mainBreaker = mainBreakerList.Find(m => m.Id == mainBreakerId);
+        if (mainBreaker.ServiceId == serviceId)
+        {
+          return GroupType.MainBreakerSection;
+        }
       }
-      return GroupType.MainMeterSection;
+      if (!String.IsNullOrEmpty(meterId) && String.IsNullOrEmpty(mainBreakerId))
+      {
+        ElectricalEntity.Meter meter = meterList.Find(m => m.Id == meterId);
+        if (meter.ServiceId == serviceId)
+        {
+          return GroupType.MainMeterSection;
+        }
+      }
+      return GroupType.Undefined;
     }
 
     private double MakeEntityFromDistributionBus(
@@ -1458,6 +1500,8 @@ namespace ElectricalCommands.SingleLine
       }
       double totalBusBarWidth = 0;
       TreeNode distributionBusNode = SingleLineTreeView.Nodes.Find(distributionBusId, true)[0];
+      ElectricalEntity.DistributionBus distributionBus = (ElectricalEntity.DistributionBus)
+        distributionBusNode.Tag;
       bool groupMembersAdded = false;
       double highest = 0;
       foreach (TreeNode distributionBusChild in distributionBusNode.Nodes)
@@ -1504,8 +1548,6 @@ namespace ElectricalCommands.SingleLine
       }
       if (addBusBar)
       {
-        ElectricalEntity.DistributionBus distributionBus = (ElectricalEntity.DistributionBus)
-          distributionBusNode.Tag;
         SingleLine.MakeDistributionBus(
           distributionBus,
           isMultimeter,
@@ -1591,6 +1633,7 @@ namespace ElectricalCommands.SingleLine
         "",
         "",
         "",
+        "",
         0,
         0,
         new Point(),
@@ -1637,6 +1680,69 @@ namespace ElectricalCommands.SingleLine
       return nullService;
     }
 
+    private Point3d MakeGroupBox(bool existing, double groupWidth, Point3d currentPoint)
+    { // draw lines on CAD
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+        LineData boxLine1 = new LineData();
+        if (existing)
+        {
+          boxLine1.ColorIndex = 8;
+        }
+        boxLine1.Layer = "E-SYM1";
+        boxLine1.StartPoint = new SimpleVector3d();
+        boxLine1.EndPoint = new SimpleVector3d();
+        boxLine1.StartPoint.X = currentPoint.X;
+        boxLine1.StartPoint.Y = currentPoint.Y;
+        boxLine1.EndPoint.X = currentPoint.X + groupWidth;
+        boxLine1.EndPoint.Y = currentPoint.Y;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine1, 1, "HIDDEN");
+
+        LineData boxLine2 = new LineData();
+        boxLine2.Layer = "E-SYM1";
+        if (existing)
+        {
+          boxLine2.ColorIndex = 8;
+        }
+        boxLine2.StartPoint = new SimpleVector3d();
+        boxLine2.EndPoint = new SimpleVector3d();
+        boxLine2.StartPoint.X = currentPoint.X;
+        boxLine2.StartPoint.Y = currentPoint.Y;
+        boxLine2.EndPoint.X = currentPoint.X;
+        boxLine2.EndPoint.Y = currentPoint.Y - 2;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine2, 1, "HIDDEN");
+
+        LineData boxLine3 = new LineData();
+        boxLine3.Layer = "E-SYM1";
+        if (existing)
+        {
+          boxLine3.ColorIndex = 8;
+        }
+        boxLine3.StartPoint = new SimpleVector3d();
+        boxLine3.EndPoint = new SimpleVector3d();
+        boxLine3.StartPoint.X = currentPoint.X;
+        boxLine3.StartPoint.Y = currentPoint.Y - 2;
+        boxLine3.EndPoint.X = currentPoint.X + groupWidth;
+        boxLine3.EndPoint.Y = currentPoint.Y - 2;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine3, 1, "HIDDEN");
+
+        tr.Commit();
+      }
+      currentPoint = new Point3d(currentPoint.X + groupWidth, currentPoint.Y, 0);
+      return currentPoint;
+    }
+
     private void MakeGroups(Point3d startingPoint)
     {
       Point3d currentPoint = startingPoint;
@@ -1646,74 +1752,97 @@ namespace ElectricalCommands.SingleLine
       bool existing = false;
       bool groundExisting = false;
       double highest = 0;
-      foreach (string groupId in groupDict.Keys)
-      {
-        if (String.IsNullOrEmpty(groupId))
-          continue;
-        GroupType groupType = InferGroupType(groupDict[groupId]);
-        double groupWidth = 2;
-        if (groupType == GroupType.MultimeterSection || groupType == GroupType.DistributionSection)
-        {
-          groupWidth = AggregateGroupWidth(groupId);
-          string groupName = GetGroupNameFromId(groupId);
-          double height;
-          (distributionBusId, height) = MakeDistributionSection(
-            groupId,
-            currentPoint,
-            groupType == GroupType.MultimeterSection,
-            groupName,
-            distributionBusId
-          );
-          if (height > highest)
-          {
-            highest = height;
-          }
-          ElectricalEntity.DistributionBus thisDistributionBus =
-            GetDistributionBusFromDistributionSection(groupId);
-          if (thisDistributionBus.NodeType != NodeType.Undefined)
-          {
-            distributionBus = thisDistributionBus;
-            existing = distributionBus.Status.ToLower() == "existing";
-          }
-        }
-        else if (groupType == GroupType.PullSection)
-        {
-          groupWidth = 0.75;
-          ElectricalEntity.Service service = GetServiceFromPullSection(groupId);
-          existing = service.Status.ToLower() == "existing";
-          SingleLine.MakePullSection(service, currentPoint);
-        }
-        else if (groupType == GroupType.MainMeterSection)
-        {
-          // get meter from section
-          ElectricalEntity.Meter meter = GetMeterFromMainSection(groupId);
-          existing = meter.Status.ToLower() == "existing";
-          groundExisting = existing;
-          groupWidth = 1.75;
-          SingleLine.MakeMainMeterSection(meter, currentPoint);
-        }
-        else if (groupType == GroupType.MainBreakerSection)
-        {
-          // get breaker from section
-          ElectricalEntity.MainBreaker mainBreaker = GetMainBreakerFromMainSection(groupId);
-          existing = mainBreaker.Status.ToLower() == "existing";
-          groundExisting = existing;
-          groupWidth = 1.75;
-          SingleLine.MakeMainBreakerSection(mainBreaker, currentPoint);
-        }
-        else if (groupType == GroupType.MainMeterAndBreakerSection)
-        {
-          // get meter and breaker from section
-          ElectricalEntity.Meter meter = GetMeterFromMainSection(groupId);
-          ElectricalEntity.MainBreaker mainBreaker = GetMainBreakerFromMainSection(groupId);
-          existing =
-            (meter.Status.ToLower() == "existing") && (mainBreaker.Status.ToLower() == "existing");
-          groundExisting = existing;
-          groupWidth = 1.75;
-          SingleLine.MakeMainMeterAndBreakerSection(meter, mainBreaker, currentPoint);
-        }
 
-        // draw lines on CAD
+      foreach (ElectricalEntity.Service currentService in serviceList)
+      {
+        string currentServiceId = currentService.ServiceId;
+        foreach (string groupId in groupDict.Keys)
+        {
+          if (String.IsNullOrEmpty(groupId))
+            continue;
+          GroupType groupType = InferGroupType(groupDict[groupId], currentServiceId);
+          if (groupType == GroupType.Undefined)
+          {
+            continue;
+          }
+          double groupWidth = 2;
+          if (
+            groupType == GroupType.MultimeterSection
+            || groupType == GroupType.DistributionSection
+          )
+          {
+            groupWidth = AggregateGroupWidth(groupId);
+            string groupName = GetGroupNameFromId(groupId);
+            double height;
+            (distributionBusId, height) = MakeDistributionSection(
+              groupId,
+              currentPoint,
+              groupType == GroupType.MultimeterSection,
+              groupName,
+              distributionBusId
+            );
+
+            ElectricalEntity.DistributionBus thisDistributionBus =
+              GetDistributionBusFromDistributionSection(groupId);
+            if (thisDistributionBus.NodeType != NodeType.Undefined)
+            {
+              distributionBus = thisDistributionBus;
+              existing = distributionBus.Status.ToLower() == "existing";
+            }
+            currentPoint = MakeGroupBox(existing, groupWidth, currentPoint);
+            index++;
+            if (height > highest)
+            {
+              highest = height;
+            }
+          }
+          else if (groupType == GroupType.PullSection)
+          {
+            groupWidth = 0.75;
+            ElectricalEntity.Service service = GetServiceFromPullSection(groupId);
+            existing = service.Status.ToLower() == "existing";
+            SingleLine.MakePullSection(service, currentPoint);
+            currentPoint = MakeGroupBox(existing, groupWidth, currentPoint);
+            index++;
+          }
+          else if (groupType == GroupType.MainMeterSection)
+          {
+            // get meter from section
+            ElectricalEntity.Meter meter = GetMeterFromMainSection(groupId);
+            existing = meter.Status.ToLower() == "existing";
+            groundExisting = existing;
+            groupWidth = 1.75;
+            SingleLine.MakeMainMeterSection(meter, currentPoint);
+            currentPoint = MakeGroupBox(existing, groupWidth, currentPoint);
+            index++;
+          }
+          else if (groupType == GroupType.MainBreakerSection)
+          {
+            // get breaker from section
+            ElectricalEntity.MainBreaker mainBreaker = GetMainBreakerFromMainSection(groupId);
+            existing = mainBreaker.Status.ToLower() == "existing";
+            groundExisting = existing;
+            groupWidth = 1.75;
+            SingleLine.MakeMainBreakerSection(mainBreaker, currentPoint);
+            currentPoint = MakeGroupBox(existing, groupWidth, currentPoint);
+            index++;
+          }
+          else if (groupType == GroupType.MainMeterAndBreakerSection)
+          {
+            // get meter and breaker from section
+            ElectricalEntity.Meter meter = GetMeterFromMainSection(groupId);
+            ElectricalEntity.MainBreaker mainBreaker = GetMainBreakerFromMainSection(groupId);
+            existing =
+              (meter.Status.ToLower() == "existing")
+              && (mainBreaker.Status.ToLower() == "existing");
+            groundExisting = existing;
+            groupWidth = 1.75;
+            SingleLine.MakeMainMeterAndBreakerSection(meter, mainBreaker, currentPoint);
+            currentPoint = MakeGroupBox(existing, groupWidth, currentPoint);
+            index++;
+          }
+        }
+        // draw last vertical line for service
         Document doc = Autodesk
           .AutoCAD
           .ApplicationServices
@@ -1727,75 +1856,25 @@ namespace ElectricalCommands.SingleLine
           BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
           BlockTableRecord btr = (BlockTableRecord)
             tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
-          LineData boxLine1 = new LineData();
+          LineData boxLine = new LineData();
+          boxLine.Layer = "E-SYM1";
           if (existing)
           {
-            boxLine1.ColorIndex = 8;
+            boxLine.ColorIndex = 8;
           }
-          boxLine1.Layer = "E-SYM1";
-          boxLine1.StartPoint = new SimpleVector3d();
-          boxLine1.EndPoint = new SimpleVector3d();
-          boxLine1.StartPoint.X = currentPoint.X;
-          boxLine1.StartPoint.Y = currentPoint.Y;
-          boxLine1.EndPoint.X = currentPoint.X + groupWidth;
-          boxLine1.EndPoint.Y = currentPoint.Y;
-          CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine1, 1, "HIDDEN");
-
-          LineData boxLine2 = new LineData();
-          boxLine2.Layer = "E-SYM1";
-          if (existing)
-          {
-            boxLine2.ColorIndex = 8;
-          }
-          boxLine2.StartPoint = new SimpleVector3d();
-          boxLine2.EndPoint = new SimpleVector3d();
-          boxLine2.StartPoint.X = currentPoint.X;
-          boxLine2.StartPoint.Y = currentPoint.Y;
-          boxLine2.EndPoint.X = currentPoint.X;
-          boxLine2.EndPoint.Y = currentPoint.Y - 2;
-          CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine2, 1, "HIDDEN");
-
-          LineData boxLine3 = new LineData();
-          boxLine3.Layer = "E-SYM1";
-          if (existing)
-          {
-            boxLine3.ColorIndex = 8;
-          }
-          boxLine3.StartPoint = new SimpleVector3d();
-          boxLine3.EndPoint = new SimpleVector3d();
-          boxLine3.StartPoint.X = currentPoint.X;
-          boxLine3.StartPoint.Y = currentPoint.Y - 2;
-          boxLine3.EndPoint.X = currentPoint.X + groupWidth;
-          boxLine3.EndPoint.Y = currentPoint.Y - 2;
-          CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine3, 1, "HIDDEN");
-
-          if (index == groupDict.Keys.Count - 1)
-          {
-            // draw last vertical line
-            LineData boxLine4 = new LineData();
-            boxLine4.Layer = "E-SYM1";
-            if (existing)
-            {
-              boxLine4.ColorIndex = 8;
-            }
-            boxLine4.StartPoint = new SimpleVector3d();
-            boxLine4.EndPoint = new SimpleVector3d();
-            boxLine4.StartPoint.X = currentPoint.X + groupWidth;
-            boxLine4.StartPoint.Y = currentPoint.Y;
-            boxLine4.EndPoint.X = currentPoint.X + groupWidth;
-            boxLine4.EndPoint.Y = currentPoint.Y - 2;
-            CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine4, 1, "HIDDEN");
-          }
-          else
-          {
-            index++;
-          }
+          boxLine.StartPoint = new SimpleVector3d();
+          boxLine.EndPoint = new SimpleVector3d();
+          boxLine.StartPoint.X = currentPoint.X;
+          boxLine.StartPoint.Y = currentPoint.Y;
+          boxLine.EndPoint.X = currentPoint.X;
+          boxLine.EndPoint.Y = currentPoint.Y - 2;
+          CADObjectCommands.CreateLine(new Point3d(), tr, btr, boxLine, 1, "HIDDEN");
           tr.Commit();
         }
-        currentPoint = new Point3d(currentPoint.X + groupWidth, currentPoint.Y, 0);
+        currentPoint = new Point3d(currentPoint.X + 0.5, currentPoint.Y, 0);
       }
-      currentPoint = new Point3d(currentPoint.X + 0.25, currentPoint.Y, 0);
       SingleLine.InsertNotes(currentPoint, groundExisting, highest);
+      SingleLine.InsertLabel(startingPoint, highest);
     }
 
     private void SingleLineDialogWindow_Load(object sender, EventArgs e) { }
