@@ -18,7 +18,7 @@ namespace ElectricalCommands.Notes
 {
   public partial class KeyedNotes: Form
   {
-    public ObservableCollection<ElectricalKeyedNoteTable> KeyedNoteTables { get; set; } = new ObservableCollection<ElectricalKeyedNoteTable>();
+    public Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> KeyedNoteTables { get; set; } = new Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>>();
     public KeyedNotes()
     { 
         InitializeComponent();
@@ -66,12 +66,15 @@ namespace ElectricalCommands.Notes
         Title = tableName,
         SheetId = sheetId
       };
-
       NoteTableUserControl noteTableUserControl = new NoteTableUserControl(newTable);
       noteTableUserControl.Dock = DockStyle.Fill;
       newTabPage.Controls.Add(noteTableUserControl);
 
-      KeyedNoteTables.Add(newTable);
+      if (!KeyedNoteTables.ContainsKey(sheetId)) {
+        KeyedNoteTables[sheetId] = new ObservableCollection<ElectricalKeyedNoteTable>();
+      }
+
+      KeyedNoteTables[sheetId].Add(newTable);
     }
     public string GetSheetName(string sheetId) {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
@@ -89,6 +92,14 @@ namespace ElectricalCommands.Notes
         tr.Commit();
       }
       return sheetName;
+    }
+    public void DetermineKeyedNoteIndexes(string sheetId) {
+      var index = 0;
+      foreach (var table in KeyedNoteTables[sheetId]) {
+        foreach (var note in table.KeyedNotes) {
+          note.Index = ++index;
+        }
+      }
     }
   }
 
