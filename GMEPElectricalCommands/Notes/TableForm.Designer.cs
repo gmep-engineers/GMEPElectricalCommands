@@ -24,7 +24,7 @@
     /// </summary>
     private void InitializeComponent() {
             this.button1 = new System.Windows.Forms.Button();
-            this.SheetName = new System.Windows.Forms.RichTextBox();
+            this.TableName = new System.Windows.Forms.RichTextBox();
             this.TableType = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
@@ -42,14 +42,14 @@
             this.button1.UseVisualStyleBackColor = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
-            // SheetName
+            // TableName
             // 
-            this.SheetName.Location = new System.Drawing.Point(91, 36);
-            this.SheetName.Name = "SheetName";
-            this.SheetName.Size = new System.Drawing.Size(189, 34);
-            this.SheetName.TabIndex = 1;
-            this.SheetName.Text = "";
-            this.SheetName.TextChanged += new System.EventHandler(this.SheetName_TextChanged);
+            this.TableName.Location = new System.Drawing.Point(91, 36);
+            this.TableName.Name = "TableName";
+            this.TableName.Size = new System.Drawing.Size(189, 34);
+            this.TableName.TabIndex = 1;
+            this.TableName.Text = "";
+            this.TableName.TextChanged += new System.EventHandler(this.TableName_TextChanged);
             // 
             // TableType
             // 
@@ -111,7 +111,7 @@
             this.Controls.Add(this.label2);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.TableType);
-            this.Controls.Add(this.SheetName);
+            this.Controls.Add(this.TableName);
             this.Controls.Add(this.button1);
             this.Name = "TableForm";
             this.Text = "TableForm";
@@ -123,7 +123,7 @@
     #endregion
 
     private System.Windows.Forms.Button button1;
-    private System.Windows.Forms.RichTextBox SheetName;
+    private System.Windows.Forms.RichTextBox TableName;
     private System.Windows.Forms.ComboBox TableType;
     private System.Windows.Forms.Label label1;
     private System.Windows.Forms.Label label2;

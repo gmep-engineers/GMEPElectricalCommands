@@ -18,15 +18,16 @@ namespace ElectricalCommands.Notes
 {
     public partial class TableForm: Form
     {
-        public string sheetName { get; set; } = string.Empty;
+        public string tableName { get; set; } = string.Empty;
         public string tableType { get; set; } = string.Empty;
         public string sheetId { get; set; } = string.Empty;
-        public Dictionary<string, ObjectId> SheetDictionary { get; private set; } = new Dictionary<string, ObjectId>();
-        public TableForm()
-         {
-            InitializeComponent();
-            PopulateSheetNamesAndIds();
-    }
+        public KeyedNotes keynotes { get; set; } = null;
+        public TableForm(KeyedNotes keynotes)
+        {
+          this.keynotes = keynotes;
+          InitializeComponent();
+          PopulateSheetNamesAndIds();
+        }
         private void PopulateSheetNamesAndIds() {
           Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
           Database db = doc.Database;
@@ -36,21 +37,23 @@ namespace ElectricalCommands.Notes
 
             foreach (DBDictionaryEntry entry in layoutDict) {
               Layout layout = tr.GetObject(entry.Value, OpenMode.ForRead) as Layout;
-              SheetDictionary[layout.LayoutName] = entry.Value;
-              TableSheet.Items.Add(layout.LayoutName);
+              TableSheet.Items.Add(new SheetItem(layout.LayoutName, entry.Value));
             }
 
             tr.Commit();
           }
         }
 
-        private void SheetName_TextChanged(object sender, EventArgs e) {
-            sheetName = SheetName.Text;
+        private void TableName_TextChanged(object sender, EventArgs e) {
+            tableName = TableName.Text;
         }
 
         private void TableSheet_SelectedIndexChanged(object sender, EventArgs e) {
             if (TableSheet.SelectedItem != null) {
-              sheetId = SheetDictionary[TableSheet.SelectedItem.ToString()].ToString();
+              SheetItem selectedSheet = TableSheet.SelectedItem as SheetItem;
+              if (selectedSheet != null) {
+                sheetId = selectedSheet.Id.ToString();
+              }
             }
         }
 
@@ -58,7 +61,21 @@ namespace ElectricalCommands.Notes
               tableType = TableType.SelectedItem.ToString();
         }
         private void button1_Click(object sender, EventArgs e) {
-            //Upload the meow meow!
+          keynotes.AddTab(tableName, tableType, sheetId);
+          this.Close();
         }
+  }
+  public class SheetItem {
+    public string Name { get; set; }
+    public ObjectId Id { get; set; }
+
+    public SheetItem(string name, ObjectId id) {
+      Name = name;
+      Id = id;
+    }
+
+    public override string ToString() {
+      return Name;
+    }
   }
 }
