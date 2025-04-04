@@ -12,14 +12,16 @@ namespace ElectricalCommands.Notes
 {
   public partial class NoteTableUserControl : UserControl {
     public ElectricalKeyedNoteTable KeyedNoteTable { get; set; } = new ElectricalKeyedNoteTable();
-    public NoteTableUserControl(ElectricalKeyedNoteTable keyedNoteTable) {
+    public KeyedNotes KeyedNotes { get; set; } = null;
+    public NoteTableUserControl(ElectricalKeyedNoteTable keyedNoteTable, KeyedNotes keyedNotes) {
       InitializeComponent();
       KeyedNoteTable = keyedNoteTable;
+      KeyedNotes = keyedNotes;
       KeyedNoteTable.KeyedNotes.ListChanged += KeyedNotes_listChanged;
     }
     private void NoteTableUserControl_Load(object sender, EventArgs e) {
       TableGridView.AutoGenerateColumns = false;
-      TableGridView.Columns.Add(CreateTextBoxColumn("Number", "Number"));
+      TableGridView.Columns.Add(CreateTextBoxColumn("Index", "Number"));
       TableGridView.Columns.Add(CreateTextBoxColumn("Note", "Note Text"));
       TableGridView.Columns.Add(CreateTextBoxColumn("TableId", "Table Id"));
       TableGridView.DataSource = KeyedNoteTable.KeyedNotes;
@@ -35,6 +37,10 @@ namespace ElectricalCommands.Notes
       if (e.ListChangedType == ListChangedType.ItemAdded) {
         KeyedNoteTable.KeyedNotes[e.NewIndex].TableId = KeyedNoteTable.Id;
       }
+      if (e.ListChangedType == ListChangedType.ItemDeleted || e.ListChangedType == ListChangedType.ItemAdded) {
+        KeyedNotes.DetermineKeyedNoteIndexes(KeyedNoteTable.SheetId);
+      }
+  
     }
   }
 }

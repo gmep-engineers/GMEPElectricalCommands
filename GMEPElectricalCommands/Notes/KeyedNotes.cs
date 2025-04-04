@@ -66,7 +66,7 @@ namespace ElectricalCommands.Notes
         Title = tableName,
         SheetId = sheetId
       };
-      NoteTableUserControl noteTableUserControl = new NoteTableUserControl(newTable);
+      NoteTableUserControl noteTableUserControl = new NoteTableUserControl(newTable, this);
       noteTableUserControl.Dock = DockStyle.Fill;
       newTabPage.Controls.Add(noteTableUserControl);
 
