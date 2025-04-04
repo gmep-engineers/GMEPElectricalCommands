@@ -45,6 +45,9 @@ namespace ElectricalCommands.Notes
         newTab.Controls.Add(new NoteTableUserControl());
         TableTabControl.TabPages.Insert(TableTabControl.TabCount - 1, newTab);
         TableTabControl.SelectedTab = newTab;
+        TableForm tabForm = new TableForm();
+        tabForm.Show();
+
       }
     }
   }

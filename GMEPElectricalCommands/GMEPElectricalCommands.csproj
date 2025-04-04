@@ -244,6 +244,12 @@
     <Compile Include="Notes\NoteTableUserControl.Designer.cs">
       <DependentUpon>NoteTableUserControl.cs</DependentUpon>
     </Compile>
+    <Compile Include="Notes\TableForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Notes\TableForm.Designer.cs">
+      <DependentUpon>TableForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="SingleLine\SingleLine.cs" />
     <Compile Include="GmepDatabase\GmepDatabase.cs" />
     <Compile Include="Equipment\EquipmentCommands.cs" />
@@ -342,6 +348,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Notes\NoteTableUserControl.resx">
       <DependentUpon>NoteTableUserControl.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Notes\TableForm.resx">
+      <DependentUpon>TableForm.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Panel\DialogWindow.resx" />
     <EmbeddedResource Include="Panel\HelpForm.resx">
