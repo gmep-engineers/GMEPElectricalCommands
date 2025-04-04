@@ -11,10 +11,9 @@ using System.Windows.Forms;
 
 namespace ElectricalCommands.Notes
 {
-    public partial class KeyedNotes: Form
-    {
+  public partial class KeyedNotes: Form
+  {
     // This is a placeholder for the DataTable that will hold the keyed notes
-
     public KeyedNotes()
     { 
         InitializeComponent();
@@ -26,7 +25,7 @@ namespace ElectricalCommands.Notes
       //TableTabControl.TabPages.Add(new TabPage("MEOW"));
       //Add 'New' Tab
       AddNewTabButton();
-      // Set the initial selected tab to the last one (the "ADD NEW" tab)
+      // Set the initial selected tab to the last one (the one before "ADD NEW" tab)
       TableTabControl.SelectedIndex = TableTabControl.TabCount - 2;
     }
 
@@ -48,20 +47,5 @@ namespace ElectricalCommands.Notes
         TableTabControl.SelectedTab = newTab;
       }
     }
-
-    /*private void TableTabControl_DrawItem(object sender, DrawItemEventArgs e) {
-      TabPage tabPage = TableTabControl.TabPages[e.Index];
-      Rectangle tabRect = TableTabControl.GetTabRect(e.Index);
-      Brush textBrush = Brushes.Black;
-      Brush backBrush = Brushes.White;
-
-      if (tabPage.Text == "ADD NEW") {
-        textBrush = Brushes.Black;
-        backBrush = Brushes.AliceBlue;
-      }
-
-      e.Graphics.FillRectangle(backBrush, tabRect);
-      e.Graphics.DrawString(tabPage.Text, e.Font, textBrush, tabRect, new StringFormat { Alignment = StringAlignment.Center, LineAlignment = StringAlignment.Center });
-    }*/
   }
 }
