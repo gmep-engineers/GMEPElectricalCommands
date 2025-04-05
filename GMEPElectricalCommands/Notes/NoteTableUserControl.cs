@@ -21,9 +21,14 @@ namespace ElectricalCommands.Notes
     }
     private void NoteTableUserControl_Load(object sender, EventArgs e) {
       TableGridView.AutoGenerateColumns = false;
-      TableGridView.Columns.Add(CreateTextBoxColumn("Index", "Number"));
-      TableGridView.Columns.Add(CreateTextBoxColumn("Note", "Note Text"));
-      TableGridView.Columns.Add(CreateTextBoxColumn("TableId", "Table Id"));
+      DataGridViewTextBoxColumn indexColumn = CreateTextBoxColumn("Index", "Number");
+      indexColumn.ReadOnly = true;
+      indexColumn.FillWeight = 1;
+
+      DataGridViewTextBoxColumn noteColumn = CreateTextBoxColumn("Note", "Note Text");
+      noteColumn.FillWeight = 8;
+      TableGridView.Columns.Add(indexColumn);
+      TableGridView.Columns.Add(noteColumn);
       TableGridView.DataSource = KeyedNoteTable.KeyedNotes;
     }
     private DataGridViewTextBoxColumn CreateTextBoxColumn(string dataPropertyName, string headerText) {
