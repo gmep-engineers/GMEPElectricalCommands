@@ -13,6 +13,7 @@ using ElectricalCommands.Equipment;
 using ElectricalCommands.SingleLine;
 using MySql.Data.MySqlClient;
 using ElectricalCommands.Notes;
+using System.ComponentModel;
 
 namespace GMEPElectricalCommands.GmepDatabase
 {
@@ -955,6 +956,7 @@ namespace GMEPElectricalCommands.GmepDatabase
             table.KeyedNotes.Add(note);
           }
         }
+        table.KeyedNotes = new BindingList<ElectricalKeyedNote>(table.KeyedNotes.OrderBy(n => n.DateCreated).ToList());
       }
       foreach(var table in tables) {
         if (!tablesDict.ContainsKey(table.SheetId)) {

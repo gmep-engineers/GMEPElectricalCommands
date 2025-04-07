@@ -32,6 +32,9 @@ namespace ElectricalCommands.Notes
     }
 
     public void TabControl_Load(object sender, EventArgs e) {
+      //Add 'New' Tab
+      AddNewTabButton();
+
       //Add All Existing Tabs
       foreach (var sheetId in KeyedNoteTables.Keys) {
         foreach (var table in KeyedNoteTables[sheetId]) {
@@ -46,10 +49,9 @@ namespace ElectricalCommands.Notes
           noteTableUserControl.Dock = DockStyle.Fill;
           newTabPage.Controls.Add(noteTableUserControl);
         }
+        DetermineKeyedNoteIndexes(sheetId);
       }
 
-      //Add 'New' Tab
-      AddNewTabButton();
 
       // Set the initial selected tab to the last one (the one before "ADD NEW" tab)
       TableTabControl.SelectedIndex = TableTabControl.TabCount - 2;
@@ -131,7 +133,7 @@ namespace ElectricalCommands.Notes
     public string TableId { get; set; }
     public DateTime DateCreated { get; set; } = DateTime.Now;
     public string Note { get; set; }
-    public int Index { get; set; }
+    public int Index { get; set; } = 0;
   }
   public class ElectricalKeyedNoteTable {
     public string Id { get; set; } = Guid.NewGuid().ToString();
