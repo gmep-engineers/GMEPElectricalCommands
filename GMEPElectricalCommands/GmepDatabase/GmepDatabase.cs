@@ -900,7 +900,17 @@ namespace GMEPElectricalCommands.GmepDatabase
       List<LightingTimeClock> clocks = new List<LightingTimeClock>();
       string query =
         @"
-        SELECT * FROM electrical_lighting_timeclocks WHERE project_id = @projectId";
+        SELECT 
+        electrical_lighting_timeclocks.id as timeclock_id,
+        electrical_lighting_timeclocks.name,
+        electrical_lighting_timeclocks.bypass_switch_name,
+        electrical_lighting_timeclocks.bypass_switch_location,
+        electrical_lighting_timeclocks.adjacent_panel_id,
+        electrical_equipment_voltages.voltage
+        FROM electrical_lighting_timeclocks 
+        LEFT JOIN electrical_equipment_voltages 
+        ON electrical_equipment_voltages.id = electrical_lighting_timeclocks.voltage_id
+        WHERE project_id = @projectId";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("projectId", projectId);
@@ -909,51 +919,18 @@ namespace GMEPElectricalCommands.GmepDatabase
       {
         clocks.Add(
           new LightingTimeClock(
-            GetSafeString(reader, "id"),
+            GetSafeString(reader, "timeclock_id"),
             GetSafeString(reader, "name"),
             GetSafeString(reader, "bypass_switch_name"),
             GetSafeString(reader, "bypass_switch_location"),
             GetSafeString(reader, "adjacent_panel_id"),
-            IdToVoltage(GetSafeInt(reader, "voltage_id"))
+            GetSafeInt(reader, "voltage").ToString()
           )
         );
       }
       CloseConnection();
       reader.Close();
       return clocks;
-    }
-
-    public string IdToVoltage(int voltageId)
-    {
-      string voltage = "0";
-      switch (voltageId)
-      {
-        case (1):
-          voltage = "115";
-          break;
-        case (2):
-          voltage = "120";
-          break;
-        case (3):
-          voltage = "208";
-          break;
-        case (4):
-          voltage = "230";
-          break;
-        case (5):
-          voltage = "240";
-          break;
-        case (6):
-          voltage = "277";
-          break;
-        case (7):
-          voltage = "460";
-          break;
-        case (8):
-          voltage = "480";
-          break;
-      }
-      return voltage;
     }
 
     public string GetProjectId(string projectNo)
