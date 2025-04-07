@@ -984,10 +984,26 @@ namespace GMEPElectricalCommands.GmepDatabase
       reader.Close();
       return id;
     }
+    public List<string> GetObjectIds(string projectId, string tableName) {
+      List<string> objectIds = new List<string>();
+      string query = $"SELECT id FROM {tableName} WHERE project_id = @projectId";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read()) {
+        objectIds.Add(GetSafeString(reader, "id"));
+      }
+      reader.Close();
+      CloseConnection();
+      return objectIds;
+    }
     public void UpdateKeyNotesTables(
       string projectId,
       Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> tables
     ) {
+      DeleteObsoleteNotesAndTables(projectId, tables);
+
       string query =
         @"
         INSERT INTO electrical_keyed_note_tables (id, project_id, sheet_id, title)
@@ -1033,6 +1049,46 @@ namespace GMEPElectricalCommands.GmepDatabase
         }
       }
       CloseConnection();
+    }
+    public void DeleteObsoleteNotesAndTables(string projectId, Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> tables) {
+      // Retrieve current note and table IDs from the database
+      List<string> currentNoteIds = GetObjectIds(projectId, "electrical_keyed_notes");
+      List<string> currentTableIds = GetObjectIds(projectId, "electrical_keyed_note_tables");
+
+      // Create sets of new note and table IDs from the dictionary
+      HashSet<string> newNoteIds = new HashSet<string>();
+      HashSet<string> newTableIds = new HashSet<string>();
+
+      foreach (var kvp in tables) {
+        foreach (var table in kvp.Value) {
+          newTableIds.Add(table.Id);
+          foreach (var note in table.KeyedNotes) {
+            newNoteIds.Add(note.Id);
+          }
+        }
+      }
+
+      // Find obsolete notes and tables
+      List<string> obsoleteNoteIds = currentNoteIds.Except(newNoteIds).ToList();
+      List<string> obsoleteTableIds = currentTableIds.Except(newTableIds).ToList();
+
+      // Delete obsolete notes
+      if (obsoleteNoteIds.Count > 0) {
+        string deleteNotesQuery = "DELETE FROM electrical_keyed_notes WHERE id IN (" + string.Join(",", obsoleteNoteIds.Select(id => $"'{id}'")) + ")";
+        OpenConnection();
+        MySqlCommand deleteNotesCommand = new MySqlCommand(deleteNotesQuery, Connection);
+        deleteNotesCommand.ExecuteNonQuery();
+        CloseConnection();
+      }
+
+      // Delete obsolete tables
+      if (obsoleteTableIds.Count > 0) {
+        string deleteTablesQuery = "DELETE FROM electrical_keyed_note_tables WHERE id IN (" + string.Join(",", obsoleteTableIds.Select(id => $"'{id}'")) + ")";
+        OpenConnection();
+        MySqlCommand deleteTablesCommand = new MySqlCommand(deleteTablesQuery, Connection);
+        deleteTablesCommand.ExecuteNonQuery();
+        CloseConnection();
+      }
     }
 
     public void UpdateEquipment(Equipment equip)
