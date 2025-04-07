@@ -82,7 +82,6 @@ namespace ElectricalCommands.Notes
       TableTabControl.SelectedTab = newTabPage;
 
       ElectricalKeyedNoteTable newTable = new ElectricalKeyedNoteTable {
-        Id = Guid.NewGuid().ToString(),
         Title = tableName,
         SheetId = sheetId
       };
@@ -121,18 +120,21 @@ namespace ElectricalCommands.Notes
         }
       }
     }
+
+    private void Save_Click(object sender, EventArgs e) {
+      gmepDb.UpdateKeyNotesTables(projectId, KeyedNoteTables);
     }
   }
 
   public class ElectricalKeyedNote {
-    public string Id { get; set; }
+    public string Id { get; set; } = Guid.NewGuid().ToString();
     public string TableId { get; set; }
     public DateTime DateCreated { get; set; } = DateTime.Now;
     public string Note { get; set; }
     public int Index { get; set; }
   }
   public class ElectricalKeyedNoteTable {
-    public string Id { get; set; }
+    public string Id { get; set; } = Guid.NewGuid().ToString();
     public string Title { get; set; }
     public string SheetId { get; set; }
     public BindingList<ElectricalKeyedNote> KeyedNotes { get; set; } = new BindingList<ElectricalKeyedNote>();

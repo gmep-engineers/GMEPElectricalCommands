@@ -901,10 +901,10 @@ namespace GMEPElectricalCommands.GmepDatabase
       string query =
         @"
         SELECT 
-        electrical_keyed_notes.id as note_id,
+        electrical_keyed_notes.id,
         electrical_keyed_notes.table_id,
         electrical_keyed_notes.date_created,
-        electrtical_keyed_notes.note,
+        electrical_keyed_notes.note
         FROM electrical_keyed_notes 
         WHERE project_id = @projectId
         order by date_created, table_id
@@ -920,11 +920,9 @@ namespace GMEPElectricalCommands.GmepDatabase
             TableId = GetSafeString(reader, "table_id"),
             DateCreated = reader.GetDateTime("date_created"),
             Note = GetSafeString(reader, "note"),
-            Index = GetSafeInt(reader, "index")
           }
         );
       }
-      
       reader.Close();
       //Tables Query
       query =
@@ -932,7 +930,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         SELECT 
         electrical_keyed_note_tables.id,
         electrical_keyed_note_tables.sheet_id,
-        electrical_keyed_note_tables.title,
+        electrical_keyed_note_tables.title
+        FROM electrical_keyed_note_tables
         WHERE project_id = @projectId
         ";
       command = new MySqlCommand(query, Connection);
@@ -997,13 +996,15 @@ namespace GMEPElectricalCommands.GmepDatabase
         ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("@projectId", projectId);
+     
       foreach (var kvp in tables) {
         foreach (var table in kvp.Value) {
+          command.Parameters.AddWithValue("@projectId", projectId);
           command.Parameters.AddWithValue("@id", table.Id);
           command.Parameters.AddWithValue("@sheetId", table.SheetId);
           command.Parameters.AddWithValue("@title", table.Title);
           command.ExecuteNonQuery();
+          command.Parameters.Clear();
         }
       }
       query =
@@ -1015,15 +1016,17 @@ namespace GMEPElectricalCommands.GmepDatabase
         note = @note
         ";
       command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("@projectId", projectId);
+     
       foreach (var kvp in tables) {
         foreach (var table in kvp.Value) {
           foreach (var note in table.KeyedNotes) {
+            command.Parameters.AddWithValue("@projectId", projectId);
             command.Parameters.AddWithValue("@id", note.Id);
             command.Parameters.AddWithValue("@tableId", note.TableId);
             command.Parameters.AddWithValue("@dateCreated", note.DateCreated);
             command.Parameters.AddWithValue("@note", note.Note);
             command.ExecuteNonQuery();
+            command.Parameters.Clear();
           }
         }
       }
