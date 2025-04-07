@@ -894,9 +894,10 @@ namespace GMEPElectricalCommands.GmepDatabase
       }
       return voltage;
     }
-    public List<ElectricalKeyedNoteTable> GetKeyedNoteTables(string projectId) {
+    public Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> GetKeyedNoteTables(string projectId) {
       List<ElectricalKeyedNote> notes = new List<ElectricalKeyedNote>();
       List<ElectricalKeyedNoteTable> tables = new List<ElectricalKeyedNoteTable>();
+      Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> tablesDict = new Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>>();
       string query =
         @"
         SELECT 
@@ -956,10 +957,16 @@ namespace GMEPElectricalCommands.GmepDatabase
           }
         }
       }
+      foreach(var table in tables) {
+        if (!tablesDict.ContainsKey(table.SheetId)) {
+          tablesDict.Add(table.SheetId, new ObservableCollection<ElectricalKeyedNoteTable>());
+        }
+        tablesDict[table.SheetId].Add(table);
+      }
 
       CloseConnection();
     
-      return tables;
+      return tablesDict;
     }
     public string GetProjectId(string projectNo)
     {
@@ -978,7 +985,7 @@ namespace GMEPElectricalCommands.GmepDatabase
     }
     public void UpdateKeyNotesTables(
       string projectId,
-      List<ElectricalKeyedNoteTable> tables
+      Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> tables
     ) {
       string query =
         @"
@@ -991,11 +998,13 @@ namespace GMEPElectricalCommands.GmepDatabase
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("@projectId", projectId);
-      foreach (var table in tables) {
-        command.Parameters.AddWithValue("@id", table.Id);
-        command.Parameters.AddWithValue("@sheetId", table.SheetId);
-        command.Parameters.AddWithValue("@title", table.Title);
-        command.ExecuteNonQuery();
+      foreach (var kvp in tables) {
+        foreach (var table in kvp.Value) {
+          command.Parameters.AddWithValue("@id", table.Id);
+          command.Parameters.AddWithValue("@sheetId", table.SheetId);
+          command.Parameters.AddWithValue("@title", table.Title);
+          command.ExecuteNonQuery();
+        }
       }
       query =
         @"
@@ -1007,13 +1016,15 @@ namespace GMEPElectricalCommands.GmepDatabase
         ";
       command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("@projectId", projectId);
-      foreach (var table in tables) {
-        foreach (var note in table.KeyedNotes) { 
-          command.Parameters.AddWithValue("@id", note.Id);
-          command.Parameters.AddWithValue("@tableId", note.TableId);
-          command.Parameters.AddWithValue("@dateCreated", note.DateCreated);
-          command.Parameters.AddWithValue("@note", note.Note);
-          command.ExecuteNonQuery();
+      foreach (var kvp in tables) {
+        foreach (var table in kvp.Value) {
+          foreach (var note in table.KeyedNotes) {
+            command.Parameters.AddWithValue("@id", note.Id);
+            command.Parameters.AddWithValue("@tableId", note.TableId);
+            command.Parameters.AddWithValue("@dateCreated", note.DateCreated);
+            command.Parameters.AddWithValue("@note", note.Note);
+            command.ExecuteNonQuery();
+          }
         }
       }
       CloseConnection();

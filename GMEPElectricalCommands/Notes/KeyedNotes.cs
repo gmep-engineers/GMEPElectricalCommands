@@ -22,12 +22,14 @@ namespace ElectricalCommands.Notes
     public KeyedNotes()
     { 
         InitializeComponent();
+
         this.Load += new EventHandler(TabControl_Load);
     }
 
     public void TabControl_Load(object sender, EventArgs e) {
       //Add All Existing Tabs
       //TableTabControl.TabPages.Add(new TabPage("MEOW"));
+
       //Add 'New' Tab
 
       AddNewTabButton();
