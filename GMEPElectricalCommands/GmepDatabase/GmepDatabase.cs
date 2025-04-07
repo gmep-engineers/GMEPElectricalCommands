@@ -12,6 +12,7 @@ using ElectricalCommands.ElectricalEntity;
 using ElectricalCommands.Equipment;
 using ElectricalCommands.SingleLine;
 using MySql.Data.MySqlClient;
+using ElectricalCommands.Notes;
 
 namespace GMEPElectricalCommands.GmepDatabase
 {
@@ -892,6 +893,73 @@ namespace GMEPElectricalCommands.GmepDatabase
           break;
       }
       return voltage;
+    }
+    public List<ElectricalKeyedNoteTable> GetKeyedNoteTables(string projectId) {
+      List<ElectricalKeyedNote> notes = new List<ElectricalKeyedNote>();
+      List<ElectricalKeyedNoteTable> tables = new List<ElectricalKeyedNoteTable>();
+      string query =
+        @"
+        SELECT 
+        electrical_keyed_notes.id as note_id,
+        electrical_keyed_notes.table_id,
+        electrical_keyed_notes.date_created,
+        electrtical_keyed_notes.note,
+        FROM electrical_keyed_notes 
+        WHERE project_id = @projectId
+        order by date_created, table_id
+        ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read()) {
+        notes.Add(
+          new ElectricalKeyedNote {
+            Id = GetSafeString(reader, "id"),
+            TableId = GetSafeString(reader, "table_id"),
+            DateCreated = reader.GetDateTime("date_created"),
+            Note = GetSafeString(reader, "note"),
+            Index = GetSafeInt(reader, "index")
+          }
+        );
+      }
+      
+      reader.Close();
+      //Tables Query
+      query =
+        @"
+        SELECT 
+        electrical_keyed_note_tables.id,
+        electrical_keyed_note_tables.sheet_id,
+        electrical_keyed_note_tables.title,
+        WHERE project_id = @projectId
+        ";
+      command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      reader = command.ExecuteReader();
+      while (reader.Read()) {
+        tables.Add(
+          new ElectricalKeyedNoteTable {
+            Id = GetSafeString(reader, "id"),
+            SheetId = GetSafeString(reader, "sheet_id"),
+            Title = GetSafeString(reader, "title")
+          }
+        );
+      }
+      reader.Close();
+
+      //Add notes to tables
+      foreach (var table in tables) {
+        foreach (var note in notes) {
+          if (note.TableId == table.Id) {
+            table.KeyedNotes.Add(note);
+          }
+        }
+      }
+
+      CloseConnection();
+    
+      return tables;
     }
     public string GetProjectId(string projectNo)
     {
