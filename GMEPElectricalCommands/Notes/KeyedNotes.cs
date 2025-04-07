@@ -13,26 +13,44 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.DatabaseServices;
+using GMEPElectricalCommands.GmepDatabase;
 
 namespace ElectricalCommands.Notes
 {
   public partial class KeyedNotes: Form
   {
+    private string projectId;
+
+    public GmepDatabase gmepDb = new GmepDatabase();
     public Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> KeyedNoteTables { get; set; } = new Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>>();
     public KeyedNotes()
-    { 
-        InitializeComponent();
-
-        this.Load += new EventHandler(TabControl_Load);
+    {
+      projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
+      KeyedNoteTables = gmepDb.GetKeyedNoteTables(projectId);
+      InitializeComponent();
+      this.Load += new EventHandler(TabControl_Load);
     }
 
     public void TabControl_Load(object sender, EventArgs e) {
       //Add All Existing Tabs
-      //TableTabControl.TabPages.Add(new TabPage("MEOW"));
+      foreach (var sheetId in KeyedNoteTables.Keys) {
+        foreach (var table in KeyedNoteTables[sheetId]) {
+          string sheetName = GetSheetName(sheetId);
+          string title = sheetName + " - " + table.Title;
+          TabPage newTabPage = new TabPage(title) {
+            BackColor = Color.AliceBlue
+          };
+          TableTabControl.TabPages.Insert(TableTabControl.TabCount - 1, newTabPage);
+          TableTabControl.SelectedTab = newTabPage;
+          NoteTableUserControl noteTableUserControl = new NoteTableUserControl(table, this);
+          noteTableUserControl.Dock = DockStyle.Fill;
+          newTabPage.Controls.Add(noteTableUserControl);
+        }
+      }
 
       //Add 'New' Tab
-
       AddNewTabButton();
+
       // Set the initial selected tab to the last one (the one before "ADD NEW" tab)
       TableTabControl.SelectedIndex = TableTabControl.TabCount - 2;
 
