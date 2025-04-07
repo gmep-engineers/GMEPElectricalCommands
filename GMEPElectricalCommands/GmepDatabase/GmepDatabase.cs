@@ -976,6 +976,48 @@ namespace GMEPElectricalCommands.GmepDatabase
       reader.Close();
       return id;
     }
+    public void UpdateKeyNotesTables(
+      string projectId,
+      List<ElectricalKeyedNoteTable> tables
+    ) {
+      string query =
+        @"
+        INSERT INTO electrical_keyed_note_tables (id, project_id, sheet_id, title)
+        VALUES (@id, @projectId, @sheetId, @title)
+        ON DUPLICATE KEY UPDATE
+        sheet_id = @sheetId,
+        title = @title
+        ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", projectId);
+      foreach (var table in tables) {
+        command.Parameters.AddWithValue("@id", table.Id);
+        command.Parameters.AddWithValue("@sheetId", table.SheetId);
+        command.Parameters.AddWithValue("@title", table.Title);
+        command.ExecuteNonQuery();
+      }
+      query =
+        @"
+        INSERT INTO electrical_keyed_notes (id, project_id, table_id, date_created, note)
+        VALUES (@id, @projectId, @tableId, @dateCreated, @note)
+        ON DUPLICATE KEY UPDATE
+        date_created = @dateCreated,
+        note = @note
+        ";
+      command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@projectId", projectId);
+      foreach (var table in tables) {
+        foreach (var note in table.KeyedNotes) { 
+          command.Parameters.AddWithValue("@id", note.Id);
+          command.Parameters.AddWithValue("@tableId", note.TableId);
+          command.Parameters.AddWithValue("@dateCreated", note.DateCreated);
+          command.Parameters.AddWithValue("@note", note.Note);
+          command.ExecuteNonQuery();
+        }
+      }
+      CloseConnection();
+    }
 
     public void UpdateEquipment(Equipment equip)
     {
