@@ -121,6 +121,7 @@ namespace ElectricalCommands.Notes
         }
       }
     }
+    }
   }
 
   public class ElectricalKeyedNote {
