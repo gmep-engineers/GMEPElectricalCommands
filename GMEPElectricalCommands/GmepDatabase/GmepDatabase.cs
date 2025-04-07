@@ -1012,7 +1012,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         MySqlDataReader reader = command.ExecuteReader();
         while (reader.Read())
         {
-          newWattage += reader.GetInt32("wattage");
+          newWattage += GetSafeFloat(reader, "wattage");
         }
         reader.Close();
       }
