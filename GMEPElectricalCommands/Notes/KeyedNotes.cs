@@ -126,6 +126,26 @@ namespace ElectricalCommands.Notes
     private void Save_Click(object sender, EventArgs e) {
       gmepDb.UpdateKeyNotesTables(projectId, KeyedNoteTables);
     }
+
+    private void deleteToolStripMenuItem_Click(object sender, EventArgs e) {
+      int tabIndex = (int)deleteToolStripMenuItem.Tag;
+      if (tabIndex >= 0 && tabIndex < TableTabControl.TabCount) {
+        string tableName = TableTabControl.TabPages[tabIndex].Text;
+        TableTabControl.TabPages.RemoveAt(tabIndex);
+      }
+    }
+    private void TableTabControl_MouseUp(object sender, MouseEventArgs e) {
+      if (e.Button == MouseButtons.Right) {
+        for (int i = 0; i < TableTabControl.TabCount; i++) {
+          if (TableTabControl.GetTabRect(i).Contains(e.Location)) {
+            deleteToolStripMenuItem.Tag = i;
+            
+            TabMenu.Show(TableTabControl, e.Location);
+            break;
+          }
+        }
+      }
+    }
   }
 
   public class ElectricalKeyedNote {
