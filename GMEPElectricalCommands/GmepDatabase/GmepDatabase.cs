@@ -778,7 +778,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         symbols.label_transform_v_x,
         symbols.label_transform_v_y,
         electrical_lighting.notes,
-        electrical_lighting_mounting_types.mounting
+        electrical_lighting_mounting_types.mounting,
+        electrical_lighting_driver_types.driver_type
         FROM electrical_lighting
         LEFT JOIN electrical_panels
         ON electrical_panels.id = electrical_lighting.parent_id
@@ -788,6 +789,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         ON symbols.id = electrical_lighting.symbol_id
         LEFT JOIN electrical_lighting_mounting_types
         ON electrical_lighting_mounting_types.id = electrical_lighting.mounting_type_id
+        LEFT JOIN electrical_lighting_driver_types
+        ON electrical_lighting_driver_types.id = electrical_lighting.driver_type_id
         WHERE electrical_lighting.project_id = @projectId
         ORDER BY electrical_lighting.tag ASC";
       this.OpenConnection();
@@ -806,7 +809,7 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeString(reader, "control_id"),
             GetSafeString(reader, "block_name"),
             GetSafeInt(reader, "voltage"),
-            GetSafeFloat(reader, "wattage"),
+            Math.Round(GetSafeFloat(reader, "wattage"), 1),
             GetSafeString(reader, "description"),
             GetSafeInt(reader, "qty"),
             GetSafeString(reader, "mounting"),
@@ -820,7 +823,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeFloat(reader, "label_transform_h_y"),
             GetSafeFloat(reader, "label_transform_v_x"),
             GetSafeFloat(reader, "label_transform_v_y"),
-            GetSafeInt(reader, "circuit_no")
+            GetSafeInt(reader, "circuit_no"),
+            GetSafeString(reader, "driver_type")
           )
         );
       }

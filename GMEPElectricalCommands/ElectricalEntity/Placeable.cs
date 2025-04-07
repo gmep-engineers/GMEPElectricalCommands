@@ -628,11 +628,13 @@ namespace ElectricalCommands.ElectricalEntity
       LabelTransformHY,
       LabelTransformVX,
       LabelTransformVY;
-    public string ControlId, LocationId,
+    public string ControlId,
+      LocationId,
       Description,
       Mounting,
       Manufacturer,
       ModelNo,
+      Driver,
       Notes;
     public bool EmCapable;
 
@@ -659,7 +661,8 @@ namespace ElectricalCommands.ElectricalEntity
       double LabelTransformHY,
       double LabelTransformVX,
       double LabelTransformVY,
-      int Circuit
+      int Circuit,
+      string Driver
     )
     {
       this.Id = Id;
@@ -670,6 +673,15 @@ namespace ElectricalCommands.ElectricalEntity
       this.Voltage = Voltage;
       this.Wattage = Wattage;
       this.ControlId = ControlId;
+      this.Driver = Driver;
+      if (!String.IsNullOrEmpty(Driver))
+      {
+        Description += $" WITH {Driver} DIMMING";
+      }
+      if (EmCapable)
+      {
+        Description += ". 'EM' DENOTES 90-MINUTE EMERGENCY BATTERY.";
+      }
       this.Description = Description;
       this.Qty = Qty;
       this.Mounting = Mounting;
@@ -688,23 +700,23 @@ namespace ElectricalCommands.ElectricalEntity
       this.LocationId = LocationId;
     }
   }
-  public class LightingLocation : PlaceableElectricalEntity {
+
+  public class LightingLocation : PlaceableElectricalEntity
+  {
     public string LocationName;
     public bool Outdoor;
     public string timeclock;
-    public LightingLocation(
-      string id,
-      string location,
-      bool outdoor,
-      string timeclock_id
-    ) 
-    { 
+
+    public LightingLocation(string id, string location, bool outdoor, string timeclock_id)
+    {
       this.Id = id;
       this.Outdoor = outdoor;
       this.LocationName = location;
     }
   }
-  public class LightingTimeClock : PlaceableElectricalEntity {
+
+  public class LightingTimeClock : PlaceableElectricalEntity
+  {
     public string BypassSwitchName;
     public string BypassSwitchLocation;
     public string AdjacentPanelId;
@@ -716,7 +728,8 @@ namespace ElectricalCommands.ElectricalEntity
       string bypassSwitchLocation,
       string adjacentPanelId,
       string voltage
-    ) {
+    )
+    {
       this.Id = id;
       this.BypassSwitchLocation = bypassSwitchLocation;
       this.BypassSwitchName = bypassSwitchName;
@@ -725,6 +738,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.Name = name;
     }
   }
+
   public class DistributionBus : PlaceableElectricalEntity
   {
     public DistributionBus(
