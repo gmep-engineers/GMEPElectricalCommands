@@ -198,13 +198,21 @@ namespace ElectricalCommands.Notes
             //Get gmep text style
             TextStyleTable textStyleTable = (TextStyleTable)
                 tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
-            ObjectId gmepTextStyleId;
+            ObjectId sectionTitleStyleId;
+            ObjectId gmepStyleId;
             if (textStyleTable.Has("gmep")) {
-              gmepTextStyleId = textStyleTable["gmep"];
+              gmepStyleId = textStyleTable["gmep"];
             }
             else {
               ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
-              gmepTextStyleId = doc.Database.Textstyle;
+              gmepStyleId = doc.Database.Textstyle;
+            }
+            if (textStyleTable.Has("section title")) {
+              sectionTitleStyleId = textStyleTable["section title"];
+            }
+            else {
+              ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+              sectionTitleStyleId = doc.Database.Textstyle;
             }
             // Create a new table here
             Table table = new Table();
@@ -214,17 +222,17 @@ namespace ElectricalCommands.Notes
             table.Position = insertionPoint; // Set the position of the table
             table.SetRowHeight(.3); // Set the row height
             table.SetColumnWidth(.3); // Set the column width
-            table.Cells[0, 0].TextString = noteTable.Title + " Keyed Notes";
-            table.Cells[0, 0].TextStyleId = gmepTextStyleId;
-            table.Cells[0, 0].TextHeight = 0.4;
+            table.Cells[0, 0].TextString = noteTable.Title.ToUpper() + " KEYED NOTES";
+            table.Cells[0, 0].TextStyleId = sectionTitleStyleId;
+            table.Cells[0, 0].TextHeight = 0.25;
             table.Columns[1].Width = 5;
 
             for (int i = 0; i < noteTable.KeyedNotes.Count; i++) {
               table.Cells[i + 2, 0].TextString = noteTable.KeyedNotes[i].Index.ToString();
-              table.Cells[i + 2, 0].TextStyleId = gmepTextStyleId;
-              table.Cells[i + 2, 1].TextString = noteTable.KeyedNotes[i].Note;
-              table.Cells[i + 2, 1].TextHeight = 0.1;
-              table.Cells[i + 2, 1].TextStyleId = gmepTextStyleId;
+              table.Cells[i + 2, 0].TextStyleId = gmepStyleId;
+              table.Cells[i + 2, 1].TextString = noteTable.KeyedNotes[i].Note.ToUpper();
+              table.Cells[i + 2, 1].TextStyleId = gmepStyleId;
+              table.Cells[i + 2, 1].TextHeight = 0.125;
             }
             currentSpace.AppendEntity(table);
             tr.AddNewlyCreatedDBObject(table, true);
