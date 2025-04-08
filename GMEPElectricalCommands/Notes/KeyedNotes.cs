@@ -131,8 +131,19 @@ namespace ElectricalCommands.Notes
     private void deleteToolStripMenuItem_Click(object sender, EventArgs e) {
       int tabIndex = (int)deleteToolStripMenuItem.Tag;
       if (tabIndex >= 0 && tabIndex < TableTabControl.TabCount) {
-        string tableName = TableTabControl.TabPages[tabIndex].Text;
+        TabPage tabPage = TableTabControl.TabPages[tabIndex];
+        if (tabPage.Controls.Count > 0 && tabPage.Controls[0] is NoteTableUserControl noteTableUserControl) {
+          // Access properties or methods of NoteTableUserControl
+          ElectricalKeyedNoteTable table = noteTableUserControl.KeyedNoteTable;
+
+          // Remove the table from the dictionary
+          if (KeyedNoteTables.ContainsKey(table.SheetId)) {
+            KeyedNoteTables[table.SheetId].Remove(table);
+            DetermineKeyedNoteIndexes(table.SheetId);
+          }
+        }
         TableTabControl.TabPages.RemoveAt(tabIndex);
+
       }
     }
     private void TableTabControl_MouseUp(object sender, MouseEventArgs e) {
