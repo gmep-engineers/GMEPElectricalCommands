@@ -463,7 +463,7 @@ namespace ElectricalCommands.Lighting
               }
             }
             tr.Commit();
-      }
+          }
       }
         catch (System.Exception ex)
         {

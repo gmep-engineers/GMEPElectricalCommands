@@ -75,6 +75,7 @@ namespace ElectricalCommands.Notes
           .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
         Point3d point = new Point3d();
+        ObjectId blockId;
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
           if (!bt.Has("KEYED NOTE (GENERAL)")) {
@@ -85,11 +86,13 @@ namespace ElectricalCommands.Notes
           BlockJig blockJig = new BlockJig();
           PromptResult res = blockJig.DragMe(keyedNoteBlock.ObjectId, out point);
           BlockReference br = new BlockReference(point, keyedNoteBlock.ObjectId);
+         
           if (res.Status == PromptStatus.OK) {
               BlockTableRecord currentSpace = tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
               currentSpace.AppendEntity(br);
               tr.AddNewlyCreatedDBObject(br, true);
           }
+          blockId = br.ObjectId;
           foreach (ObjectId objId in keyedNoteBlock) {
             DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
             AttributeDefinition attDef = obj as AttributeDefinition;
@@ -102,6 +105,22 @@ namespace ElectricalCommands.Notes
                 br.AttributeCollection.AppendAttribute(attRef);
                 tr.AddNewlyCreatedDBObject(attRef, true);
               }
+            }
+          }
+          tr.Commit();
+        }
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+          var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+          BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+          DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+          foreach (DynamicBlockReferenceProperty prop in pc) {
+            if (prop.PropertyName == "gmep_keyed_note_id" && prop.Value as string == "0") {
+              prop.Value = KeyedNoteTable.KeyedNotes[e.RowIndex].Id.ToString();
+            }
+            if (prop.PropertyName == "gmep_keyed_note_table_id" && prop.Value as string == "0") {
+              prop.Value = KeyedNoteTable.KeyedNotes[e.RowIndex].TableId.ToString();
             }
           }
           tr.Commit();
