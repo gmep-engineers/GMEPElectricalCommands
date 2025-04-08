@@ -34,6 +34,7 @@
             this.TableGridView.Name = "TableGridView";
             this.TableGridView.Size = new System.Drawing.Size(764, 414);
             this.TableGridView.TabIndex = 0;
+            this.TableGridView.CellContentDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.TableGridView_CellContentDoubleClick);
             // 
             // NoteTableUserControl
             // 
