@@ -1260,12 +1260,12 @@ namespace ElectricalCommands
                 if ((equip.Circuit + 1) % 4 == 2)
                 {
                   // phase a left
-                  AddLoadToCircuit2P(jsonPanel, "a", "right", equip);
+                  AddLoadToCircuit2P(jsonPanel, "a", "left", equip);
                 }
                 else
                 {
                   // phase b left
-                  AddLoadToCircuit2P(jsonPanel, "b", "right", equip);
+                  AddLoadToCircuit2P(jsonPanel, "b", "left", equip);
                 }
               }
             }
