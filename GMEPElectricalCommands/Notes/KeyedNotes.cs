@@ -185,6 +185,7 @@ namespace ElectricalCommands.Notes
           .State
           .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
+
         PromptPointOptions ppo = new PromptPointOptions("\nSpecify insertion point: ");
         PromptPointResult ppr = ed.GetPoint(ppo);
         if (ppr.Status == PromptStatus.OK) {
@@ -192,6 +193,19 @@ namespace ElectricalCommands.Notes
           using (Transaction tr = db.TransactionManager.StartTransaction()) {
             BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
             BlockTableRecord currentSpace = tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+
+
+            //Get gmep text style
+            TextStyleTable textStyleTable = (TextStyleTable)
+                tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+            ObjectId gmepTextStyleId;
+            if (textStyleTable.Has("gmep")) {
+              gmepTextStyleId = textStyleTable["gmep"];
+            }
+            else {
+              ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+              gmepTextStyleId = doc.Database.Textstyle;
+            }
             // Create a new table here
             Table table = new Table();
             table.Layer = "E-TEXT"; // Set the layer of the table
@@ -201,12 +215,16 @@ namespace ElectricalCommands.Notes
             table.SetRowHeight(.3); // Set the row height
             table.SetColumnWidth(.3); // Set the column width
             table.Cells[0, 0].TextString = noteTable.Title + " Keyed Notes";
+            table.Cells[0, 0].TextStyleId = gmepTextStyleId;
+            table.Cells[0, 0].TextHeight = 0.4;
             table.Columns[1].Width = 5;
 
             for (int i = 0; i < noteTable.KeyedNotes.Count; i++) {
               table.Cells[i + 2, 0].TextString = noteTable.KeyedNotes[i].Index.ToString();
+              table.Cells[i + 2, 0].TextStyleId = gmepTextStyleId;
               table.Cells[i + 2, 1].TextString = noteTable.KeyedNotes[i].Note;
-
+              table.Cells[i + 2, 1].TextHeight = 0.1;
+              table.Cells[i + 2, 1].TextStyleId = gmepTextStyleId;
             }
             currentSpace.AppendEntity(table);
             tr.AddNewlyCreatedDBObject(table, true);
