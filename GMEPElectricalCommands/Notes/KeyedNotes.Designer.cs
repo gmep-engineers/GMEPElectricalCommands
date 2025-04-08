@@ -28,6 +28,7 @@
             this.button1 = new System.Windows.Forms.Button();
             this.TabMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.deleteToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.placeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.TabMenu.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -39,10 +40,10 @@
             this.TableTabControl.Size = new System.Drawing.Size(776, 403);
             this.TableTabControl.TabIndex = 1;
             this.TableTabControl.MouseUp += new System.Windows.Forms.MouseEventHandler(this.TableTabControl_MouseUp);
-      // 
-      // button1
-      // 
-      this.button1.Location = new System.Drawing.Point(359, 421);
+            // 
+            // button1
+            // 
+            this.button1.Location = new System.Drawing.Point(359, 421);
             this.button1.Name = "button1";
             this.button1.Size = new System.Drawing.Size(75, 23);
             this.button1.TabIndex = 2;
@@ -53,9 +54,10 @@
             // TabMenu
             // 
             this.TabMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.deleteToolStripMenuItem});
+            this.deleteToolStripMenuItem,
+            this.placeToolStripMenuItem});
             this.TabMenu.Name = "TabMenu";
-            this.TabMenu.Size = new System.Drawing.Size(181, 48);
+            this.TabMenu.Size = new System.Drawing.Size(181, 70);
             // 
             // deleteToolStripMenuItem
             // 
@@ -63,6 +65,13 @@
             this.deleteToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.deleteToolStripMenuItem.Text = "Delete";
             this.deleteToolStripMenuItem.Click += new System.EventHandler(this.deleteToolStripMenuItem_Click);
+            // 
+            // placeToolStripMenuItem
+            // 
+            this.placeToolStripMenuItem.Name = "placeToolStripMenuItem";
+            this.placeToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.placeToolStripMenuItem.Text = "Place";
+            this.placeToolStripMenuItem.Click += new System.EventHandler(this.placeToolStripMenuItem_Click);
             // 
             // KeyedNotes
             // 
@@ -83,5 +92,6 @@
     private System.Windows.Forms.Button button1;
     private System.Windows.Forms.ContextMenuStrip TabMenu;
     private System.Windows.Forms.ToolStripMenuItem deleteToolStripMenuItem;
+    private System.Windows.Forms.ToolStripMenuItem placeToolStripMenuItem;
   }
 }

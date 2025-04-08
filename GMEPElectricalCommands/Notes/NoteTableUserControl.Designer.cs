@@ -34,11 +34,12 @@
             this.TableGridView.Name = "TableGridView";
             this.TableGridView.Size = new System.Drawing.Size(764, 414);
             this.TableGridView.TabIndex = 0;
-            this.TableGridView.CellContentDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.TableGridView_CellContentDoubleClick);
-            // 
-            // NoteTableUserControl
-            // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.TableGridView.CellDoubleClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.TableGridView_CellContentDoubleClick);
+
+      // 
+      // NoteTableUserControl
+      // 
+      this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.Controls.Add(this.TableGridView);
             this.Location = new System.Drawing.Point(0, 1);

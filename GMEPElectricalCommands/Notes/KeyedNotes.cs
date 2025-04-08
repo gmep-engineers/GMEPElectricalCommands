@@ -14,6 +14,7 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.DatabaseServices;
 using GMEPElectricalCommands.GmepDatabase;
+using Autodesk.AutoCAD.Geometry;
 
 namespace ElectricalCommands.Notes
 {
@@ -127,6 +128,7 @@ namespace ElectricalCommands.Notes
     private void Save_Click(object sender, EventArgs e) {
       gmepDb.UpdateKeyNotesTables(projectId, KeyedNoteTables);
     }
+    
 
     private void deleteToolStripMenuItem_Click(object sender, EventArgs e) {
       int tabIndex = (int)deleteToolStripMenuItem.Tag;
@@ -156,6 +158,52 @@ namespace ElectricalCommands.Notes
           }
         }
       }
+    }
+    private void PlaceTable() {
+      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      using (
+        DocumentLock docLock =
+          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
+      ) {
+        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
+          .AutoCAD
+          .Windows
+          .Window
+          .State
+          .Maximized;
+        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
+        PromptPointOptions ppo = new PromptPointOptions("\nSpecify insertion point: ");
+        PromptPointResult ppr = ed.GetPoint(ppo);
+        if (ppr.Status == PromptStatus.OK) {
+          Point3d insertionPoint = ppr.Value;
+          using (Transaction tr = db.TransactionManager.StartTransaction()) {
+            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+            BlockTableRecord currentSpace = tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+            // Create a new table here
+            Table table = new Table();
+            table.SetSize(5, 3); // Set the size of the table (rows, columns)
+            table.Position = insertionPoint; // Set the position of the table
+            table.SetRowHeight(10); // Set the row height
+            table.SetColumnWidth(20); // Set the column width
+            table.Cells[0, 0].TextString = "Header 1";
+            table.Cells[0, 1].TextString = "Header 2";
+            table.Cells[0, 2].TextString = "Header 3";
+            table.Cells[1, 0].TextString = "Data 1";
+            table.Cells[1, 1].TextString = "Data 2";
+            table.Cells[1, 2].TextString = "Data 3";
+            currentSpace.AppendEntity(table);
+            tr.AddNewlyCreatedDBObject(table, true);
+            // ...
+            tr.Commit();
+          }
+        }
+      }
+    }
+
+    private void placeToolStripMenuItem_Click(object sender, EventArgs e) {
+      PlaceTable();
     }
   }
 
