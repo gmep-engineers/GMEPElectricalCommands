@@ -69,8 +69,9 @@ namespace ElectricalCommands.Notes
     private void TableTabControl_SelectedIndexChanged(object sender, EventArgs e) {
       if (TableTabControl.SelectedTab != null && TableTabControl.SelectedTab.Text == "ADD NEW") {
         TableForm tabForm = new TableForm(this);
-        tabForm.Show();
         TableTabControl.SelectedIndex = TableTabControl.SelectedIndex - 1;
+        tabForm.Show();
+
       }
     }
     public void AddTab(string tableName, string sheetId) {
@@ -139,7 +140,6 @@ namespace ElectricalCommands.Notes
         for (int i = 0; i < TableTabControl.TabCount; i++) {
           if (TableTabControl.GetTabRect(i).Contains(e.Location)) {
             deleteToolStripMenuItem.Tag = i;
-            
             TabMenu.Show(TableTabControl, e.Location);
             break;
           }
