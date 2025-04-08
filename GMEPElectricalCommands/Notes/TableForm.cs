@@ -36,7 +36,7 @@ namespace ElectricalCommands.Notes
 
             foreach (DBDictionaryEntry entry in layoutDict) {
               Layout layout = tr.GetObject(entry.Value, OpenMode.ForRead) as Layout;
-              TableSheet.Items.Add(new SheetItem(layout.LayoutName, entry.Value));
+              TableSheet.Items.Add(new SheetItem(layout.LayoutName, layout.Handle.ToString()));
             }
 
             tr.Commit();
@@ -64,9 +64,9 @@ namespace ElectricalCommands.Notes
   }
   public class SheetItem {
     public string Name { get; set; }
-    public ObjectId Id { get; set; }
+    public string Id { get; set; }
 
-    public SheetItem(string name, ObjectId id) {
+    public SheetItem(string name, string id) {
       Name = name;
       Id = id;
     }

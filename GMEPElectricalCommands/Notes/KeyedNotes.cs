@@ -101,12 +101,12 @@ namespace ElectricalCommands.Notes
     public string GetSheetName(string sheetId) {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
-      string sheetName = string.Empty;
+      string sheetName = "Meow";
       using (Transaction tr = db.TransactionManager.StartTransaction()) {
         DBDictionary layoutDict = tr.GetObject(db.LayoutDictionaryId, OpenMode.ForRead) as DBDictionary;
         foreach (DBDictionaryEntry entry in layoutDict) {
           Layout layout = tr.GetObject(entry.Value, OpenMode.ForRead) as Layout;
-          if (layout.ObjectId.ToString() == sheetId) {
+          if (layout.Handle.ToString() == sheetId) {
             sheetName = layout.LayoutName;
             break;
           }
