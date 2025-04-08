@@ -159,7 +159,18 @@ namespace ElectricalCommands.Notes
         }
       }
     }
-    private void PlaceTable() {
+    private void placeToolStripMenuItem_Click(object sender, EventArgs e) {
+      int tabIndex = (int)deleteToolStripMenuItem.Tag;
+      if (tabIndex >= 0 && tabIndex < TableTabControl.TabCount) {
+        TabPage tabPage = TableTabControl.TabPages[tabIndex];
+        if (tabPage.Controls.Count > 0 && tabPage.Controls[0] is NoteTableUserControl noteTableUserControl) {
+          // Access properties or methods of NoteTableUserControl
+          ElectricalKeyedNoteTable table = noteTableUserControl.KeyedNoteTable;
+          PlaceTable(table);
+        }
+      }
+    }
+    private void PlaceTable(ElectricalKeyedNoteTable noteTable) {
       Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
@@ -183,16 +194,20 @@ namespace ElectricalCommands.Notes
             BlockTableRecord currentSpace = tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
             // Create a new table here
             Table table = new Table();
-            table.SetSize(5, 3); // Set the size of the table (rows, columns)
+            table.Layer = "E-TEXT"; // Set the layer of the table
+            table.SetSize(noteTable.KeyedNotes.Count + 2, 2); // Set the size of the table (rows, columns)
+
             table.Position = insertionPoint; // Set the position of the table
-            table.SetRowHeight(10); // Set the row height
-            table.SetColumnWidth(20); // Set the column width
-            table.Cells[0, 0].TextString = "Header 1";
-            table.Cells[0, 1].TextString = "Header 2";
-            table.Cells[0, 2].TextString = "Header 3";
-            table.Cells[1, 0].TextString = "Data 1";
-            table.Cells[1, 1].TextString = "Data 2";
-            table.Cells[1, 2].TextString = "Data 3";
+            table.SetRowHeight(.3); // Set the row height
+            table.SetColumnWidth(.3); // Set the column width
+            table.Cells[0, 0].TextString = noteTable.Title + " Keyed Notes";
+            table.Columns[1].Width = 5;
+
+            for (int i = 0; i < noteTable.KeyedNotes.Count; i++) {
+              table.Cells[i + 2, 0].TextString = noteTable.KeyedNotes[i].Index.ToString();
+              table.Cells[i + 2, 1].TextString = noteTable.KeyedNotes[i].Note;
+
+            }
             currentSpace.AppendEntity(table);
             tr.AddNewlyCreatedDBObject(table, true);
             // ...
@@ -200,10 +215,6 @@ namespace ElectricalCommands.Notes
           }
         }
       }
-    }
-
-    private void placeToolStripMenuItem_Click(object sender, EventArgs e) {
-      PlaceTable();
     }
   }
 
