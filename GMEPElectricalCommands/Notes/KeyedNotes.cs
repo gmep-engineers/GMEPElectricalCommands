@@ -16,6 +16,7 @@ using Autodesk.AutoCAD.DatabaseServices;
 using GMEPElectricalCommands.GmepDatabase;
 using Autodesk.AutoCAD.Geometry;
 using Dreambuild.AutoCAD;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 
 namespace ElectricalCommands.Notes
 {
@@ -128,8 +129,61 @@ namespace ElectricalCommands.Notes
 
     private void Save_Click(object sender, EventArgs e) {
       gmepDb.UpdateKeyNotesTables(projectId, KeyedNoteTables);
+      UpdateCAD();
     }
-    
+    private void UpdateCAD() {
+      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      using (DocumentLock docLock = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()) {
+        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
+          .AutoCAD
+          .Windows
+          .Window
+          .State
+          .Maximized;
+        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
+        ed.WriteMessage("\nUpdating CAD...");
+
+        //Loop through each table in autocad
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          foreach (ObjectId btrId in bt) {
+            BlockTableRecord btr = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
+
+            foreach (ObjectId entId in btr) {
+              Entity ent = tr.GetObject(entId, OpenMode.ForRead) as Entity;
+              if (ent is Table) {
+                Table table = (Table)ent;
+                // Check if the table has an extension dictionary
+                if (table.ExtensionDictionary == ObjectId.Null) {
+                  continue;
+                }
+                DBDictionary extDict = (DBDictionary)tr.GetObject(table.ExtensionDictionary, OpenMode.ForRead);
+                if (extDict != null) {
+                  if (extDict.Contains("gmep_keyed_note_table_id")) {
+                    ObjectId valueId = extDict.GetAt("gmep_keyed_note_table_id");
+                    using (Xrecord xRec = (Xrecord)tr.GetObject(valueId, OpenMode.ForRead)) {
+                      if (xRec != null && xRec.Data != null && xRec.Data.AsArray().Count() > 0) {
+                        TypedValue tv = xRec.Data.AsArray()[0];
+                        if (tv.TypeCode == (int)DxfCode.Text) {
+                          string noteTableIdString = tv.Value as string;
+                          ed.WriteMessage("\nNote Table ID: " + noteTableIdString);
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          tr.Commit();
+        }
+        //loop through each note in autocad
+
+      }
+    }
+
 
     private void deleteToolStripMenuItem_Click(object sender, EventArgs e) {
       int tabIndex = (int)deleteToolStripMenuItem.Tag;
