@@ -1513,8 +1513,6 @@ namespace ElectricalCommands.Equipment
       }
     }
 
-    private void MakeSingleLineButton_Click(object sender, EventArgs e) { }
-
     private void CreateEquipmentSchedule(Document doc, Database db, Editor ed, Point3d startPoint)
     {
       var spaceId =
