@@ -1,19 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
-using DocumentFormat.OpenXml.Drawing.Charts;
 using ElectricalCommands.ElectricalEntity;
 using GMEPElectricalCommands.GmepDatabase;
 
@@ -503,6 +494,7 @@ namespace ElectricalCommands.Lighting
           }
         }
         int numSubitems = LightingFixturesListView.SelectedItems[0].SubItems.Count;
+        Dictionary<string, int> fixtureDict = GetNumFixturesOnPlan();
         for (int si = 0; si < LightingFixturesListView.SelectedItems.Count; si++)
         {
           foreach (ElectricalEntity.LightingFixture fixture in lightingFixtureList)
@@ -514,7 +506,12 @@ namespace ElectricalCommands.Lighting
             {
               continue;
             }
-            for (int i = 0; i < fixture.Qty; i++)
+            int currentNumFixtures = 0;
+            if (fixtureDict.ContainsKey(fixture.Id))
+            {
+              currentNumFixtures = fixtureDict[fixture.Id];
+            }
+            for (int i = currentNumFixtures; i < fixture.Qty; i++)
             {
               ed.WriteMessage(
                 "\nPlace "
