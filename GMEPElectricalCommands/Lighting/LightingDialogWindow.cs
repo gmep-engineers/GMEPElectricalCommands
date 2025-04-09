@@ -50,20 +50,78 @@ namespace ElectricalCommands.Lighting
       isLoading = false;
     }
 
+    private Dictionary<string, int> GetNumFixturesOnPlan()
+    {
+      Dictionary<string, int> fixtureDict = new Dictionary<string, int>();
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      Transaction tr = db.TransactionManager.StartTransaction();
+      List<PlaceableElectricalEntity> pooledEquipment = new List<PlaceableElectricalEntity>();
+      using (tr)
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+        foreach (ObjectId id in modelSpace)
+        {
+          try
+          {
+            BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
+            if (br != null && br.IsDynamicBlock)
+            {
+              DynamicBlockReferencePropertyCollection pc =
+                br.DynamicBlockReferencePropertyCollection;
+              PlaceableElectricalEntity eq = new PlaceableElectricalEntity();
+              foreach (DynamicBlockReferenceProperty prop in pc)
+              {
+                if (prop.PropertyName == "gmep_lighting_fixture_id") // HERE test
+                {
+                  if (!fixtureDict.ContainsKey(prop.Value as string))
+                  {
+                    fixtureDict[prop.Value as string] = 1;
+                  }
+                  else
+                  {
+                    fixtureDict[prop.Value as string] += 1;
+                  }
+                }
+              }
+            }
+          }
+          catch (Exception e) { }
+        }
+      }
+      return fixtureDict;
+    }
+
     private void CreateLightingFixtureListView(bool updateOnly = false)
     {
       if (updateOnly)
       {
-        LightingFixturesListView.Clear();
+        LightingFixturesListView.Items.Clear();
       }
       LightingFixturesListView.View = View.Details;
       LightingFixturesListView.FullRowSelect = true;
+      Dictionary<string, int> fixtureDict = GetNumFixturesOnPlan();
       foreach (LightingFixture fixture in lightingFixtureList)
       {
+        int placed = 0;
+        if (fixtureDict.ContainsKey(fixture.Id))
+        {
+          placed = fixtureDict[fixture.Id];
+        }
         ListViewItem item = new ListViewItem(fixture.Name, 0);
         item.SubItems.Add(fixture.BlockName);
         item.SubItems.Add(fixture.Voltage.ToString());
         item.SubItems.Add(fixture.Qty.ToString());
+        item.SubItems.Add(placed.ToString());
         item.SubItems.Add(fixture.Mounting);
         item.SubItems.Add(fixture.Description);
         item.SubItems.Add(fixture.Manufacturer);
@@ -80,6 +138,7 @@ namespace ElectricalCommands.Lighting
         LightingFixturesListView.Columns.Add("Legend", -2, HorizontalAlignment.Left);
         LightingFixturesListView.Columns.Add("Volt", -2, HorizontalAlignment.Left);
         LightingFixturesListView.Columns.Add("Count", -2, HorizontalAlignment.Left);
+        LightingFixturesListView.Columns.Add("Placed", -2, HorizontalAlignment.Left);
         LightingFixturesListView.Columns.Add("Mount", -2, HorizontalAlignment.Left);
         LightingFixturesListView.Columns.Add("Description", -2, HorizontalAlignment.Left);
         LightingFixturesListView.Columns.Add("Manufacturer", -2, HorizontalAlignment.Left);
@@ -668,6 +727,7 @@ namespace ElectricalCommands.Lighting
           }
         }
       }
+      CreateLightingFixtureListView(true);
     }
   }
 }
