@@ -56,21 +56,25 @@ namespace ElectricalCommands.Notes
     private void Grid_MouseUp(object sender, DataGridViewCellMouseEventArgs e) {
       Point cellPoint = TableGridView.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true).Location;
       Point newPoint = new Point(cellPoint.X + e.Location.X, cellPoint.Y + e.Location.Y);
-      if (e.Button == MouseButtons.Right) {
-          deleteToolStripMenuItem.Tag = e.RowIndex;
+      if (e.Button == MouseButtons.Right && TableGridView.SelectedRows.Count > 0) {
           gridMenu.Show(TableGridView, newPoint);
       }
     }
 
     private void deleteToolStripMenuItem_Click(object sender, EventArgs e) {
-        int tabIndex = (int)deleteToolStripMenuItem.Tag;
-        KeyedNoteTable.KeyedNotes.RemoveAt(tabIndex);
+        foreach (var row in TableGridView.SelectedRows) {
+          int tabIndex = TableGridView.Rows.IndexOf((DataGridViewRow)row);
+          KeyedNoteTable.KeyedNotes.RemoveAt(tabIndex);
+        }
     }
     
    
     private void placeToolStripMenuItem_Click(object sender, EventArgs e) {
-      int rowIndex = (int)deleteToolStripMenuItem.Tag;
-      PlaceNote(rowIndex);
+      foreach (var row in TableGridView.SelectedRows) {
+        int rowIndex = TableGridView.Rows.IndexOf((DataGridViewRow)row);
+        PlaceNote(rowIndex);
+      }
+      
     }
 
     private void PlaceNote(int rowIndex) {
@@ -102,14 +106,18 @@ namespace ElectricalCommands.Notes
             return;
           }
           BlockTableRecord keyedNoteBlock = (BlockTableRecord)tr.GetObject(bt["KEYED NOTE (GENERAL)"], OpenMode.ForRead);
-          BlockJig blockJig = new BlockJig();
+          BlockJig blockJig = new BlockJig(KeyedNoteTable.KeyedNotes[rowIndex].Index.ToString());
           PromptResult res = blockJig.DragMe(keyedNoteBlock.ObjectId, out point);
           BlockReference br = new BlockReference(point, keyedNoteBlock.ObjectId);
-         
+          br.Layer = "E-TEXT";
+
           if (res.Status == PromptStatus.OK) {
               BlockTableRecord currentSpace = tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
               currentSpace.AppendEntity(br);
               tr.AddNewlyCreatedDBObject(br, true);
+          }
+          else {
+            return;
           }
           blockId = br.ObjectId;
           foreach (ObjectId objId in keyedNoteBlock) {

@@ -153,9 +153,11 @@ namespace ElectricalCommands.Notes
       if (e.Button == MouseButtons.Right) {
         for (int i = 0; i < TableTabControl.TabCount; i++) {
           if (TableTabControl.GetTabRect(i).Contains(e.Location)) {
-            deleteToolStripMenuItem.Tag = i;
-            TabMenu.Show(TableTabControl, e.Location);
-            break;
+            if (i != TableTabControl.TabCount - 1) {
+              deleteToolStripMenuItem.Tag = i;
+              TabMenu.Show(TableTabControl, e.Location);
+              break;
+            }
           }
         }
       }
