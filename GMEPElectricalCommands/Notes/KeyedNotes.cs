@@ -220,19 +220,36 @@ namespace ElectricalCommands.Notes
             table.SetSize(noteTable.KeyedNotes.Count + 2, 2); // Set the size of the table (rows, columns)
 
             table.Position = insertionPoint; // Set the position of the table
-            table.SetRowHeight(.3); // Set the row height
-            table.SetColumnWidth(.3); // Set the column width
+            table.SetRowHeight(.25); // Set the row height
+            table.SetColumnWidth(.5); // Set the column width
             table.Cells[0, 0].TextString = noteTable.Title.ToUpper() + " KEYED NOTES";
             table.Cells[0, 0].TextStyleId = sectionTitleStyleId;
             table.Cells[0, 0].TextHeight = 0.25;
             table.Columns[1].Width = 5;
 
             for (int i = 0; i < noteTable.KeyedNotes.Count; i++) {
-              table.Cells[i + 2, 0].TextString = noteTable.KeyedNotes[i].Index.ToString();
-              table.Cells[i + 2, 0].TextStyleId = gmepStyleId;
+              //Grabbing the objectid of the attribute definition "A"
+              BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt["4KNHEX"], OpenMode.ForRead);
+              ObjectId attDefId = ObjectId.Null;
+              foreach (ObjectId id in btr) {
+                DBObject obj = tr.GetObject(id, OpenMode.ForRead);
+                if (obj is AttributeDefinition attDef && attDef.Tag.ToUpper() == "A") {
+                  attDefId= id;
+                  break;
+                }
+              }
+
+              //Note Index with block
+              table.Cells[i + 2, 0].BlockTableRecordId = bt["4KNHEX"];
+              table.Cells[i + 2, 0].SetBlockAttributeValue(attDefId, noteTable.KeyedNotes[i].Index.ToString());
+              table.Cells[i + 2, 0].Alignment = CellAlignment.TopCenter;
+
+              //Note Description
               table.Cells[i + 2, 1].TextString = noteTable.KeyedNotes[i].Note.ToUpper();
               table.Cells[i + 2, 1].TextStyleId = gmepStyleId;
               table.Cells[i + 2, 1].TextHeight = 0.125;
+              table.Cells[i + 2, 1].Alignment = CellAlignment.MiddleLeft;
+
             }
             currentSpace.AppendEntity(table);
             tr.AddNewlyCreatedDBObject(table, true);
