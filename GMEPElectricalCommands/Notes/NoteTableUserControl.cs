@@ -53,8 +53,27 @@ namespace ElectricalCommands.Notes
       }
   
     }
+    private void Grid_MouseUp(object sender, DataGridViewCellMouseEventArgs e) {
+      Point cellPoint = TableGridView.GetCellDisplayRectangle(e.ColumnIndex, e.RowIndex, true).Location;
+      Point newPoint = new Point(cellPoint.X + e.Location.X, cellPoint.Y + e.Location.Y);
+      if (e.Button == MouseButtons.Right) {
+          deleteToolStripMenuItem.Tag = e.RowIndex;
+          gridMenu.Show(TableGridView, newPoint);
+      }
+    }
 
-    private void TableGridView_CellContentDoubleClick(object sender, DataGridViewCellEventArgs e) {
+    private void deleteToolStripMenuItem_Click(object sender, EventArgs e) {
+        int tabIndex = (int)deleteToolStripMenuItem.Tag;
+        KeyedNoteTable.KeyedNotes.RemoveAt(tabIndex);
+    }
+    
+   
+    private void placeToolStripMenuItem_Click(object sender, EventArgs e) {
+      int rowIndex = (int)deleteToolStripMenuItem.Tag;
+      PlaceNote(rowIndex);
+    }
+
+    private void PlaceNote(int rowIndex) {
       Document doc = Autodesk
        .AutoCAD
        .ApplicationServices
@@ -100,7 +119,7 @@ namespace ElectricalCommands.Notes
               using (AttributeReference attRef = new AttributeReference()) {
                 attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
                 if (attRef.Tag == "A") {
-                  attRef.TextString = KeyedNoteTable.KeyedNotes[e.RowIndex].Index.ToString();
+                  attRef.TextString = KeyedNoteTable.KeyedNotes[rowIndex].Index.ToString();
                 }
                 br.AttributeCollection.AppendAttribute(attRef);
                 tr.AddNewlyCreatedDBObject(attRef, true);
@@ -117,16 +136,18 @@ namespace ElectricalCommands.Notes
           DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
           foreach (DynamicBlockReferenceProperty prop in pc) {
             if (prop.PropertyName == "gmep_keyed_note_id" && prop.Value as string == "0") {
-              prop.Value = KeyedNoteTable.KeyedNotes[e.RowIndex].Id.ToString();
+              prop.Value = KeyedNoteTable.KeyedNotes[rowIndex].Id.ToString();
             }
             if (prop.PropertyName == "gmep_keyed_note_table_id" && prop.Value as string == "0") {
-              prop.Value = KeyedNoteTable.KeyedNotes[e.RowIndex].TableId.ToString();
+              prop.Value = KeyedNoteTable.KeyedNotes[rowIndex].TableId.ToString();
             }
           }
           tr.Commit();
         }
       }
     }
+
+
   }
 }
 
