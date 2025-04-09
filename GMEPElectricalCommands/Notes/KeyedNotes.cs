@@ -15,6 +15,7 @@ using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.DatabaseServices;
 using GMEPElectricalCommands.GmepDatabase;
 using Autodesk.AutoCAD.Geometry;
+using Dreambuild.AutoCAD;
 
 namespace ElectricalCommands.Notes
 {
@@ -257,6 +258,24 @@ namespace ElectricalCommands.Notes
             currentSpace.AppendEntity(table);
             tr.AddNewlyCreatedDBObject(table, true);
             // ...
+
+            //Adding Unique Table Identifier
+            if (table.ExtensionDictionary == ObjectId.Null) {
+              table.UpgradeOpen();
+              table.CreateExtensionDictionary();
+            }
+            using (DBDictionary extDict = (DBDictionary)tr.GetObject(table.ExtensionDictionary, OpenMode.ForWrite)) {
+              Xrecord xRec = new Xrecord();
+
+              xRec.Data = new ResultBuffer(
+                  new TypedValue((int)DxfCode.Text, noteTable.Id)
+              );
+              if (!extDict.Contains("gmep_keyed_note_table_id")) {
+
+                extDict.SetAt("gmep_keyed_note_table_id", xRec);
+                tr.AddNewlyCreatedDBObject(xRec, true);
+              }
+            }
             tr.Commit();
           }
         }
