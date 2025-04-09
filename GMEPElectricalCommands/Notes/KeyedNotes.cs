@@ -149,7 +149,8 @@ namespace ElectricalCommands.Notes
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
-          //Getting the object id of the attribute definition "A"
+          //Getting the object id of the attribute definition "A" and the object id of "4KNHEX"
+          ObjectId blockId = bt["4KNHEX"];
           BlockTableRecord btr1 = (BlockTableRecord)tr.GetObject(bt["4KNHEX"], OpenMode.ForRead);
           ObjectId attDefId = ObjectId.Null;
           foreach (ObjectId id in btr1) {
@@ -159,11 +160,22 @@ namespace ElectricalCommands.Notes
               break;
             }
           }
+          //Getting the text style id of "gmep"
+          TextStyleTable textStyleTable = (TextStyleTable)
+                tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+          ObjectId gmepStyleId;
+          if (textStyleTable.Has("gmep")) {
+            gmepStyleId = textStyleTable["gmep"];
+          }
+          else {
+            ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+            gmepStyleId = doc.Database.Textstyle;
+          }
+         
 
           //Iterating through each block table record
           foreach (ObjectId btrId in bt) {
             BlockTableRecord btr = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
-
             foreach (ObjectId entId in btr) {
               Entity ent = tr.GetObject(entId, OpenMode.ForWrite) as Entity;
               if (ent is Table) {
@@ -181,7 +193,7 @@ namespace ElectricalCommands.Notes
                         TypedValue tv = xRec.Data.AsArray()[0];
                         if (tv.TypeCode == (int)DxfCode.Text) {
                           string noteTableIdString = tv.Value as string;
-                          updateTableOnCAD(table, noteTableIdString, attDefId);
+                          updateTableOnCAD(table, noteTableIdString, blockId, attDefId, gmepStyleId);
                         }
                       }
                     }
@@ -196,7 +208,7 @@ namespace ElectricalCommands.Notes
 
       }
     }
-    private void updateTableOnCAD(Table table, string noteTableId, ObjectId attDefId) {
+    private void updateTableOnCAD(Table table, string noteTableId, ObjectId blockId, ObjectId attDefId, ObjectId styleId) {
       //update the values of the table
       foreach (var sheetId in KeyedNoteTables.Keys) {
         foreach (var noteTable in KeyedNoteTables[sheetId]) {
@@ -204,8 +216,16 @@ namespace ElectricalCommands.Notes
             table.SetSize(noteTable.KeyedNotes.Count + 2, 2);
             for (int i = 0; i < table.Rows.Count - 2; i++) {
               ElectricalKeyedNote note = noteTable.KeyedNotes[i];
+              table.Cells[i + 2, 0].BlockTableRecordId = blockId;
               table.Cells[i + 2, 0].SetBlockAttributeValue(attDefId, note.Index.ToString());
+              table.Cells[i + 2, 0].Alignment = CellAlignment.TopCenter;
+              table.Cells[i + 2, 0].TextStyleId = styleId;
+              table.Cells[i + 2, 0].Contents[0].IsAutoScale = false;
+
               table.Cells[i + 2, 1].TextString = note.Note.ToUpper();
+              table.Cells[i + 2, 1].TextHeight = 0.1;
+              table.Cells[i + 2, 1].TextStyleId = styleId;
+              table.Cells[i + 2, 1].Alignment = CellAlignment.MiddleLeft;
             }
           }
         }
