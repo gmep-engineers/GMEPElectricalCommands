@@ -148,6 +148,19 @@ namespace ElectricalCommands.Notes
         //Loop through each table in autocad
         using (Transaction tr = db.TransactionManager.StartTransaction()) {
           BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+          //Getting the object id of the attribute definition "A"
+          BlockTableRecord btr1 = (BlockTableRecord)tr.GetObject(bt["4KNHEX"], OpenMode.ForRead);
+          ObjectId attDefId = ObjectId.Null;
+          foreach (ObjectId id in btr1) {
+            DBObject obj = tr.GetObject(id, OpenMode.ForRead);
+            if (obj is AttributeDefinition attDef && attDef.Tag.ToUpper() == "A") {
+              attDefId = id;
+              break;
+            }
+          }
+
+          //Iterating through each block table record
           foreach (ObjectId btrId in bt) {
             BlockTableRecord btr = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
 
@@ -168,7 +181,7 @@ namespace ElectricalCommands.Notes
                         TypedValue tv = xRec.Data.AsArray()[0];
                         if (tv.TypeCode == (int)DxfCode.Text) {
                           string noteTableIdString = tv.Value as string;
-                          updateTableOnCAD(table, noteTableIdString);
+                          updateTableOnCAD(table, noteTableIdString, attDefId);
                         }
                       }
                     }
@@ -183,13 +196,15 @@ namespace ElectricalCommands.Notes
 
       }
     }
-    private void updateTableOnCAD(Table table, string noteTableId) {
+    private void updateTableOnCAD(Table table, string noteTableId, ObjectId attDefId) {
+      //update the values of the table
       foreach (var sheetId in KeyedNoteTables.Keys) {
         foreach (var noteTable in KeyedNoteTables[sheetId]) {
           if (noteTable.Id == noteTableId) {
+            table.SetSize(noteTable.KeyedNotes.Count + 2, 2);
             for (int i = 0; i < table.Rows.Count - 2; i++) {
               ElectricalKeyedNote note = noteTable.KeyedNotes[i];
-              //table.Cells[i + 2, 0].SetBlockAttributeValue(note.Id, note.Index.ToString());
+              table.Cells[i + 2, 0].SetBlockAttributeValue(attDefId, note.Index.ToString());
               table.Cells[i + 2, 1].TextString = note.Note.ToUpper();
             }
           }
