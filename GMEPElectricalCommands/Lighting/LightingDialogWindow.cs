@@ -71,6 +71,7 @@ namespace ElectricalCommands.Lighting
         item.SubItems.Add("LED");
         item.SubItems.Add(Math.Round(fixture.Wattage, 1).ToString());
         item.SubItems.Add(fixture.Notes);
+        item.SubItems.Add(fixture.Id);
         LightingFixturesListView.Items.Add(item);
       }
       if (!updateOnly)
@@ -395,6 +396,277 @@ namespace ElectricalCommands.Lighting
           }
         }
         CreateLightingFixtureSchedule(doc, db, ed, startingPoint);
+      }
+    }
+
+    private void PlaceFixture_Click(object sender, EventArgs e)
+    {
+      if (LightingFixturesListView.SelectedItems.Count == 0)
+      {
+        return;
+      }
+      using (
+        DocumentLock docLock =
+          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
+      )
+      {
+        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
+          .AutoCAD
+          .Windows
+          .Window
+          .State
+          .Maximized;
+        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
+        if (CADObjectCommands.Scale == -1.0)
+        {
+          CADObjectCommands.SetScale();
+        }
+        Document doc = Autodesk
+          .AutoCAD
+          .ApplicationServices
+          .Core
+          .Application
+          .DocumentManager
+          .MdiActiveDocument;
+        Editor ed = doc.Editor;
+        Database db = doc.Database;
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          LayerTable acLyrTbl;
+          acLyrTbl = tr.GetObject(db.LayerTableId, OpenMode.ForRead) as LayerTable;
+
+          string sLayerName = "E-LITE-FIXT";
+
+          if (acLyrTbl.Has(sLayerName) == true)
+          {
+            db.Clayer = acLyrTbl[sLayerName];
+            tr.Commit();
+          }
+        }
+        int numSubitems = LightingFixturesListView.SelectedItems[0].SubItems.Count;
+        for (int si = 0; si < LightingFixturesListView.SelectedItems.Count; si++)
+        {
+          foreach (ElectricalEntity.LightingFixture fixture in lightingFixtureList)
+          {
+            if (
+              fixture.Id
+              != LightingFixturesListView.SelectedItems[si].SubItems[numSubitems - 1].Text
+            )
+            {
+              continue;
+            }
+            for (int i = 0; i < fixture.Qty; i++)
+            {
+              ed.WriteMessage(
+                "\nPlace "
+                  + (i + 1).ToString()
+                  + "/"
+                  + fixture.Qty.ToString()
+                  + " for '"
+                  + fixture.Name
+                  + "'"
+              );
+              ObjectId blockId;
+              try
+              {
+                Point3d point;
+                double rotation = 0;
+                using (Transaction tr = db.TransactionManager.StartTransaction())
+                {
+                  BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+                  BlockTableRecord block = (BlockTableRecord)
+                    tr.GetObject(bt[fixture.BlockName], OpenMode.ForRead);
+                  BlockJig blockJig = new BlockJig();
+
+                  PromptResult res = blockJig.DragMe(block.ObjectId, out point);
+
+                  if (res.Status == PromptStatus.OK)
+                  {
+                    BlockTableRecord curSpace = (BlockTableRecord)
+                      tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+                    BlockReference br = new BlockReference(point, block.ObjectId);
+
+                    if (fixture.Rotate)
+                    {
+                      RotateJig rotateJig = new RotateJig(br);
+                      PromptResult rotatePromptResult = ed.Drag(rotateJig);
+
+                      if (rotatePromptResult.Status != PromptStatus.OK)
+                      {
+                        return;
+                      }
+                      rotation = br.Rotation;
+                    }
+
+                    curSpace.AppendEntity(br);
+
+                    tr.AddNewlyCreatedDBObject(br, true);
+                    blockId = br.Id;
+
+                    //Setting Attributes
+                    foreach (ObjectId objId in block)
+                    {
+                      DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
+                      AttributeDefinition attDef = obj as AttributeDefinition;
+                      if (attDef != null && !attDef.Constant)
+                      {
+                        using (AttributeReference attRef = new AttributeReference())
+                        {
+                          attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
+                          attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
+                          if (attDef.Tag == "LIGHTING_NAME")
+                          {
+                            attRef.TextString = fixture.Name;
+                          }
+                          if (attDef.Tag == "LIGHTING_CIRCUIT")
+                          {
+                            attRef.TextString = "#~";
+                          }
+                          br.AttributeCollection.AppendAttribute(attRef);
+                          tr.AddNewlyCreatedDBObject(attRef, true);
+                        }
+                      }
+                    }
+                  }
+                  else
+                  {
+                    return;
+                  }
+
+                  tr.Commit();
+                }
+                using (Transaction tr = db.TransactionManager.StartTransaction())
+                {
+                  BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+                  var modelSpace = (BlockTableRecord)
+                    tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                  BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+                  DynamicBlockReferencePropertyCollection pc =
+                    br.DynamicBlockReferencePropertyCollection;
+
+                  foreach (DynamicBlockReferenceProperty prop in pc)
+                  {
+                    if (prop.PropertyName == "gmep_lighting_id" && prop.Value as string == "0")
+                    {
+                      prop.Value = Guid.NewGuid().ToString();
+                    }
+                    if (
+                      prop.PropertyName == "gmep_lighting_fixture_id"
+                      && prop.Value as string == "0"
+                    )
+                    {
+                      prop.Value = fixture.Id;
+                    }
+                    if (prop.PropertyName == "gmep_lighting_name" && prop.Value as string == "0")
+                    {
+                      prop.Value = fixture.Name;
+                    }
+                  }
+                  tr.Commit();
+                }
+                using (Transaction tr = db.TransactionManager.StartTransaction())
+                {
+                  BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+                  Point3d position = new Point3d(
+                    point.X + fixture.LabelTransformVX,
+                    point.Y
+                      + fixture.LabelTransformVY
+                      + (
+                        (CADObjectCommands.Scale - 0.25)
+                        * 12
+                        * Math.Pow(0.25 / CADObjectCommands.Scale, 1.5)
+                      ),
+                    0
+                  );
+                  Point3d position2 = new Point3d(
+                    point.X + fixture.LabelTransformVX,
+                    point.Y
+                      - fixture.LabelTransformVY
+                      - (
+                        (CADObjectCommands.Scale - 0.25)
+                        * 12
+                        * Math.Pow(0.25 / CADObjectCommands.Scale, 1.5)
+                      )
+                      - (16 * CADObjectCommands.Scale),
+                    0
+                  );
+                  if (Math.Round(rotation, 1) == 1.6 || Math.Round(rotation, 1) == 4.7)
+                  {
+                    position = new Point3d(
+                      point.X + fixture.LabelTransformHX,
+                      point.Y
+                        + fixture.LabelTransformHY
+                        + (
+                          (CADObjectCommands.Scale - 0.25)
+                          * 12
+                          * Math.Pow(0.25 / CADObjectCommands.Scale, 1.5)
+                        ),
+                      0
+                    );
+                    position2 = new Point3d(
+                      point.X + fixture.LabelTransformHX,
+                      point.Y
+                        - fixture.LabelTransformHY
+                        - (
+                          (CADObjectCommands.Scale - 0.25)
+                          * 12
+                          * Math.Pow(0.25 / CADObjectCommands.Scale, 1.5)
+                        )
+                        - (16 * CADObjectCommands.Scale),
+                      0
+                    );
+                  }
+
+                  foreach (ObjectId id in br.AttributeCollection)
+                  {
+                    AttributeReference attRef = (AttributeReference)
+                      tr.GetObject(id, OpenMode.ForWrite);
+                    if (attRef.Tag == "LIGHTING_NAME")
+                    {
+                      attRef.Position = position;
+                      attRef.Rotation = attRef.Rotation - rotation;
+                      attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;
+                      attRef.WidthFactor = 0.85;
+                      attRef.HorizontalMode = TextHorizontalMode.TextLeft;
+                      attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
+                      attRef.Justify = AttachmentPoint.BaseLeft;
+                    }
+                    if (attRef.Tag == "LIGHTING_CIRCUIT")
+                    {
+                      attRef.Position = position2;
+                      attRef.Rotation = attRef.Rotation - rotation;
+                      attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;
+                      attRef.WidthFactor = 0.85;
+                      attRef.HorizontalMode = TextHorizontalMode.TextLeft;
+                      attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
+                      attRef.Justify = AttachmentPoint.BaseLeft;
+                    }
+                  }
+                  tr.Commit();
+                }
+              }
+              catch (System.Exception ex)
+              {
+                ed.WriteMessage(ex.ToString());
+              }
+            }
+          }
+          using (Transaction tr = db.TransactionManager.StartTransaction())
+          {
+            LayerTable acLyrTbl;
+            acLyrTbl = tr.GetObject(db.LayerTableId, OpenMode.ForRead) as LayerTable;
+
+            string sLayerName = "E-CND1";
+
+            if (acLyrTbl.Has(sLayerName) == true)
+            {
+              db.Clayer = acLyrTbl[sLayerName];
+              tr.Commit();
+            }
+          }
+        }
       }
     }
   }
