@@ -152,7 +152,7 @@ namespace ElectricalCommands.Notes
             BlockTableRecord btr = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
 
             foreach (ObjectId entId in btr) {
-              Entity ent = tr.GetObject(entId, OpenMode.ForRead) as Entity;
+              Entity ent = tr.GetObject(entId, OpenMode.ForWrite) as Entity;
               if (ent is Table) {
                 Table table = (Table)ent;
                 // Check if the table has an extension dictionary
@@ -168,7 +168,7 @@ namespace ElectricalCommands.Notes
                         TypedValue tv = xRec.Data.AsArray()[0];
                         if (tv.TypeCode == (int)DxfCode.Text) {
                           string noteTableIdString = tv.Value as string;
-                          ed.WriteMessage("\nNote Table ID: " + noteTableIdString);
+                          updateTableOnCAD(table, noteTableIdString);
                         }
                       }
                     }
@@ -182,6 +182,22 @@ namespace ElectricalCommands.Notes
         //loop through each note in autocad
 
       }
+    }
+    private void updateTableOnCAD(Table table, string noteTableId) {
+      foreach (var sheetId in KeyedNoteTables.Keys) {
+        foreach (var noteTable in KeyedNoteTables[sheetId]) {
+          if (noteTable.Id == noteTableId) {
+            for (int i = 0; i < table.Rows.Count - 2; i++) {
+              ElectricalKeyedNote note = noteTable.KeyedNotes[i];
+              //table.Cells[i + 2, 0].SetBlockAttributeValue(note.Id, note.Index.ToString());
+              table.Cells[i + 2, 1].TextString = note.Note.ToUpper();
+            }
+          }
+        }
+      }
+
+    }
+    private void updateNoteOnCAD(BlockReference noteRef) {
     }
 
 
