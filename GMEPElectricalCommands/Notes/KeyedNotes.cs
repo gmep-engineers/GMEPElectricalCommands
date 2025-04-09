@@ -225,7 +225,7 @@ namespace ElectricalCommands.Notes
             table.Cells[0, 0].TextString = noteTable.Title.ToUpper() + " KEYED NOTES";
             table.Cells[0, 0].TextStyleId = sectionTitleStyleId;
             table.Cells[0, 0].TextHeight = 0.25;
-            table.Columns[1].Width = 5;
+            table.Columns[1].Width = 5.5;
 
             for (int i = 0; i < noteTable.KeyedNotes.Count; i++) {
               //Grabbing the objectid of the attribute definition "A"
@@ -243,12 +243,15 @@ namespace ElectricalCommands.Notes
               table.Cells[i + 2, 0].BlockTableRecordId = bt["4KNHEX"];
               table.Cells[i + 2, 0].SetBlockAttributeValue(attDefId, noteTable.KeyedNotes[i].Index.ToString());
               table.Cells[i + 2, 0].Alignment = CellAlignment.TopCenter;
+              table.Cells[i + 2, 0].TextStyleId = gmepStyleId;
+              table.Cells[i + 2, 0].Contents[0].IsAutoScale = false;
 
               //Note Description
               table.Cells[i + 2, 1].TextString = noteTable.KeyedNotes[i].Note.ToUpper();
               table.Cells[i + 2, 1].TextStyleId = gmepStyleId;
-              table.Cells[i + 2, 1].TextHeight = 0.125;
+              table.Cells[i + 2, 1].TextHeight = 0.1;
               table.Cells[i + 2, 1].Alignment = CellAlignment.MiddleLeft;
+              table.Cells[i + 2, 1].Contents[0].IsAutoScale = false;
 
             }
             currentSpace.AppendEntity(table);
