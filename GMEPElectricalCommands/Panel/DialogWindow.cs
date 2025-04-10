@@ -1,19 +1,21 @@
-﻿using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.GraphicsInterface;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Windows.Forms;
+using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.GraphicsInterface;
+using GMEPElectricalCommands.GmepDatabase;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
-namespace ElectricalCommands {
-
-  public partial class MainForm : Form {
+namespace ElectricalCommands
+{
+  public partial class MainForm : Form
+  {
     private readonly PanelCommands myCommandsInstance;
     private NewPanelForm newPanelForm;
     private readonly List<PanelUserControl> userControls;
@@ -22,8 +24,10 @@ namespace ElectricalCommands {
     private readonly string acDocFileName;
     private readonly string acDocName;
     public bool initialized = false;
+    public bool readOnly = false;
 
-    public MainForm(PanelCommands myCommands) {
+    public MainForm(PanelCommands myCommands)
+    {
       InitializeComponent();
       this.myCommandsInstance = myCommands;
       this.newPanelForm = new NewPanelForm(this);
@@ -33,7 +37,12 @@ namespace ElectricalCommands {
       this.KeyPreview = true;
       this.KeyDown += new KeyEventHandler(MAINFORM_KEYDOWN);
       this.Deactivate += MAINFORM_DEACTIVATE;
-      this.acDoc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+      this.acDoc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
       this.acDoc.BeginDocumentClose -= new DocumentBeginCloseEventHandler(DocBeginDocClose);
       this.acDoc.BeginDocumentClose += new DocumentBeginCloseEventHandler(DocBeginDocClose);
       this.acDocPath = Path.GetDirectoryName(this.acDoc.Name);
@@ -41,22 +50,29 @@ namespace ElectricalCommands {
       this.acDocName = this.acDoc.Name;
     }
 
-    private void DocBeginDocClose(object sender, DocumentBeginCloseEventArgs e) {
-      SavePanelDataToLocalJsonFile();
-      this.acDoc.Database.SaveAs(
+    private void DocBeginDocClose(object sender, DocumentBeginCloseEventArgs e)
+    {
+      if (!readOnly)
+      {
+        SavePanelDataToLocalJsonFile();
+        this.acDoc.Database.SaveAs(
           acDocName,
           true,
           DwgVersion.Current,
           this.acDoc.Database.SecurityParameters
-      );
+        );
+      }
     }
 
-    public List<PanelUserControl> RetrieveUserControls() {
+    public List<PanelUserControl> RetrieveUserControls()
+    {
       return this.userControls;
     }
 
-    public UserControl FindUserControl(string panelName) {
-      foreach (PanelUserControl userControl in userControls) {
+    public UserControl FindUserControl(string panelName)
+    {
+      foreach (PanelUserControl userControl in userControls)
+      {
         string userControlName = userControl.Name.Replace("'", "");
         userControlName = userControlName.Replace(" ", "");
         userControlName = userControlName.Replace("-", "");
@@ -69,7 +85,8 @@ namespace ElectricalCommands {
         panelName = panelName.Replace("PANEL", "");
         panelName = panelName.Replace("DISTRIB.", "");
 
-        if (userControlName.ToLower() == panelName.ToLower()) {
+        if (userControlName.ToLower() == panelName.ToLower())
+        {
           return userControl;
         }
       }
@@ -77,26 +94,31 @@ namespace ElectricalCommands {
       return null;
     }
 
-    public void InitializeModal() {
+    public void InitializeModal()
+    {
       PANEL_TABS.TabPages.Clear();
 
       List<Dictionary<string, object>> panelStorage = RetrieveSavedPanelData();
 
-      if (panelStorage.Count == 0) {
+      if (panelStorage.Count == 0)
+      {
         return;
       }
-      else {
+      else
+      {
         MakeTabsAndPopulate(panelStorage);
         this.initialized = true;
       }
     }
 
-    public void DuplicatePanel() {
+    public void DuplicatePanel()
+    {
       // Get the currently selected tab
       TabPage selectedTab = PANEL_TABS.SelectedTab;
 
       // Check if a tab is selected
-      if (selectedTab != null) {
+      if (selectedTab != null)
+      {
         // Get the UserControl associated with the selected tab
         PanelUserControl selectedUserControl = (PanelUserControl)selectedTab.Controls[0];
 
@@ -105,7 +127,9 @@ namespace ElectricalCommands {
 
         // Create a deep copy of the selected panel data using serialization
         string jsonData = JsonConvert.SerializeObject(selectedPanelData);
-        Dictionary<string, object> duplicatePanelData = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonData);
+        Dictionary<string, object> duplicatePanelData = JsonConvert.DeserializeObject<
+          Dictionary<string, object>
+        >(jsonData);
 
         // Get the original panel name
         string originalPanelName = selectedPanelData["panel"].ToString();
@@ -116,56 +140,71 @@ namespace ElectricalCommands {
         // Update the panel name in the duplicate panel data
         duplicatePanelData["panel"] = newPanelName;
 
-        List<Dictionary<string, object>> newPanelStorage = new List<Dictionary<string, object>> { duplicatePanelData };
+        List<Dictionary<string, object>> newPanelStorage = new List<Dictionary<string, object>>
+        {
+          duplicatePanelData,
+        };
 
         MakeTabsAndPopulate(newPanelStorage);
       }
     }
 
-    private object DeepCopy(object value) {
-      if (value is ICloneable cloneable) {
+    private object DeepCopy(object value)
+    {
+      if (value is ICloneable cloneable)
+      {
         return cloneable.Clone();
       }
-      if (value is string || value.GetType().IsValueType) {
+      if (value is string || value.GetType().IsValueType)
+      {
         return value;
       }
-      if (value is Dictionary<string, object> dict) {
+      if (value is Dictionary<string, object> dict)
+      {
         Dictionary<string, object> copy = new Dictionary<string, object>();
-        foreach (var kvp in dict) {
+        foreach (var kvp in dict)
+        {
           copy[kvp.Key] = DeepCopy(kvp.Value);
         }
         return copy;
       }
-      if (value is List<object> list) {
+      if (value is List<object> list)
+      {
         List<object> copy = new List<object>();
-        foreach (var item in list) {
+        foreach (var item in list)
+        {
           copy.Add(DeepCopy(item));
         }
         return copy;
       }
-      if (value is JToken jToken) {
+      if (value is JToken jToken)
+      {
         return jToken.DeepClone();
       }
       throw new InvalidOperationException("Unsupported data type in panel data");
     }
 
-    private string GetNewPanelName(string originalPanelName) {
+    private string GetNewPanelName(string originalPanelName)
+    {
       string newPanelName = originalPanelName;
 
       // Check if the original panel name ends with a number
       int lastNumber = 0;
       int index = originalPanelName.Length - 1;
-      while (index >= 0 && char.IsDigit(originalPanelName[index])) {
+      while (index >= 0 && char.IsDigit(originalPanelName[index]))
+      {
         lastNumber = lastNumber * 10 + (originalPanelName[index] - '0');
         index--;
       }
 
-      if (lastNumber > 0) {
+      if (lastNumber > 0)
+      {
         // Increment the last number
         lastNumber++;
         newPanelName = originalPanelName.Substring(0, index + 1) + lastNumber.ToString();
       }
-      else {
+      else
+      {
         // Append "2" to the original panel name
         newPanelName = originalPanelName + "2";
       }
@@ -173,16 +212,19 @@ namespace ElectricalCommands {
       return newPanelName;
     }
 
-    private void MakeTabsAndPopulate(List<Dictionary<string, object>> panelStorage) {
+    private void MakeTabsAndPopulate(List<Dictionary<string, object>> panelStorage)
+    {
       SetupCellsValuesFromPanelData(panelStorage);
       SetupTagsFromPanelData(panelStorage);
 
       var sortedPanels = panelStorage.OrderBy(panel => panel["panel"].ToString()).ToList();
 
-      foreach (Dictionary<string, object> panel in sortedPanels) {
+      foreach (Dictionary<string, object> panel in sortedPanels)
+      {
         string panelName = panel["panel"].ToString();
         PanelUserControl userControl = (PanelUserControl)FindUserControl(panelName);
-        if (userControl == null) {
+        if (userControl == null)
+        {
           continue;
         }
         userControl.AddListeners();
@@ -193,58 +235,76 @@ namespace ElectricalCommands {
       }
     }
 
-    private void SetupCellsValuesFromPanelData(List<Dictionary<string, object>> panelStorage) {
+    private void SetupCellsValuesFromPanelData(List<Dictionary<string, object>> panelStorage)
+    {
       var sortedPanels = panelStorage.OrderBy(panel => panel["panel"].ToString()).ToList();
 
-      foreach (Dictionary<string, object> panel in sortedPanels) {
+      foreach (Dictionary<string, object> panel in sortedPanels)
+      {
         string panelName = panel["panel"].ToString();
         bool is3Ph = panel.ContainsKey("phase_c_left");
         PanelUserControl userControl1 = CreateNewPanelTab(panelName, is3Ph);
         userControl1.ClearModalAndRemoveRows(panel);
         userControl1.PopulateModalWithPanelData(panel);
+        if (userControl1.readOnly)
+        {
+          readOnly = true;
+          NEW_PANEL_BUTTON.Enabled = !readOnly;
+          SAVE_BUTTON.Enabled = !readOnly;
+          LOAD_BUTTON.Enabled = !readOnly;
+          DUPLICATE_PANEL_BUTTON.Enabled = !readOnly;
+        }
         var notes = JsonConvert.DeserializeObject<List<string>>(panel["notes"].ToString());
         userControl1.UpdateNotesStorage(notes);
       }
     }
 
-    private void SetupTagsFromPanelData(List<Dictionary<string, object>> panelStorage) {
-      foreach (Dictionary<string, object> panel in panelStorage) {
+    private void SetupTagsFromPanelData(List<Dictionary<string, object>> panelStorage)
+    {
+      foreach (Dictionary<string, object> panel in panelStorage)
+      {
         string panelName = panel["panel"].ToString();
         PanelUserControl userControl1 = (PanelUserControl)FindUserControl(panelName);
-        if (userControl1 == null) {
+        if (userControl1 == null)
+        {
           continue;
         }
         DataGridView panelGrid = userControl1.RetrievePanelGrid();
-        foreach (DataGridViewRow row in panelGrid.Rows) {
+        foreach (DataGridViewRow row in panelGrid.Rows)
+        {
           int rowIndex = row.Index;
           var tagNames = new Dictionary<string, int>();
-          if (panel.ContainsKey("phase_c_left")) {
+          if (panel.ContainsKey("phase_c_left"))
+          {
             tagNames = new Dictionary<string, int>()
-                        {
-                            { "phase_a_left_tag", 1 },
-                            { "phase_b_left_tag", 2 },
-                            { "phase_c_left_tag", 3 },
-                            { "phase_a_right_tag", 8 },
-                            { "phase_b_right_tag", 9 },
-                            { "phase_c_right_tag", 10 },
-                            { "description_left_tags", 0 },
-                            { "description_right_tags", 11 }
-                        };
+            {
+              { "phase_a_left_tag", 1 },
+              { "phase_b_left_tag", 2 },
+              { "phase_c_left_tag", 3 },
+              { "phase_a_right_tag", 8 },
+              { "phase_b_right_tag", 9 },
+              { "phase_c_right_tag", 10 },
+              { "description_left_tags", 0 },
+              { "description_right_tags", 11 },
+            };
           }
-          else {
+          else
+          {
             tagNames = new Dictionary<string, int>()
-                        {
-                            { "phase_a_left_tag", 1 },
-                            { "phase_b_left_tag", 2 },
-                            { "phase_a_right_tag", 7 },
-                            { "phase_b_right_tag", 8 },
-                            { "description_left_tags", 0 },
-                            { "description_right_tags", 9 }
-                        };
+            {
+              { "phase_a_left_tag", 1 },
+              { "phase_b_left_tag", 2 },
+              { "phase_a_right_tag", 7 },
+              { "phase_b_right_tag", 8 },
+              { "description_left_tags", 0 },
+              { "description_right_tags", 9 },
+            };
           }
 
-          foreach (var tagName in tagNames) {
-            if (panel.ContainsKey(tagName.Key)) {
+          foreach (var tagName in tagNames)
+          {
+            if (panel.ContainsKey(tagName.Key))
+            {
               SetCellValue(panel, tagName.Key, rowIndex, tagName.Value, row);
             }
           }
@@ -254,54 +314,73 @@ namespace ElectricalCommands {
       }
     }
 
-    private void SetCellValue(Dictionary<string, object> panel, string key, int rowIndex, int cellIndex, DataGridViewRow row) {
+    private void SetCellValue(
+      Dictionary<string, object> panel,
+      string key,
+      int rowIndex,
+      int cellIndex,
+      DataGridViewRow row
+    )
+    {
       string tag = panel[key].ToString();
       List<string> tagList = JsonConvert.DeserializeObject<List<string>>(tag);
 
-      if (rowIndex < tagList.Count) {
+      if (rowIndex < tagList.Count)
+      {
         string tagValue = tagList[rowIndex];
-        if (!string.IsNullOrEmpty(tagValue)) {
-          if (key.Contains("phase") && tagValue.Contains("=")) {
+        if (!string.IsNullOrEmpty(tagValue))
+        {
+          if (key.Contains("phase") && tagValue.Contains("="))
+          {
             row.Cells[cellIndex].Value = tagValue;
           }
-          else if (key.Contains("description")) {
+          else if (key.Contains("description"))
+          {
             row.Cells[cellIndex].Tag = tagValue;
           }
-          else if (key.Contains("phase") && !tagValue.Contains("=")) {
+          else if (key.Contains("phase") && !tagValue.Contains("="))
+          {
             row.Cells[cellIndex].Tag = tagValue;
           }
         }
       }
     }
 
-    internal void DeletePanel(PanelUserControl userControl1) {
+    internal void DeletePanel(PanelUserControl userControl1)
+    {
       DialogResult dialogResult = MessageBox.Show(
-          "Are you sure you want to delete this panel?",
-          "Delete Panel",
-          MessageBoxButtons.YesNo
+        "Are you sure you want to delete this panel?",
+        "Delete Panel",
+        MessageBoxButtons.YesNo
       );
-      if (dialogResult == DialogResult.Yes) {
+      if (dialogResult == DialogResult.Yes)
+      {
         this.userControls.Remove(userControl1);
         PANEL_TABS.TabPages.Remove(userControl1.Parent as TabPage);
         using (
-            DocumentLock docLock =
-                Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
-        ) {
+          DocumentLock docLock =
+            Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
+        )
+        {
           RemovePanelFromStorage(userControl1);
         }
       }
     }
 
-    private void RemovePanelFromStorage(PanelUserControl userControl1) {
+    private void RemovePanelFromStorage(PanelUserControl userControl1)
+    {
       var panelData = RetrieveSavedPanelData();
       var userControlName = userControl1.Name.Replace("\'", "").Replace("`", "");
       Dictionary<string, object> panelToRemove = null;
-      foreach (Dictionary<string, object> panel in panelData) {
+      foreach (Dictionary<string, object> panel in panelData)
+      {
         var panelName = panel["panel"].ToString().Replace("\'", "").Replace("`", "");
-        if (panelName == userControlName) {
+        if (panelName == userControlName)
+        {
           panelToRemove = panel;
         }
-        else {
+        else
+        {
           // check if panel is fed from deleted panel
           PanelUserControl p = (PanelUserControl)FindUserControl(panelName);
           p.RemoveFedFrom(userControlName);
@@ -309,22 +388,27 @@ namespace ElectricalCommands {
           p.RemoveSubpanel(userControlName, userControl1.Is3Ph());
         }
       }
-      if (panelToRemove != null) {
+      if (panelToRemove != null)
+      {
         panelData.Remove(panelToRemove);
       }
       StoreDataInJsonFile(panelData);
     }
 
-    internal bool PanelNameExists(string panelName) {
-      foreach (TabPage tabPage in PANEL_TABS.TabPages) {
-        if (tabPage.Text.Split(' ')[1].ToLower() == panelName.ToLower()) {
+    internal bool PanelNameExists(string panelName)
+    {
+      foreach (TabPage tabPage in PANEL_TABS.TabPages)
+      {
+        if (tabPage.Text.Split(' ')[1].ToLower() == panelName.ToLower())
+        {
           return true;
         }
       }
       return false;
     }
 
-    public void AddUserControlToNewTab(UserControl control, TabPage tabPage) {
+    public void AddUserControlToNewTab(UserControl control, TabPage tabPage)
+    {
       // Set the user control location and size if needed
       control.Location = new Point(0, 0); // Top-left corner of the tab page
       control.Dock = DockStyle.Fill; // If you want to dock it to fill the tab
@@ -333,9 +417,11 @@ namespace ElectricalCommands {
       tabPage.Controls.Add(control);
     }
 
-    public PanelUserControl CreateNewPanelTab(string tabName, bool is3Ph) {
+    public PanelUserControl CreateNewPanelTab(string tabName, bool is3Ph)
+    {
       // if tabname has "PANEL" in it replace it with "Panel"
-      if (tabName.Contains("PANEL") || tabName.Contains("Panel")) {
+      if (tabName.Contains("PANEL") || tabName.Contains("Panel"))
+      {
         tabName = tabName.Replace("PANEL", "");
         tabName = tabName.Replace("Panel", "");
       }
@@ -350,7 +436,13 @@ namespace ElectricalCommands {
       PANEL_TABS.SelectedTab = newTabPage;
 
       // Create a new UserControl
-      PanelUserControl userControl1 = new PanelUserControl(this.myCommandsInstance, this, this.newPanelForm, tabName, is3Ph);
+      PanelUserControl userControl1 = new PanelUserControl(
+        this.myCommandsInstance,
+        this,
+        this.newPanelForm,
+        tabName,
+        is3Ph
+      );
 
       // Add the UserControl to the list of UserControls
       this.userControls.Add(userControl1);
@@ -362,22 +454,25 @@ namespace ElectricalCommands {
       return userControl1;
     }
 
-    public List<Dictionary<string, object>> RetrieveSavedPanelData() {
+    public List<Dictionary<string, object>> RetrieveSavedPanelData()
+    {
       List<Dictionary<string, object>> allPanelData = new List<Dictionary<string, object>>();
 
       string savesDirectory = Path.Combine(acDocPath, "Saves");
       string panelSavesDirectory = Path.Combine(savesDirectory, "Panel");
 
       // Check if the "Saves/Panel" directory exists
-      if (Directory.Exists(panelSavesDirectory)) {
+      if (Directory.Exists(panelSavesDirectory))
+      {
         // Get all JSON files in the directory
         string[] jsonFiles = Directory.GetFiles(panelSavesDirectory, "*.json");
 
         // If there are any JSON files, find the most recent one
-        if (jsonFiles.Length > 0) {
+        if (jsonFiles.Length > 0)
+        {
           string mostRecentJsonFile = jsonFiles
-              .OrderByDescending(f => File.GetLastWriteTime(f))
-              .First();
+            .OrderByDescending(f => File.GetLastWriteTime(f))
+            .First();
 
           // Read the JSON data from the file
           string jsonData = File.ReadAllText(mostRecentJsonFile);
@@ -390,11 +485,14 @@ namespace ElectricalCommands {
       return allPanelData;
     }
 
-    public void SavePanelDataToLocalJsonFile() {
+    public void SavePanelDataToLocalJsonFile()
+    {
       List<Dictionary<string, object>> panelStorage = new List<Dictionary<string, object>>();
 
-      if (this.acDoc != null) {
-        foreach (PanelUserControl userControl in this.userControls) {
+      if (this.acDoc != null && !readOnly)
+      {
+        foreach (PanelUserControl userControl in this.userControls)
+        {
           panelStorage.Add(userControl.RetrieveDataFromModal());
         }
 
@@ -402,22 +500,29 @@ namespace ElectricalCommands {
       }
     }
 
-    public void StoreDataInJsonFile(List<Dictionary<string, object>> saveData) {
+    public void StoreDataInJsonFile(List<Dictionary<string, object>> saveData)
+    {
+      if (readOnly)
+      {
+        return;
+      }
       string savesDirectory = Path.Combine(acDocPath, "Saves");
       string panelSavesDirectory = Path.Combine(savesDirectory, "Panel");
 
       // Create the "Saves" directory if it doesn't exist
-      if (!Directory.Exists(savesDirectory)) {
+      if (!Directory.Exists(savesDirectory))
+      {
         Directory.CreateDirectory(savesDirectory);
       }
 
       // Create the "Saves/Panel" directory if it doesn't exist
-      if (!Directory.Exists(panelSavesDirectory)) {
+      if (!Directory.Exists(panelSavesDirectory))
+      {
         Directory.CreateDirectory(panelSavesDirectory);
       }
 
       // Create a JSON file name based on the AutoCAD file name and the current timestamp
-      
+
       string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
       string jsonFileName = acDocFileName + "_" + timestamp + ".json";
       string jsonFilePath = Path.Combine(panelSavesDirectory, jsonFileName);
@@ -429,34 +534,57 @@ namespace ElectricalCommands {
       File.WriteAllText(jsonFilePath, jsonData);
     }
 
-    private void MAINFORM_CLOSING(object sender, FormClosingEventArgs e) {
+    private void MAINFORM_CLOSING(object sender, FormClosingEventArgs e)
+    {
       this.acDoc.BeginDocumentClose -= new DocumentBeginCloseEventHandler(DocBeginDocClose);
-      SavePanelDataToLocalJsonFile();
+      if (!readOnly)
+      {
+        SavePanelDataToLocalJsonFile();
+      }
     }
 
-    public void PANEL_NAME_INPUT_TextChanged(object sender, EventArgs e, string input, bool distribSect = false) {
+    public void PANEL_NAME_INPUT_TextChanged(
+      object sender,
+      EventArgs e,
+      string input,
+      bool distribSect = false
+    )
+    {
       int selectedIndex = PANEL_TABS.SelectedIndex;
 
-      if (selectedIndex >= 0) {
-        if (distribSect) {
+      if (selectedIndex >= 0)
+      {
+        if (distribSect)
+        {
           PANEL_TABS.TabPages[selectedIndex].Text = "DISTRIB. " + input.ToUpper();
         }
-        else {
+        else
+        {
           PANEL_TABS.TabPages[selectedIndex].Text = "PANEL " + input.ToUpper();
         }
       }
     }
 
-    public void PANEL_NAME_INPUT_Leave(object sender, EventArgs e, string input, string id, string fedFrom) {
+    public void PANEL_NAME_INPUT_Leave(
+      object sender,
+      EventArgs e,
+      string input,
+      string id,
+      string fedFrom
+    )
+    {
       int selectedIndex = PANEL_TABS.SelectedIndex;
       List<Dictionary<string, object>> panelStorage = RetrieveSavedPanelData();
       string oldPanelName = "";
-      foreach (Dictionary<string, object> panel in panelStorage) {
-        if (!String.IsNullOrEmpty(id) && (panel["id"] as string).ToLower() == id.ToLower()) {
+      foreach (Dictionary<string, object> panel in panelStorage)
+      {
+        if (!String.IsNullOrEmpty(id) && (panel["id"] as string).ToLower() == id.ToLower())
+        {
           oldPanelName = (panel["panel"] as string).Replace("'", "");
         }
       }
-      if (!String.IsNullOrEmpty(oldPanelName) && !String.IsNullOrEmpty(fedFrom)) {
+      if (!String.IsNullOrEmpty(oldPanelName) && !String.IsNullOrEmpty(fedFrom))
+      {
         PanelUserControl fedFromUserControl = (PanelUserControl)FindUserControl(fedFrom);
         fedFromUserControl.UpdateSubpanelName("PANEL " + oldPanelName, "PANEL " + input);
       }
@@ -465,77 +593,107 @@ namespace ElectricalCommands {
       SavePanelDataToLocalJsonFile();
     }
 
-    private void MAINFORM_DEACTIVATE(object sender, EventArgs e) {
-      foreach (PanelUserControl userControl in userControls) {
+    private void MAINFORM_DEACTIVATE(object sender, EventArgs e)
+    {
+      foreach (PanelUserControl userControl in userControls)
+      {
         DataGridView panelGrid = userControl.RetrievePanelGrid();
         panelGrid.ClearSelection();
       }
     }
 
-    private void NEW_PANEL_BUTTON_Click(object sender, EventArgs e) {
+    private void NEW_PANEL_BUTTON_Click(object sender, EventArgs e)
+    {
       this.newPanelForm.ShowDialog();
     }
 
-    private void CREATE_ALL_PANELS_BUTTON_Click(object sender, EventArgs e) {
+    private void CREATE_ALL_PANELS_BUTTON_Click(object sender, EventArgs e)
+    {
       List<PanelUserControl> userControls = RetrieveUserControls();
       List<Dictionary<string, object>> panels = new List<Dictionary<string, object>>();
 
-      foreach (PanelUserControl userControl in userControls) {
+      foreach (PanelUserControl userControl in userControls)
+      {
         Dictionary<string, object> panelData = userControl.RetrieveDataFromModal();
         panels.Add(panelData);
       }
 
       using (
-          DocumentLock docLock =
-              Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
-      ) {
+        DocumentLock docLock =
+          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
+      )
+      {
         Close();
         myCommandsInstance.CreatePanels(panels);
 
-        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk.AutoCAD.Windows.Window.State.Maximized;
+        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
+          .AutoCAD
+          .Windows
+          .Window
+          .State
+          .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
       }
     }
 
-    private void MAINFORM_SHOWN(object sender, EventArgs e) {
+    private void CreateCurrentPanel_Click(object sender, EventArgs e)
+    {
+      string selectedTabName = PANEL_TABS.SelectedTab.Text;
+      PanelUserControl selectedUserControl = (PanelUserControl)FindUserControl(selectedTabName);
+      if (selectedUserControl != null)
+      {
+        selectedUserControl.CreatePanel();
+      }
+    }
+
+    private void MAINFORM_SHOWN(object sender, EventArgs e)
+    {
       // Check if the userControls list is empty
-      if (this.userControls.Count == 0) {
+      if (this.userControls.Count == 0)
+      {
         // If empty, show newPanelForm as a modal dialog
         newPanelForm.ShowDialog(); // or use appropriate method to show it as modal
       }
     }
 
-    private void HELP_BUTTON_Click(object sender, EventArgs e) {
+    private void HELP_BUTTON_Click(object sender, EventArgs e)
+    {
       HelpForm helpForm = new HelpForm();
 
       helpForm.ShowDialog();
     }
 
-    private void SAVE_BUTTON_Click(object sender, EventArgs e) {
+    private void SAVE_BUTTON_Click(object sender, EventArgs e)
+    {
       SavePanelDataToLocalJsonFile();
     }
 
-    private void MAINFORM_KEYDOWN(object sender, KeyEventArgs e) {
-      if (e.Control && e.KeyCode == Keys.S) {
+    private void MAINFORM_KEYDOWN(object sender, KeyEventArgs e)
+    {
+      if (e.Control && e.KeyCode == Keys.S)
+      {
         SavePanelDataToLocalJsonFile();
       }
     }
 
-    private void LOAD_BUTTON_Click(object sender, EventArgs e) {
+    private void LOAD_BUTTON_Click(object sender, EventArgs e)
+    {
       Close();
       // Prompt the user to select a JSON file
-      OpenFileDialog openFileDialog = new OpenFileDialog {
+      OpenFileDialog openFileDialog = new OpenFileDialog
+      {
         Filter = "JSON files (*.json)|*.json",
-        Title = "Select a JSON file"
+        Title = "Select a JSON file",
       };
 
-      if (openFileDialog.ShowDialog() == DialogResult.OK) {
+      if (openFileDialog.ShowDialog() == DialogResult.OK)
+      {
         // Read the JSON data from the file
         string jsonData = File.ReadAllText(openFileDialog.FileName);
 
         // Deserialize the JSON data to a list of dictionaries
         List<Dictionary<string, object>> panelData = JsonConvert.DeserializeObject<
-            List<Dictionary<string, object>>
+          List<Dictionary<string, object>>
         >(jsonData);
 
         // Save the panel data
@@ -543,31 +701,663 @@ namespace ElectricalCommands {
       }
     }
 
-    private void DUPLICATE_PANEL_BUTTON_Click(object sender, EventArgs e) {
+    private void DUPLICATE_PANEL_BUTTON_Click(object sender, EventArgs e)
+    {
       DuplicatePanel();
     }
 
-    private void LOAD_CALCULATIONS_BUTTON_Click(object sender, EventArgs e) {
-      using (DocumentLock docLock = this.acDoc.LockDocument()) {
+    private void LOAD_CALCULATIONS_BUTTON_Click(object sender, EventArgs e)
+    {
+      using (DocumentLock docLock = this.acDoc.LockDocument())
+      {
         CreateLoadCalculationsTable(this.userControls);
       }
     }
 
-    public static void CreateLoadCalculationsTable(List<PanelUserControl> userControls) {
-      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+    private void AddLoadToCircuit3P(
+      JsonPanel3P jsonPanel,
+      string startPhase,
+      string side,
+      ElectricalEntity.Equipment equip
+    )
+    {
+      string[] circuitArr;
+      string[] descriptionArr;
+      string[] breakerArr;
+      if (side == "left")
+      {
+        circuitArr = jsonPanel.circuit_left;
+        descriptionArr = jsonPanel.description_left;
+        breakerArr = jsonPanel.breaker_left;
+      }
+      else
+      {
+        circuitArr = jsonPanel.circuit_right;
+        descriptionArr = jsonPanel.description_right;
+        breakerArr = jsonPanel.breaker_right;
+      }
+      int startIndex = 0;
+      foreach (string circuit in circuitArr)
+      {
+        if (circuit == equip.Circuit.ToString())
+        {
+          break;
+        }
+        else
+        {
+          startIndex++;
+        }
+      }
+      string[] firstPhaseArr;
+      string[] secondPhaseArr;
+      string[] thirdPhaseArr;
+
+      if (startPhase == "a")
+      {
+        if (side == "left")
+        {
+          firstPhaseArr = jsonPanel.phase_a_left;
+          secondPhaseArr = jsonPanel.phase_b_left;
+          thirdPhaseArr = jsonPanel.phase_c_left;
+        }
+        else
+        {
+          firstPhaseArr = jsonPanel.phase_a_right;
+          secondPhaseArr = jsonPanel.phase_b_right;
+          thirdPhaseArr = jsonPanel.phase_c_right;
+        }
+      }
+      else if (startPhase == "b")
+      {
+        if (side == "left")
+        {
+          firstPhaseArr = jsonPanel.phase_b_left;
+          secondPhaseArr = jsonPanel.phase_c_left;
+          thirdPhaseArr = jsonPanel.phase_a_left;
+        }
+        else
+        {
+          firstPhaseArr = jsonPanel.phase_b_right;
+          secondPhaseArr = jsonPanel.phase_c_right;
+          thirdPhaseArr = jsonPanel.phase_a_right;
+        }
+      }
+      else
+      {
+        if (side == "left")
+        {
+          firstPhaseArr = jsonPanel.phase_c_left;
+          secondPhaseArr = jsonPanel.phase_a_left;
+          thirdPhaseArr = jsonPanel.phase_b_left;
+        }
+        else
+        {
+          firstPhaseArr = jsonPanel.phase_c_right;
+          secondPhaseArr = jsonPanel.phase_a_right;
+          thirdPhaseArr = jsonPanel.phase_b_right;
+        }
+      }
+      string phaseLoad = string.Empty;
+      if (equip.Pole == 3)
+      {
+        phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 1.732, 0).ToString();
+        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        breakerArr[startIndex + 2] = "";
+        breakerArr[startIndex + 4] = "3";
+        firstPhaseArr[startIndex] = phaseLoad;
+        secondPhaseArr[startIndex + 2] = phaseLoad;
+        thirdPhaseArr[startIndex + 4] = phaseLoad;
+      }
+      else if (equip.Pole == 2)
+      {
+        phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 2, 0).ToString();
+        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        breakerArr[startIndex + 2] = "2";
+        firstPhaseArr[startIndex] = phaseLoad;
+        secondPhaseArr[startIndex + 2] = phaseLoad;
+      }
+      else
+      {
+        phaseLoad = equip.Va.ToString();
+        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        firstPhaseArr[startIndex] = phaseLoad;
+      }
+    }
+
+    private void AddLoadToCircuit2P(
+      JsonPanel2P jsonPanel,
+      string startPhase,
+      string side,
+      ElectricalEntity.Equipment equip
+    )
+    {
+      string[] circuitArr;
+      string[] descriptionArr;
+      string[] breakerArr;
+      if (side == "left")
+      {
+        circuitArr = jsonPanel.circuit_left;
+        descriptionArr = jsonPanel.description_left;
+        breakerArr = jsonPanel.breaker_left;
+      }
+      else
+      {
+        circuitArr = jsonPanel.circuit_right;
+        descriptionArr = jsonPanel.description_right;
+        breakerArr = jsonPanel.breaker_right;
+      }
+      int startIndex = 0;
+      foreach (string circuit in circuitArr)
+      {
+        if (circuit == equip.Circuit.ToString())
+        {
+          break;
+        }
+        else
+        {
+          startIndex++;
+        }
+      }
+      string[] firstPhaseArr;
+      string[] secondPhaseArr;
+
+      if (startPhase == "a")
+      {
+        if (side == "left")
+        {
+          firstPhaseArr = jsonPanel.phase_a_left;
+          secondPhaseArr = jsonPanel.phase_b_left;
+        }
+        else
+        {
+          firstPhaseArr = jsonPanel.phase_a_right;
+          secondPhaseArr = jsonPanel.phase_b_right;
+        }
+      }
+      else
+      {
+        if (side == "left")
+        {
+          firstPhaseArr = jsonPanel.phase_b_left;
+          secondPhaseArr = jsonPanel.phase_a_left;
+        }
+        else
+        {
+          firstPhaseArr = jsonPanel.phase_b_right;
+          secondPhaseArr = jsonPanel.phase_a_right;
+        }
+      }
+
+      string phaseLoad = string.Empty;
+      if (equip.Pole == 2)
+      {
+        phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 2, 0).ToString();
+        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        breakerArr[startIndex + 2] = "2";
+        firstPhaseArr[startIndex] = phaseLoad;
+        secondPhaseArr[startIndex + 2] = phaseLoad;
+      }
+      else
+      {
+        phaseLoad = equip.Va.ToString();
+        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        firstPhaseArr[startIndex] = phaseLoad;
+      }
+    }
+
+    private void LoadFromDesignTool_ButtonClick(object sender, EventArgs e)
+    {
+      // get list of panels
+      // get list of equipment
+      // generate json based on equipment panel-circuit association + lml/lcl
+      GmepDatabase gmepDb = new GmepDatabase();
+      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
+      List<ElectricalEntity.Panel> panels = gmepDb.GetPanels(projectId);
+      List<ElectricalEntity.Equipment> equipment = gmepDb.GetEquipment(projectId);
+      List<JsonPanel3P> jsonPanels3P = new List<JsonPanel3P>();
+      List<JsonPanel2P> jsonPanels2P = new List<JsonPanel2P>();
+      List<string> serializedPanels = new List<string>();
+      foreach (ElectricalEntity.Panel panel in panels)
+      {
+        if (panel.NumBreakers == 0)
+        {
+          panel.NumBreakers = 42;
+        }
+        if (panel.Phase == 3)
+        {
+          List<PanelNote> panelNotes = gmepDb.GetPanelNotes(panel.Id);
+          JsonPanel3P jsonPanel = new JsonPanel3P();
+          jsonPanel.id = panel.Id;
+          jsonPanel.read_only = true;
+          jsonPanel.main = panel.MainAmpRating.ToString();
+          jsonPanel.panel = "'" + panel.Name + "'";
+          jsonPanel.location = "";
+          jsonPanel.voltage1 = panel.Voltage.Substring(0, 3);
+          jsonPanel.voltage2 = panel.LineVoltage.ToString();
+          jsonPanel.phase = panel.Phase.ToString();
+          jsonPanel.wire = panel.Phase == 3 ? "4" : "3";
+          jsonPanel.mounting = panel.IsRecessed ? "RECESSED" : "SURFACE";
+          jsonPanel.existing = panel.Status.ToUpper();
+          jsonPanel.lcl_override = false;
+          jsonPanel.lml_override = false;
+          jsonPanel.subtotal_a = "0";
+          jsonPanel.subtotal_b = "0";
+          jsonPanel.subtotal_c = "0";
+          jsonPanel.total_va = "0";
+          jsonPanel.lcl = 0;
+          jsonPanel.lcl125 = 0;
+          jsonPanel.lml = 0;
+          jsonPanel.lml125 = 0;
+          jsonPanel.kva = "0";
+          jsonPanel.feeder_amps = "0";
+          jsonPanel.custom_title = "";
+          jsonPanel.bus_rating = panel.BusAmpRating.ToString();
+          jsonPanel.description_left_highlights = new bool[panel.NumBreakers];
+          jsonPanel.description_right_highlights = new bool[panel.NumBreakers];
+          jsonPanel.breaker_left_highlights = new bool[panel.NumBreakers];
+          jsonPanel.breaker_right_highlights = new bool[panel.NumBreakers];
+          jsonPanel.description_left = new string[panel.NumBreakers];
+          jsonPanel.description_right = new string[panel.NumBreakers];
+
+          jsonPanel.phase_a_left = new string[panel.NumBreakers];
+          jsonPanel.phase_a_right = new string[panel.NumBreakers];
+          jsonPanel.phase_b_left = new string[panel.NumBreakers];
+          jsonPanel.phase_b_right = new string[panel.NumBreakers];
+          jsonPanel.phase_c_left = new string[panel.NumBreakers];
+          jsonPanel.phase_c_right = new string[panel.NumBreakers];
+
+          jsonPanel.breaker_left = new string[panel.NumBreakers];
+          jsonPanel.breaker_right = new string[panel.NumBreakers];
+
+          jsonPanel.circuit_left = new string[panel.NumBreakers];
+          jsonPanel.circuit_right = new string[panel.NumBreakers];
+
+          jsonPanel.phase_a_left_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_a_right_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_b_left_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_b_right_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_c_left_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_c_right_tag = new string[panel.NumBreakers / 2];
+
+          jsonPanel.description_left_tags = new string[panel.NumBreakers / 2];
+          jsonPanel.description_right_tags = new string[panel.NumBreakers / 2];
+          int numNotes = 0;
+          foreach (PanelNote note in panelNotes)
+          {
+            if (note.Number > numNotes)
+            {
+              numNotes = note.Number;
+            }
+          }
+          jsonPanel.notes = new string[numNotes];
+          jsonPanels3P.Add(jsonPanel);
+          for (int i = 0; i < panel.NumBreakers; i++)
+          {
+            jsonPanel.description_left_highlights[i] = false;
+
+            jsonPanel.description_right_highlights[i] = false;
+
+            jsonPanel.breaker_left_highlights[i] = false;
+
+            jsonPanel.breaker_right_highlights[i] = false;
+
+            jsonPanel.description_left[i] = "SPACE";
+
+            jsonPanel.description_right[i] = "SPACE";
+
+            jsonPanel.phase_a_left[i] = "0";
+            jsonPanel.phase_a_right[i] = "0";
+
+            jsonPanel.phase_b_left[i] = "0";
+            jsonPanel.phase_b_right[i] = "0";
+
+            jsonPanel.phase_c_left[i] = "0";
+            jsonPanel.phase_c_right[i] = "0";
+
+            jsonPanel.breaker_left[i] = string.Empty;
+            jsonPanel.breaker_right[i] = string.Empty;
+
+            if (i % 2 == 0)
+            {
+              jsonPanel.circuit_left[i] = (i + 1).ToString();
+              jsonPanel.circuit_right[i] = (i + 2).ToString();
+            }
+            else
+            {
+              jsonPanel.circuit_left[i] = string.Empty;
+              jsonPanel.circuit_right[i] = string.Empty;
+            }
+          }
+          int noteIndex = 0;
+          for (int i = 0; i < panel.NumBreakers / 2; i++)
+          {
+            jsonPanel.phase_a_left_tag[i] = string.Empty;
+            jsonPanel.phase_a_right_tag[i] = string.Empty;
+
+            jsonPanel.phase_b_left_tag[i] = string.Empty;
+            jsonPanel.phase_b_right_tag[i] = string.Empty;
+
+            jsonPanel.phase_c_left_tag[i] = string.Empty;
+            jsonPanel.phase_c_right_tag[i] = string.Empty;
+
+            jsonPanel.description_left_tags[i] = string.Empty;
+            jsonPanel.description_right_tags[i] = string.Empty;
+          }
+          for (int i = 0; i < panel.NumBreakers / 2; i++)
+          {
+            List<PanelNote> leftNotes = panelNotes.FindAll(n =>
+              n.CircuitNo % 2 == 1 && n.CircuitNo == i + 1
+            );
+            foreach (PanelNote leftNote in leftNotes)
+            {
+              for (int j = 0; j < leftNote.Length; j++)
+              {
+                jsonPanel.description_left_tags[i + j] += "|" + leftNote.Note;
+                jsonPanel.description_left_tags[i + j] = jsonPanel
+                  .description_left_tags[i + j]
+                  .Trim('|');
+              }
+              if (!jsonPanel.notes.Contains(leftNote.Note))
+              {
+                jsonPanel.notes[noteIndex] = leftNote.Note;
+                noteIndex++;
+              }
+            }
+
+            List<PanelNote> rightNotes = panelNotes.FindAll(n =>
+              n.CircuitNo % 2 == 0 && n.CircuitNo == i + 2
+            );
+            foreach (PanelNote rightNote in rightNotes)
+            {
+              for (int j = 0; j < rightNote.Length; j++)
+              {
+                jsonPanel.description_right_tags[i + j] += "|" + rightNote.Note;
+                jsonPanel.description_right_tags[i + j] = jsonPanel
+                  .description_right_tags[i + j]
+                  .Trim('|');
+              }
+              if (!jsonPanel.notes.Contains(rightNote.Note))
+              {
+                jsonPanel.notes[noteIndex] = rightNote.Note;
+                noteIndex++;
+              }
+            }
+          }
+          foreach (ElectricalEntity.Equipment equip in equipment)
+          {
+            if (equip.ParentId == panel.Id)
+            {
+              if (equip.Circuit % 2 == 0)
+              {
+                // right 3-phase
+                if (equip.Circuit % 3 == 2)
+                {
+                  // phase a right
+                  AddLoadToCircuit3P(jsonPanel, "a", "right", equip);
+                }
+                else if (equip.Circuit % 3 == 1)
+                {
+                  // phase b right
+                  AddLoadToCircuit3P(jsonPanel, "b", "right", equip);
+                }
+                else
+                {
+                  // phase c right
+                  AddLoadToCircuit3P(jsonPanel, "c", "right", equip);
+                }
+              }
+              else
+              {
+                // left 3-phase
+                if (equip.Circuit % 3 == 1)
+                {
+                  // phase a left
+                  AddLoadToCircuit3P(jsonPanel, "a", "left", equip);
+                }
+                else if (equip.Circuit % 3 == 2)
+                {
+                  // phase c left
+                  AddLoadToCircuit3P(jsonPanel, "c", "left", equip);
+                }
+                else
+                {
+                  // phase b left
+                  AddLoadToCircuit3P(jsonPanel, "b", "left", equip);
+                }
+              }
+            }
+          }
+          string serializedPanel = JsonConvert.SerializeObject(jsonPanel, Formatting.Indented);
+          serializedPanels.Add(serializedPanel);
+        }
+        else
+        {
+          List<PanelNote> thisPanelNotes = gmepDb.GetPanelNotes(panel.Id);
+          JsonPanel2P jsonPanel = new JsonPanel2P();
+          jsonPanel.id = panel.Id;
+          jsonPanel.read_only = true;
+          jsonPanel.main = panel.MainAmpRating.ToString();
+          jsonPanel.panel = "'" + panel.Name + "'";
+          jsonPanel.location = "";
+          jsonPanel.voltage1 = panel.Voltage.Substring(0, 3);
+          jsonPanel.voltage2 = panel.LineVoltage.ToString();
+          jsonPanel.phase = panel.Phase.ToString();
+          jsonPanel.wire = panel.Phase == 3 ? "4" : "3";
+          jsonPanel.mounting = panel.IsRecessed ? "RECESSED" : "SURFACE";
+          jsonPanel.existing = panel.Status.ToUpper();
+          jsonPanel.lcl_override = false;
+          jsonPanel.lml_override = false;
+          jsonPanel.subtotal_a = "0";
+          jsonPanel.subtotal_b = "0";
+          jsonPanel.subtotal_c = "0";
+          jsonPanel.total_va = "0";
+          jsonPanel.lcl = 0;
+          jsonPanel.lcl125 = 0;
+          jsonPanel.lml = 0;
+          jsonPanel.lml125 = 0;
+          jsonPanel.kva = "0";
+          jsonPanel.feeder_amps = "0";
+          jsonPanel.custom_title = "";
+          jsonPanel.bus_rating = panel.BusAmpRating.ToString();
+          jsonPanel.description_left_highlights = new bool[panel.NumBreakers];
+          jsonPanel.description_right_highlights = new bool[panel.NumBreakers];
+          jsonPanel.breaker_left_highlights = new bool[panel.NumBreakers];
+          jsonPanel.breaker_right_highlights = new bool[panel.NumBreakers];
+          jsonPanel.description_left = new string[panel.NumBreakers];
+          jsonPanel.description_right = new string[panel.NumBreakers];
+
+          jsonPanel.phase_a_left = new string[panel.NumBreakers];
+          jsonPanel.phase_a_right = new string[panel.NumBreakers];
+          jsonPanel.phase_b_left = new string[panel.NumBreakers];
+          jsonPanel.phase_b_right = new string[panel.NumBreakers];
+
+          jsonPanel.breaker_left = new string[panel.NumBreakers];
+          jsonPanel.breaker_right = new string[panel.NumBreakers];
+
+          jsonPanel.circuit_left = new string[panel.NumBreakers];
+          jsonPanel.circuit_right = new string[panel.NumBreakers];
+
+          jsonPanel.phase_a_left_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_a_right_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_b_left_tag = new string[panel.NumBreakers / 2];
+          jsonPanel.phase_b_right_tag = new string[panel.NumBreakers / 2];
+
+          jsonPanel.description_left_tags = new string[panel.NumBreakers / 2];
+          jsonPanel.description_right_tags = new string[panel.NumBreakers / 2];
+          jsonPanel.notes = new string[thisPanelNotes.Count];
+          jsonPanels2P.Add(jsonPanel);
+          for (int i = 0; i < panel.NumBreakers; i++)
+          {
+            jsonPanel.description_left_highlights[i] = false;
+
+            jsonPanel.description_right_highlights[i] = false;
+
+            jsonPanel.breaker_left_highlights[i] = false;
+
+            jsonPanel.breaker_right_highlights[i] = false;
+
+            jsonPanel.description_left[i] = "SPACE";
+
+            jsonPanel.description_right[i] = "SPACE";
+
+            jsonPanel.phase_a_left[i] = "0";
+            jsonPanel.phase_a_right[i] = "0";
+
+            jsonPanel.phase_b_left[i] = "0";
+            jsonPanel.phase_b_right[i] = "0";
+
+            jsonPanel.breaker_left[i] = string.Empty;
+            jsonPanel.breaker_right[i] = string.Empty;
+
+            if (i % 2 == 0)
+            {
+              jsonPanel.circuit_left[i] = (i + 1).ToString();
+              jsonPanel.circuit_right[i] = (i + 2).ToString();
+            }
+            else
+            {
+              jsonPanel.circuit_left[i] = string.Empty;
+              jsonPanel.circuit_right[i] = string.Empty;
+            }
+          }
+          for (int i = 0; i < panel.NumBreakers / 2; i++)
+          {
+            jsonPanel.phase_a_left_tag[i] = string.Empty;
+            jsonPanel.phase_a_right_tag[i] = string.Empty;
+
+            jsonPanel.phase_b_left_tag[i] = string.Empty;
+            jsonPanel.phase_b_right_tag[i] = string.Empty;
+
+            jsonPanel.description_left_tags[i] = string.Empty;
+            jsonPanel.description_right_tags[i] = string.Empty;
+          }
+          foreach (ElectricalEntity.Equipment equip in equipment)
+          {
+            if (equip.ParentId == panel.Id)
+            {
+              if (equip.Circuit % 2 == 0)
+              {
+                // right 1-phase
+                if (equip.Circuit % 4 == 2)
+                {
+                  // phase a
+                  AddLoadToCircuit2P(jsonPanel, "a", "right", equip);
+                }
+                else
+                {
+                  // phase b
+                  AddLoadToCircuit2P(jsonPanel, "b", "right", equip);
+                }
+              }
+              else
+              {
+                // left 1-phase
+                if ((equip.Circuit + 1) % 4 == 2)
+                {
+                  // phase a left
+                  AddLoadToCircuit2P(jsonPanel, "a", "left", equip);
+                }
+                else
+                {
+                  // phase b left
+                  AddLoadToCircuit2P(jsonPanel, "b", "left", equip);
+                }
+              }
+            }
+          }
+          string serializedPanel = JsonConvert.SerializeObject(jsonPanel, Formatting.Indented);
+          serializedPanels.Add(serializedPanel);
+        }
+      }
+      if (serializedPanels.Count == 0)
+      {
+        return;
+      }
+      try
+      {
+        string savesDirectory = Path.Combine(acDocPath, "Saves");
+        string panelSavesDirectory = Path.Combine(savesDirectory, "Panel");
+
+        // Create the "Saves" directory if it doesn't exist
+        if (!Directory.Exists(savesDirectory))
+        {
+          Directory.CreateDirectory(savesDirectory);
+        }
+
+        // Create the "Saves/Panel" directory if it doesn't exist
+        if (!Directory.Exists(panelSavesDirectory))
+        {
+          Directory.CreateDirectory(panelSavesDirectory);
+        }
+
+        // Create a JSON file name based on the AutoCAD file name and the current timestamp
+
+        string timestamp = DateTime.Now.ToString("yyyyMMddHHmmss");
+        string jsonFileName = acDocFileName + "_" + timestamp + ".json";
+        string jsonFilePath = Path.Combine(panelSavesDirectory, jsonFileName);
+        StreamWriter sw = new StreamWriter(jsonFilePath);
+        sw.WriteLine("[");
+        for (int i = 0; i < serializedPanels.Count - 1; i++)
+        {
+          sw.WriteLine(serializedPanels[i]);
+          sw.WriteLine(",");
+        }
+        sw.WriteLine(serializedPanels[serializedPanels.Count - 1]);
+        sw.WriteLine("]");
+        sw.Close();
+
+        // Read the JSON data from the file
+        string jsonData = File.ReadAllText(jsonFilePath);
+
+        // Deserialize the JSON data to a list of dictionaries
+        List<Dictionary<string, object>> panelData = JsonConvert.DeserializeObject<
+          List<Dictionary<string, object>>
+        >(jsonData);
+
+        // Save the panel data
+        readOnly = false;
+        StoreDataInJsonFile(panelData);
+        InitializeModal();
+        readOnly = true;
+        NEW_PANEL_BUTTON.Enabled = !readOnly;
+        SAVE_BUTTON.Enabled = !readOnly;
+        LOAD_BUTTON.Enabled = !readOnly;
+        DUPLICATE_PANEL_BUTTON.Enabled = !readOnly;
+      }
+      catch { }
+    }
+
+    public static void CreateLoadCalculationsTable(List<PanelUserControl> userControls)
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
 
       // Collect all subpanel names
       HashSet<string> subpanelNames = new HashSet<string>();
-      foreach (var userControl in userControls) {
+      foreach (var userControl in userControls)
+      {
         subpanelNames.UnionWith(userControl.GetSubPanels());
       }
 
-      using (DocumentLock docLock = doc.LockDocument()) {
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
-          try {
-            BlockTableRecord currentSpace = (BlockTableRecord)tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+      using (DocumentLock docLock = doc.LockDocument())
+      {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          try
+          {
+            BlockTableRecord currentSpace = (BlockTableRecord)
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
             Table table = new Table();
 
             // Calculate the number of rows (exclude subpanels)
@@ -590,9 +1380,11 @@ namespace ElectricalCommands {
             table.Columns[2].Width = 2.5;
 
             // Set row heights and text properties
-            for (int row = 0; row < rowCount; row++) {
+            for (int row = 0; row < rowCount; row++)
+            {
               table.Rows[row].Height = 0.75;
-              for (int col = 0; col < 3; col++) {
+              for (int col = 0; col < 3; col++)
+              {
                 Cell cell = table.Cells[row, col];
                 cell.TextHeight = (row == 0) ? 0.25 : 0.1;
                 cell.TextStyleId = CreateOrGetTextStyle(db, tr, "Archquick");
@@ -608,10 +1400,12 @@ namespace ElectricalCommands {
             int rowIndex = 1;
             int panelCounter = 1;
 
-            foreach (var userControl in userControls) {
+            foreach (var userControl in userControls)
+            {
               string panelName = userControl.GetPanelName();
               string newOrExisting = userControl.GetNewOrExisting();
-              if (!subpanelNames.Contains(panelName)) {
+              if (!subpanelNames.Contains(panelName))
+              {
                 double kVA = userControl.GetPanelLoad();
                 totalKVA += kVA;
 
@@ -639,7 +1433,8 @@ namespace ElectricalCommands {
 
             ed.WriteMessage("\nLoad calculations table created successfully.");
           }
-          catch (System.Exception ex) {
+          catch (System.Exception ex)
+          {
             ed.WriteMessage($"\nError creating load calculations table: {ex.Message}");
             tr.Abort();
           }
@@ -647,11 +1442,15 @@ namespace ElectricalCommands {
       }
     }
 
-    private static ObjectId CreateOrGetTextStyle(Database db, Transaction tr, string styleName) {
-      TextStyleTable textStyleTable = (TextStyleTable)tr.GetObject(db.TextStyleTableId, OpenMode.ForRead);
+    private static ObjectId CreateOrGetTextStyle(Database db, Transaction tr, string styleName)
+    {
+      TextStyleTable textStyleTable = (TextStyleTable)
+        tr.GetObject(db.TextStyleTableId, OpenMode.ForRead);
 
-      if (!textStyleTable.Has(styleName)) {
-        using (TextStyleTableRecord textStyle = new TextStyleTableRecord()) {
+      if (!textStyleTable.Has(styleName))
+      {
+        using (TextStyleTableRecord textStyle = new TextStyleTableRecord())
+        {
           textStyle.Name = styleName;
           textStyle.Font = new FontDescriptor(styleName, false, false, 0, 0);
 
@@ -662,70 +1461,100 @@ namespace ElectricalCommands {
           return textStyleId;
         }
       }
-      else {
+      else
+      {
         return textStyleTable[styleName];
       }
     }
 
-    public void UpdateLclLml() {
-      Document doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+    public void UpdateLclLml()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
       LclLmlManager manager = new LclLmlManager();
 
       // First pass: Collect initial data
-      foreach (PanelUserControl userControl in this.userControls) {
+      foreach (PanelUserControl userControl in this.userControls)
+      {
         LclLmlObject obj = new LclLmlObject(userControl.Name.Replace("'", ""));
         var LclOverride = (int)userControl.GetLclOverride();
         var LmlOverride = (int)userControl.GetLmlOverride();
         obj.LclOverride = LclOverride != 0;
         obj.LmlOverride = LmlOverride != 0;
-        obj.Lcl = (LclOverride != 0) ? LclOverride : (int)Math.Round(userControl.CalculateWattageSum("LCL"));
-        obj.Lml = (LmlOverride != 0) ? LmlOverride : (int)Math.Round(userControl.StoreItemsAndWattage("LML"));
+        obj.Lcl =
+          (LclOverride != 0)
+            ? LclOverride
+            : (int)Math.Round(userControl.CalculateWattageSum("LCL"));
+        obj.Lml =
+          (LmlOverride != 0)
+            ? LmlOverride
+            : (int)Math.Round(userControl.StoreItemsAndWattage("LML"));
         obj.Subpanels = userControl.GetSubPanels();
         manager.List.Add(obj);
       }
 
       // Second pass: Calculate final LCL and LML values
-      foreach (var panel in manager.List) {
+      foreach (var panel in manager.List)
+      {
         CalculateLcl(panel, manager.List);
         CalculateLml(panel, manager.List);
       }
 
       // Third pass: Update user controls with calculated values
-      foreach (PanelUserControl userControl in this.userControls) {
+      foreach (PanelUserControl userControl in this.userControls)
+      {
         var panelObj = manager.List.Find(p => p.PanelName == userControl.Name.Replace("'", ""));
-        if (panelObj != null) {
+        if (panelObj != null)
+        {
           userControl.UpdateLclLmlLabels(panelObj.Lcl, panelObj.Lml);
         }
       }
     }
 
-    private void CalculateLcl(LclLmlObject panel, List<LclLmlObject> allPanels) {
-      if (panel.LclOverride) return;
+    private void CalculateLcl(LclLmlObject panel, List<LclLmlObject> allPanels)
+    {
+      if (panel.LclOverride)
+        return;
 
       int totalLcl = panel.Lcl;
-      foreach (var subpanelName in panel.Subpanels) {
+      foreach (var subpanelName in panel.Subpanels)
+      {
         var subpanel = allPanels.Find(p => p.PanelName == subpanelName);
-        if (subpanel != null) {
+        if (subpanel != null)
+        {
           totalLcl += subpanel.Lcl;
         }
       }
       panel.Lcl = totalLcl;
     }
 
-    private void CalculateLml(LclLmlObject panel, List<LclLmlObject> allPanels) {
-      if (panel.LmlOverride) return;
+    private void CalculateLml(LclLmlObject panel, List<LclLmlObject> allPanels)
+    {
+      if (panel.LmlOverride)
+        return;
 
       int maxLml = panel.Lml;
       maxLml = RecursiveCalculateLml(panel, allPanels, maxLml);
       panel.Lml = maxLml;
     }
 
-    private int RecursiveCalculateLml(LclLmlObject panel, List<LclLmlObject> allPanels, int currentMax) {
-      foreach (var subpanelName in panel.Subpanels) {
+    private int RecursiveCalculateLml(
+      LclLmlObject panel,
+      List<LclLmlObject> allPanels,
+      int currentMax
+    )
+    {
+      foreach (var subpanelName in panel.Subpanels)
+      {
         var subpanel = allPanels.Find(p => p.PanelName == subpanelName);
-        if (subpanel != null && !subpanel.LmlOverride) {
+        if (subpanel != null && !subpanel.LmlOverride)
+        {
           currentMax = Math.Max(currentMax, subpanel.Lml);
           currentMax = RecursiveCalculateLml(subpanel, allPanels, currentMax);
         }
@@ -733,15 +1562,18 @@ namespace ElectricalCommands {
       return currentMax;
     }
 
-    public void RemoveFedFrom(string panelName) {
+    public void RemoveFedFrom(string panelName)
+    {
       PanelUserControl panel = (PanelUserControl)FindUserControl(panelName);
-      if (panel != null) {
+      if (panel != null)
+      {
         panel.RemoveFedFrom(panelName, false);
       }
     }
   }
 
-  public class LclLmlObject {
+  public class LclLmlObject
+  {
     public int Lcl { get; set; }
     public int Lml { get; set; }
     public bool LclOverride { get; set; }
@@ -749,7 +1581,8 @@ namespace ElectricalCommands {
     public List<string> Subpanels { get; set; }
     public string PanelName { get; }
 
-    public LclLmlObject(string panelName) {
+    public LclLmlObject(string panelName)
+    {
       Lcl = 0;
       Lml = 0;
       Subpanels = new List<string>();
@@ -757,10 +1590,12 @@ namespace ElectricalCommands {
     }
   }
 
-  public class LclLmlManager {
+  public class LclLmlManager
+  {
     public List<LclLmlObject> List { get; set; }
 
-    public LclLmlManager() {
+    public LclLmlManager()
+    {
       List = new List<LclLmlObject>();
     }
   }

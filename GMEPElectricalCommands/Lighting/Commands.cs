@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Buffers;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
@@ -6,29 +7,28 @@ using System.Drawing.Imaging;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Accord.MachineLearning;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
+using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Spreadsheet;
 using Dreambuild.AutoCAD;
 using ElectricalCommands.ElectricalEntity;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
+using Emgu.CV.ML;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using GMEPElectricalCommands.GmepDatabase;
 using Newtonsoft.Json;
 using TriangleNet.Meshing.Algorithm;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
-using Group = Autodesk.AutoCAD.DatabaseServices.Group;
-using System.Threading.Tasks;
-using System.Buffers;
-using DocumentFormat.OpenXml.Drawing.Charts;
-using Emgu.CV.ML;
-using DocumentFormat.OpenXml.Spreadsheet;
 using Color = System.Drawing.Color;
+using Group = Autodesk.AutoCAD.DatabaseServices.Group;
 
 namespace ElectricalCommands.Lighting
 {
@@ -404,13 +404,17 @@ namespace ElectricalCommands.Lighting
               tr.AddNewlyCreatedDBObject(br, true);
               blockId = br.Id;
 
-              foreach (ObjectId objId in block) {  
+              foreach (ObjectId objId in block)
+              {
                 DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
                 AttributeDefinition attDef = obj as AttributeDefinition;
-                if (attDef != null && !attDef.Constant) {
-                  using (AttributeReference attRef = new AttributeReference()) {
+                if (attDef != null && !attDef.Constant)
+                {
+                  using (AttributeReference attRef = new AttributeReference())
+                  {
                     attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
-                    if (attRef.Tag == "CONTROL_NAME") {
+                    if (attRef.Tag == "CONTROL_NAME")
+                    {
                       attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
                       attRef.TextString = control.Name;
                       attRef.Height = 0.0938 / scale * 6;
@@ -420,7 +424,8 @@ namespace ElectricalCommands.Lighting
                       attRef.Justify = AttachmentPoint.BaseLeft;
                       attRef.Rotation = attRef.Rotation - rotation;
                     }
-                    if (attRef.Tag == "D") {
+                    if (attRef.Tag == "D")
+                    {
                       attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
                       attRef.Height = 0.0938 / scale * 6;
                       attRef.WidthFactor = 0.85;
@@ -428,8 +433,12 @@ namespace ElectricalCommands.Lighting
                       attRef.HorizontalMode = TextHorizontalMode.TextLeft;
                       attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
                       attRef.Justify = AttachmentPoint.BaseLeft;
-                    
-                      Matrix3d rotationMatrix = Matrix3d.Rotation(-rotation, Vector3d.ZAxis, br.Position);
+
+                      Matrix3d rotationMatrix = Matrix3d.Rotation(
+                        -rotation,
+                        Vector3d.ZAxis,
+                        br.Position
+                      );
                       attRef.TransformBy(rotationMatrix);
                     }
                     br.AttributeCollection.AppendAttribute(attRef);
@@ -449,7 +458,7 @@ namespace ElectricalCommands.Lighting
           {
             BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
             var modelSpace = (BlockTableRecord)
-            tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+              tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
             BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
             DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
             foreach (DynamicBlockReferenceProperty prop in pc)
@@ -458,18 +467,18 @@ namespace ElectricalCommands.Lighting
               {
                 prop.Value = control.Id;
               }
-              if (prop.PropertyName == "gmep_lighting_control_tag" && prop.Value as string == "0") {
+              if (prop.PropertyName == "gmep_lighting_control_tag" && prop.Value as string == "0")
+              {
                 prop.Value = control.Name;
               }
             }
             tr.Commit();
           }
-      }
+        }
         catch (System.Exception ex)
         {
           ed.WriteMessage(ex.ToString());
         }
-
       }
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
@@ -485,8 +494,10 @@ namespace ElectricalCommands.Lighting
         }
       }
     }
+
     [CommandMethod("ToggleEMLighting")]
-    public static void ToggleEMLighting() {
+    public static void ToggleEMLighting()
+    {
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
@@ -496,35 +507,49 @@ namespace ElectricalCommands.Lighting
       pso2.MessageForAdding = "\nSelect Lighting:";
       PromptSelectionResult psr2 = ed.GetSelection(pso2);
 
-      if (psr2.Status == PromptStatus.OK) {
+      if (psr2.Status == PromptStatus.OK)
+      {
         SelectionSet ss = psr2.Value;
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
-          foreach (ObjectId id in ss.GetObjectIds()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          foreach (ObjectId id in ss.GetObjectIds())
+          {
             string circuit = "";
             string control = "";
             string em = "";
             DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
             BlockReference block = tr.GetObject(id, OpenMode.ForWrite) as BlockReference;
-            foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
-              if (property.PropertyName == "gmep_lighting_control") {
+            foreach (
+              DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection
+            )
+            {
+              if (property.PropertyName == "gmep_lighting_control")
+              {
                 control = property.Value as string;
               }
-              if (property.PropertyName == "gmep_lighting_circuit") {
+              if (property.PropertyName == "gmep_lighting_circuit")
+              {
                 circuit = property.Value as string;
               }
-              if (property.PropertyName == "Visibility1") {
-                if (property.Value as string == "EM") {
+              if (property.PropertyName == "Visibility1")
+              {
+                if (property.Value as string == "EM")
+                {
                   property.Value = "Non-EM";
                 }
-                else {
+                else
+                {
                   property.Value = "EM";
                   em = ", EM";
                 }
               }
             }
-            foreach (ObjectId id2 in block.AttributeCollection) {
-              AttributeReference attRef = tr.GetObject(id2, OpenMode.ForWrite) as AttributeReference;
-              if (attRef.Tag == "LIGHTING_CIRCUIT") {
+            foreach (ObjectId id2 in block.AttributeCollection)
+            {
+              AttributeReference attRef =
+                tr.GetObject(id2, OpenMode.ForWrite) as AttributeReference;
+              if (attRef.Tag == "LIGHTING_CIRCUIT")
+              {
                 attRef.TextString = circuit + control + em;
               }
             }
@@ -533,8 +558,10 @@ namespace ElectricalCommands.Lighting
         }
       }
     }
+
     [CommandMethod("AssignLightingControl")]
-    public static void AssignLightingControl() {
+    public static void AssignLightingControl()
+    {
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
@@ -551,60 +578,82 @@ namespace ElectricalCommands.Lighting
 
       string control = "";
 
-      if (psr2.Status == PromptStatus.OK) {
+      if (psr2.Status == PromptStatus.OK)
+      {
         SelectionSet ss = psr2.Value;
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
-          foreach (ObjectId id in ss.GetObjectIds()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          foreach (ObjectId id in ss.GetObjectIds())
+          {
             DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
-            if (obj is BlockReference block) {
-              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
-                if (property.PropertyName == "gmep_lighting_control_tag") {
+            if (obj is BlockReference block)
+            {
+              foreach (
+                DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection
+              )
+              {
+                if (property.PropertyName == "gmep_lighting_control_tag")
+                {
                   control = property.Value as string;
                 }
               }
             }
           }
-          tr.Commit();  
+          tr.Commit();
         }
       }
 
-      if (psr.Status == PromptStatus.OK) {
+      if (psr.Status == PromptStatus.OK)
+      {
         SelectionSet ss = psr.Value;
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
-          foreach (ObjectId id in ss.GetObjectIds()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          foreach (ObjectId id in ss.GetObjectIds())
+          {
             DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
-            if (obj is BlockReference block) {
+            if (obj is BlockReference block)
+            {
               string circuit = "";
               string em = "";
-              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
-                if (property.PropertyName == "gmep_lighting_control") {
+              foreach (
+                DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection
+              )
+              {
+                if (property.PropertyName == "gmep_lighting_control")
+                {
                   property.Value = control;
                 }
-                if (property.PropertyName == "gmep_lighting_circuit") {
+                if (property.PropertyName == "gmep_lighting_circuit")
+                {
                   circuit = property.Value as string;
                 }
-                if (property.PropertyName == "Visibility1") {
-                  if (property.Value as string == "EM") {
+                if (property.PropertyName == "Visibility1")
+                {
+                  if (property.Value as string == "EM")
+                  {
                     em = ", EM";
                   }
                 }
               }
-              foreach (ObjectId id2 in block.AttributeCollection) {
-                AttributeReference attRef = tr.GetObject(id2, OpenMode.ForWrite) as AttributeReference;
-                if (attRef.Tag == "LIGHTING_CIRCUIT") {
+              foreach (ObjectId id2 in block.AttributeCollection)
+              {
+                AttributeReference attRef =
+                  tr.GetObject(id2, OpenMode.ForWrite) as AttributeReference;
+                if (attRef.Tag == "LIGHTING_CIRCUIT")
+                {
                   attRef.TextString = circuit + control + em;
                 }
               }
             }
-
-            }
+          }
           tr.Commit();
         }
       }
     }
 
     [CommandMethod("AssignLightingCircuit")]
-    public static void AssignLightingCircuit() {
+    public static void AssignLightingCircuit()
+    {
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
@@ -614,39 +663,51 @@ namespace ElectricalCommands.Lighting
       List<Panel> panelList = gmepDb.GetPanels(projectId);
       List<ElectricalEntity.Equipment> equipmentList = gmepDb.GetEquipment(projectId);
       List<Transformer> transformerList = gmepDb.GetTransformers(projectId);
-      Dictionary<string,List<string>> panelCircuits = new Dictionary<string, List<string>>();
+      Dictionary<string, List<string>> panelCircuits = new Dictionary<string, List<string>>();
       List<string> lightings = new List<string>();
 
       PromptKeywordOptions pko = new PromptKeywordOptions("");
 
-      foreach (Panel panel in panelList) {
-        if (panel.NumBreakers > 0) {
+      foreach (Panel panel in panelList)
+      {
+        if (panel.NumBreakers > 0)
+        {
           pko.Keywords.Add(panel.Name + ":" + panel.Id);
           panelCircuits.Add(panel.Id, new List<string>());
-          for (int i = 1; i <= panel.NumBreakers; i++) {
+          for (int i = 1; i <= panel.NumBreakers; i++)
+          {
             panelCircuits[panel.Id].Add(i.ToString());
           }
         }
       }
 
       //Start removing Circuits from the dictionary, accounting for circuitnumber and pole.
-      foreach (Panel panel in panelList) {
-        if (panelCircuits.ContainsKey(panel.ParentId) && panel.Circuit != 0) {
-          for (int i = 0; i < panel.Pole; i++) {
-            panelCircuits[panel.ParentId].Remove((panel.Circuit + i*2).ToString());
+      foreach (Panel panel in panelList)
+      {
+        if (panelCircuits.ContainsKey(panel.ParentId) && panel.Circuit != 0)
+        {
+          for (int i = 0; i < panel.Pole; i++)
+          {
+            panelCircuits[panel.ParentId].Remove((panel.Circuit + i * 2).ToString());
           }
         }
       }
-      foreach (ElectricalEntity.Equipment equipment in equipmentList) {
-        if (panelCircuits.ContainsKey(equipment.ParentId) && equipment.Circuit != 0) {
-          for (int i = 0; i < equipment.Pole; i++) {
+      foreach (ElectricalEntity.Equipment equipment in equipmentList)
+      {
+        if (panelCircuits.ContainsKey(equipment.ParentId) && equipment.Circuit != 0)
+        {
+          for (int i = 0; i < equipment.Pole; i++)
+          {
             panelCircuits[equipment.ParentId].Remove((equipment.Circuit + i * 2).ToString());
           }
         }
       }
-      foreach (Transformer transformer in transformerList) {
-        if (panelCircuits.ContainsKey(transformer.ParentId) && transformer.Circuit != 0) {
-          for (int i = 0; i < transformer.Pole; i++) {
+      foreach (Transformer transformer in transformerList)
+      {
+        if (panelCircuits.ContainsKey(transformer.ParentId) && transformer.Circuit != 0)
+        {
+          for (int i = 0; i < transformer.Pole; i++)
+          {
             panelCircuits[transformer.ParentId].Remove((transformer.Circuit + i * 2).ToString());
           }
         }
@@ -665,57 +726,87 @@ namespace ElectricalCommands.Lighting
       //Prompt user for circuit
       PromptKeywordOptions pko2 = new PromptKeywordOptions("");
       pko2.Message = "\nAssign Circuit:";
-      foreach (string circuit in panelCircuits[chosenPanel]) {
+      foreach (string circuit in panelCircuits[chosenPanel])
+      {
         pko2.Keywords.Add(circuit);
       }
       PromptResult pr2 = ed.GetKeywords(pko2);
       string result2 = pr2.StringResult;
       var chosenCircuit = int.Parse(result2);
 
-      if (psr.Status == PromptStatus.OK) {
+      if (psr.Status == PromptStatus.OK)
+      {
         SelectionSet ss = psr.Value;
-        using (Transaction tr = db.TransactionManager.StartTransaction()) {
-          foreach (ObjectId id in ss.GetObjectIds()) {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          foreach (ObjectId id in ss.GetObjectIds())
+          {
             DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
-            if (obj is BlockReference block) {
+            if (obj is BlockReference block)
+            {
               string circuit = "";
               string control = "";
               string em = "";
-              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
-                if (property.PropertyName == "gmep_lighting_fixture_id") {
+              foreach (
+                DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection
+              )
+              {
+                if (property.PropertyName == "gmep_lighting_fixture_id")
+                {
                   var fixtureId = property.Value as string;
                   lightings.Add(fixtureId);
                 }
               }
-              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
-                if (property.PropertyName == "gmep_lighting_parent_id") {
+              foreach (
+                DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection
+              )
+              {
+                if (property.PropertyName == "gmep_lighting_parent_id")
+                {
                   property.Value = chosenPanel;
                 }
               }
-              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
-                if (property.PropertyName == "gmep_lighting_parent_name") {
+              foreach (
+                DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection
+              )
+              {
+                if (property.PropertyName == "gmep_lighting_parent_name")
+                {
                   property.Value = chosenPanelName;
                 }
               }
-              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
-                if (property.PropertyName == "gmep_lighting_circuit") {
+              foreach (
+                DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection
+              )
+              {
+                if (property.PropertyName == "gmep_lighting_circuit")
+                {
                   property.Value = chosenCircuit;
                   circuit = property.Value as string;
                 }
               }
-              foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
-                if (property.PropertyName == "gmep_lighting_control") {
+              foreach (
+                DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection
+              )
+              {
+                if (property.PropertyName == "gmep_lighting_control")
+                {
                   control = property.Value as string;
                 }
-                if (property.PropertyName == "Visibility1") {
-                  if (property.Value as string == "EM") {
+                if (property.PropertyName == "Visibility1")
+                {
+                  if (property.Value as string == "EM")
+                  {
                     em = ", EM";
                   }
                 }
               }
-              foreach (ObjectId id3 in block.AttributeCollection) {
-                AttributeReference attRef = (AttributeReference)tr.GetObject(id3, OpenMode.ForWrite);
-                if (attRef.Tag == "LIGHTING_CIRCUIT") {
+              foreach (ObjectId id3 in block.AttributeCollection)
+              {
+                AttributeReference attRef = (AttributeReference)
+                  tr.GetObject(id3, OpenMode.ForWrite);
+                if (attRef.Tag == "LIGHTING_CIRCUIT")
+                {
                   attRef.TextString = circuit + control + em;
                 }
               }
@@ -726,20 +817,24 @@ namespace ElectricalCommands.Lighting
           tr.Commit();
         }
       }
-      }
+    }
+
     [CommandMethod("DefineLightingLocation")]
-    public static void DefineLightingLocation() {
+    public static void DefineLightingLocation()
+    {
       // Define the scale
       double scale = 12;
       if (
         CADObjectCommands.Scale <= 0
         && (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
-      ) {
+      )
+      {
         CADObjectCommands.SetScale();
         if (CADObjectCommands.Scale <= 0)
           return;
       }
-      if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport()) {
+      if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
+      {
         scale = CADObjectCommands.Scale;
       }
 
@@ -754,26 +849,40 @@ namespace ElectricalCommands.Lighting
       List<Panel> panelList = gmepDb.GetPanels(projectId);
       List<string> existingLocationIds = new List<string>();
 
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord btr = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+        BlockTableRecord btr =
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
 
-        BlockTableRecord locationBlock = (BlockTableRecord)tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
+        BlockTableRecord locationBlock = (BlockTableRecord)
+          tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
         //Searching for existing locations
-        foreach (ObjectId id in locationBlock.GetAnonymousBlockIds()) {
-          if (id.IsValid) {
-            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
-              if (anonymousBtr != null) {
-                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+        foreach (ObjectId id in locationBlock.GetAnonymousBlockIds())
+        {
+          if (id.IsValid)
+          {
+            using (
+              BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord
+            )
+            {
+              if (anonymousBtr != null)
+              {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                {
                   var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
-                  if (entity != null) {
-                    foreach (DynamicBlockReferenceProperty prop in entity.DynamicBlockReferencePropertyCollection) {
-                      if (prop.PropertyName == "lighting_location_id") {
+                  if (entity != null)
+                  {
+                    foreach (
+                      DynamicBlockReferenceProperty prop in entity.DynamicBlockReferencePropertyCollection
+                    )
+                    {
+                      if (prop.PropertyName == "lighting_location_id")
+                      {
                         existingLocationIds.Add(prop.Value as string);
                       }
                     }
                   }
-
                 }
               }
             }
@@ -781,23 +890,25 @@ namespace ElectricalCommands.Lighting
         }
       }
 
-
       PromptKeywordOptions pko = new PromptKeywordOptions("");
       PromptKeywordOptions pko2 = new PromptKeywordOptions("");
       PromptKeywordOptions pko3 = new PromptKeywordOptions("");
 
-      foreach (LightingLocation location in locationList) {
-          if (!existingLocationIds.Contains(location.Id)) {
-            pko.Keywords.Add(location.LocationName + ":" + location.Id);
-          }
+      foreach (LightingLocation location in locationList)
+      {
+        if (!existingLocationIds.Contains(location.Id))
+        {
+          pko.Keywords.Add(location.LocationName + ":" + location.Id);
+        }
       }
-      foreach (LightingTimeClock clock in timeClockList) {
+      foreach (LightingTimeClock clock in timeClockList)
+      {
         pko2.Keywords.Add(clock.Name + ":" + clock.Id);
       }
-      foreach (Panel panel in panelList) {
+      foreach (Panel panel in panelList)
+      {
         pko3.Keywords.Add(panel.Name + ":" + panel.Id);
       }
-
 
       PromptPointOptions ppo = new PromptPointOptions("\nSpecify start point: ");
       PromptPointResult ppr = ed.GetPoint(ppo);
@@ -808,24 +919,29 @@ namespace ElectricalCommands.Lighting
       PolyLineJig jig = new PolyLineJig(startPoint);
 
       // Loop to keep adding vertices until the polyline is closed
-      while (true) {
+      while (true)
+      {
         PromptResult res = ed.Drag(jig);
-        if (res.Status == PromptStatus.OK) {
+        if (res.Status == PromptStatus.OK)
+        {
           jig.AddVertex(jig.CurrentPoint);
         }
-        else if (res.Status == PromptStatus.Cancel) {
+        else if (res.Status == PromptStatus.Cancel)
+        {
           break;
         }
       }
 
-
       Polyline polyline;
-      using (Transaction trans = db.TransactionManager.StartTransaction()) {
+      using (Transaction trans = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = trans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord btr = trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+        BlockTableRecord btr =
+          trans.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
         polyline = jig.GetPolyline();
-        
-        if (polyline != null) {
+
+        if (polyline != null)
+        {
           btr.AppendEntity(polyline);
           trans.AddNewlyCreatedDBObject(polyline, true);
           trans.Commit();
@@ -841,7 +957,8 @@ namespace ElectricalCommands.Lighting
       Point3d point;
       ObjectId blockId;
 
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
         BlockTableRecord block = (BlockTableRecord)
@@ -850,8 +967,8 @@ namespace ElectricalCommands.Lighting
 
         PromptResult res = blockJig.DragMe(block.ObjectId, out point);
 
-
-        if (res.Status == PromptStatus.OK) {
+        if (res.Status == PromptStatus.OK)
+        {
           BlockTableRecord curSpace = (BlockTableRecord)
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
@@ -863,14 +980,18 @@ namespace ElectricalCommands.Lighting
           blockId = br.Id;
 
           //Setting Attributes
-          foreach (ObjectId objId in block) {
+          foreach (ObjectId objId in block)
+          {
             DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
             AttributeDefinition attDef = obj as AttributeDefinition;
-            if (attDef != null && !attDef.Constant) {
-              using (AttributeReference attRef = new AttributeReference()) {
+            if (attDef != null && !attDef.Constant)
+            {
+              using (AttributeReference attRef = new AttributeReference())
+              {
                 attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
                 attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
-                if (attDef.Tag == "NAME") {
+                if (attDef.Tag == "NAME")
+                {
                   attRef.TextString = locationName;
                 }
                 br.AttributeCollection.AppendAttribute(attRef);
@@ -879,32 +1000,37 @@ namespace ElectricalCommands.Lighting
             }
           }
         }
-        else {
+        else
+        {
           return;
         }
 
         tr.Commit();
       }
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
         var modelSpace = (BlockTableRecord)
           tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
         BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
-        DynamicBlockReferencePropertyCollection pc =
-          br.DynamicBlockReferencePropertyCollection;
+        DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
 
         LightingLocation matchingLocation = locationList.FirstOrDefault(x => x.Id == locationId);
-        foreach (DynamicBlockReferenceProperty prop in pc) {
-          if (prop.PropertyName == "lighting_location_id") {
+        foreach (DynamicBlockReferenceProperty prop in pc)
+        {
+          if (prop.PropertyName == "lighting_location_id")
+          {
             prop.Value = locationId;
           }
-          if (prop.PropertyName == "outdoor") {
+          if (prop.PropertyName == "outdoor")
+          {
             if (matchingLocation.Outdoor)
               prop.Value = "True";
             else
               prop.Value = "False";
           }
-          if (prop.PropertyName == "lighting_location_name") {
+          if (prop.PropertyName == "lighting_location_name")
+          {
             prop.Value = locationName;
           }
         }
@@ -918,37 +1044,47 @@ namespace ElectricalCommands.Lighting
       var timeClockId = result2.Split(':')[1];
       var timeClockName = result2.Split(':')[0];
 
-
       Point3d point2;
       ObjectId blockId2 = ObjectId.Null;
       //bool timeClockPlaced = false;
 
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-        BlockTableRecord btr = tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead) as BlockTableRecord;
+        BlockTableRecord btr =
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead) as BlockTableRecord;
 
         //Checking if timeclock is already placed
-        foreach (ObjectId objId in btr) {
+        foreach (ObjectId objId in btr)
+        {
           Entity entity = tr.GetObject(objId, OpenMode.ForRead) as Entity;
-          if (entity is BlockReference blockRef) {
-            DynamicBlockReferencePropertyCollection pc = blockRef.DynamicBlockReferencePropertyCollection;
-            foreach (DynamicBlockReferenceProperty prop in pc) {
-                if (prop.PropertyName == "id") {
-                  if (prop.Value.ToString() == timeClockId) {
-                    blockId2 = blockRef.ObjectId;
-                    break;
-                  }
+          if (entity is BlockReference blockRef)
+          {
+            DynamicBlockReferencePropertyCollection pc =
+              blockRef.DynamicBlockReferencePropertyCollection;
+            foreach (DynamicBlockReferenceProperty prop in pc)
+            {
+              if (prop.PropertyName == "id")
+              {
+                if (prop.Value.ToString() == timeClockId)
+                {
+                  blockId2 = blockRef.ObjectId;
+                  break;
                 }
               }
             }
+          }
         }
 
-        BlockTableRecord block = (BlockTableRecord)tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
-        if (blockId2 == ObjectId.Null) {
+        BlockTableRecord block = (BlockTableRecord)
+          tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
+        if (blockId2 == ObjectId.Null)
+        {
           BlockJig blockJig = new BlockJig();
           PromptResult res = blockJig.DragMe(block.ObjectId, out point2);
 
-          if (res.Status == PromptStatus.OK) {
+          if (res.Status == PromptStatus.OK)
+          {
             BlockTableRecord curSpace = (BlockTableRecord)
               tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
@@ -960,15 +1096,19 @@ namespace ElectricalCommands.Lighting
             blockId2 = br.Id;
 
             //Setting Attributes
-            foreach (ObjectId objId in block) {
+            foreach (ObjectId objId in block)
+            {
               DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
               AttributeDefinition attDef = obj as AttributeDefinition;
-              if (attDef != null && !attDef.Constant) {
-                using (AttributeReference attRef = new AttributeReference()) {
+              if (attDef != null && !attDef.Constant)
+              {
+                using (AttributeReference attRef = new AttributeReference())
+                {
                   attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
                   attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
-                  if (attDef.Tag == "NAME") {
-                    attRef.TextString ="TIMECLOCK " + timeClockName;
+                  if (attDef.Tag == "NAME")
+                  {
+                    attRef.TextString = "TIMECLOCK " + timeClockName;
                   }
                   br.AttributeCollection.AppendAttribute(attRef);
                   tr.AddNewlyCreatedDBObject(attRef, true);
@@ -976,7 +1116,8 @@ namespace ElectricalCommands.Lighting
               }
             }
           }
-          else {
+          else
+          {
             return;
           }
         }
@@ -988,32 +1129,39 @@ namespace ElectricalCommands.Lighting
       string result3 = pr3.StringResult;
       var adjacentPanelId = result3.Split(':')[1];
 
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
         var modelSpace = (BlockTableRecord)
           tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
         BlockReference br = (BlockReference)tr.GetObject(blockId2, OpenMode.ForWrite);
-        DynamicBlockReferencePropertyCollection pc =
-          br.DynamicBlockReferencePropertyCollection;
+        DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
 
         LightingTimeClock matchingClock = timeClockList.FirstOrDefault(x => x.Id == timeClockId);
-        foreach (DynamicBlockReferenceProperty prop in pc) {
-          if (prop.PropertyName == "id") {
+        foreach (DynamicBlockReferenceProperty prop in pc)
+        {
+          if (prop.PropertyName == "id")
+          {
             prop.Value = timeClockId;
           }
-          if (prop.PropertyName == "name") {
+          if (prop.PropertyName == "name")
+          {
             prop.Value = timeClockName;
           }
-          if (prop.PropertyName == "bypass_switch_name") {
+          if (prop.PropertyName == "bypass_switch_name")
+          {
             prop.Value = matchingClock.BypassSwitchName;
           }
-          if (prop.PropertyName == "bypass_switch_location") {
+          if (prop.PropertyName == "bypass_switch_location")
+          {
             prop.Value = matchingClock.BypassSwitchLocation;
           }
-          if (prop.PropertyName == "adjacent_panel_id") {
+          if (prop.PropertyName == "adjacent_panel_id")
+          {
             prop.Value = adjacentPanelId;
           }
-          if (prop.PropertyName == "voltage") {
+          if (prop.PropertyName == "voltage")
+          {
             prop.Value = matchingClock.Voltage;
           }
         }
@@ -1021,44 +1169,66 @@ namespace ElectricalCommands.Lighting
       }
 
       //Assigning Timeclockid to location
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
         var modelSpace = (BlockTableRecord)
           tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
         BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
         DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
-        foreach (DynamicBlockReferenceProperty prop in pc) {
-          if (prop.PropertyName == "timeclock_id") {
+        foreach (DynamicBlockReferenceProperty prop in pc)
+        {
+          if (prop.PropertyName == "timeclock_id")
+          {
             prop.Value = timeClockId;
           }
         }
         tr.Commit();
       }
-        SelectObjectsInsidePolyline(ed, db, polyline, locationId);
+      SelectObjectsInsidePolyline(ed, db, polyline, locationId);
     }
-    private static void SelectObjectsInsidePolyline(Editor ed, Database db, Polyline polyline, string locationId) {
-      SelectionFilter filter = new SelectionFilter(new TypedValue[]
-       {
-                new TypedValue((int)DxfCode.Start, "INSERT")
-       });
+
+    private static void SelectObjectsInsidePolyline(
+      Editor ed,
+      Database db,
+      Polyline polyline,
+      string locationId
+    )
+    {
+      SelectionFilter filter = new SelectionFilter(
+        new TypedValue[] { new TypedValue((int)DxfCode.Start, "INSERT") }
+      );
 
       Extents3d extents = polyline.GeometricExtents;
 
-      PromptSelectionResult psr = ed.SelectCrossingWindow(extents.MinPoint, extents.MaxPoint, filter);
+      PromptSelectionResult psr = ed.SelectCrossingWindow(
+        extents.MinPoint,
+        extents.MaxPoint,
+        filter
+      );
       SelectionSet ss = psr.Value;
-      if (psr.Status == PromptStatus.OK) {
+      if (psr.Status == PromptStatus.OK)
+      {
         ed.WriteMessage($"\nNumber of objects selected: {ss.Count}");
       }
-      else {
+      else
+      {
         ed.WriteMessage("\nNo objects selected.");
         return;
       }
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
-        foreach(ObjectId id in ss.GetObjectIds()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        foreach (ObjectId id in ss.GetObjectIds())
+        {
           DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
-          if (obj is BlockReference block) {
-            foreach (DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection) {
-              if (property.PropertyName == "gmep_lighting_location_id") {
+          if (obj is BlockReference block)
+          {
+            foreach (
+              DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection
+            )
+            {
+              if (property.PropertyName == "gmep_lighting_location_id")
+              {
                 property.Value = locationId;
               }
             }
@@ -1067,8 +1237,10 @@ namespace ElectricalCommands.Lighting
         tr.Commit();
       }
     }
+
     [CommandMethod("LightingControlDiagram")]
-    public static void LightingControlDiagram() {
+    public static void LightingControlDiagram()
+    {
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
@@ -1077,93 +1249,170 @@ namespace ElectricalCommands.Lighting
       List<LightingLocation> locations = new List<LightingLocation>();
       List<LightingFixture> lightings = new List<LightingFixture>();
 
-      using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord timeClockBlock = (BlockTableRecord)tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
-        BlockTableRecord locationBlock = (BlockTableRecord)tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
-        BlockTableRecord lightingBlock = (BlockTableRecord)tr.GetObject(bt["GMEP LTG 2X4"], OpenMode.ForRead);
+        BlockTableRecord timeClockBlock = (BlockTableRecord)
+          tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
+        BlockTableRecord locationBlock = (BlockTableRecord)
+          tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
+        BlockTableRecord lightingBlock = (BlockTableRecord)
+          tr.GetObject(bt["GMEP LTG 2X4"], OpenMode.ForRead);
 
         //Timeclocks
-        foreach (ObjectId id in timeClockBlock.GetAnonymousBlockIds()) {
-          if (id.IsValid) {
-            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
-              if (anonymousBtr != null) {
-                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)){
-
+        foreach (ObjectId id in timeClockBlock.GetAnonymousBlockIds())
+        {
+          if (id.IsValid)
+          {
+            using (
+              BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord
+            )
+            {
+              if (anonymousBtr != null)
+              {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                {
                   var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
 
                   var timeClock = new LightingTimeClock("0", "", "", "", "", "");
                   var pc = entity.DynamicBlockReferencePropertyCollection;
-                  foreach (DynamicBlockReferenceProperty prop in pc) {
-                    if (prop.PropertyName == "id") timeClock.Id = prop.Value as string;
-                    if (prop.PropertyName == "name") timeClock.Name = prop.Value as string;
-                    if (prop.PropertyName == "bypass_switch_name") timeClock.BypassSwitchName = prop.Value as string;
-                    if (prop.PropertyName == "bypass_switch_location") timeClock.BypassSwitchLocation = prop.Value as string;
-                    if (prop.PropertyName == "adjacent_panel_id") timeClock.AdjacentPanelId = prop.Value as string;
-                    if (prop.PropertyName == "voltage") timeClock.Voltage = prop.Value as string;
+                  foreach (DynamicBlockReferenceProperty prop in pc)
+                  {
+                    if (prop.PropertyName == "id")
+                      timeClock.Id = prop.Value as string;
+                    if (prop.PropertyName == "name")
+                      timeClock.Name = prop.Value as string;
+                    if (prop.PropertyName == "bypass_switch_name")
+                      timeClock.BypassSwitchName = prop.Value as string;
+                    if (prop.PropertyName == "bypass_switch_location")
+                      timeClock.BypassSwitchLocation = prop.Value as string;
+                    if (prop.PropertyName == "adjacent_panel_id")
+                      timeClock.AdjacentPanelId = prop.Value as string;
+                    if (prop.PropertyName == "voltage")
+                      timeClock.Voltage = prop.Value as string;
                   }
-                  if (timeClock.Id != "0") timeClocks.Add(timeClock);
+                  if (timeClock.Id != "0")
+                    timeClocks.Add(timeClock);
                 }
               }
             }
           }
         }
         //Locations
-        foreach (ObjectId id in locationBlock.GetAnonymousBlockIds()) {
-          if (id.IsValid) {
-            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
-              if (anonymousBtr != null) {
-                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+        foreach (ObjectId id in locationBlock.GetAnonymousBlockIds())
+        {
+          if (id.IsValid)
+          {
+            using (
+              BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord
+            )
+            {
+              if (anonymousBtr != null)
+              {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                {
                   var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
                   var location = new LightingLocation("", "", false, "");
                   var pc = entity.DynamicBlockReferencePropertyCollection;
-                  foreach (DynamicBlockReferenceProperty prop in pc) {
-                    if (prop.PropertyName == "lighting_location_id") location.Id = prop.Value as string;
-                    if (prop.PropertyName == "outdoor") location.Outdoor = (prop.Value as string == "True");
-                    if (prop.PropertyName == "lighting_location_name") location.LocationName = prop.Value as string;
-                    if (prop.PropertyName == "timeclock_id") location.timeclock = prop.Value as string;
+                  foreach (DynamicBlockReferenceProperty prop in pc)
+                  {
+                    if (prop.PropertyName == "lighting_location_id")
+                      location.Id = prop.Value as string;
+                    if (prop.PropertyName == "outdoor")
+                      location.Outdoor = (prop.Value as string == "True");
+                    if (prop.PropertyName == "lighting_location_name")
+                      location.LocationName = prop.Value as string;
+                    if (prop.PropertyName == "timeclock_id")
+                      location.timeclock = prop.Value as string;
                   }
-                  if (location.Id != "0") locations.Add(location);
+                  if (location.Id != "0")
+                    locations.Add(location);
                 }
               }
             }
           }
         }
         //Lighting
-        foreach (ObjectId id in lightingBlock.GetAnonymousBlockIds()) {
-          if (id.IsValid) {
-            using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
-              if (anonymousBtr != null) {
-                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+        foreach (ObjectId id in lightingBlock.GetAnonymousBlockIds())
+        {
+          if (id.IsValid)
+          {
+            using (
+              BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord
+            )
+            {
+              if (anonymousBtr != null)
+              {
+                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
+                {
                   var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
-                  var lighting = new LightingFixture("", "", "", "", "", "", "", 0, 0, "", 1, "", "", "", "", false, 0, false, 0, 0, 0, 0, 0);
+                  var lighting = new LightingFixture(
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    "",
+                    0,
+                    0,
+                    "",
+                    1,
+                    "",
+                    "",
+                    "",
+                    "",
+                    false,
+                    0,
+                    false,
+                    false,
+                    false,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    ""
+                  );
                   var pc = entity.DynamicBlockReferencePropertyCollection;
-                  foreach (DynamicBlockReferenceProperty prop in pc) {
-                    if (prop.PropertyName == "gmep_lighting_fixture_id") lighting.Id = prop.Value as string;
-                    if (prop.PropertyName == "gmep_lighting_parent_name") lighting.ParentName = prop.Value as string;
-                    if (prop.PropertyName == "gmep_lighting_location_id") lighting.LocationId = prop.Value as string;
-                    if (prop.PropertyName == "gmep_lighting_circuit") {
-                      if (int.TryParse(prop.Value.ToString(), out int circuit)) {
+                  foreach (DynamicBlockReferenceProperty prop in pc)
+                  {
+                    if (prop.PropertyName == "gmep_lighting_fixture_id")
+                      lighting.Id = prop.Value as string;
+                    if (prop.PropertyName == "gmep_lighting_parent_name")
+                      lighting.ParentName = prop.Value as string;
+                    if (prop.PropertyName == "gmep_lighting_location_id")
+                      lighting.LocationId = prop.Value as string;
+                    if (prop.PropertyName == "gmep_lighting_circuit")
+                    {
+                      if (int.TryParse(prop.Value.ToString(), out int circuit))
+                      {
                         lighting.Circuit = circuit;
                       }
                     }
-                    if (prop.PropertyName == "Visibility1") {
+                    if (prop.PropertyName == "Visibility1")
+                    {
                       //Note: Technically this should be a bool like IsEM/IsNotEm, but using EMCapable bool to determine if EM is toggled.
-                      if (prop.Value as string == "EM") { 
-                        lighting.EmCapable = true; 
+                      if (prop.Value as string == "EM")
+                      {
+                        lighting.EmCapable = true;
                       }
-                      else {
-                        lighting.EmCapable = false; 
+                      else
+                      {
+                        lighting.EmCapable = false;
                       }
                     }
                   }
-                  foreach (ObjectId attId in entity.AttributeCollection) {
+                  foreach (ObjectId attId in entity.AttributeCollection)
+                  {
                     var attRef = tr.GetObject(attId, OpenMode.ForWrite) as AttributeReference;
-                    if (attRef != null && attRef.Tag == "LIGHTING_NAME") {
+                    if (attRef != null && attRef.Tag == "LIGHTING_NAME")
+                    {
                       lighting.Name = attRef.TextString;
                     }
                   }
-                  if (lighting.Id != "0") lightings.Add(lighting);
+                  if (lighting.Id != "0")
+                    lightings.Add(lighting);
                 }
               }
             }
@@ -1172,8 +1421,9 @@ namespace ElectricalCommands.Lighting
         tr.Commit();
       }
 
-      PromptKeywordOptions pko= new PromptKeywordOptions("");
-      foreach (LightingTimeClock timeclock in timeClocks) {
+      PromptKeywordOptions pko = new PromptKeywordOptions("");
+      foreach (LightingTimeClock timeclock in timeClocks)
+      {
         pko.Keywords.Add(timeclock.Name + ":" + timeclock.Id);
       }
       pko.Message = "\nSelect Time Clock For Diagram:";
@@ -1182,11 +1432,18 @@ namespace ElectricalCommands.Lighting
       var timeClockId = result.Split(':')[1];
 
       LightingTimeClock chosenTimeClock = timeClocks.FirstOrDefault(x => x.Id == timeClockId);
-      List<LightingLocation> newLocations = locations.Where(loc => loc.timeclock == chosenTimeClock.Id).ToList();
-      List<LightingFixture> newLightings = lightings.Where(lighting => newLocations.Any(loc => loc.Id == lighting.LocationId)).ToList();
-      LightingControlDiagram diagram = new LightingControlDiagram(chosenTimeClock, newLocations, newLightings);
+      List<LightingLocation> newLocations = locations
+        .Where(loc => loc.timeclock == chosenTimeClock.Id)
+        .ToList();
+      List<LightingFixture> newLightings = lightings
+        .Where(lighting => newLocations.Any(loc => loc.Id == lighting.LocationId))
+        .ToList();
+      LightingControlDiagram diagram = new LightingControlDiagram(
+        chosenTimeClock,
+        newLocations,
+        newLightings
+      );
     }
-
 
     [CommandMethod("PlaceLighting")]
     public static void PlaceLighting()
@@ -1242,17 +1499,20 @@ namespace ElectricalCommands.Lighting
 
               PromptResult res = blockJig.DragMe(block.ObjectId, out point);
 
-              if (res.Status == PromptStatus.OK) {
+              if (res.Status == PromptStatus.OK)
+              {
                 BlockTableRecord curSpace = (BlockTableRecord)
                   tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
                 BlockReference br = new BlockReference(point, block.ObjectId);
 
-                if (fixture.Rotate) {
+                if (fixture.Rotate)
+                {
                   RotateJig rotateJig = new RotateJig(br);
                   PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
-                  if (rotatePromptResult.Status != PromptStatus.OK) {
+                  if (rotatePromptResult.Status != PromptStatus.OK)
+                  {
                     return;
                   }
                   rotation = br.Rotation;
@@ -1264,18 +1524,22 @@ namespace ElectricalCommands.Lighting
                 blockId = br.Id;
 
                 //Setting Attributes
-                foreach (ObjectId objId in block) {
+                foreach (ObjectId objId in block)
+                {
                   DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
                   AttributeDefinition attDef = obj as AttributeDefinition;
-                  if (attDef != null && !attDef.Constant) 
+                  if (attDef != null && !attDef.Constant)
                   {
-                    using (AttributeReference attRef = new AttributeReference()) {
+                    using (AttributeReference attRef = new AttributeReference())
+                    {
                       attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
                       attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
-                      if (attDef.Tag == "LIGHTING_NAME") {
+                      if (attDef.Tag == "LIGHTING_NAME")
+                      {
                         attRef.TextString = fixture.Name;
                       }
-                      if (attDef.Tag== "LIGHTING_CIRCUIT") {
+                      if (attDef.Tag == "LIGHTING_CIRCUIT")
+                      {
                         attRef.TextString = "#~";
                       }
                       br.AttributeCollection.AppendAttribute(attRef);
@@ -1284,7 +1548,8 @@ namespace ElectricalCommands.Lighting
                   }
                 }
               }
-              else {
+              else
+              {
                 return;
               }
 
@@ -1298,7 +1563,7 @@ namespace ElectricalCommands.Lighting
               BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
               DynamicBlockReferencePropertyCollection pc =
                 br.DynamicBlockReferencePropertyCollection;
-           
+
               foreach (DynamicBlockReferenceProperty prop in pc)
               {
                 if (prop.PropertyName == "gmep_lighting_id" && prop.Value as string == "0")
@@ -1309,7 +1574,8 @@ namespace ElectricalCommands.Lighting
                 {
                   prop.Value = fixture.Id;
                 }
-                if (prop.PropertyName == "gmep_lighting_name" && prop.Value as string == "0") {
+                if (prop.PropertyName == "gmep_lighting_name" && prop.Value as string == "0")
+                {
                   prop.Value = fixture.Name;
                 }
               }
@@ -1337,8 +1603,10 @@ namespace ElectricalCommands.Lighting
                     (CADObjectCommands.Scale - 0.25)
                     * 12
                     * Math.Pow(0.25 / CADObjectCommands.Scale, 1.5)
-                  ) - (16 * CADObjectCommands.Scale),
-                0);
+                  )
+                  - (16 * CADObjectCommands.Scale),
+                0
+              );
               if (Math.Round(rotation, 1) == 1.6 || Math.Round(rotation, 1) == 4.7)
               {
                 position = new Point3d(
@@ -1360,14 +1628,17 @@ namespace ElectricalCommands.Lighting
                       (CADObjectCommands.Scale - 0.25)
                       * 12
                       * Math.Pow(0.25 / CADObjectCommands.Scale, 1.5)
-                    ) - (16 * CADObjectCommands.Scale),
+                    )
+                    - (16 * CADObjectCommands.Scale),
                   0
                 );
               }
 
-              foreach (ObjectId id in br.AttributeCollection) {
+              foreach (ObjectId id in br.AttributeCollection)
+              {
                 AttributeReference attRef = (AttributeReference)tr.GetObject(id, OpenMode.ForWrite);
-                if (attRef.Tag == "LIGHTING_NAME") {
+                if (attRef.Tag == "LIGHTING_NAME")
+                {
                   attRef.Position = position;
                   attRef.Rotation = attRef.Rotation - rotation;
                   attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;
@@ -1376,7 +1647,8 @@ namespace ElectricalCommands.Lighting
                   attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
                   attRef.Justify = AttachmentPoint.BaseLeft;
                 }
-                if (attRef.Tag == "LIGHTING_CIRCUIT") {
+                if (attRef.Tag == "LIGHTING_CIRCUIT")
+                {
                   attRef.Position = position2;
                   attRef.Rotation = attRef.Rotation - rotation;
                   attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;

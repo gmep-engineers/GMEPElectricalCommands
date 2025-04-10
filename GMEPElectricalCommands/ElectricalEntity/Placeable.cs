@@ -628,11 +628,13 @@ namespace ElectricalCommands.ElectricalEntity
       LabelTransformHY,
       LabelTransformVX,
       LabelTransformVY;
-    public string ControlId, LocationId,
+    public string ControlId,
+      LocationId,
       Description,
       Mounting,
       Manufacturer,
       ModelNo,
+      Driver,
       Notes;
     public bool EmCapable;
 
@@ -655,11 +657,14 @@ namespace ElectricalCommands.ElectricalEntity
       bool Rotate,
       double PaperSpaceScale,
       bool EmCapable,
+      bool HasPhotocell,
+      bool HasOccupancy,
       double LabelTransformHX,
       double LabelTransformHY,
       double LabelTransformVX,
       double LabelTransformVY,
-      int Circuit
+      int Circuit,
+      string Driver
     )
     {
       this.Id = Id;
@@ -670,6 +675,49 @@ namespace ElectricalCommands.ElectricalEntity
       this.Voltage = Voltage;
       this.Wattage = Wattage;
       this.ControlId = ControlId;
+      this.Driver = Driver;
+      List<string> specialAttributes = new List<string>();
+
+      if (!String.IsNullOrEmpty(Driver))
+      {
+        specialAttributes.Add($"{Driver} DIMMING");
+      }
+      if (HasPhotocell)
+      {
+        specialAttributes.Add("INTEGRATED PHOTOCELL");
+      }
+      if (HasOccupancy)
+      {
+        specialAttributes.Add("OCCUPANCY SENSOR"); // HERE design tool is not updating this correcting in the database
+      }
+      if (specialAttributes.Count > 0)
+      {
+        Description += " WITH ";
+        for (int i = 0; i < specialAttributes.Count; i++)
+        {
+          if (specialAttributes.Count > 1 && i == specialAttributes.Count - 1)
+          {
+            Description += "AND " + specialAttributes[i];
+          }
+          else if (specialAttributes.Count == 1)
+          {
+            Description += specialAttributes[i];
+          }
+          else if (i < specialAttributes.Count - 1 && specialAttributes.Count > 2)
+          {
+            Description += specialAttributes[i] + ", ";
+          }
+          else
+          {
+            Description += specialAttributes[i];
+          }
+        }
+      }
+
+      if (EmCapable)
+      {
+        Description += ". 'EM' DENOTES 90-MINUTE EMERGENCY BATTERY.";
+      }
       this.Description = Description;
       this.Qty = Qty;
       this.Mounting = Mounting;
@@ -688,23 +736,23 @@ namespace ElectricalCommands.ElectricalEntity
       this.LocationId = LocationId;
     }
   }
-  public class LightingLocation : PlaceableElectricalEntity {
+
+  public class LightingLocation : PlaceableElectricalEntity
+  {
     public string LocationName;
     public bool Outdoor;
     public string timeclock;
-    public LightingLocation(
-      string id,
-      string location,
-      bool outdoor,
-      string timeclock_id
-    ) 
-    { 
+
+    public LightingLocation(string id, string location, bool outdoor, string timeclock_id)
+    {
       this.Id = id;
       this.Outdoor = outdoor;
       this.LocationName = location;
     }
   }
-  public class LightingTimeClock : PlaceableElectricalEntity {
+
+  public class LightingTimeClock : PlaceableElectricalEntity
+  {
     public string BypassSwitchName;
     public string BypassSwitchLocation;
     public string AdjacentPanelId;
@@ -716,7 +764,8 @@ namespace ElectricalCommands.ElectricalEntity
       string bypassSwitchLocation,
       string adjacentPanelId,
       string voltage
-    ) {
+    )
+    {
       this.Id = id;
       this.BypassSwitchLocation = bypassSwitchLocation;
       this.BypassSwitchName = bypassSwitchName;
@@ -725,10 +774,12 @@ namespace ElectricalCommands.ElectricalEntity
       this.Name = name;
     }
   }
+
   public class DistributionBus : PlaceableElectricalEntity
   {
     public DistributionBus(
       string Id,
+      string ParentId,
       string NodeId,
       string Status,
       int AmpRating,
@@ -738,6 +789,7 @@ namespace ElectricalCommands.ElectricalEntity
     )
     {
       this.Id = Id;
+      this.ParentId = ParentId;
       this.NodeId = NodeId;
       this.Status = Status;
       this.AmpRating = AmpRating;
@@ -766,6 +818,7 @@ namespace ElectricalCommands.ElectricalEntity
     )
     {
       this.Id = Id;
+      this.ServiceId = Id;
       this.NodeId = NodeId;
       Name =
         $"{AmpRating}A {Voltage.Replace(" ", "V-")}"
@@ -806,7 +859,8 @@ namespace ElectricalCommands.ElectricalEntity
 
     public int MountingHeight,
       Circuit,
-      Pole;
+      Pole,
+      Va;
     public double Fla,
       Mca;
     public bool Is3Phase,
@@ -828,6 +882,7 @@ namespace ElectricalCommands.ElectricalEntity
       double LocationY,
       float Mca,
       string Hp,
+      int Va,
       int MountingHeight,
       int Circuit,
       bool HasPlug,
@@ -855,6 +910,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.IsHidden = Hidden;
       this.Status = Status;
       this.NodeType = NodeType.Equipment;
+      this.Va = Va;
       TableName = "electrical_equipment";
       Pole = SetPole(Is3Phase, Voltage);
     }

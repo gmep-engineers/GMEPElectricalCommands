@@ -14,6 +14,7 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Internal;
 using Autodesk.AutoCAD.Runtime;
 using DocumentFormat.OpenXml.Packaging;
+using ElectricalCommands.ElectricalEntity;
 using ElectricalCommands.Lighting;
 using GMEPElectricalCommands.GmepDatabase;
 using Newtonsoft.Json;
@@ -1823,35 +1824,161 @@ namespace ElectricalCommands
           ? SymbolUtilityServices.GetBlockModelSpaceId(db)
           : SymbolUtilityServices.GetBlockPaperSpaceId(db);
       GmepDatabase gmepDb = new GmepDatabase();
-      // get all distribution section breakers for project
-      // make a list of all ds
-      Dictionary<string, Dictionary<string, int>> distributionSections =
-        new Dictionary<string, Dictionary<string, int>>();
-      Dictionary<string, int> ds1 = new Dictionary<string, int>();
-      ds1["A"] = 22356;
-      ds1["B"] = 34532;
-      ds1["C"] = 93464;
-      distributionSections["DS-1"] = ds1;
-      // make new table for each ds
-      foreach (KeyValuePair<string, Dictionary<string, int>> ds in distributionSections)
+      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
+      List<ElectricalEntity.Service> services = gmepDb.GetServices(projectId);
+      List<ElectricalEntity.DistributionBus> distributionBuses = gmepDb.GetDistributionBuses(
+        projectId
+      );
+      List<ElectricalEntity.Panel> panels = gmepDb.GetPanels(projectId);
+      List<ElectricalEntity.Transformer> transformers = gmepDb.GetTransformers(projectId);
+      List<ElectricalEntity.Equipment> equipment = gmepDb.GetEquipment(projectId, true);
+      double offset = 0;
+      foreach (ElectricalEntity.Service service in services)
       {
+        List<ElectricalEntity.Panel> panelLoads = new List<ElectricalEntity.Panel>();
+        List<ElectricalEntity.Equipment> equipmentLoads = new List<ElectricalEntity.Equipment>();
+        int count = 0;
+        foreach (
+          ElectricalEntity.DistributionBus distributionBus in distributionBuses.FindAll(d =>
+            d.ParentId == service.Id
+          )
+        )
+        {
+          foreach (
+            ElectricalEntity.Panel panel in panels.FindAll(e => e.ParentId == distributionBus.Id)
+          )
+          {
+            panelLoads.Add(panel);
+            count++;
+          }
+          foreach (
+            ElectricalEntity.Transformer transformer in transformers.FindAll(e =>
+              e.ParentId == distributionBus.Id
+            )
+          )
+          {
+            foreach (
+              ElectricalEntity.Panel panel in panels.FindAll(e => e.ParentId == transformer.Id)
+            )
+            {
+              panelLoads.Add(panel);
+              count++;
+            }
+            foreach (
+              ElectricalEntity.Equipment equip in equipment.FindAll(e =>
+                e.ParentId == transformer.Id
+              )
+            )
+            {
+              equipmentLoads.Add(equip);
+              count++;
+            }
+          }
+          foreach (
+            ElectricalEntity.Equipment equip in equipment.FindAll(e =>
+              e.ParentId == distributionBus.Id
+            )
+          )
+          {
+            equipmentLoads.Add(equip);
+            count++;
+          }
+        }
         Table tb = new Table();
         tb.TableStyle = db.Tablestyle;
+
         using (var tr = db.TransactionManager.StartTransaction())
         {
           var btr = (BlockTableRecord)tr.GetObject(spaceId, OpenMode.ForWrite);
 
-          var startPoint = new Point3d(topRightCorner.X, topRightCorner.Y, 0);
+          var startPoint = new Point3d(topRightCorner.X + offset, topRightCorner.Y, 0);
           tb.TableStyle = db.Tablestyle;
           tb.Position = startPoint;
-          tb.SetSize(ds.Value.Count + 5, 3);
+          tb.SetSize(count + 5, 3);
           tb.SetRowHeight(0.5);
-          tb.Cells[0, 0].TextHeight = (0.125);
-          tb.Cells[0, 0].TextString = $"{ds.Key} LOAD SUMMARY";
-          int tableRowIndex = 1;
-          int increment = 2;
+
+          var textStyleId = GetTextStyleId("gmep");
+          tb.Layer = "E-TXT1";
+          for (int i = 0; i < count + 5; i++)
+          {
+            for (int j = 0; j < 3; j++)
+            {
+              tb.Cells[i, j].TextHeight = 0.1;
+              tb.Cells[i, j].Alignment = CellAlignment.MiddleCenter;
+              tb.Cells[i, j].TextStyleId = textStyleId;
+            }
+          }
+          {
+            CellRange range = CellRange.Create(tb, 1, 0, 1, 1);
+            tb.MergeCells(range);
+          }
+          for (int i = count + 2; i < count + 5; i++)
+          {
+            CellRange range = CellRange.Create(tb, i, 0, i, 1);
+            tb.MergeCells(range);
+          }
+
+          tb.Cells[0, 0].TextHeight = (0.1);
+          tb.Cells[0, 0].TextString = $"{service.Name.ToUpper()} LOAD SUMMARY";
+          tb.Cells[1, 0].TextString = "SOURCE";
+          tb.Cells[1, 2].TextString = "LOAD";
+          int tableRowIndex = 2;
+          int loadRowIndex = 1;
           tb.SetColumnWidth(2);
+          tb.Columns[0].Width = 0.625;
+          tb.Columns[1].Width = 2.4;
+          tb.Columns[2].Width = 1.6;
+          List<double> kvaList = new List<double>();
+          foreach (ElectricalEntity.Panel panel in panelLoads)
+          {
+            tb.Cells[tableRowIndex, 0].TextString = loadRowIndex.ToString() + ".";
+            tb.Cells[tableRowIndex, 1].TextString = "PANEL '" + panel.Name + "'";
+            double kva = Math.Round(panel.Kva, 1);
+            kvaList.Add(kva);
+            tb.Cells[tableRowIndex, 2].TextString = kva.ToString() + " KVA";
+            tableRowIndex++;
+            loadRowIndex++;
+          }
+          foreach (ElectricalEntity.Equipment equip in equipmentLoads)
+          {
+            tb.Cells[tableRowIndex, 0].TextString = loadRowIndex.ToString() + ".";
+            tb.Cells[tableRowIndex, 1].TextString = equip.Name;
+            double kva = Math.Round(equip.Kva, 1);
+            kvaList.Add(kva);
+            tb.Cells[tableRowIndex, 2].TextString = kva.ToString() + " KVA";
+            tableRowIndex++;
+            loadRowIndex++;
+          }
+          double sum = kvaList.Sum();
+          tb.Cells[tableRowIndex, 0].TextString = "SUBTOTAL";
+          tb.Cells[tableRowIndex, 2].TextString = sum.ToString() + " KVA";
+          tableRowIndex++;
+
+          double amp = sum * 1000 / service.LineVoltage / (service.Phase == 3 ? 1.732 : 1);
+          amp = Math.Round(amp, 1);
+
+          tb.Cells[tableRowIndex, 0].TextString =
+            $"TOTAL AMP @{service.Name.Replace(" Service", "")}";
+          tb.Cells[tableRowIndex, 2].TextString = amp.ToString() + " AMPS";
+          tableRowIndex++;
+
+          tb.Cells[tableRowIndex, 0].TextString = "CONCLUSION";
+          if (amp > service.AmpRating)
+          {
+            tb.Cells[tableRowIndex, 2].TextString =
+              $"{service.AmpRating}A SERVICE CANNOT HANDLE {amp}A LOAD";
+          }
+          else
+          {
+            tb.Cells[tableRowIndex, 2].TextString =
+              $"{service.AmpRating}A SERVICE CAN HANDLE {amp}A LOAD";
+          }
+          BlockTable bt = (BlockTable)tr.GetObject(doc.Database.BlockTableId, OpenMode.ForRead);
+          btr.AppendEntity(tb);
+          tr.AddNewlyCreatedDBObject(tb, true);
+          tr.Commit();
         }
+        offset += 5;
       }
     }
 
