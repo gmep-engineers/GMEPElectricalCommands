@@ -1322,6 +1322,7 @@ namespace ElectricalCommands
         // Save the panel data
         readOnly = false;
         StoreDataInJsonFile(panelData);
+        userControls.Clear();
         InitializeModal();
         readOnly = true;
         NEW_PANEL_BUTTON.Enabled = !readOnly;
