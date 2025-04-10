@@ -13,6 +13,8 @@ using ElectricalCommands.ElectricalEntity;
 using ElectricalCommands.Equipment;
 using ElectricalCommands.SingleLine;
 using MySql.Data.MySqlClient;
+using ElectricalCommands.Notes;
+using System.ComponentModel;
 
 namespace GMEPElectricalCommands.GmepDatabase
 {
@@ -936,6 +938,110 @@ namespace GMEPElectricalCommands.GmepDatabase
       reader.Close();
       return clocks;
     }
+   public string IdToVoltage(int voltageId) {
+      string voltage = "0";
+      switch (voltageId) {
+        case (1):
+          voltage = "115";
+          break;
+        case (2):
+          voltage = "120";
+          break;
+        case (3):
+          voltage = "208";
+          break;
+        case (4):
+          voltage = "230";
+          break;
+        case (5):
+          voltage = "240";
+          break;
+        case (6):
+          voltage = "277";
+          break;
+        case (7):
+          voltage = "460";
+          break;
+        case (8):
+          voltage = "480";
+          break;
+      }
+      return voltage;
+    }
+    public Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> GetKeyedNoteTables(string projectId) {
+      List<ElectricalKeyedNote> notes = new List<ElectricalKeyedNote>();
+      List<ElectricalKeyedNoteTable> tables = new List<ElectricalKeyedNoteTable>();
+      Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> tablesDict = new Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>>();
+      string query =
+        @"
+        SELECT 
+        electrical_keyed_notes.id,
+        electrical_keyed_notes.table_id,
+        electrical_keyed_notes.date_created,
+        electrical_keyed_notes.note
+        FROM electrical_keyed_notes 
+        WHERE project_id = @projectId
+        order by date_created, table_id
+        ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read()) {
+        notes.Add(
+          new ElectricalKeyedNote {
+            Id = GetSafeString(reader, "id"),
+            TableId = GetSafeString(reader, "table_id"),
+            DateCreated = reader.GetDateTime("date_created"),
+            Note = GetSafeString(reader, "note"),
+          }
+        );
+      }
+      reader.Close();
+      //Tables Query
+      query =
+        @"
+        SELECT 
+        electrical_keyed_note_tables.id,
+        electrical_keyed_note_tables.sheet_id,
+        electrical_keyed_note_tables.title
+        FROM electrical_keyed_note_tables
+        WHERE project_id = @projectId
+        ";
+      command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      reader = command.ExecuteReader();
+      while (reader.Read()) {
+        tables.Add(
+          new ElectricalKeyedNoteTable {
+            Id = GetSafeString(reader, "id"),
+            SheetId = GetSafeString(reader, "sheet_id"),
+            Title = GetSafeString(reader, "title")
+          }
+        );
+      }
+      reader.Close();
+
+      //Add notes to tables
+      foreach (var table in tables) {
+        foreach (var note in notes) {
+          if (note.TableId == table.Id) {
+            table.KeyedNotes.Add(note);
+          }
+        }
+        table.KeyedNotes = new BindingList<ElectricalKeyedNote>(table.KeyedNotes.OrderBy(n => n.DateCreated).ToList());
+      }
+      foreach(var table in tables) {
+        if (!tablesDict.ContainsKey(table.SheetId)) {
+          tablesDict.Add(table.SheetId, new ObservableCollection<ElectricalKeyedNoteTable>());
+        }
+        tablesDict[table.SheetId].Add(table);
+      }
+
+      CloseConnection();
+    
+      return tablesDict;
+    }
 
     public string GetProjectId(string projectNo)
     {
@@ -951,6 +1057,112 @@ namespace GMEPElectricalCommands.GmepDatabase
       }
       reader.Close();
       return id;
+    }
+    public List<string> GetObjectIds(string projectId, string tableName) {
+      List<string> objectIds = new List<string>();
+      string query = $"SELECT id FROM {tableName} WHERE project_id = @projectId";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("projectId", projectId);
+      MySqlDataReader reader = command.ExecuteReader();
+      while (reader.Read()) {
+        objectIds.Add(GetSafeString(reader, "id"));
+      }
+      reader.Close();
+      CloseConnection();
+      return objectIds;
+    }
+    public void UpdateKeyNotesTables(
+      string projectId,
+      Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> tables
+    ) {
+      DeleteObsoleteNotesAndTables(projectId, tables);
+
+      string query =
+        @"
+        INSERT INTO electrical_keyed_note_tables (id, project_id, sheet_id, title)
+        VALUES (@id, @projectId, @sheetId, @title)
+        ON DUPLICATE KEY UPDATE
+        sheet_id = @sheetId,
+        title = @title
+        ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+     
+      foreach (var kvp in tables) {
+        foreach (var table in kvp.Value) {
+          command.Parameters.AddWithValue("@projectId", projectId);
+          command.Parameters.AddWithValue("@id", table.Id);
+          command.Parameters.AddWithValue("@sheetId", table.SheetId);
+          command.Parameters.AddWithValue("@title", table.Title);
+          command.ExecuteNonQuery();
+          command.Parameters.Clear();
+        }
+      }
+      query =
+        @"
+        INSERT INTO electrical_keyed_notes (id, project_id, table_id, date_created, note)
+        VALUES (@id, @projectId, @tableId, @dateCreated, @note)
+        ON DUPLICATE KEY UPDATE
+        date_created = @dateCreated,
+        note = @note
+        ";
+      command = new MySqlCommand(query, Connection);
+     
+      foreach (var kvp in tables) {
+        foreach (var table in kvp.Value) {
+          foreach (var note in table.KeyedNotes) {
+            command.Parameters.AddWithValue("@projectId", projectId);
+            command.Parameters.AddWithValue("@id", note.Id);
+            command.Parameters.AddWithValue("@tableId", note.TableId);
+            command.Parameters.AddWithValue("@dateCreated", note.DateCreated);
+            command.Parameters.AddWithValue("@note", note.Note);
+            command.ExecuteNonQuery();
+            command.Parameters.Clear();
+          }
+        }
+      }
+      CloseConnection();
+    }
+    public void DeleteObsoleteNotesAndTables(string projectId, Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> tables) {
+      // Retrieve current note and table IDs from the database
+      List<string> currentNoteIds = GetObjectIds(projectId, "electrical_keyed_notes");
+      List<string> currentTableIds = GetObjectIds(projectId, "electrical_keyed_note_tables");
+
+      // Create sets of new note and table IDs from the dictionary
+      HashSet<string> newNoteIds = new HashSet<string>();
+      HashSet<string> newTableIds = new HashSet<string>();
+
+      foreach (var kvp in tables) {
+        foreach (var table in kvp.Value) {
+          newTableIds.Add(table.Id);
+          foreach (var note in table.KeyedNotes) {
+            newNoteIds.Add(note.Id);
+          }
+        }
+      }
+
+      // Find obsolete notes and tables
+      List<string> obsoleteNoteIds = currentNoteIds.Except(newNoteIds).ToList();
+      List<string> obsoleteTableIds = currentTableIds.Except(newTableIds).ToList();
+
+      // Delete obsolete notes
+      if (obsoleteNoteIds.Count > 0) {
+        string deleteNotesQuery = "DELETE FROM electrical_keyed_notes WHERE id IN (" + string.Join(",", obsoleteNoteIds.Select(id => $"'{id}'")) + ")";
+        OpenConnection();
+        MySqlCommand deleteNotesCommand = new MySqlCommand(deleteNotesQuery, Connection);
+        deleteNotesCommand.ExecuteNonQuery();
+        CloseConnection();
+      }
+
+      // Delete obsolete tables
+      if (obsoleteTableIds.Count > 0) {
+        string deleteTablesQuery = "DELETE FROM electrical_keyed_note_tables WHERE id IN (" + string.Join(",", obsoleteTableIds.Select(id => $"'{id}'")) + ")";
+        OpenConnection();
+        MySqlCommand deleteTablesCommand = new MySqlCommand(deleteTablesQuery, Connection);
+        deleteTablesCommand.ExecuteNonQuery();
+        CloseConnection();
+      }
     }
 
     public void UpdateEquipment(Equipment equip)
