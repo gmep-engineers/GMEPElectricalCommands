@@ -17,6 +17,8 @@ using GMEPElectricalCommands.GmepDatabase;
 using Autodesk.AutoCAD.Geometry;
 using Dreambuild.AutoCAD;
 using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using System.Buffers;
+using DocumentFormat.OpenXml.Vml.Office;
 
 namespace ElectricalCommands.Notes
 {
@@ -205,7 +207,39 @@ namespace ElectricalCommands.Notes
           tr.Commit();
         }
         //loop through each note in autocad
-
+        using (Transaction tr = db.TransactionManager.StartTransaction()) {
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+          BlockTableRecord keyedNoteBlock = (BlockTableRecord)tr.GetObject(bt["KEYED NOTE (GENERAL)"], OpenMode.ForRead);
+          //Iterating through each block table record
+          if (keyedNoteBlock != null) {
+            foreach (ObjectId id in keyedNoteBlock.GetAnonymousBlockIds()) {
+              if (id.IsValid) {
+                using (BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord) {
+                  if (anonymousBtr != null) {
+                    foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+                      if (objId.IsValid) {
+                        var entity = tr.GetObject(objId, OpenMode.ForWrite) as BlockReference;
+                        string keyedNoteId = "";
+                        if (entity != null) {
+                          foreach (DynamicBlockReferenceProperty prop in entity.DynamicBlockReferencePropertyCollection) {
+                            if (prop.PropertyName == "gmep_keyed_note_id") {
+                              keyedNoteId = prop.Value as string;
+                              break;
+                            }
+                          }
+                          if (keyedNoteId != "0") {
+                            updateNoteOnCAD(entity, keyedNoteId, tr);
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+          tr.Commit();
+        }
       }
     }
     private void updateTableOnCAD(Table table, string noteTableId, ObjectId blockId, ObjectId attDefId, ObjectId styleId) {
@@ -227,12 +261,30 @@ namespace ElectricalCommands.Notes
               table.Cells[i + 2, 1].TextStyleId = styleId;
               table.Cells[i + 2, 1].Alignment = CellAlignment.MiddleLeft;
             }
+            return;
           }
         }
       }
-
+      table.Erase();
     }
-    private void updateNoteOnCAD(BlockReference noteRef) {
+    private void updateNoteOnCAD(BlockReference noteRef, string keyedNoteId, Transaction tr) {
+      foreach (var sheetId in KeyedNoteTables.Keys) {
+        foreach (var noteTable in KeyedNoteTables[sheetId]) {
+          foreach (var note in noteTable.KeyedNotes) {
+            if (note.Id == keyedNoteId) {
+              foreach (ObjectId attId in noteRef.AttributeCollection) {
+                AttributeReference attRef = (AttributeReference)tr.GetObject(attId, OpenMode.ForWrite);
+                if (attRef.Tag == "A") {
+                  attRef.TextString = note.Index.ToString();
+                  return;
+                }
+                break;
+              }
+            }
+          }
+        }
+      }
+      noteRef.Erase();
     }
 
 
