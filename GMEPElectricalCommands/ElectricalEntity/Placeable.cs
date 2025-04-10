@@ -657,6 +657,8 @@ namespace ElectricalCommands.ElectricalEntity
       bool Rotate,
       double PaperSpaceScale,
       bool EmCapable,
+      bool HasPhotocell,
+      bool HasOccupancy,
       double LabelTransformHX,
       double LabelTransformHY,
       double LabelTransformVX,
@@ -674,10 +676,44 @@ namespace ElectricalCommands.ElectricalEntity
       this.Wattage = Wattage;
       this.ControlId = ControlId;
       this.Driver = Driver;
+      List<string> specialAttributes = new List<string>();
+
       if (!String.IsNullOrEmpty(Driver))
       {
-        Description += $" WITH {Driver} DIMMING";
+        specialAttributes.Add($"{Driver} DIMMING");
       }
+      if (HasPhotocell)
+      {
+        specialAttributes.Add("INTEGRATED PHOTOCELL");
+      }
+      if (HasOccupancy)
+      {
+        specialAttributes.Add("OCCUPANCY SENSOR"); // HERE design tool is not updating this correcting in the database
+      }
+      if (specialAttributes.Count > 0)
+      {
+        Description += " WITH ";
+        for (int i = 0; i < specialAttributes.Count; i++)
+        {
+          if (specialAttributes.Count > 1 && i == specialAttributes.Count - 1)
+          {
+            Description += "AND " + specialAttributes[i];
+          }
+          else if (specialAttributes.Count == 1)
+          {
+            Description += specialAttributes[i];
+          }
+          else if (i < specialAttributes.Count - 1 && specialAttributes.Count > 2)
+          {
+            Description += specialAttributes[i] + ", ";
+          }
+          else
+          {
+            Description += specialAttributes[i];
+          }
+        }
+      }
+
       if (EmCapable)
       {
         Description += ". 'EM' DENOTES 90-MINUTE EMERGENCY BATTERY.";

@@ -72,7 +72,7 @@ namespace ElectricalCommands.Lighting
               PlaceableElectricalEntity eq = new PlaceableElectricalEntity();
               foreach (DynamicBlockReferenceProperty prop in pc)
               {
-                if (prop.PropertyName == "gmep_lighting_fixture_id") // HERE test
+                if (prop.PropertyName == "gmep_lighting_fixture_id")
                 {
                   if (!fixtureDict.ContainsKey(prop.Value as string))
                   {
