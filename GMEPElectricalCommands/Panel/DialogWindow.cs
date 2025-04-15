@@ -1488,14 +1488,8 @@ namespace ElectricalCommands
         var LmlOverride = (int)userControl.GetLmlOverride();
         obj.LclOverride = LclOverride != 0;
         obj.LmlOverride = LmlOverride != 0;
-        obj.Lcl =
-          (LclOverride != 0)
-            ? LclOverride
-            : (int)Math.Round(userControl.CalculateWattageSum("LCL"));
-        obj.Lml =
-          (LmlOverride != 0)
-            ? LmlOverride
-            : (int)Math.Round(userControl.StoreItemsAndWattage("LML"));
+        obj.Lcl = (LclOverride != 0) ? LclOverride : userControl.CalculateWattageSum("LCL");
+        obj.Lml = (LmlOverride != 0) ? LmlOverride : userControl.StoreItemsAndWattage("LML");
         obj.Subpanels = userControl.GetSubPanels();
         manager.List.Add(obj);
       }
@@ -1523,7 +1517,7 @@ namespace ElectricalCommands
       if (panel.LclOverride)
         return;
 
-      int totalLcl = panel.Lcl;
+      double totalLcl = panel.Lcl;
       foreach (var subpanelName in panel.Subpanels)
       {
         var subpanel = allPanels.Find(p => p.PanelName == subpanelName);
@@ -1540,15 +1534,15 @@ namespace ElectricalCommands
       if (panel.LmlOverride)
         return;
 
-      int maxLml = panel.Lml;
+      double maxLml = panel.Lml;
       maxLml = RecursiveCalculateLml(panel, allPanels, maxLml);
       panel.Lml = maxLml;
     }
 
-    private int RecursiveCalculateLml(
+    private double RecursiveCalculateLml(
       LclLmlObject panel,
       List<LclLmlObject> allPanels,
-      int currentMax
+      double currentMax
     )
     {
       foreach (var subpanelName in panel.Subpanels)
@@ -1575,8 +1569,8 @@ namespace ElectricalCommands
 
   public class LclLmlObject
   {
-    public int Lcl { get; set; }
-    public int Lml { get; set; }
+    public double Lcl { get; set; }
+    public double Lml { get; set; }
     public bool LclOverride { get; set; }
     public bool LmlOverride { get; set; }
     public List<string> Subpanels { get; set; }

@@ -688,7 +688,7 @@ namespace ElectricalCommands.ElectricalEntity
       }
       if (HasOccupancy)
       {
-        specialAttributes.Add("OCCUPANCY SENSOR"); // HERE design tool is not updating this correcting in the database
+        specialAttributes.Add("OCCUPANCY SENSOR");
       }
       if (specialAttributes.Count > 0)
       {

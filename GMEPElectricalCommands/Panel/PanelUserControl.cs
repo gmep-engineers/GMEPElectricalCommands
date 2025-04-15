@@ -3427,7 +3427,7 @@ namespace ElectricalCommands
       doc.SetLispSymbol($"panel_{id.Replace("-", "")}_a", feederAmps.ToString() + " A");
     }
 
-    private double CalculateLclOnPhase(string phase)
+    private double CalculateLclOnPhase(string phase, bool percentOnly = false)
     {
       double lcl = 0;
       string side = "left";
@@ -3448,10 +3448,10 @@ namespace ElectricalCommands
         }
         side = "right";
       }
-      return lcl;
+      return lcl * (percentOnly ? 0.25 : 1);
     }
 
-    private double CalculateLmlOnPhase(string phase)
+    private double CalculateLmlOnPhase(string phase, bool percentOnly = false)
     {
       double lml = 0;
       string side = "left";
@@ -3476,7 +3476,7 @@ namespace ElectricalCommands
         }
         side = "right";
       }
-      return lml;
+      return lml * (percentOnly ? 0.25 : 1);
     }
 
     public void UpdatePerCellValueChange()
@@ -3531,18 +3531,6 @@ namespace ElectricalCommands
       double lcl = Convert.ToDouble(LCL.Text);
       double lml = Convert.ToDouble(LML.Text);
 
-      // Handle LCL
-      if (!string.IsNullOrEmpty(LCL.Text) && LCL.Text != "0")
-      {
-        sum += Math.Round(Convert.ToDouble(LCL.Text) * 0.25, 0);
-      }
-
-      // Handle LML
-      if (!string.IsNullOrEmpty(LML.Text) && LML.Text != "0")
-      {
-        sum += Math.Round(Convert.ToDouble(LML.Text) * 0.25, 0);
-      }
-
       if (lineVoltage == 240 && phaseVoltage == 120 && this.is3Ph)
       {
         double l1 = phB;
@@ -3590,8 +3578,18 @@ namespace ElectricalCommands
         return;
       }
 
+      // Handle LCL
+      if (!string.IsNullOrEmpty(LCL.Text) && LCL.Text != "0")
+      {
+        sum += Math.Round(Convert.ToDouble(LCL.Text) * 0.25, 0);
+      }
+
+      // Handle LML
+      if (!string.IsNullOrEmpty(LML.Text) && LML.Text != "0")
+      {
+        sum += Math.Round(Convert.ToDouble(LML.Text) * 0.25, 0);
+      }
       totalKva = CalculatePanelLoad(sum) * safetyFactor;
-      PANEL_LOAD_GRID.Rows[0].Cells[0].Value = Math.Round(totalKva, 1);
       if (phaseVoltageObj != null)
       {
         double yFactor = 1;
@@ -3616,21 +3614,35 @@ namespace ElectricalCommands
           }
           else
           {
-            double maxPhaseVa = phA;
-            string maxPhase = "a";
-            if (phB > phA)
+            double lclA = CalculateLclOnPhase("a", true);
+            double lclB = CalculateLclOnPhase("b", true);
+            double lclC = 0;
+
+            double lmlA = CalculateLmlOnPhase("a", true);
+            double lmlB = CalculateLmlOnPhase("b", true);
+            double lmlC = 0;
+
+            if (is3Ph)
             {
-              maxPhase = "b";
+              lclC = CalculateLclOnPhase("c", true);
+              lmlC = CalculateLmlOnPhase("c", true);
+            }
+
+            double totalA = phA + lclA + lmlA;
+            double totalB = phB + lclB + lmlB;
+            double totalC = phC + lclC + lmlC;
+
+            double maxPhaseVa = totalA;
+            if (totalB > totalA)
+            {
               maxPhaseVa = phB;
             }
-            if (phC > phB && phC > phA)
+            if (totalC > totalB && totalC > totalA)
             {
-              maxPhase = "c";
-              maxPhaseVa = phC;
+              maxPhaseVa = totalC;
             }
-            lcl = CalculateLclOnPhase(maxPhase);
-            lml = CalculateLmlOnPhase(maxPhase);
-            feederAmps = safetyFactor * (maxPhaseVa + (0.25 * lcl) + (0.25 * lml)) / phaseVoltage;
+
+            feederAmps = safetyFactor * (maxPhaseVa) / phaseVoltage;
             feederAmps = Math.Round(feederAmps, 1);
             FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
           }
@@ -3652,7 +3664,7 @@ namespace ElectricalCommands
       return Math.Round(maxVal / lineVoltage, 1);
     }
 
-    public void UpdateLclLmlLabels(int lcl, int lml)
+    public void UpdateLclLmlLabels(double lcl, double lml)
     {
       if (!LCL_OVERRIDE.Checked)
       {
@@ -3660,7 +3672,8 @@ namespace ElectricalCommands
       }
       if (!LML_OVERRIDE.Checked)
       {
-        LML.Text = $"{lml}";
+        Console.WriteLine(lml);
+        LML.Text = $"{Math.Round(lml * 1.732, 0)}";
       }
     }
 

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.IO;
 using System.Linq;
 using System.Xml.Linq;
@@ -11,10 +12,9 @@ using DocumentFormat.OpenXml.Office2010.CustomUI;
 using ElectricalCommands;
 using ElectricalCommands.ElectricalEntity;
 using ElectricalCommands.Equipment;
+using ElectricalCommands.Notes;
 using ElectricalCommands.SingleLine;
 using MySql.Data.MySqlClient;
-using ElectricalCommands.Notes;
-using System.ComponentModel;
 
 namespace GMEPElectricalCommands.GmepDatabase
 {
@@ -789,7 +789,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         ON electrical_panels.id = electrical_lighting.parent_id
         LEFT JOIN electrical_equipment_voltages
         ON electrical_equipment_voltages.id = electrical_lighting.voltage_id
-        LEFT JOIN symbols
+        LEFT JOIN electrical_lighting_symbols as symbols
         ON symbols.id = electrical_lighting.symbol_id
         LEFT JOIN electrical_lighting_mounting_types
         ON electrical_lighting_mounting_types.id = electrical_lighting.mounting_type_id
@@ -938,9 +938,12 @@ namespace GMEPElectricalCommands.GmepDatabase
       reader.Close();
       return clocks;
     }
-   public string IdToVoltage(int voltageId) {
+
+    public string IdToVoltage(int voltageId)
+    {
       string voltage = "0";
-      switch (voltageId) {
+      switch (voltageId)
+      {
         case (1):
           voltage = "115";
           break;
@@ -968,10 +971,15 @@ namespace GMEPElectricalCommands.GmepDatabase
       }
       return voltage;
     }
-    public Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> GetKeyedNoteTables(string projectId) {
+
+    public Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> GetKeyedNoteTables(
+      string projectId
+    )
+    {
       List<ElectricalKeyedNote> notes = new List<ElectricalKeyedNote>();
       List<ElectricalKeyedNoteTable> tables = new List<ElectricalKeyedNoteTable>();
-      Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> tablesDict = new Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>>();
+      Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> tablesDict =
+        new Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>>();
       string query =
         @"
         SELECT 
@@ -987,9 +995,11 @@ namespace GMEPElectricalCommands.GmepDatabase
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("projectId", projectId);
       MySqlDataReader reader = command.ExecuteReader();
-      while (reader.Read()) {
+      while (reader.Read())
+      {
         notes.Add(
-          new ElectricalKeyedNote {
+          new ElectricalKeyedNote
+          {
             Id = GetSafeString(reader, "id"),
             TableId = GetSafeString(reader, "table_id"),
             DateCreated = reader.GetDateTime("date_created"),
@@ -1011,35 +1021,44 @@ namespace GMEPElectricalCommands.GmepDatabase
       command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("projectId", projectId);
       reader = command.ExecuteReader();
-      while (reader.Read()) {
+      while (reader.Read())
+      {
         tables.Add(
-          new ElectricalKeyedNoteTable {
+          new ElectricalKeyedNoteTable
+          {
             Id = GetSafeString(reader, "id"),
             SheetId = GetSafeString(reader, "sheet_id"),
-            Title = GetSafeString(reader, "title")
+            Title = GetSafeString(reader, "title"),
           }
         );
       }
       reader.Close();
 
       //Add notes to tables
-      foreach (var table in tables) {
-        foreach (var note in notes) {
-          if (note.TableId == table.Id) {
+      foreach (var table in tables)
+      {
+        foreach (var note in notes)
+        {
+          if (note.TableId == table.Id)
+          {
             table.KeyedNotes.Add(note);
           }
         }
-        table.KeyedNotes = new BindingList<ElectricalKeyedNote>(table.KeyedNotes.OrderBy(n => n.DateCreated).ToList());
+        table.KeyedNotes = new BindingList<ElectricalKeyedNote>(
+          table.KeyedNotes.OrderBy(n => n.DateCreated).ToList()
+        );
       }
-      foreach(var table in tables) {
-        if (!tablesDict.ContainsKey(table.SheetId)) {
+      foreach (var table in tables)
+      {
+        if (!tablesDict.ContainsKey(table.SheetId))
+        {
           tablesDict.Add(table.SheetId, new ObservableCollection<ElectricalKeyedNoteTable>());
         }
         tablesDict[table.SheetId].Add(table);
       }
 
       CloseConnection();
-    
+
       return tablesDict;
     }
 
@@ -1058,24 +1077,29 @@ namespace GMEPElectricalCommands.GmepDatabase
       reader.Close();
       return id;
     }
-    public List<string> GetObjectIds(string projectId, string tableName) {
+
+    public List<string> GetObjectIds(string projectId, string tableName)
+    {
       List<string> objectIds = new List<string>();
       string query = $"SELECT id FROM {tableName} WHERE project_id = @projectId";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("projectId", projectId);
       MySqlDataReader reader = command.ExecuteReader();
-      while (reader.Read()) {
+      while (reader.Read())
+      {
         objectIds.Add(GetSafeString(reader, "id"));
       }
       reader.Close();
       CloseConnection();
       return objectIds;
     }
+
     public void UpdateKeyNotesTables(
       string projectId,
       Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> tables
-    ) {
+    )
+    {
       DeleteObsoleteNotesAndTables(projectId, tables);
 
       string query =
@@ -1088,9 +1112,11 @@ namespace GMEPElectricalCommands.GmepDatabase
         ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-     
-      foreach (var kvp in tables) {
-        foreach (var table in kvp.Value) {
+
+      foreach (var kvp in tables)
+      {
+        foreach (var table in kvp.Value)
+        {
           command.Parameters.AddWithValue("@projectId", projectId);
           command.Parameters.AddWithValue("@id", table.Id);
           command.Parameters.AddWithValue("@sheetId", table.SheetId);
@@ -1108,10 +1134,13 @@ namespace GMEPElectricalCommands.GmepDatabase
         note = @note
         ";
       command = new MySqlCommand(query, Connection);
-     
-      foreach (var kvp in tables) {
-        foreach (var table in kvp.Value) {
-          foreach (var note in table.KeyedNotes) {
+
+      foreach (var kvp in tables)
+      {
+        foreach (var table in kvp.Value)
+        {
+          foreach (var note in table.KeyedNotes)
+          {
             command.Parameters.AddWithValue("@projectId", projectId);
             command.Parameters.AddWithValue("@id", note.Id);
             command.Parameters.AddWithValue("@tableId", note.TableId);
@@ -1124,7 +1153,12 @@ namespace GMEPElectricalCommands.GmepDatabase
       }
       CloseConnection();
     }
-    public void DeleteObsoleteNotesAndTables(string projectId, Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> tables) {
+
+    public void DeleteObsoleteNotesAndTables(
+      string projectId,
+      Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> tables
+    )
+    {
       // Retrieve current note and table IDs from the database
       List<string> currentNoteIds = GetObjectIds(projectId, "electrical_keyed_notes");
       List<string> currentTableIds = GetObjectIds(projectId, "electrical_keyed_note_tables");
@@ -1133,10 +1167,13 @@ namespace GMEPElectricalCommands.GmepDatabase
       HashSet<string> newNoteIds = new HashSet<string>();
       HashSet<string> newTableIds = new HashSet<string>();
 
-      foreach (var kvp in tables) {
-        foreach (var table in kvp.Value) {
+      foreach (var kvp in tables)
+      {
+        foreach (var table in kvp.Value)
+        {
           newTableIds.Add(table.Id);
-          foreach (var note in table.KeyedNotes) {
+          foreach (var note in table.KeyedNotes)
+          {
             newNoteIds.Add(note.Id);
           }
         }
@@ -1147,8 +1184,12 @@ namespace GMEPElectricalCommands.GmepDatabase
       List<string> obsoleteTableIds = currentTableIds.Except(newTableIds).ToList();
 
       // Delete obsolete notes
-      if (obsoleteNoteIds.Count > 0) {
-        string deleteNotesQuery = "DELETE FROM electrical_keyed_notes WHERE id IN (" + string.Join(",", obsoleteNoteIds.Select(id => $"'{id}'")) + ")";
+      if (obsoleteNoteIds.Count > 0)
+      {
+        string deleteNotesQuery =
+          "DELETE FROM electrical_keyed_notes WHERE id IN ("
+          + string.Join(",", obsoleteNoteIds.Select(id => $"'{id}'"))
+          + ")";
         OpenConnection();
         MySqlCommand deleteNotesCommand = new MySqlCommand(deleteNotesQuery, Connection);
         deleteNotesCommand.ExecuteNonQuery();
@@ -1156,8 +1197,12 @@ namespace GMEPElectricalCommands.GmepDatabase
       }
 
       // Delete obsolete tables
-      if (obsoleteTableIds.Count > 0) {
-        string deleteTablesQuery = "DELETE FROM electrical_keyed_note_tables WHERE id IN (" + string.Join(",", obsoleteTableIds.Select(id => $"'{id}'")) + ")";
+      if (obsoleteTableIds.Count > 0)
+      {
+        string deleteTablesQuery =
+          "DELETE FROM electrical_keyed_note_tables WHERE id IN ("
+          + string.Join(",", obsoleteTableIds.Select(id => $"'{id}'"))
+          + ")";
         OpenConnection();
         MySqlCommand deleteTablesCommand = new MySqlCommand(deleteTablesQuery, Connection);
         deleteTablesCommand.ExecuteNonQuery();
