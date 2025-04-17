@@ -48,6 +48,22 @@ namespace ElectricalCommands.ElectricalEntity
       Editor ed = doc.Editor;
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
+        LayerTable layerTable = tr.GetObject(db.LayerTableId, OpenMode.ForRead) as LayerTable;
+        if (layerTable.Has("E-SYM-EXISTING") == false)
+        {
+          using (LayerTableRecord layerTableRecord = new LayerTableRecord())
+          {
+            layerTableRecord.Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(
+              Autodesk.AutoCAD.Colors.ColorMethod.ByAci,
+              8
+            );
+            layerTableRecord.Name = "E-SYM-EXISTING";
+
+            tr.GetObject(db.LayerTableId, OpenMode.ForWrite);
+            layerTable.Add(layerTableRecord);
+            tr.AddNewlyCreatedDBObject(layerTableRecord, true);
+          }
+        }
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord btr = (BlockTableRecord)
           tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
