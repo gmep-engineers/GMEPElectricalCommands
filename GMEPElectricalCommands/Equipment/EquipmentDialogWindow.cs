@@ -1629,31 +1629,33 @@ namespace ElectricalCommands.Equipment
 
     private void CreateEquipmentSchedule_Click(object sender, EventArgs e)
     {
+      Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
+        .AutoCAD
+        .Windows
+        .Window
+        .State
+        .Maximized;
+      Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
+      Point3d startingPoint;
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      var currentView = ed.GetCurrentView();
       using (
         DocumentLock docLock =
           Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
       )
       {
-        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
-          .AutoCAD
-          .Windows
-          .Window
-          .State
-          .Maximized;
-        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
-        Point3d startingPoint;
-        Document doc = Autodesk
-          .AutoCAD
-          .ApplicationServices
-          .Application
-          .DocumentManager
-          .MdiActiveDocument;
-        Database db = doc.Database;
-        Editor ed = doc.Editor;
         using (Transaction tr = db.TransactionManager.StartTransaction())
         {
           var promptOptions = new PromptPointOptions("\nSelect upper left point:");
           var promptResult = ed.GetPoint(promptOptions);
+          currentView = ed.GetCurrentView();
           if (promptResult.Status == PromptStatus.OK)
             startingPoint = promptResult.Value;
           else
@@ -1663,6 +1665,7 @@ namespace ElectricalCommands.Equipment
         }
         CreateEquipmentSchedule(doc, db, ed, startingPoint);
       }
+      ed.SetCurrentView(currentView);
     }
   }
 }
