@@ -1487,6 +1487,37 @@ namespace ElectricalCommands.SingleLine
       }
     }
 
+    public static void MakeGroundingBusSection(Point3d currentPoint, bool existing)
+    {
+      MakeGroundingBus(currentPoint, existing);
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+
+        LineData conduitLine1 = new LineData();
+        conduitLine1.Layer = "E-CND1";
+        conduitLine1.ColorIndex = existing ? 8 : 256;
+        conduitLine1.StartPoint = new SimpleVector3d();
+        conduitLine1.EndPoint = new SimpleVector3d();
+        conduitLine1.StartPoint.X = currentPoint.X;
+        conduitLine1.StartPoint.Y = currentPoint.Y - 0.2813;
+        conduitLine1.EndPoint.X = currentPoint.X + 1.75;
+        conduitLine1.EndPoint.Y = currentPoint.Y - 0.2813;
+        CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
+
+        tr.Commit();
+      }
+    }
+
     public static void MakeMainSection(Point3d currentPoint, bool existing)
     {
       Document doc = Autodesk

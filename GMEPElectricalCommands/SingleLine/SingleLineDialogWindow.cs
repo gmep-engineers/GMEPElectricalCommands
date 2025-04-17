@@ -21,6 +21,7 @@ namespace ElectricalCommands.SingleLine
     DistributionSection,
     MultimeterSection,
     PullSection,
+    PullSectionGroundingBusSection,
     MainBreakerSection,
     MainMeterSection,
     MainMeterAndBreakerSection,
@@ -496,6 +497,20 @@ namespace ElectricalCommands.SingleLine
           TreeNode mainBreakerNode = node.Nodes.Add(mainBreaker.Id, mainBreaker.GetStatusAndName());
           mainBreakerNode.Tag = mainBreaker;
           PopulateFromMainBreaker(mainBreakerNode, mainBreaker);
+        }
+      }
+      foreach (ElectricalEntity.DistributionBus distributionBus in distributionBusList)
+      {
+        if (VerifyNodeLink(service.NodeId, distributionBus.NodeId))
+        {
+          service.GroundBusOnly = true;
+          InheritElectricalAttributes(service, distributionBus);
+          TreeNode distributionBusNode = node.Nodes.Add(
+            distributionBus.Id,
+            distributionBus.GetStatusAndName()
+          );
+          distributionBusNode.Tag = distributionBus;
+          PopulateFromDistributionBus(distributionBusNode, distributionBus);
         }
       }
     }
@@ -1061,6 +1076,10 @@ namespace ElectricalCommands.SingleLine
           ElectricalEntity.Service service = serviceList.Find(s => s.Id == groupMember);
           if (service.ServiceId == serviceId)
           {
+            if (service.GroundBusOnly)
+            {
+              return GroupType.PullSectionGroundingBusSection;
+            }
             return GroupType.PullSection;
           }
         }
@@ -1811,6 +1830,18 @@ namespace ElectricalCommands.SingleLine
             ElectricalEntity.Service service = GetServiceFromPullSection(groupId);
             existing = service.Status.ToLower() == "existing";
             SingleLine.MakePullSection(service, currentPoint);
+            currentPoint = MakeGroupBox(existing, groupWidth, currentPoint);
+            index++;
+          }
+          else if (groupType == GroupType.PullSectionGroundingBusSection)
+          {
+            groupWidth = 0.75;
+            ElectricalEntity.Service service = GetServiceFromPullSection(groupId);
+            existing = service.Status.ToLower() == "existing";
+            SingleLine.MakePullSection(service, currentPoint);
+            currentPoint = MakeGroupBox(existing, groupWidth, currentPoint);
+            groupWidth = 1.75;
+            SingleLine.MakeGroundingBusSection(currentPoint, service.IsExisting());
             currentPoint = MakeGroupBox(existing, groupWidth, currentPoint);
             index++;
           }

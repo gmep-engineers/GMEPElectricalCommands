@@ -826,6 +826,8 @@ namespace ElectricalCommands.ElectricalEntity
 
   public class Service : PlaceableElectricalEntity
   {
+    public bool GroundBusOnly;
+
     public Service(
       string Id,
       string NodeId,
@@ -837,6 +839,7 @@ namespace ElectricalCommands.ElectricalEntity
       Point3d Location
     )
     {
+      GroundBusOnly = false;
       this.Id = Id;
       this.ServiceId = Id;
       this.NodeId = NodeId;
