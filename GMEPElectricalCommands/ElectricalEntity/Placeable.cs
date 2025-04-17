@@ -678,7 +678,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.Driver = Driver;
       List<string> specialAttributes = new List<string>();
 
-      if (!String.IsNullOrEmpty(Driver))
+      if (!String.IsNullOrEmpty(Driver) && !Driver.Contains("N/A"))
       {
         specialAttributes.Add($"{Driver} DIMMING");
       }
@@ -714,9 +714,13 @@ namespace ElectricalCommands.ElectricalEntity
         }
       }
 
-      if (EmCapable)
+      if (EmCapable && !Driver.Contains("N/A"))
       {
         Description += ". 'EM' DENOTES 90-MINUTE EMERGENCY BATTERY.";
+      }
+      if (Driver.Contains("EM"))
+      {
+        Description += " WITH 90-MINUTE BATTERY";
       }
       this.Description = Description;
       this.Qty = Qty;
