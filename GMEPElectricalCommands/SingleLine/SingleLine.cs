@@ -1865,7 +1865,7 @@ namespace ElectricalCommands.SingleLine
         );
         GeneralCommands.CreateAndPositionText(
           tr,
-          statusText + "1#3/0 CU.",
+          statusText + (existing ? "" : "1#3/0 CU."),
           "gmep",
           0.0938,
           0.85,
@@ -1875,7 +1875,7 @@ namespace ElectricalCommands.SingleLine
         );
         GeneralCommands.CreateAndPositionText(
           tr,
-          "TO COLD WATER PIPE",
+          (existing ? "GROUND BUS" : "TO COLD WATER PIPE"),
           "gmep",
           0.0938,
           0.85,
@@ -1885,7 +1885,7 @@ namespace ElectricalCommands.SingleLine
         );
         GeneralCommands.CreateAndPositionText(
           tr,
-          statusText + "1#3/0 CU.",
+          statusText + (existing ? "" : "1#3/0 CU."),
           "gmep",
           0.0938,
           0.85,
@@ -1895,7 +1895,7 @@ namespace ElectricalCommands.SingleLine
         );
         GeneralCommands.CreateAndPositionText(
           tr,
-          "TO COLD BUILDING STEEL",
+          (existing ? "GROUND BUS" : "TO COLD WATER PIPE"),
           "gmep",
           0.0938,
           0.85,
@@ -2129,16 +2129,19 @@ namespace ElectricalCommands.SingleLine
           "E-TXT1",
           new Point3d(currentPoint.X + 0.6, currentPoint.Y + 0.38, 0)
         );
-        GeneralCommands.CreateAndPositionText(
-          tr,
-          "65 KAIC OR MATCH FAULT CURRENT ON SITE",
-          "gmep",
-          0.0938,
-          0.85,
-          2,
-          "E-TXT1",
-          new Point3d(currentPoint.X + 0.6, currentPoint.Y + 0.25, 0)
-        );
+        if (!distributionBus.IsExisting())
+        {
+          GeneralCommands.CreateAndPositionText(
+            tr,
+            "65 KAIC OR MATCH FAULT CURRENT ON SITE",
+            "gmep",
+            0.0938,
+            0.85,
+            2,
+            "E-TXT1",
+            new Point3d(currentPoint.X + 0.6, currentPoint.Y + 0.25, 0)
+          );
+        }
 
         GeneralCommands.CreateAndPositionText(
           tr,
