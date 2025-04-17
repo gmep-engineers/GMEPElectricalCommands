@@ -3601,6 +3601,8 @@ namespace ElectricalCommands
         {
           if (LCL.Text == "0" && LML.Text == "0")
           {
+            TOTAL_VA_GRID.Rows[0].Cells[0].Value = CalculateTotalVA(sum);
+            PANEL_LOAD_GRID.Rows[0].Cells[0].Value = Math.Round(sum / 1000, 1);
             if (DISTRIBUTION_SECTION_CHECKBOX.Checked)
             {
               feederAmps = Math.Round(totalKva * 1000 / lineVoltage / yFactor, 1);
@@ -3645,6 +3647,9 @@ namespace ElectricalCommands
             feederAmps = safetyFactor * (maxPhaseVa) / phaseVoltage;
             feederAmps = Math.Round(feederAmps, 1);
             FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
+            sum = totalA + totalB + totalC;
+            TOTAL_VA_GRID.Rows[0].Cells[0].Value = Math.Round(phA + phB + phC);
+            PANEL_LOAD_GRID.Rows[0].Cells[0].Value = Math.Round(sum / 1000, 1);
           }
           ColorFeederAmpsBox(feederAmps, busRating);
           SetPanelLoadLispVars(totalKva, feederAmps);
