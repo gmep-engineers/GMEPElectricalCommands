@@ -2435,5 +2435,38 @@ namespace ElectricalCommands.SingleLine
         }
       }
     }
+
+    public static void MakeNoWorkText(Point3d currentPoint)
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForWrite);
+        GeneralCommands.CreateAndPositionText(
+          tr,
+          "NO WORK",
+          "gmep",
+          0.0938,
+          0.85,
+          2,
+          "E-TXT1",
+          new Point3d(currentPoint.X, currentPoint.Y, 0),
+          TextHorizontalMode.TextCenter,
+          TextVerticalMode.TextBase,
+          AttachmentPoint.BaseCenter
+        );
+        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X, currentPoint.Y - 0.13, 0));
+        tr.Commit();
+      }
+    }
   }
 }

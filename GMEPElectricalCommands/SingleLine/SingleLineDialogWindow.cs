@@ -1152,6 +1152,7 @@ namespace ElectricalCommands.SingleLine
         {
           SingleLine.MakeDistributionMeterCombo(meter, currentPoint);
         }
+        SingleLine.MakeNoWorkText(new Point3d(currentPoint.X, currentPoint.Y - 1.83, 0));
       }
       else if (
         distributionBusChild.Nodes.Count == 0
@@ -1160,6 +1161,7 @@ namespace ElectricalCommands.SingleLine
       {
         DistributionBreaker distributionBreaker = (DistributionBreaker)distributionBusChildEntity;
         SingleLine.MakeDistributionBreakerCombo(distributionBreaker, currentPoint);
+        SingleLine.MakeNoWorkText(new Point3d(currentPoint.X, currentPoint.Y - 1.83, 0));
       }
       else if (distributionBusChild.Nodes.Count == 0)
       {
@@ -1198,6 +1200,10 @@ namespace ElectricalCommands.SingleLine
               nextChildEntity.IsExisting()
             );
           }
+        }
+        else
+        {
+          SingleLine.MakeNoWorkText(new Point3d(currentPoint.X, currentPoint.Y - 1.83, 0));
         }
       }
       else
