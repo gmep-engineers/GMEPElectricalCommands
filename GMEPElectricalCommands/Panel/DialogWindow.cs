@@ -1048,7 +1048,7 @@ namespace ElectricalCommands
             jsonPanel.description_left_tags[i] = string.Empty;
             jsonPanel.description_right_tags[i] = string.Empty;
           }
-          for (int i = 0; i < panel.NumBreakers / 2; i++)
+          for (int i = 0; i < panel.NumBreakers; i++)
           {
             List<PanelNote> leftNotes = panelNotes.FindAll(n =>
               n.CircuitNo % 2 == 1 && n.CircuitNo == i + 1
@@ -1057,9 +1057,9 @@ namespace ElectricalCommands
             {
               for (int j = 0; j < leftNote.Length; j++)
               {
-                jsonPanel.description_left_tags[i + j] += "|" + leftNote.Note;
-                jsonPanel.description_left_tags[i + j] = jsonPanel
-                  .description_left_tags[i + j]
+                jsonPanel.description_left_tags[i / 2 + j] += "|" + leftNote.Note;
+                jsonPanel.description_left_tags[i / 2 + j] = jsonPanel
+                  .description_left_tags[i / 2 + j]
                   .Trim('|');
               }
               if (!jsonPanel.notes.Contains(leftNote.Note))
@@ -1076,9 +1076,9 @@ namespace ElectricalCommands
             {
               for (int j = 0; j < rightNote.Length; j++)
               {
-                jsonPanel.description_right_tags[i + j] += "|" + rightNote.Note;
-                jsonPanel.description_right_tags[i + j] = jsonPanel
-                  .description_right_tags[i + j]
+                jsonPanel.description_right_tags[i / 2 + j] += "|" + rightNote.Note;
+                jsonPanel.description_right_tags[i / 2 + j] = jsonPanel
+                  .description_right_tags[i / 2 + j]
                   .Trim('|');
               }
               if (!jsonPanel.notes.Contains(rightNote.Note))

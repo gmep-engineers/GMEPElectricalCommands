@@ -3677,7 +3677,6 @@ namespace ElectricalCommands
       }
       if (!LML_OVERRIDE.Checked)
       {
-        Console.WriteLine(lml);
         LML.Text = $"{Math.Round(lml * 1.732, 0)}";
       }
     }
@@ -4187,7 +4186,6 @@ namespace ElectricalCommands
       {
         return "-1";
       }
-      Console.WriteLine(sanitized);
       System.Data.DataTable dt = new System.Data.DataTable();
       double sumObject = Convert.ToDouble(dt.Compute(sanitized, null));
       string phaseVA = "";
