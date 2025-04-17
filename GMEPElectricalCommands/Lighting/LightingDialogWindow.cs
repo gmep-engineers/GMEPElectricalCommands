@@ -726,5 +726,14 @@ namespace ElectricalCommands.Lighting
       }
       CreateLightingFixtureListView(true);
     }
+
+    private void RefreshButton_Click(object sender, EventArgs e)
+    {
+      panelList.Clear();
+      lightingFixtureList.Clear();
+      panelList = gmepDb.GetPanels(projectId);
+      lightingFixtureList = gmepDb.GetLightingFixtures(projectId);
+      CreateLightingFixtureListView(true);
+    }
   }
 }
