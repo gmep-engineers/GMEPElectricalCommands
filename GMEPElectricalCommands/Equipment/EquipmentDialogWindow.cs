@@ -194,9 +194,11 @@ namespace ElectricalCommands.Equipment
               + Math.Round(equipment.Location.Y / 12, 1).ToString()
           );
         }
+        item.SubItems.Add(equipment.ConnectionSymbol);
         item.SubItems.Add(equipment.IsHidden.ToString());
         item.SubItems.Add(equipment.Id);
         item.SubItems.Add(equipment.ParentId);
+        
         equipmentListView.Items.Add(item);
       }
       if (!updateOnly)
