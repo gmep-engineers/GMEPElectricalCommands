@@ -199,6 +199,7 @@ namespace ElectricalCommands.Equipment
         item.SubItems.Add(equipment.Id);
         item.SubItems.Add(equipment.ParentId);
         
+        
         equipmentListView.Items.Add(item);
       }
       if (!updateOnly)
@@ -212,6 +213,7 @@ namespace ElectricalCommands.Equipment
         equipmentListView.Columns.Add("Voltage", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Phase", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
+        equipmentListView.Columns.Add("Connection Symbol", -2, HorizontalAlignment.Left);
         ContextMenu contextMenu = new ContextMenu();
         contextMenu.MenuItems.Add(
           new MenuItem("Show on plan", new EventHandler(ShowEquipOnPlan_Click))
@@ -620,7 +622,8 @@ namespace ElectricalCommands.Equipment
       string parentId,
       string equipNo,
       EquipmentType equipType,
-      string circuitNo = ""
+      string circuitNo = "",
+      string connectionSymbol = ""
     )
     {
       Document doc = Autodesk
@@ -695,7 +698,7 @@ namespace ElectricalCommands.Equipment
       switch (equipType)
       {
         case EquipmentType.Duplex:
-          blockName = $"GMEP DUPLEX";
+          blockName = connectionSymbol;
           break;
         case EquipmentType.Panel:
           blockName = $"A$C26441056";
@@ -1177,7 +1180,9 @@ namespace ElectricalCommands.Equipment
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
           equipmentListView.SelectedItems[0].Text,
           EquipmentType.Duplex, // TODO set this based on connection
-          circuitNo
+          circuitNo,
+          equipmentListView.SelectedItems[0].SubItems[numSubItems - 4].Text
+
         );
         if (p == null)
         {
@@ -1350,7 +1355,8 @@ namespace ElectricalCommands.Equipment
                   item.SubItems[numSubItems - 1].Text,
                   item.Text,
                   EquipmentType.Duplex,
-                  circuitNo
+                  circuitNo,
+                  item.SubItems[numSubItems - 4].Text
                 );
                 if (p == null)
                 {
@@ -1437,7 +1443,8 @@ namespace ElectricalCommands.Equipment
                   item.SubItems[numSubItems - 1].Text,
                   item.Text,
                   EquipmentType.Duplex,
-                  circuitNo
+                  circuitNo,
+                  item.SubItems[numSubItems - 4].Text
                 );
                 if (p == null)
                 {
