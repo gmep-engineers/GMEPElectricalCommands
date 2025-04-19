@@ -634,6 +634,19 @@ namespace ElectricalCommands.Equipment
         .MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
+
+      //editing the connectionSymbol string
+      if (connectionSymbol.Contains(" W/ ")) {
+        string[] parts = connectionSymbol.Split(new string[] { " W/ " }, StringSplitOptions.None);
+
+        if (parts.Length == 2) {
+          string beforeW = parts[0];
+          string afterW = parts[1];
+          connectionSymbol = beforeW + afterW;
+        }
+      }
+      connectionSymbol = "GMEP " + connectionSymbol.ToUpper();
+
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;

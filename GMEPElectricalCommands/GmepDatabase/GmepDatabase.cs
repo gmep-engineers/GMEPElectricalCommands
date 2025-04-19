@@ -746,7 +746,7 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeBoolean(reader, "has_plug"),
             GetSafeBoolean(reader, "is_hidden_on_plan"),
             GetSafeString(reader, "status"),
-            "GMEP " + GetSafeString(reader, "connection_name").ToUpper()
+            GetSafeString(reader, "connection_name")
           )
         );
       }
