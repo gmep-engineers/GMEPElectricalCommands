@@ -760,9 +760,31 @@ namespace ElectricalCommands.Equipment
                 }
               }
             }
-            acTrans.Commit();
           }
         }
+        acTrans.Commit();
+      }
+      using (Transaction acTrans = db.TransactionManager.StartTransaction()) {
+        BlockTable acBlkTbl = acTrans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord switchRec = acTrans.GetObject(acBlkTbl["GMEP J-BOXSWITCHOBJ"], OpenMode.ForRead) as BlockTableRecord;
+        if (blockName == "GMEP J-BOXSWITCH") {
+          PromptPointOptions promptOptions2 = new PromptPointOptions("\nSelect point for J-Box switch: ");
+          PromptPointResult promptResult2 = ed.GetPoint(promptOptions2);
+          if (promptResult.Status != PromptStatus.OK)
+            return null;
+          Point3d firstClickPoint2 = promptResult2.Value;
+          using (BlockReference switchRef = new BlockReference(Point3d.Origin, switchRec.ObjectId)) {
+            RotateJig blockJig = new RotateJig(switchRef);
+            PromptResult blockPromptResult = ed.Drag(blockJig);
+            BlockTableRecord currentSpace =
+              acTrans.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+            currentSpace.AppendEntity(switchRef);
+            acTrans.AddNewlyCreatedDBObject(switchRef, true);
+            switchRef.ScaleFactors = new Scale3d(0.25 / scale);
+            switchRef.Layer = "E-SYM1";
+          }
+        }
+        acTrans.Commit();
       }
 
       double labelOffsetX = 0;
