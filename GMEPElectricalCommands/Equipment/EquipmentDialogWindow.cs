@@ -788,6 +788,26 @@ namespace ElectricalCommands.Equipment
         acTrans.Commit();
       }
 
+      double xFactor = 4.5;
+      double yFactor = 4.5;
+      switch (blockName) {
+       
+        case "GMEP DUPLEXDATA":
+          xFactor = 9;
+          break;
+        case "GMEP QUADDATA":
+          xFactor = 9;
+          break;
+        case "GMEP FLOOR DUPLEXDATA":
+          xFactor = 9;
+          break;
+        case "GMEP FLOOR QUADDATA":
+          xFactor = 9;
+          break;
+
+        default:
+          break;
+      }
       double labelOffsetX = 0;
       double labelOffsetY = 0;
       switch (equipType)
@@ -796,19 +816,19 @@ namespace ElectricalCommands.Equipment
           switch (rotation)
           {
             case var _ when rotation > 5.49:
-              labelOffsetY = -4.5;
+              labelOffsetY = -yFactor;
               break;
             case var _ when rotation > 4.71:
-              labelOffsetX = -4.5;
+              labelOffsetX = -xFactor;
               break;
             case var _ when rotation > 2.35:
-              labelOffsetY = 4.5;
+              labelOffsetY = yFactor;
               break;
             case var _ when rotation > 1.57:
-              labelOffsetX = 4.5;
+              labelOffsetX = xFactor;
               break;
             default:
-              labelOffsetY = -4.5;
+              labelOffsetY = -yFactor;
               break;
           }
           break;
@@ -831,23 +851,23 @@ namespace ElectricalCommands.Equipment
         switch (rotation)
         {
           case var _ when rotation > 5.49:
-            circuitOffsetY = -9;
-            circuitOffsetX = 4.5;
+            circuitOffsetY = -2*yFactor;
+            circuitOffsetX = xFactor;
             break;
           case var _ when rotation > 4.71:
-            circuitOffsetY = -4.5;
+            circuitOffsetY = -yFactor;
             break;
           case var _ when rotation > 2.35:
-            circuitOffsetY = 4.5;
-            circuitOffsetX = -4.5;
+            circuitOffsetY = yFactor;
+            circuitOffsetX = -xFactor;
             break;
           case var _ when rotation > 1.57:
-            circuitOffsetX = 9;
-            circuitOffsetY = -4.5;
+            circuitOffsetX = xFactor*2;
+            circuitOffsetY = -yFactor;
             break;
           default:
-            circuitOffsetY = -9;
-            circuitOffsetX = 4.5;
+            circuitOffsetY = -yFactor*2;
+            circuitOffsetX = xFactor;
             break;
         }
         circuitOffsetY = circuitOffsetY * 0.25 / scale;
