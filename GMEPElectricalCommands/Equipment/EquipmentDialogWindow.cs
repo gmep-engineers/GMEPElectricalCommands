@@ -118,8 +118,8 @@ namespace ElectricalCommands.Equipment
         }
       }
       CreateEquipmentListView();
-      CreatePanelListView();
-      CreateTransformerListView();
+     // CreatePanelListView();
+     // CreateTransformerListView();
       ResetLocations();
       CalculateDistances();
       isLoading = false;
@@ -260,188 +260,7 @@ namespace ElectricalCommands.Equipment
         }
       }
     }
-
-    private void CreatePanelListView(bool updateOnly = false)
-    {
-      if (updateOnly)
-      {
-        panelListView.Items.Clear();
-      }
-      panelListView.View = View.Details;
-      panelListView.FullRowSelect = true;
-      foreach (ElectricalEntity.Panel panel in panelList)
-      {
-        ListViewItem item = new ListViewItem(panel.Name, 0);
-        item.SubItems.Add(panel.ParentName);
-        if (panel.ParentDistance == -1)
-        {
-          item.SubItems.Add("Not Set");
-        }
-        else
-        {
-          item.SubItems.Add(panel.ParentDistance.ToString() + "'");
-        }
-        if (panel.Location.X == 0 && panel.Location.Y == 0)
-        {
-          item.SubItems.Add("Not Set");
-        }
-        else
-        {
-          item.SubItems.Add(
-            Math.Round(panel.Location.X / 12, 1).ToString()
-              + ", "
-              + Math.Round(panel.Location.Y / 12, 1).ToString()
-          );
-        }
-        item.SubItems.Add(panel.IsHidden.ToString());
-        item.SubItems.Add(panel.Id);
-        item.SubItems.Add(panel.ParentId);
-        panelListView.Items.Add(item);
-        if (!updateOnly)
-        {
-          filterPanelComboBox.Items.Add(panel.Name);
-        }
-      }
-      if (!updateOnly)
-      {
-        panelListView.Columns.Add("Name", -2, HorizontalAlignment.Left);
-        panelListView.Columns.Add("Parent", -2, HorizontalAlignment.Left);
-        panelListView.Columns.Add("Parent Distance", -2, HorizontalAlignment.Left);
-        panelListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
-        ContextMenu contextMenu = new ContextMenu();
-        contextMenu.MenuItems.Add(
-          new MenuItem("Show on plan", new EventHandler(ShowPanelOnPlan_Click))
-        );
-        panelListView.ContextMenu = contextMenu;
-      }
-    }
-
-    private void ShowPanelOnPlan_Click(object sender, EventArgs e)
-    {
-      if (panelListView.SelectedItems.Count > 0)
-      {
-        int numSubitems = panelListView.SelectedItems[0].SubItems.Count;
-        string equipId = panelListView.SelectedItems[0].SubItems[numSubitems - 2].Text;
-        foreach (ElectricalEntity.Panel p in panelList)
-        {
-          if (p.Id == equipId && p.Location.X != 0 && p.Location.Y != 0)
-          {
-            Document doc = Autodesk
-              .AutoCAD
-              .ApplicationServices
-              .Application
-              .DocumentManager
-              .MdiActiveDocument;
-
-            Editor ed = doc.Editor;
-            using (var view = ed.GetCurrentView())
-            {
-              var UCS2DCS =
-                (
-                  Matrix3d.Rotation(-view.ViewTwist, view.ViewDirection, view.Target)
-                  * Matrix3d.Displacement(view.Target - Point3d.Origin)
-                  * Matrix3d.PlaneToWorld(view.ViewDirection)
-                ).Inverse() * ed.CurrentUserCoordinateSystem;
-              var center = p.Location.TransformBy(UCS2DCS);
-              view.CenterPoint = new Point2d(center.X, center.Y);
-              ed.SetCurrentView(view);
-            }
-            break;
-          }
-        }
-      }
-    }
-
-    private void CreateTransformerListView(bool updateOnly = false)
-    {
-      if (updateOnly)
-      {
-        transformerListView.Items.Clear();
-      }
-      transformerListView.View = View.Details;
-      transformerListView.FullRowSelect = true;
-      foreach (Transformer xfmr in transformerList)
-      {
-        ListViewItem item = new ListViewItem(xfmr.Name, 0);
-        item.SubItems.Add(xfmr.ParentName);
-        if (xfmr.ParentDistance == -1)
-        {
-          item.SubItems.Add("Not Set");
-        }
-        else
-        {
-          item.SubItems.Add(xfmr.ParentDistance.ToString() + "'");
-        }
-        if (xfmr.Location.X == 0 && xfmr.Location.Y == 0)
-        {
-          item.SubItems.Add("Not Set");
-        }
-        else
-        {
-          item.SubItems.Add(
-            Math.Round(xfmr.Location.X / 12, 1).ToString()
-              + ", "
-              + Math.Round(xfmr.Location.Y / 12, 1).ToString()
-          );
-        }
-        item.SubItems.Add(xfmr.IsHidden.ToString());
-        item.SubItems.Add(xfmr.Id);
-        item.SubItems.Add(xfmr.ParentId);
-        transformerListView.Items.Add(item);
-        if (!updateOnly)
-        {
-          filterPanelComboBox.Items.Add(xfmr.Name);
-        }
-      }
-      if (!updateOnly)
-      {
-        transformerListView.Columns.Add("Name", -2, HorizontalAlignment.Left);
-        transformerListView.Columns.Add("Parent", -2, HorizontalAlignment.Left);
-        transformerListView.Columns.Add("Parent Distance", -2, HorizontalAlignment.Left);
-        transformerListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
-        ContextMenu contextMenu = new ContextMenu();
-        contextMenu.MenuItems.Add(
-          new MenuItem("Show on plan", new EventHandler(ShowTransformerOnPlan_Click))
-        );
-        transformerListView.ContextMenu = contextMenu;
-      }
-    }
-
-    private void ShowTransformerOnPlan_Click(object sender, EventArgs e)
-    {
-      if (transformerListView.SelectedItems.Count > 0)
-      {
-        int numSubitems = transformerListView.SelectedItems[0].SubItems.Count;
-        string equipId = transformerListView.SelectedItems[0].SubItems[numSubitems - 2].Text;
-        foreach (Transformer t in transformerList)
-        {
-          if (t.Id == equipId && t.Location.X != 0 && t.Location.Y != 0)
-          {
-            Document doc = Autodesk
-              .AutoCAD
-              .ApplicationServices
-              .Application
-              .DocumentManager
-              .MdiActiveDocument;
-
-            Editor ed = doc.Editor;
-            using (var view = ed.GetCurrentView())
-            {
-              var UCS2DCS =
-                (
-                  Matrix3d.Rotation(-view.ViewTwist, view.ViewDirection, view.Target)
-                  * Matrix3d.Displacement(view.Target - Point3d.Origin)
-                  * Matrix3d.PlaneToWorld(view.ViewDirection)
-                ).Inverse() * ed.CurrentUserCoordinateSystem;
-              var center = t.Location.TransformBy(UCS2DCS);
-              view.CenterPoint = new Point2d(center.X, center.Y);
-              ed.SetCurrentView(view);
-            }
-            break;
-          }
-        }
-      }
-    }
+    
 
     private void ResetLocations()
     {
@@ -1200,8 +1019,8 @@ namespace ElectricalCommands.Equipment
           }
         }
       }
-      CreatePanelListView(true);
-      CreateTransformerListView(true);
+      //CreatePanelListView(true);
+     // CreateTransformerListView(true);
       CreateEquipmentListView(true);
     }
 
@@ -1278,73 +1097,7 @@ namespace ElectricalCommands.Equipment
       CalculateDistances();
     }
 
-    private void PanelListView_MouseDoubleClick(object sender, MouseEventArgs e)
-    {
-      int numSubItems = panelListView.SelectedItems[0].SubItems.Count;
-      if (panelListView.SelectedItems[0].SubItems[numSubItems - 3].Text == "True")
-      {
-        return;
-      }
-      using (
-        DocumentLock docLock =
-          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
-      )
-      {
-        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
-          .AutoCAD
-          .Windows
-          .Window
-          .State
-          .Maximized;
-        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
-        Point3d? p = PlaceEquipment(
-          panelListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
-          panelListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
-          panelListView.SelectedItems[0].Text,
-          EquipmentType.Panel
-        );
-        if (p == null)
-        {
-          return;
-        }
-      }
-      CreatePanelListView(true);
-      CalculateDistances();
-    }
-
-    private void TransformerListView_MouseDoubleClick(object sender, MouseEventArgs e)
-    {
-      int numSubItems = transformerListView.SelectedItems[0].SubItems.Count;
-      if (transformerListView.SelectedItems[0].SubItems[numSubItems - 3].Text == "True")
-      {
-        return;
-      }
-      using (
-        DocumentLock docLock =
-          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
-      )
-      {
-        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
-          .AutoCAD
-          .Windows
-          .Window
-          .State
-          .Maximized;
-        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
-        Point3d? p = PlaceEquipment(
-          transformerListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
-          transformerListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
-          transformerListView.SelectedItems[0].Text,
-          EquipmentType.Transformer
-        );
-        if (p == null)
-        {
-          return;
-        }
-      }
-      CreateTransformerListView(true);
-      CalculateDistances();
-    }
+    
 
     private void PlaceSelectedButton_Click(object sender, EventArgs e)
     {
@@ -1361,82 +1114,26 @@ namespace ElectricalCommands.Equipment
           .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
         int numSubItems = 0;
-        if (panelListView.SelectedItems.Count > 0)
+        
+        if (equipmentListView.SelectedItems.Count > 0)
         {
-          numSubItems = panelListView.SelectedItems[0].SubItems.Count;
-        }
-        Dictionary<string, Point3d> panelLocs = new Dictionary<string, Point3d>();
-        bool brk = false;
-        foreach (ListViewItem item in panelListView.SelectedItems)
-        {
-          if (item.SubItems[numSubItems - 3].Text != "True")
+          numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
+          foreach (ListViewItem item in equipmentListView.SelectedItems)
           {
-            Point3d? p = PlaceEquipment(
-              item.SubItems[numSubItems - 2].Text,
-              item.SubItems[numSubItems - 1].Text,
-              item.Text,
-              EquipmentType.Panel
-            );
-            if (p == null)
+            if (item.SubItems[numSubItems - 3].Text != "True")
             {
-              brk = true;
-              break;
-            }
-            panelLocs[item.SubItems[numSubItems - 2].Text] = (Point3d)p;
-          }
-        }
-        if (
-          !brk
-          && (
-            transformerListView.SelectedItems.Count > 0 || equipmentListView.SelectedItems.Count > 0
-          )
-        )
-        {
-          if (transformerListView.SelectedItems.Count > 0)
-          {
-            numSubItems = transformerListView.SelectedItems[0].SubItems.Count;
-            foreach (ListViewItem item in transformerListView.SelectedItems)
-            {
-              if (item.SubItems[numSubItems - 3].Text != "True")
+              string circuitNo = GetCircuitNo(item);
+              Point3d? p = PlaceEquipment(
+                item.SubItems[numSubItems - 2].Text,
+                item.SubItems[numSubItems - 1].Text,
+                item.Text,
+                EquipmentType.Duplex,
+                circuitNo,
+                item.SubItems[numSubItems - 4].Text
+              );
+              if (p == null)
               {
-                Point3d? p = PlaceEquipment(
-                  item.SubItems[numSubItems - 2].Text,
-                  item.SubItems[numSubItems - 1].Text,
-                  item.Text,
-                  EquipmentType.Transformer
-                );
-                if (p == null)
-                {
-                  return;
-                }
-                if (p == null)
-                {
-                  brk = true;
-                  break;
-                }
-              }
-            }
-          }
-          if (!brk && equipmentListView.SelectedItems.Count > 0)
-          {
-            numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
-            foreach (ListViewItem item in equipmentListView.SelectedItems)
-            {
-              if (item.SubItems[numSubItems - 3].Text != "True")
-              {
-                string circuitNo = GetCircuitNo(item);
-                Point3d? p = PlaceEquipment(
-                  item.SubItems[numSubItems - 2].Text,
-                  item.SubItems[numSubItems - 1].Text,
-                  item.Text,
-                  EquipmentType.Duplex,
-                  circuitNo,
-                  item.SubItems[numSubItems - 4].Text
-                );
-                if (p == null)
-                {
-                  break;
-                }
+                break;
               }
             }
           }
@@ -1460,71 +1157,26 @@ namespace ElectricalCommands.Equipment
           .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
         int numSubItems = 0;
-        if (panelListView.Items.Count > 0)
+       
+        if (equipmentListView.Items.Count > 0)
         {
-          numSubItems = panelListView.Items[0].SubItems.Count;
-        }
-        bool brk = false;
-        foreach (ListViewItem item in panelListView.Items)
-        {
-          if (item.SubItems[numSubItems - 3].Text != "True")
+          numSubItems = equipmentListView.Items[0].SubItems.Count;
+          foreach (ListViewItem item in equipmentListView.Items)
           {
-            Point3d? p = PlaceEquipment(
-              item.SubItems[numSubItems - 2].Text,
-              item.SubItems[numSubItems - 1].Text,
-              item.Text,
-              EquipmentType.Panel
-            );
-            if (p == null)
+            if (item.SubItems[numSubItems - 3].Text != "True")
             {
-              brk = true;
-              break;
-            }
-          }
-        }
-        if (!brk && (transformerListView.Items.Count > 0 || equipmentListView.Items.Count > 0))
-        {
-          if (transformerListView.Items.Count > 0)
-          {
-            numSubItems = transformerListView.Items[0].SubItems.Count;
-            foreach (ListViewItem item in transformerListView.Items)
-            {
-              if (item.SubItems[numSubItems - 3].Text != "True")
+              string circuitNo = GetCircuitNo(item);
+              Point3d? p = PlaceEquipment(
+                item.SubItems[numSubItems - 2].Text,
+                item.SubItems[numSubItems - 1].Text,
+                item.Text,
+                EquipmentType.Duplex,
+                circuitNo,
+                item.SubItems[numSubItems - 4].Text
+              );
+              if (p == null)
               {
-                Point3d? p = PlaceEquipment(
-                  item.SubItems[numSubItems - 2].Text,
-                  item.SubItems[numSubItems - 1].Text,
-                  item.Text,
-                  EquipmentType.Transformer
-                );
-                if (p == null)
-                {
-                  brk = true;
-                  break;
-                }
-              }
-            }
-          }
-          if (!brk && equipmentListView.Items.Count > 0)
-          {
-            numSubItems = equipmentListView.Items[0].SubItems.Count;
-            foreach (ListViewItem item in equipmentListView.Items)
-            {
-              if (item.SubItems[numSubItems - 3].Text != "True")
-              {
-                string circuitNo = GetCircuitNo(item);
-                Point3d? p = PlaceEquipment(
-                  item.SubItems[numSubItems - 2].Text,
-                  item.SubItems[numSubItems - 1].Text,
-                  item.Text,
-                  EquipmentType.Duplex,
-                  circuitNo,
-                  item.SubItems[numSubItems - 4].Text
-                );
-                if (p == null)
-                {
-                  break;
-                }
+                break;
               }
             }
           }

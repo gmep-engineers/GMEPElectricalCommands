@@ -37,18 +37,12 @@
             this.filterPanelComboBox = new System.Windows.Forms.ComboBox();
             this.equipmentGroupBox = new System.Windows.Forms.GroupBox();
             this.equipmentListView = new System.Windows.Forms.ListView();
-            this.panelsGroupBox = new System.Windows.Forms.GroupBox();
-            this.panelListView = new System.Windows.Forms.ListView();
             this.placeSelectedButton = new System.Windows.Forms.Button();
             this.placeAllButton = new System.Windows.Forms.Button();
             this.recalculateDistancesButton = new System.Windows.Forms.Button();
-            this.transformerGroupBox = new System.Windows.Forms.GroupBox();
-            this.transformerListView = new System.Windows.Forms.ListView();
             this.createEquipmentScheduleButton = new System.Windows.Forms.Button();
             this.filtersGroupBox.SuspendLayout();
             this.equipmentGroupBox.SuspendLayout();
-            this.panelsGroupBox.SuspendLayout();
-            this.transformerGroupBox.SuspendLayout();
             this.SuspendLayout();
             // 
             // filtersGroupBox
@@ -66,9 +60,9 @@
             this.filtersGroupBox.Controls.Add(this.filterVoltageLabel);
             this.filtersGroupBox.Controls.Add(this.filterPanelLabel);
             this.filtersGroupBox.Controls.Add(this.filterPanelComboBox);
-            this.filtersGroupBox.Location = new System.Drawing.Point(12, 251);
+            this.filtersGroupBox.Location = new System.Drawing.Point(12, 12);
             this.filtersGroupBox.Name = "filtersGroupBox";
-            this.filtersGroupBox.Size = new System.Drawing.Size(860, 56);
+            this.filtersGroupBox.Size = new System.Drawing.Size(860, 59);
             this.filtersGroupBox.TabIndex = 0;
             this.filtersGroupBox.TabStop = false;
             this.filtersGroupBox.Text = "Filters";
@@ -194,9 +188,9 @@
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
             this.equipmentGroupBox.Controls.Add(this.equipmentListView);
-            this.equipmentGroupBox.Location = new System.Drawing.Point(12, 313);
+            this.equipmentGroupBox.Location = new System.Drawing.Point(12, 77);
             this.equipmentGroupBox.Name = "equipmentGroupBox";
-            this.equipmentGroupBox.Size = new System.Drawing.Size(860, 502);
+            this.equipmentGroupBox.Size = new System.Drawing.Size(860, 738);
             this.equipmentGroupBox.TabIndex = 1;
             this.equipmentGroupBox.TabStop = false;
             this.equipmentGroupBox.Text = "Equipment";
@@ -209,33 +203,10 @@
             this.equipmentListView.HideSelection = false;
             this.equipmentListView.Location = new System.Drawing.Point(6, 20);
             this.equipmentListView.Name = "equipmentListView";
-            this.equipmentListView.Size = new System.Drawing.Size(848, 476);
+            this.equipmentListView.Size = new System.Drawing.Size(848, 712);
             this.equipmentListView.TabIndex = 0;
             this.equipmentListView.UseCompatibleStateImageBehavior = false;
             this.equipmentListView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.EquipmentListView_MouseDoubleClick);
-            // 
-            // panelsGroupBox
-            // 
-            this.panelsGroupBox.Controls.Add(this.panelListView);
-            this.panelsGroupBox.Location = new System.Drawing.Point(12, 13);
-            this.panelsGroupBox.Name = "panelsGroupBox";
-            this.panelsGroupBox.Size = new System.Drawing.Size(420, 232);
-            this.panelsGroupBox.TabIndex = 2;
-            this.panelsGroupBox.TabStop = false;
-            this.panelsGroupBox.Text = "Panels";
-            // 
-            // panelListView
-            // 
-            this.panelListView.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left) 
-            | System.Windows.Forms.AnchorStyles.Right)));
-            this.panelListView.HideSelection = false;
-            this.panelListView.Location = new System.Drawing.Point(6, 19);
-            this.panelListView.Name = "panelListView";
-            this.panelListView.Size = new System.Drawing.Size(408, 207);
-            this.panelListView.TabIndex = 0;
-            this.panelListView.UseCompatibleStateImageBehavior = false;
-            this.panelListView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.PanelListView_MouseDoubleClick);
             // 
             // placeSelectedButton
             // 
@@ -270,27 +241,6 @@
             this.recalculateDistancesButton.UseVisualStyleBackColor = true;
             this.recalculateDistancesButton.Click += new System.EventHandler(this.RecalculateDistancesButton_Click);
             // 
-            // transformerGroupBox
-            // 
-            this.transformerGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.transformerGroupBox.Controls.Add(this.transformerListView);
-            this.transformerGroupBox.Location = new System.Drawing.Point(439, 13);
-            this.transformerGroupBox.Name = "transformerGroupBox";
-            this.transformerGroupBox.Size = new System.Drawing.Size(433, 232);
-            this.transformerGroupBox.TabIndex = 6;
-            this.transformerGroupBox.TabStop = false;
-            this.transformerGroupBox.Text = "Transformers";
-            // 
-            // transformerListView
-            // 
-            this.transformerListView.HideSelection = false;
-            this.transformerListView.Location = new System.Drawing.Point(7, 19);
-            this.transformerListView.Name = "transformerListView";
-            this.transformerListView.Size = new System.Drawing.Size(420, 207);
-            this.transformerListView.TabIndex = 0;
-            this.transformerListView.UseCompatibleStateImageBehavior = false;
-            this.transformerListView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.TransformerListView_MouseDoubleClick);
-            // 
             // createEquipmentScheduleButton
             // 
             this.createEquipmentScheduleButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
@@ -308,11 +258,9 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(884, 861);
             this.Controls.Add(this.createEquipmentScheduleButton);
-            this.Controls.Add(this.transformerGroupBox);
             this.Controls.Add(this.recalculateDistancesButton);
             this.Controls.Add(this.placeAllButton);
             this.Controls.Add(this.placeSelectedButton);
-            this.Controls.Add(this.panelsGroupBox);
             this.Controls.Add(this.equipmentGroupBox);
             this.Controls.Add(this.filtersGroupBox);
             this.MaximumSize = new System.Drawing.Size(900, 1200);
@@ -322,8 +270,6 @@
             this.filtersGroupBox.ResumeLayout(false);
             this.filtersGroupBox.PerformLayout();
             this.equipmentGroupBox.ResumeLayout(false);
-            this.panelsGroupBox.ResumeLayout(false);
-            this.transformerGroupBox.ResumeLayout(false);
             this.ResumeLayout(false);
 
     }
@@ -344,13 +290,9 @@
     private System.Windows.Forms.ComboBox filterCategoryComboBox;
     private System.Windows.Forms.ListView equipmentListView;
     private System.Windows.Forms.Button filterClearButton;
-    private System.Windows.Forms.GroupBox panelsGroupBox;
-    private System.Windows.Forms.ListView panelListView;
     private System.Windows.Forms.Button placeSelectedButton;
     private System.Windows.Forms.Button placeAllButton;
     private System.Windows.Forms.Button recalculateDistancesButton;
-    private System.Windows.Forms.GroupBox transformerGroupBox;
-    private System.Windows.Forms.ListView transformerListView;
     private System.Windows.Forms.Button createEquipmentScheduleButton;
   }
 }
