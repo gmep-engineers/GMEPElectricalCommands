@@ -8,8 +8,11 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using ElectricalCommands.ElectricalEntity;
+using Emgu.CV.ML;
 using GMEPElectricalCommands.GmepDatabase;
+using Table = Autodesk.AutoCAD.DatabaseServices.Table;
 
 namespace ElectricalCommands.Equipment
 {
@@ -194,9 +197,12 @@ namespace ElectricalCommands.Equipment
               + Math.Round(equipment.Location.Y / 12, 1).ToString()
           );
         }
+        item.SubItems.Add(equipment.ConnectionSymbol);
         item.SubItems.Add(equipment.IsHidden.ToString());
         item.SubItems.Add(equipment.Id);
         item.SubItems.Add(equipment.ParentId);
+        
+        
         equipmentListView.Items.Add(item);
       }
       if (!updateOnly)
@@ -210,6 +216,7 @@ namespace ElectricalCommands.Equipment
         equipmentListView.Columns.Add("Voltage", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Phase", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
+        equipmentListView.Columns.Add("Connection Symbol", -2, HorizontalAlignment.Left);
         ContextMenu contextMenu = new ContextMenu();
         contextMenu.MenuItems.Add(
           new MenuItem("Show on plan", new EventHandler(ShowEquipOnPlan_Click))
@@ -618,7 +625,8 @@ namespace ElectricalCommands.Equipment
       string parentId,
       string equipNo,
       EquipmentType equipType,
-      string circuitNo = ""
+      string circuitNo = "",
+      string connectionSymbol = ""
     )
     {
       Document doc = Autodesk
@@ -629,6 +637,19 @@ namespace ElectricalCommands.Equipment
         .MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
+
+      //editing the connectionSymbol string
+      if (connectionSymbol.Contains(" W/ ")) {
+        string[] parts = connectionSymbol.Split(new string[] { " W/ " }, StringSplitOptions.None);
+
+        if (parts.Length == 2) {
+          string beforeW = parts[0];
+          string afterW = parts[1];
+          connectionSymbol = beforeW + afterW;
+        }
+      }
+      connectionSymbol = "GMEP " + connectionSymbol.ToUpper();
+
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -693,41 +714,80 @@ namespace ElectricalCommands.Equipment
       switch (equipType)
       {
         case EquipmentType.Duplex:
-          blockName = $"GMEP DUPLEX";
+          blockName = connectionSymbol;
           break;
         case EquipmentType.Panel:
           blockName = $"A$C26441056";
           break;
         // TODO check for remaining connection types
       }
-      using (Transaction acTrans = db.TransactionManager.StartTransaction())
-      {
+      using (Transaction acTrans = db.TransactionManager.StartTransaction()) {
         BlockTable acBlkTbl = acTrans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord acBlkTblRec =
           acTrans.GetObject(acBlkTbl[blockName], OpenMode.ForRead) as BlockTableRecord;
 
-        using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId))
-        {
+        using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId)) {
           RotateJig blockJig = new RotateJig(acBlkRef);
           PromptResult blockPromptResult = ed.Drag(blockJig);
           double scaleFactor = 0.25;
-          if (equipType != EquipmentType.Panel && equipType != EquipmentType.Transformer)
-          {
+          if (equipType != EquipmentType.Panel && equipType != EquipmentType.Transformer) {
             scaleFactor = scale;
           }
-          if (promptResult.Status == PromptStatus.OK)
-          {
+          if (promptResult.Status == PromptStatus.OK) {
             BlockTableRecord currentSpace =
               acTrans.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
             currentSpace.AppendEntity(acBlkRef);
             acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
             acBlkRef.ScaleFactors = new Scale3d(0.25 / scaleFactor);
             acBlkRef.Layer = "E-SYM1";
-            acTrans.Commit();
             rotation = acBlkRef.Rotation;
+
+            //Setting attributes if blockname is j-box or j-boxswitch
+            if (blockName == "GMEP J-BOX" || blockName == "GMEP J-BOXSWITCH") {
+              foreach (ObjectId objId in acBlkTblRec) {
+                DBObject obj = acTrans.GetObject(objId, OpenMode.ForRead);
+                AttributeDefinition attDef = obj as AttributeDefinition;
+                if (attDef != null && !attDef.Constant) {
+                  using (AttributeReference attRef = new AttributeReference()) {
+                    attRef.SetAttributeFromBlock(attDef, acBlkRef.BlockTransform);
+                    if (attRef.Tag == "J") {
+                      attRef.TextString = "J";
+                      attRef.Rotation = attRef.Rotation - rotation;
+                    }
+                    acBlkRef.AttributeCollection.AppendAttribute(attRef);
+                    acTrans.AddNewlyCreatedDBObject(attRef, true);
+                  }
+                }
+              }
+            }
           }
         }
+        acTrans.Commit();
       }
+      //Placing down a switch for a j-box switch
+      using (Transaction acTrans = db.TransactionManager.StartTransaction()) {
+        BlockTable acBlkTbl = acTrans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord switchRec = acTrans.GetObject(acBlkTbl["GMEP J-BOXSWITCHOBJ"], OpenMode.ForRead) as BlockTableRecord;
+        if (blockName == "GMEP J-BOXSWITCH") {
+          PromptPointOptions promptOptions2 = new PromptPointOptions("\nSelect point for J-Box switch: ");
+          PromptPointResult promptResult2 = ed.GetPoint(promptOptions2);
+          if (promptResult.Status != PromptStatus.OK)
+            return null;
+          Point3d firstClickPoint2 = promptResult2.Value;
+          using (BlockReference switchRef = new BlockReference(Point3d.Origin, switchRec.ObjectId)) {
+            RotateJig blockJig = new RotateJig(switchRef);
+            PromptResult blockPromptResult = ed.Drag(blockJig);
+            BlockTableRecord currentSpace =
+              acTrans.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+            currentSpace.AppendEntity(switchRef);
+            acTrans.AddNewlyCreatedDBObject(switchRef, true);
+            switchRef.ScaleFactors = new Scale3d(0.25 / scale);
+            switchRef.Layer = "E-SYM1";
+          }
+        }
+        acTrans.Commit();
+      }
+
       double labelOffsetX = 0;
       double labelOffsetY = 0;
       switch (equipType)
@@ -1175,7 +1235,9 @@ namespace ElectricalCommands.Equipment
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
           equipmentListView.SelectedItems[0].Text,
           EquipmentType.Duplex, // TODO set this based on connection
-          circuitNo
+          circuitNo,
+          equipmentListView.SelectedItems[0].SubItems[numSubItems - 4].Text
+
         );
         if (p == null)
         {
@@ -1348,7 +1410,8 @@ namespace ElectricalCommands.Equipment
                   item.SubItems[numSubItems - 1].Text,
                   item.Text,
                   EquipmentType.Duplex,
-                  circuitNo
+                  circuitNo,
+                  item.SubItems[numSubItems - 4].Text
                 );
                 if (p == null)
                 {
@@ -1435,7 +1498,8 @@ namespace ElectricalCommands.Equipment
                   item.SubItems[numSubItems - 1].Text,
                   item.Text,
                   EquipmentType.Duplex,
-                  circuitNo
+                  circuitNo,
+                  item.SubItems[numSubItems - 4].Text
                 );
                 if (p == null)
                 {
