@@ -8,8 +8,11 @@ using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using ElectricalCommands.ElectricalEntity;
+using Emgu.CV.ML;
 using GMEPElectricalCommands.GmepDatabase;
+using Table = Autodesk.AutoCAD.DatabaseServices.Table;
 
 namespace ElectricalCommands.Equipment
 {
@@ -718,34 +721,50 @@ namespace ElectricalCommands.Equipment
           break;
         // TODO check for remaining connection types
       }
-      using (Transaction acTrans = db.TransactionManager.StartTransaction())
-      {
+      using (Transaction acTrans = db.TransactionManager.StartTransaction()) {
         BlockTable acBlkTbl = acTrans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord acBlkTblRec =
           acTrans.GetObject(acBlkTbl[blockName], OpenMode.ForRead) as BlockTableRecord;
 
-        using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId))
-        {
+        using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId)) {
           RotateJig blockJig = new RotateJig(acBlkRef);
           PromptResult blockPromptResult = ed.Drag(blockJig);
           double scaleFactor = 0.25;
-          if (equipType != EquipmentType.Panel && equipType != EquipmentType.Transformer)
-          {
+          if (equipType != EquipmentType.Panel && equipType != EquipmentType.Transformer) {
             scaleFactor = scale;
           }
-          if (promptResult.Status == PromptStatus.OK)
-          {
+          if (promptResult.Status == PromptStatus.OK) {
             BlockTableRecord currentSpace =
               acTrans.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
             currentSpace.AppendEntity(acBlkRef);
             acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
             acBlkRef.ScaleFactors = new Scale3d(0.25 / scaleFactor);
             acBlkRef.Layer = "E-SYM1";
-            acTrans.Commit();
             rotation = acBlkRef.Rotation;
+
+            //Setting attributes if blockname is j-box or j-boxswitch
+            if (blockName == "GMEP J-BOX" || blockName == "GMEP J-BOXSWITCH") {
+              foreach (ObjectId objId in acBlkTblRec) {
+                DBObject obj = acTrans.GetObject(objId, OpenMode.ForRead);
+                AttributeDefinition attDef = obj as AttributeDefinition;
+                if (attDef != null && !attDef.Constant) {
+                  using (AttributeReference attRef = new AttributeReference()) {
+                    attRef.SetAttributeFromBlock(attDef, acBlkRef.BlockTransform);
+                    if (attRef.Tag == "J") {
+                      attRef.TextString = "J";
+                      attRef.Rotation = attRef.Rotation - rotation;
+                    }
+                    acBlkRef.AttributeCollection.AppendAttribute(attRef);
+                    acTrans.AddNewlyCreatedDBObject(attRef, true);
+                  }
+                }
+              }
+            }
+            acTrans.Commit();
           }
         }
       }
+
       double labelOffsetX = 0;
       double labelOffsetY = 0;
       switch (equipType)
