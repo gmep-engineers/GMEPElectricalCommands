@@ -764,6 +764,7 @@ namespace ElectricalCommands.Equipment
         }
         acTrans.Commit();
       }
+      //Placing down a switch for a j-box switch
       using (Transaction acTrans = db.TransactionManager.StartTransaction()) {
         BlockTable acBlkTbl = acTrans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord switchRec = acTrans.GetObject(acBlkTbl["GMEP J-BOXSWITCHOBJ"], OpenMode.ForRead) as BlockTableRecord;
