@@ -677,6 +677,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_equipment.id,
         electrical_equipment.parent_id,
         electrical_panels.name,
+        electrical_equipment_connection_symbols.connection_name,
         electrical_equipment.equip_no,
         electrical_equipment_categories.category,
         electrical_equipment.description,
@@ -703,6 +704,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         LEFT JOIN electrical_equipment_voltages
         ON electrical_equipment_voltages.id = electrical_equipment.voltage_id
         LEFT JOIN statuses ON statuses.id = electrical_equipment.status_id
+        LEFT JOIN electrical_equipment_connection_symbols ON electrical_equipment_connection_symbols.id = electrical_equipment.connection_symbol_id
         WHERE electrical_equipment.project_id = @projectId";
       if (singleLineOnly)
       {
@@ -743,7 +745,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeInt(reader, "circuit_no"),
             GetSafeBoolean(reader, "has_plug"),
             GetSafeBoolean(reader, "is_hidden_on_plan"),
-            GetSafeString(reader, "status")
+            GetSafeString(reader, "status"),
+            GetSafeString(reader, "connection_name")
           )
         );
       }
