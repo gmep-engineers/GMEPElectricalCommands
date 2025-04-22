@@ -2448,6 +2448,10 @@ namespace ElectricalCommands
         // for each notes that does not contain *NOT ADDED AS NOTE*, create a note
         foreach (var note in customNotes)
         {
+          if (String.IsNullOrEmpty(note))
+          {
+            continue;
+          }
           if (!note.Contains("NOT ADDED AS NOTE"))
           {
             // Create the circle
@@ -3332,6 +3336,8 @@ namespace ElectricalCommands
       List<string> newNotes = new List<string>();
       foreach (string note in notes)
       {
+        if (String.IsNullOrEmpty(note))
+          continue;
         if (!note.Contains("NOT ADDED AS NOTE"))
         {
           newNotes.Add(note);

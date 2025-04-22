@@ -1137,7 +1137,7 @@ namespace ElectricalCommands
         }
         else
         {
-          List<PanelNote> thisPanelNotes = gmepDb.GetPanelNotes(panel.Id);
+          List<PanelNote> panelNotes = gmepDb.GetPanelNotes(panel.Id);
           JsonPanel2P jsonPanel = new JsonPanel2P();
           jsonPanel.id = panel.Id;
           jsonPanel.read_only = true;
@@ -1189,7 +1189,7 @@ namespace ElectricalCommands
 
           jsonPanel.description_left_tags = new string[panel.NumBreakers / 2];
           jsonPanel.description_right_tags = new string[panel.NumBreakers / 2];
-          jsonPanel.notes = new string[thisPanelNotes.Count];
+          jsonPanel.notes = new string[panelNotes.Count];
           jsonPanels2P.Add(jsonPanel);
           for (int i = 0; i < panel.NumBreakers; i++)
           {
@@ -1235,6 +1235,47 @@ namespace ElectricalCommands
 
             jsonPanel.description_left_tags[i] = string.Empty;
             jsonPanel.description_right_tags[i] = string.Empty;
+          }
+          int noteIndex = 0;
+          for (int i = 0; i < panel.NumBreakers; i++)
+          {
+            List<PanelNote> leftNotes = panelNotes.FindAll(n =>
+              n.CircuitNo % 2 == 1 && n.CircuitNo == i + 1
+            );
+            foreach (PanelNote leftNote in leftNotes)
+            {
+              for (int j = 0; j < leftNote.Length; j++)
+              {
+                jsonPanel.description_left_tags[i / 2 + j] += "|" + leftNote.Note;
+                jsonPanel.description_left_tags[i / 2 + j] = jsonPanel
+                  .description_left_tags[i / 2 + j]
+                  .Trim('|');
+              }
+              if (!jsonPanel.notes.Contains(leftNote.Note))
+              {
+                jsonPanel.notes[noteIndex] = leftNote.Note;
+                noteIndex++;
+              }
+            }
+
+            List<PanelNote> rightNotes = panelNotes.FindAll(n =>
+              n.CircuitNo % 2 == 0 && n.CircuitNo == i + 2
+            );
+            foreach (PanelNote rightNote in rightNotes)
+            {
+              for (int j = 0; j < rightNote.Length; j++)
+              {
+                jsonPanel.description_right_tags[i / 2 + j] += "|" + rightNote.Note;
+                jsonPanel.description_right_tags[i / 2 + j] = jsonPanel
+                  .description_right_tags[i / 2 + j]
+                  .Trim('|');
+              }
+              if (!jsonPanel.notes.Contains(rightNote.Note))
+              {
+                jsonPanel.notes[noteIndex] = rightNote.Note;
+                noteIndex++;
+              }
+            }
           }
           foreach (ElectricalEntity.Equipment equip in equipment)
           {

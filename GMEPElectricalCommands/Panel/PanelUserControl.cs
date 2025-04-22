@@ -2370,7 +2370,7 @@ namespace ElectricalCommands
 
     public void UpdateCellBackgroundColor()
     {
-      if (APPLY_COMBOBOX.SelectedItem == null)
+      if (APPLY_COMBOBOX.Items.Count == 0 || APPLY_COMBOBOX.SelectedItem == null)
       {
         return;
       }
