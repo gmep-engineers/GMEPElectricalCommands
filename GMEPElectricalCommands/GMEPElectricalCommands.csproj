@@ -328,6 +328,7 @@
     <Compile Include="Symbols\AutoCADTools.cs" />
     <Compile Include="Symbols\CreationMethods.cs" />
     <Compile Include="Symbols\JigCommands.cs" />
+    <Compile Include="T24\T24Commands.cs" />
     <Compile Include="XREF\SetupXREFCommands.cs" />
   </ItemGroup>
   <ItemGroup>
