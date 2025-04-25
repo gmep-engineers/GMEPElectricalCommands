@@ -14,6 +14,8 @@ namespace ElectricalCommands.Lighting
   {
     private List<LightingFixture> lightingFixtureList;
     private List<ListViewItem> lightingFixtureListViewList;
+    private List<LightingControl> lightingControlList;
+    private List<ListViewItem> lightingControlListViewList;
     private string projectId;
     public GmepDatabase gmepDb = new GmepDatabase();
     private List<ElectricalEntity.Panel> panelList;
@@ -36,14 +38,16 @@ namespace ElectricalCommands.Lighting
       projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
       panelList = gmepDb.GetPanels(projectId);
       lightingFixtureList = gmepDb.GetLightingFixtures(projectId);
+      lightingControlList = gmepDb.GetLightingControls(projectId);
       CreateLightingFixtureListView();
+      CreateLightingControlListView();
 
       isLoading = false;
     }
 
-    private Dictionary<string, int> GetNumFixturesOnPlan()
+    private Dictionary<string, int> GetNumObjectsOnPlan(string propName)
     {
-      Dictionary<string, int> fixtureDict = new Dictionary<string, int>();
+      Dictionary<string, int> objDict = new Dictionary<string, int>();
       Document doc = Autodesk
         .AutoCAD
         .ApplicationServices
@@ -54,7 +58,6 @@ namespace ElectricalCommands.Lighting
       Database db = doc.Database;
       Editor ed = doc.Editor;
       Transaction tr = db.TransactionManager.StartTransaction();
-      List<PlaceableElectricalEntity> pooledEquipment = new List<PlaceableElectricalEntity>();
       using (tr)
       {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -72,15 +75,15 @@ namespace ElectricalCommands.Lighting
               PlaceableElectricalEntity eq = new PlaceableElectricalEntity();
               foreach (DynamicBlockReferenceProperty prop in pc)
               {
-                if (prop.PropertyName == "gmep_lighting_fixture_id")
+                if (prop.PropertyName == propName)
                 {
-                  if (!fixtureDict.ContainsKey(prop.Value as string))
+                  if (!objDict.ContainsKey(prop.Value as string))
                   {
-                    fixtureDict[prop.Value as string] = 1;
+                    objDict[prop.Value as string] = 1;
                   }
                   else
                   {
-                    fixtureDict[prop.Value as string] += 1;
+                    objDict[prop.Value as string] += 1;
                   }
                 }
               }
@@ -89,7 +92,39 @@ namespace ElectricalCommands.Lighting
           catch (Exception e) { }
         }
       }
-      return fixtureDict;
+      return objDict;
+    }
+
+    private void CreateLightingControlListView(bool updateOnly = false)
+    {
+      if (updateOnly)
+      {
+        LightingControlsListView.Items.Clear();
+      }
+      LightingControlsListView.View = View.Details;
+      LightingControlsListView.FullRowSelect = true;
+      Dictionary<string, int> controlDict = GetNumObjectsOnPlan("gmep_lighting_control_id");
+      foreach (LightingControl control in lightingControlList)
+      {
+        int placed = 0;
+        if (controlDict.ContainsKey(control.Id))
+        {
+          placed = controlDict[control.Id];
+        }
+        ListViewItem item = new ListViewItem(control.Name, 0);
+        item.SubItems.Add(control.ControlType);
+        item.SubItems.Add(control.HasOccupancy ? "Yes" : "No");
+        item.SubItems.Add(placed.ToString());
+        item.SubItems.Add(control.Id);
+        LightingControlsListView.Items.Add(item);
+      }
+      if (!updateOnly)
+      {
+        LightingControlsListView.Columns.Add("Tag", -2, HorizontalAlignment.Left);
+        LightingControlsListView.Columns.Add("Control Type", -2, HorizontalAlignment.Left);
+        LightingControlsListView.Columns.Add("Occupancy", -2, HorizontalAlignment.Left);
+        LightingControlsListView.Columns.Add("Placed", -2, HorizontalAlignment.Left);
+      }
     }
 
     private void CreateLightingFixtureListView(bool updateOnly = false)
@@ -100,7 +135,7 @@ namespace ElectricalCommands.Lighting
       }
       LightingFixturesListView.View = View.Details;
       LightingFixturesListView.FullRowSelect = true;
-      Dictionary<string, int> fixtureDict = GetNumFixturesOnPlan();
+      Dictionary<string, int> fixtureDict = GetNumObjectsOnPlan("gmep_lighting_fixture_id");
       foreach (LightingFixture fixture in lightingFixtureList)
       {
         int placed = 0;
@@ -452,6 +487,219 @@ namespace ElectricalCommands.Lighting
       ed.SetCurrentView(currentView);
     }
 
+    private void PlaceControl_Click(object sender, EventArgs e)
+    {
+      if (LightingControlsListView.SelectedItems.Count == 0)
+      {
+        return;
+      }
+      using (
+        DocumentLock docLock =
+          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
+      )
+      {
+        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
+          .AutoCAD
+          .Windows
+          .Window
+          .State
+          .Maximized;
+        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
+        if (CADObjectCommands.Scale == -1.0)
+        {
+          CADObjectCommands.SetScale();
+        }
+        Document doc = Autodesk
+          .AutoCAD
+          .ApplicationServices
+          .Core
+          .Application
+          .DocumentManager
+          .MdiActiveDocument;
+        Editor ed = doc.Editor;
+        Database db = doc.Database;
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          LayerTable acLyrTbl;
+          acLyrTbl = tr.GetObject(db.LayerTableId, OpenMode.ForRead) as LayerTable;
+
+          string sLayerName = "E-LITE-FIXT";
+
+          if (acLyrTbl.Has(sLayerName) == true)
+          {
+            db.Clayer = acLyrTbl[sLayerName];
+            tr.Commit();
+          }
+        }
+        int numSubitems = LightingControlsListView.SelectedItems[0].SubItems.Count;
+        Dictionary<string, int> controlDict = GetNumObjectsOnPlan("gmep_lighting_control_id");
+        for (int si = 0; si < LightingControlsListView.SelectedItems.Count; si++)
+        {
+          foreach (ElectricalEntity.LightingControl control in lightingControlList)
+          {
+            if (
+              control.Id
+              != LightingControlsListView.SelectedItems[si].SubItems[numSubitems - 1].Text
+            )
+            {
+              continue;
+            }
+            int currentNumControls = 0;
+            if (controlDict.ContainsKey(control.Id))
+            {
+              currentNumControls = controlDict[control.Id];
+            }
+            string blockName = "GMEP LTG CTRL DIMMER";
+            bool dimmerOccupancy = false;
+            if (control.ControlType == "SWITCH")
+            {
+              blockName = "GMEP LTG CTRL SWITCH";
+              if (control.HasOccupancy)
+              {
+                blockName = "GMEP LTG CTRL OCCUPANCY";
+              }
+            }
+            else if (control.HasOccupancy)
+            {
+              dimmerOccupancy = true;
+            }
+            ObjectId blockId;
+            try
+            {
+              Point3d point;
+              double rotation = 0;
+              using (Transaction tr = db.TransactionManager.StartTransaction())
+              {
+                BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+                BlockTableRecord btr = (BlockTableRecord)
+                  tr.GetObject(bt[blockName], OpenMode.ForRead);
+                BlockJig blockJig = new BlockJig();
+
+                PromptResult res = blockJig.DragMe(btr.ObjectId, out point);
+
+                if (res.Status == PromptStatus.OK)
+                {
+                  BlockTableRecord curSpace = (BlockTableRecord)
+                    tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+                  BlockReference br = new BlockReference(point, btr.ObjectId);
+
+                  RotateJig rotateJig = new RotateJig(br);
+                  PromptResult rotatePromptResult = ed.Drag(rotateJig);
+
+                  if (rotatePromptResult.Status != PromptStatus.OK)
+                  {
+                    return;
+                  }
+                  rotation = br.Rotation;
+
+                  curSpace.AppendEntity(br);
+
+                  tr.AddNewlyCreatedDBObject(br, true);
+                  blockId = br.Id;
+
+                  //Setting Attributes
+                  foreach (ObjectId objId in btr)
+                  {
+                    DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
+                    AttributeDefinition attDef = obj as AttributeDefinition;
+                    if (attDef != null && !attDef.Constant)
+                    {
+                      using (AttributeReference attRef = new AttributeReference())
+                      {
+                        attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
+                        if (attRef.Tag == "CONTROL_NAME")
+                        {
+                          attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
+                          attRef.TextString = control.Name;
+                          attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;
+                          attRef.WidthFactor = 0.85;
+                          attRef.HorizontalMode = TextHorizontalMode.TextLeft;
+                          attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
+                          attRef.Justify = AttachmentPoint.BaseLeft;
+                          attRef.Rotation = attRef.Rotation - rotation;
+                        }
+                        if (attRef.Tag == "D")
+                        {
+                          attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
+                          attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;
+                          attRef.WidthFactor = 0.85;
+                          attRef.TextString = attRef.Tag;
+                          attRef.HorizontalMode = TextHorizontalMode.TextLeft;
+                          attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
+                          attRef.Justify = AttachmentPoint.BaseLeft;
+
+                          Matrix3d rotationMatrix = Matrix3d.Rotation(
+                            -rotation,
+                            Vector3d.ZAxis,
+                            br.Position
+                          );
+                          attRef.TransformBy(rotationMatrix);
+                        }
+                        br.AttributeCollection.AppendAttribute(attRef);
+                        tr.AddNewlyCreatedDBObject(attRef, true);
+                      }
+                    }
+                  }
+                }
+                else
+                {
+                  return;
+                }
+
+                tr.Commit();
+              }
+              using (Transaction tr = db.TransactionManager.StartTransaction())
+              {
+                BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
+                var modelSpace = (BlockTableRecord)
+                  tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
+                DynamicBlockReferencePropertyCollection pc =
+                  br.DynamicBlockReferencePropertyCollection;
+                foreach (DynamicBlockReferenceProperty prop in pc)
+                {
+                  if (
+                    prop.PropertyName == "gmep_lighting_control_id"
+                    && prop.Value as string == "0"
+                  )
+                  {
+                    prop.Value = control.Id;
+                  }
+                  if (
+                    prop.PropertyName == "gmep_lighting_control_tag"
+                    && prop.Value as string == "0"
+                  )
+                  {
+                    prop.Value = control.Name;
+                  }
+                }
+                tr.Commit();
+              }
+            }
+            catch (System.Exception ex)
+            {
+              ed.WriteMessage(ex.ToString());
+            }
+          }
+        }
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          LayerTable acLyrTbl;
+          acLyrTbl = tr.GetObject(db.LayerTableId, OpenMode.ForRead) as LayerTable;
+
+          string sLayerName = "E-CND1";
+
+          if (acLyrTbl.Has(sLayerName) == true)
+          {
+            db.Clayer = acLyrTbl[sLayerName];
+            tr.Commit();
+          }
+        }
+      }
+      CreateLightingFixtureListView(true);
+    }
+
     private void PlaceFixture_Click(object sender, EventArgs e)
     {
       if (LightingFixturesListView.SelectedItems.Count == 0)
@@ -497,7 +745,7 @@ namespace ElectricalCommands.Lighting
           }
         }
         int numSubitems = LightingFixturesListView.SelectedItems[0].SubItems.Count;
-        Dictionary<string, int> fixtureDict = GetNumFixturesOnPlan();
+        Dictionary<string, int> fixtureDict = GetNumObjectsOnPlan("gmep_lighting_fixture_id");
         for (int si = 0; si < LightingFixturesListView.SelectedItems.Count; si++)
         {
           foreach (ElectricalEntity.LightingFixture fixture in lightingFixtureList)

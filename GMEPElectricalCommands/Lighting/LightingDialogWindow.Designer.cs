@@ -26,12 +26,13 @@
       this.ControlAreasGroupBox = new System.Windows.Forms.GroupBox();
       this.ControlAreasListView = new System.Windows.Forms.ListView();
       this.ControlsGroupBox = new System.Windows.Forms.GroupBox();
-      this.ControlsListView = new System.Windows.Forms.ListView();
+      this.LightingControlsListView = new System.Windows.Forms.ListView();
       this.LightingFixturesGroupBox = new System.Windows.Forms.GroupBox();
       this.LightingFixturesListView = new System.Windows.Forms.ListView();
       this.CreateLightingFixtureScheduleButton = new System.Windows.Forms.Button();
-      this.button1 = new System.Windows.Forms.Button();
+      this.PlaceSelectedFixturesButton = new System.Windows.Forms.Button();
       this.RefreshButton = new System.Windows.Forms.Button();
+      this.PlaceSelectedControlsButton = new System.Windows.Forms.Button();
       this.ControlAreasGroupBox.SuspendLayout();
       this.ControlsGroupBox.SuspendLayout();
       this.LightingFixturesGroupBox.SuspendLayout();
@@ -59,7 +60,7 @@
       // ControlsGroupBox
       // 
       this.ControlsGroupBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-      this.ControlsGroupBox.Controls.Add(this.ControlsListView);
+      this.ControlsGroupBox.Controls.Add(this.LightingControlsListView);
       this.ControlsGroupBox.Location = new System.Drawing.Point(526, 12);
       this.ControlsGroupBox.Name = "ControlsGroupBox";
       this.ControlsGroupBox.Size = new System.Drawing.Size(346, 225);
@@ -67,14 +68,14 @@
       this.ControlsGroupBox.TabStop = false;
       this.ControlsGroupBox.Text = "Controls";
       // 
-      // ControlsListView
+      // LightingControlsListView
       // 
-      this.ControlsListView.HideSelection = false;
-      this.ControlsListView.Location = new System.Drawing.Point(7, 20);
-      this.ControlsListView.Name = "ControlsListView";
-      this.ControlsListView.Size = new System.Drawing.Size(333, 199);
-      this.ControlsListView.TabIndex = 0;
-      this.ControlsListView.UseCompatibleStateImageBehavior = false;
+      this.LightingControlsListView.HideSelection = false;
+      this.LightingControlsListView.Location = new System.Drawing.Point(7, 20);
+      this.LightingControlsListView.Name = "LightingControlsListView";
+      this.LightingControlsListView.Size = new System.Drawing.Size(333, 199);
+      this.LightingControlsListView.TabIndex = 0;
+      this.LightingControlsListView.UseCompatibleStateImageBehavior = false;
       // 
       // LightingFixturesGroupBox
       // 
@@ -112,15 +113,15 @@
       this.CreateLightingFixtureScheduleButton.UseVisualStyleBackColor = true;
       this.CreateLightingFixtureScheduleButton.Click += new System.EventHandler(this.CreateLightingFixtureScheduleButton_Click);
       // 
-      // button1
+      // PlaceSelectedFixturesButton
       // 
-      this.button1.Location = new System.Drawing.Point(19, 425);
-      this.button1.Name = "button1";
-      this.button1.Size = new System.Drawing.Size(149, 23);
-      this.button1.TabIndex = 4;
-      this.button1.Text = "Place Selected Fixtures";
-      this.button1.UseVisualStyleBackColor = true;
-      this.button1.Click += new System.EventHandler(this.PlaceFixture_Click);
+      this.PlaceSelectedFixturesButton.Location = new System.Drawing.Point(19, 425);
+      this.PlaceSelectedFixturesButton.Name = "PlaceSelectedFixturesButton";
+      this.PlaceSelectedFixturesButton.Size = new System.Drawing.Size(149, 23);
+      this.PlaceSelectedFixturesButton.TabIndex = 4;
+      this.PlaceSelectedFixturesButton.Text = "Place Selected Fixtures";
+      this.PlaceSelectedFixturesButton.UseVisualStyleBackColor = true;
+      this.PlaceSelectedFixturesButton.Click += new System.EventHandler(this.PlaceFixture_Click);
       // 
       // RefreshButton
       // 
@@ -132,13 +133,24 @@
       this.RefreshButton.UseVisualStyleBackColor = true;
       this.RefreshButton.Click += new System.EventHandler(this.RefreshButton_Click);
       // 
+      // PlaceSelectedControlsButton
+      // 
+      this.PlaceSelectedControlsButton.Location = new System.Drawing.Point(183, 425);
+      this.PlaceSelectedControlsButton.Name = "PlaceSelectedControlsButton";
+      this.PlaceSelectedControlsButton.Size = new System.Drawing.Size(152, 23);
+      this.PlaceSelectedControlsButton.TabIndex = 6;
+      this.PlaceSelectedControlsButton.Text = "Place Selected Controls";
+      this.PlaceSelectedControlsButton.UseVisualStyleBackColor = true;
+      this.PlaceSelectedControlsButton.Click += new System.EventHandler(this.PlaceControl_Click);
+      // 
       // LightingDialogWindow
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
       this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
       this.ClientSize = new System.Drawing.Size(884, 461);
+      this.Controls.Add(this.PlaceSelectedControlsButton);
       this.Controls.Add(this.RefreshButton);
-      this.Controls.Add(this.button1);
+      this.Controls.Add(this.PlaceSelectedFixturesButton);
       this.Controls.Add(this.CreateLightingFixtureScheduleButton);
       this.Controls.Add(this.LightingFixturesGroupBox);
       this.Controls.Add(this.ControlsGroupBox);
@@ -160,10 +172,11 @@
     private System.Windows.Forms.GroupBox ControlsGroupBox;
     private System.Windows.Forms.GroupBox LightingFixturesGroupBox;
     private System.Windows.Forms.ListView ControlAreasListView;
-    private System.Windows.Forms.ListView ControlsListView;
+    private System.Windows.Forms.ListView LightingControlsListView;
     private System.Windows.Forms.ListView LightingFixturesListView;
     private System.Windows.Forms.Button CreateLightingFixtureScheduleButton;
-    private System.Windows.Forms.Button button1;
+    private System.Windows.Forms.Button PlaceSelectedFixturesButton;
     private System.Windows.Forms.Button RefreshButton;
+    private System.Windows.Forms.Button PlaceSelectedControlsButton;
   }
 }

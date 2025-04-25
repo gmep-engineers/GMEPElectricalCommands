@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Autodesk.AutoCAD.ApplicationServices;
 using Newtonsoft.Json;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
 
 namespace ElectricalCommands
 {
@@ -37,6 +39,7 @@ namespace ElectricalCommands
       int highLegPhase = 1
     )
     {
+      IWebDriver driver = new ChromeDriver();
       InitializeComponent();
       this.isLoading = true;
       myCommandsInstance = myCommands;
@@ -3028,7 +3031,7 @@ namespace ElectricalCommands
 
     private void PANEL_GRID_KeyDown(object sender, KeyEventArgs e)
     {
-      if (e.Control && e.KeyCode == Keys.V)
+      if (e.Control && e.KeyCode == System.Windows.Forms.Keys.V)
       {
         // Get text from clipboard
         string text = Clipboard.GetText();
@@ -3078,7 +3081,7 @@ namespace ElectricalCommands
         e.Handled = true;
       }
       // Check if Ctrl+C was pressed
-      else if (e.Control && e.KeyCode == Keys.C)
+      else if (e.Control && e.KeyCode == System.Windows.Forms.Keys.C)
       {
         StringBuilder copiedText = new StringBuilder();
 
@@ -3128,7 +3131,10 @@ namespace ElectricalCommands
         e.Handled = true;
       }
       // Existing code for handling the Delete key
-      else if (e.KeyCode == Keys.Delete || e.KeyCode == Keys.Back)
+      else if (
+        e.KeyCode == System.Windows.Forms.Keys.Delete
+        || e.KeyCode == System.Windows.Forms.Keys.Back
+      )
       {
         foreach (DataGridViewCell cell in PANEL_GRID.SelectedCells)
         {
@@ -3147,7 +3153,7 @@ namespace ElectricalCommands
         UpdatePerCellValueChange();
       }
       // Check if Ctrl+D was pressed
-      else if (e.Control && e.KeyCode == Keys.D)
+      else if (e.Control && e.KeyCode == System.Windows.Forms.Keys.D)
       {
         int rowIndex = PANEL_GRID.CurrentCell.RowIndex;
         int colIndex = PANEL_GRID.CurrentCell.ColumnIndex;
