@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 using Accord.MachineLearning;
 using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
@@ -29,6 +30,7 @@ using TriangleNet.Meshing.Algorithm;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 using Color = System.Drawing.Color;
 using Group = Autodesk.AutoCAD.DatabaseServices.Group;
+using Panel = ElectricalCommands.ElectricalEntity.Panel;
 
 namespace ElectricalCommands.Lighting
 {
@@ -898,16 +900,16 @@ namespace ElectricalCommands.Lighting
       {
         if (!existingLocationIds.Contains(location.Id))
         {
-          pko.Keywords.Add(location.LocationName + ":" + location.Id);
+          pko.Keywords.Add(location.LocationName.ToUpper() + ":" + location.Id);
         }
       }
       foreach (LightingTimeClock clock in timeClockList)
       {
-        pko2.Keywords.Add(clock.Name + ":" + clock.Id);
+        pko2.Keywords.Add(clock.Name.ToUpper() + ":" + clock.Id);
       }
       foreach (Panel panel in panelList)
       {
-        pko3.Keywords.Add(panel.Name + ":" + panel.Id);
+        pko3.Keywords.Add(panel.Name.ToUpper() + ":" + panel.Id);
       }
 
       PromptPointOptions ppo = new PromptPointOptions("\nSpecify start point: ");
