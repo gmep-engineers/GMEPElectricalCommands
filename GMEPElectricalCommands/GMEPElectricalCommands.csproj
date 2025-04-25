@@ -135,7 +135,8 @@
       <HintPath>..\packages\K4os.Hash.xxHash.1.0.8\lib\net462\K4os.Hash.xxHash.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=5.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.5.0.0\lib\net461\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.9.0.4\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="Microsoft.IO.RecyclableMemoryStream, Version=1.4.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.IO.RecyclableMemoryStream.1.4.1\lib\net46\Microsoft.IO.RecyclableMemoryStream.dll</HintPath>
@@ -181,8 +182,8 @@
       <Private>True</Private>
       <Private>True</Private>
     </Reference>
-    <Reference Include="System.IO.Pipelines, Version=5.0.0.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
-      <HintPath>..\packages\System.IO.Pipelines.5.0.2\lib\net461\System.IO.Pipelines.dll</HintPath>
+    <Reference Include="System.IO.Pipelines, Version=9.0.0.4, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.IO.Pipelines.9.0.4\lib\net462\System.IO.Pipelines.dll</HintPath>
     </Reference>
     <Reference Include="System.Management" />
     <Reference Include="System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
@@ -328,6 +329,7 @@
     <Compile Include="Symbols\AutoCADTools.cs" />
     <Compile Include="Symbols\CreationMethods.cs" />
     <Compile Include="Symbols\JigCommands.cs" />
+    <Compile Include="T24\T24Commands.cs" />
     <Compile Include="XREF\SetupXREFCommands.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -823,6 +825,8 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Accord.3.8.0\build\Accord.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.3.8.0\build\Accord.targets'))" />
     <Error Condition="!Exists('..\packages\Emgu.CV.runtime.windows.4.4.0.4099\build\Emgu.CV.runtime.windows.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Emgu.CV.runtime.windows.4.4.0.4099\build\Emgu.CV.runtime.windows.targets'))" />
+    <Error Condition="!Exists('..\packages\Selenium.WebDriver.4.31.0\build\Selenium.WebDriver.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Selenium.WebDriver.4.31.0\build\Selenium.WebDriver.targets'))" />
   </Target>
   <Import Project="..\packages\Emgu.CV.runtime.windows.4.4.0.4099\build\Emgu.CV.runtime.windows.targets" Condition="Exists('..\packages\Emgu.CV.runtime.windows.4.4.0.4099\build\Emgu.CV.runtime.windows.targets')" />
+  <Import Project="..\packages\Selenium.WebDriver.4.31.0\build\Selenium.WebDriver.targets" Condition="Exists('..\packages\Selenium.WebDriver.4.31.0\build\Selenium.WebDriver.targets')" />
 </Project>
