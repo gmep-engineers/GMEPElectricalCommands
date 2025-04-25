@@ -135,7 +135,7 @@ namespace ElectricalCommands.Equipment
       equipmentListView.FullRowSelect = true;
       foreach (ElectricalEntity.Equipment equipment in equipmentList)
       {
-        if (!String.IsNullOrEmpty(filterPanel) && equipment.ParentName != filterPanel)
+        if (!String.IsNullOrEmpty(filterPanel) && equipment.ParentName.ToUpper().Replace("PANEL", "").Trim() != filterPanel)
         {
           continue;
         }
@@ -173,7 +173,7 @@ namespace ElectricalCommands.Equipment
         ListViewItem item = new ListViewItem(equipment.Name, 0);
         item.SubItems.Add(equipment.Description);
         item.SubItems.Add(equipment.Category);
-        item.SubItems.Add(equipment.ParentName);
+        item.SubItems.Add(equipment.ParentName.ToUpper().Replace("PANEL", "").Trim());
         item.SubItems.Add(equipment.Circuit.ToString());
         if (equipment.ParentDistance == -1)
         {
