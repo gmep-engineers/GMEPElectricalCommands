@@ -231,9 +231,6 @@
     <Reference Include="Triangle">
       <HintPath>3rdPartyDeps\Triangle.NET\Triangle.dll</HintPath>
     </Reference>
-    <Reference Include="WebDriver, Version=4.0.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Selenium.WebDriver.4.31.0\lib\netstandard2.0\WebDriver.dll</HintPath>
-    </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="ZstdSharp, Version=0.8.0.0, Culture=neutral, PublicKeyToken=8d151af33a4ad5cf, processorArchitecture=MSIL">
       <HintPath>..\packages\ZstdSharp.Port.0.8.0\lib\net462\ZstdSharp.dll</HintPath>
@@ -835,8 +832,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\Accord.3.8.0\build\Accord.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Accord.3.8.0\build\Accord.targets'))" />
     <Error Condition="!Exists('..\packages\Emgu.CV.runtime.windows.4.4.0.4099\build\Emgu.CV.runtime.windows.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\Emgu.CV.runtime.windows.4.4.0.4099\build\Emgu.CV.runtime.windows.targets'))" />
-    <Error Condition="!Exists('packages\Selenium.WebDriver.4.31.0\build\Selenium.WebDriver.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\Selenium.WebDriver.4.31.0\build\Selenium.WebDriver.targets'))" />
   </Target>
   <Import Project="..\packages\Emgu.CV.runtime.windows.4.4.0.4099\build\Emgu.CV.runtime.windows.targets" Condition="Exists('..\packages\Emgu.CV.runtime.windows.4.4.0.4099\build\Emgu.CV.runtime.windows.targets')" />
-  <Import Project="packages\Selenium.WebDriver.4.31.0\build\Selenium.WebDriver.targets" Condition="Exists('packages\Selenium.WebDriver.4.31.0\build\Selenium.WebDriver.targets')" />
 </Project>

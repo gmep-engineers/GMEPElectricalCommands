@@ -11,8 +11,6 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Autodesk.AutoCAD.ApplicationServices;
 using Newtonsoft.Json;
-using OpenQA.Selenium;
-using OpenQA.Selenium.Chrome;
 
 namespace ElectricalCommands
 {
@@ -39,7 +37,6 @@ namespace ElectricalCommands
       int highLegPhase = 1
     )
     {
-      IWebDriver driver = new ChromeDriver();
       InitializeComponent();
       this.isLoading = true;
       myCommandsInstance = myCommands;
@@ -3643,7 +3640,7 @@ namespace ElectricalCommands
             double maxPhaseVa = totalA;
             if (totalB > totalA)
             {
-              maxPhaseVa = phB;
+              maxPhaseVa = totalB;
             }
             if (totalC > totalB && totalC > totalA)
             {
