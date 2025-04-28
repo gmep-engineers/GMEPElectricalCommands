@@ -2888,6 +2888,10 @@ namespace ElectricalCommands
         .Tag;
       descriptionCellTag = descriptionCellTag
         .ToString()
+        .Replace(
+          "DENOTES EXISTING CIRCUIT BREAKER TO REMAIN; ALL OTHERS ARE NEW TO MATCH EXISTING.",
+          ""
+        )
         .Replace("DENOTES EXISTING CIRCUIT BREAKER TO REMAIN; ALL OTHERS ARE NEW.", "");
       descriptionCellTag = descriptionCellTag.ToString().TrimEnd('|');
 
@@ -2897,7 +2901,7 @@ namespace ElectricalCommands
       if (
         APPLY_COMBOBOX.SelectedItem != null
         && APPLY_COMBOBOX.SelectedItem.ToString()
-          == "DENOTES EXISTING CIRCUIT BREAKER TO REMAIN; ALL OTHERS ARE NEW."
+          == "DENOTES EXISTING CIRCUIT BREAKER TO REMAIN; ALL OTHERS ARE NEW TO MATCH EXISTING."
       )
       {
         PANEL_GRID.Rows[dataGridViewCell.RowIndex].Cells["description_" + side].Style.BackColor =
@@ -3853,7 +3857,7 @@ namespace ElectricalCommands
     private void STATUS_COMBOBOX_SelectedIndexChanged(object sender, EventArgs e)
     {
       var default_existing_message =
-        "DENOTES EXISTING CIRCUIT BREAKER TO REMAIN; ALL OTHERS ARE NEW.";
+        "DENOTES EXISTING CIRCUIT BREAKER TO REMAIN; ALL OTHERS ARE NEW TO MATCH EXISTING.";
       var default_new_message = "65 KAIC SERIES RATED OR MATCH FAULT CURRENT AT SITE.";
 
       if (STATUS_COMBOBOX.SelectedItem != null)

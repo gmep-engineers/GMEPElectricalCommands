@@ -3316,7 +3316,8 @@ namespace ElectricalCommands
           var i = tags.IndexOf(tag);
           if (
             descriptions[i * 2] == "SPACE"
-            && note == "DENOTES EXISTING CIRCUIT BREAKER TO REMAIN; ALL OTHERS ARE NEW."
+            && note
+              == "DENOTES EXISTING CIRCUIT BREAKER TO REMAIN; ALL OTHERS ARE NEW TO MATCH EXISTING."
           )
           {
             bools.Add(false);
