@@ -168,7 +168,9 @@ namespace ElectricalCommands
       line = new Line(startPoint, startPoint);
       line.Layer = "E-TXT1";
       Field field = new Field(equipId);
+      Field isClone = new Field("false");
       line.SetField("gmep_equip_id", field);
+      line.SetField("is_clone", isClone);
     }
 
     protected override bool WorldDraw(WorldDraw draw)
@@ -433,7 +435,9 @@ namespace ElectricalCommands
       endPoint = startPoint;
       line = new Line(startPoint, startPoint);
       Field field = new Field(equipId);
+      Field isClone = new Field("false");
       line.SetField("gmep_equip_id", field);
+      line.SetField("is_clone", isClone);
       line.Layer = "E-TXT1";
     }
 
