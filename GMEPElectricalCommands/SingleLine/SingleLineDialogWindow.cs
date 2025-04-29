@@ -1169,7 +1169,7 @@ namespace ElectricalCommands.SingleLine
         }
         else
         {
-          SingleLine.MakeDistributionMeterCombo(meter, currentPoint);
+          SingleLine.MakeDistributionMeterCombo(meter, currentPoint, meter.IsExisting());
         }
         SingleLine.MakeNoWorkText(new Point3d(currentPoint.X, currentPoint.Y - 1.83, 0));
       }
@@ -1179,7 +1179,11 @@ namespace ElectricalCommands.SingleLine
       )
       {
         DistributionBreaker distributionBreaker = (DistributionBreaker)distributionBusChildEntity;
-        SingleLine.MakeDistributionBreakerCombo(distributionBreaker, currentPoint);
+        SingleLine.MakeDistributionBreakerCombo(
+          distributionBreaker,
+          currentPoint,
+          distributionBreaker.IsExisting()
+        );
         SingleLine.MakeNoWorkText(new Point3d(currentPoint.X, currentPoint.Y - 1.83, 0));
       }
       else if (distributionBusChild.Nodes.Count == 0)
@@ -1192,17 +1196,30 @@ namespace ElectricalCommands.SingleLine
         TreeNode childNode = distributionBusChild.Nodes[0];
         ElectricalEntity.DistributionBreaker distributionBreaker =
           (ElectricalEntity.DistributionBreaker)childNode.Tag;
+        bool fieldEntityExisting = distributionBreaker.IsExisting();
+        if (distributionBusChild.Nodes[0].Nodes.Count > 0)
+        {
+          ElectricalEntity.ElectricalEntity nextChildEntity = (ElectricalEntity.ElectricalEntity)
+            distributionBusChild.Nodes[0].Nodes[0].Tag;
+          nextChildEntity.IsExisting();
+        }
         if (meter.HasCts)
         {
           SingleLine.MakeDistributionCtsMeterAndBreakerCombo(
             meter,
             distributionBreaker,
-            currentPoint
+            currentPoint,
+            fieldEntityExisting
           );
         }
         else
         {
-          SingleLine.MakeDistributionMeterAndBreakerCombo(meter, distributionBreaker, currentPoint);
+          SingleLine.MakeDistributionMeterAndBreakerCombo(
+            meter,
+            distributionBreaker,
+            currentPoint,
+            fieldEntityExisting
+          );
         }
         if (childNode.Nodes.Count > 0)
         {
@@ -1228,7 +1245,6 @@ namespace ElectricalCommands.SingleLine
       else
       {
         DistributionBreaker distributionBreaker = (DistributionBreaker)distributionBusChildEntity;
-        SingleLine.MakeDistributionBreakerCombo(distributionBreaker, currentPoint);
         height += MakeFieldEntity(
           distributionBusChild,
           new Point3d(currentPoint.X, currentPoint.Y - 4.1875, 0)
@@ -1237,9 +1253,22 @@ namespace ElectricalCommands.SingleLine
         {
           ElectricalEntity.ElectricalEntity nextChildEntity = (ElectricalEntity.ElectricalEntity)
             distributionBusChild.Nodes[0].Tag;
+          SingleLine.MakeDistributionBreakerCombo(
+            distributionBreaker,
+            currentPoint,
+            nextChildEntity.IsExisting()
+          );
           SingleLine.MakeDistributionChildConduit(
             new Point3d(currentPoint.X, currentPoint.Y - 1.6875, 0),
             nextChildEntity.IsExisting()
+          );
+        }
+        else
+        {
+          SingleLine.MakeDistributionBreakerCombo(
+            distributionBreaker,
+            currentPoint,
+            distributionBreaker.IsExisting()
           );
         }
       }

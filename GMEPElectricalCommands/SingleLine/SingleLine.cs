@@ -84,7 +84,8 @@ namespace ElectricalCommands.SingleLine
 
     public static void MakeDistributionBreakerCombo(
       ElectricalEntity.DistributionBreaker distributionBreaker,
-      Point3d currentPoint
+      Point3d currentPoint,
+      bool childIsExisting
     )
     {
       MakeDistributionBreaker(
@@ -116,7 +117,7 @@ namespace ElectricalCommands.SingleLine
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
         LineData conduitLine2 = new LineData();
         conduitLine2.Layer = "E-CND1";
-        conduitLine2.ColorIndex = distributionBreaker.IsExisting() ? 8 : 256;
+        conduitLine2.ColorIndex = childIsExisting ? 8 : 256;
         conduitLine2.StartPoint = new SimpleVector3d();
         conduitLine2.EndPoint = new SimpleVector3d();
         conduitLine2.StartPoint.X = currentPoint.X;
@@ -163,7 +164,8 @@ namespace ElectricalCommands.SingleLine
 
     public static void MakeDistributionMeterCombo(
       ElectricalEntity.Meter meter,
-      Point3d currentPoint
+      Point3d currentPoint,
+      bool childIsExisting
     )
     {
       Document doc = Autodesk
@@ -190,7 +192,7 @@ namespace ElectricalCommands.SingleLine
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
         LineData conduitLine2 = new LineData();
         conduitLine2.Layer = "E-CND1";
-        conduitLine2.ColorIndex = meter.IsExisting() ? 8 : 256;
+        conduitLine2.ColorIndex = childIsExisting ? 8 : 256;
         conduitLine2.StartPoint = new SimpleVector3d();
         conduitLine2.EndPoint = new SimpleVector3d();
         conduitLine2.StartPoint.X = currentPoint.X;
@@ -206,7 +208,8 @@ namespace ElectricalCommands.SingleLine
     public static void MakeDistributionCtsMeterAndBreakerCombo(
       ElectricalEntity.Meter meter,
       ElectricalEntity.DistributionBreaker distributionBreaker,
-      Point3d currentPoint
+      Point3d currentPoint,
+      bool childIsExisting
     )
     {
       Document doc = Autodesk
@@ -233,7 +236,7 @@ namespace ElectricalCommands.SingleLine
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine1, 1);
         LineData conduitLine2 = new LineData();
         conduitLine2.Layer = "E-CND1";
-        conduitLine2.ColorIndex = meter.IsExisting() ? 8 : 256;
+        conduitLine2.ColorIndex = childIsExisting ? 8 : 256;
         conduitLine2.StartPoint = new SimpleVector3d();
         conduitLine2.EndPoint = new SimpleVector3d();
         conduitLine2.StartPoint.X = currentPoint.X;
@@ -253,7 +256,8 @@ namespace ElectricalCommands.SingleLine
     public static void MakeDistributionMeterAndBreakerCombo(
       ElectricalEntity.Meter meter,
       ElectricalEntity.DistributionBreaker distributionBreaker,
-      Point3d currentPoint
+      Point3d currentPoint,
+      bool childIsExisting
     )
     {
       Document doc = Autodesk
@@ -290,7 +294,7 @@ namespace ElectricalCommands.SingleLine
         CADObjectCommands.CreateLine(new Point3d(), tr, btr, conduitLine2, 1);
         LineData conduitLine3 = new LineData();
         conduitLine3.Layer = "E-CND1";
-        conduitLine3.ColorIndex = distributionBreaker.IsExisting() ? 8 : 256;
+        conduitLine3.ColorIndex = childIsExisting ? 8 : 256;
         conduitLine3.StartPoint = new SimpleVector3d();
         conduitLine3.EndPoint = new SimpleVector3d();
         conduitLine3.StartPoint.X = currentPoint.X;
