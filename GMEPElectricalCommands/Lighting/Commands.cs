@@ -17,6 +17,7 @@ using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Spreadsheet;
+using DocumentFormat.OpenXml.Wordprocessing;
 using Dreambuild.AutoCAD;
 using ElectricalCommands.ElectricalEntity;
 using Emgu.CV;
@@ -303,6 +304,122 @@ namespace ElectricalCommands.Lighting
       var lightingDialogWindow = new LightingDialogWindow();
       lightingDialogWindow.InitializeModal();
       lightingDialogWindow.Show();
+    }
+
+    [CommandMethod("DefineLightingSymbol")]
+    public static void DefineLightingSymbol()
+    {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      GmepDatabase gmepDb = new GmepDatabase();
+
+      PromptSelectionOptions promptSelectionOptions = new PromptSelectionOptions();
+      promptSelectionOptions.MessageForAdding = "\nSelect Lighting:";
+      PromptSelectionResult promptSelectionResult = ed.GetSelection(promptSelectionOptions);
+
+      if (promptSelectionResult.Status == PromptStatus.OK)
+      {
+        SelectionSet selectionSet = promptSelectionResult.Value;
+        PromptResult result = ed.GetString(
+          "\nEnter scale (e.g., 1/4, 3/16) or press Enter to autoscale: "
+        );
+        string blockName = "";
+        if (result.Status == PromptStatus.OK)
+        {
+          blockName = result.StringResult.Trim();
+        }
+        else
+        {
+          return;
+        }
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+          if (bt.Has(blockName))
+          {
+            // Block exists
+            MessageBox.Show(
+              $"Block '{blockName}' already exists.",
+              "Block Creation",
+              MessageBoxButtons.OK,
+              MessageBoxIcon.Information
+            );
+            tr.Commit();
+            return;
+          }
+
+          TextStyleTable textStyleTable = (TextStyleTable)
+            tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+          ObjectId gmepTextStyleId;
+          if (textStyleTable.Has("gmep"))
+          {
+            gmepTextStyleId = textStyleTable["gmep"];
+          }
+          else
+          {
+            ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+            gmepTextStyleId = doc.Database.Textstyle;
+          }
+
+          BlockTableRecord newBlock = new BlockTableRecord();
+          newBlock.Name = blockName;
+
+          AttributeDefinition attrDefLightingCircuit = new AttributeDefinition();
+          attrDefLightingCircuit.Position = new Point3d(-11.3082, 24.7579, 0);
+          attrDefLightingCircuit.LockPositionInBlock = false;
+          attrDefLightingCircuit.Tag = "LIGHTING_CIRCUIT";
+          attrDefLightingCircuit.IsMTextAttributeDefinition = false;
+          attrDefLightingCircuit.TextString = "#";
+          attrDefLightingCircuit.Justify = AttachmentPoint.BaseLeft;
+          attrDefLightingCircuit.Visible = true;
+          attrDefLightingCircuit.Invisible = false;
+          attrDefLightingCircuit.Constant = false;
+          attrDefLightingCircuit.Height = 2;
+          attrDefLightingCircuit.WidthFactor = 0.85;
+          attrDefLightingCircuit.TextStyleId = gmepTextStyleId;
+          attrDefLightingCircuit.Layer = "E-TEXT";
+
+          newBlock.AppendEntity(attrDefLightingCircuit);
+
+          AttributeDefinition attrDefLightingName = new AttributeDefinition();
+          attrDefLightingName.Position = new Point3d(-12.6893, 27.3458, 0);
+          attrDefLightingName.LockPositionInBlock = false;
+          attrDefLightingName.Tag = "LIGHTING_NAME";
+          attrDefLightingName.IsMTextAttributeDefinition = false;
+          attrDefLightingName.TextString = "Name";
+          attrDefLightingName.Justify = AttachmentPoint.BaseLeft;
+          attrDefLightingName.Visible = true;
+          attrDefLightingName.Invisible = false;
+          attrDefLightingName.Constant = false;
+          attrDefLightingName.Height = 2;
+          attrDefLightingName.WidthFactor = 0.85;
+          attrDefLightingName.TextStyleId = gmepTextStyleId;
+          attrDefLightingName.Layer = "E-TEXT";
+
+          newBlock.AppendEntity(attrDefLightingName);
+          tr.AddNewlyCreatedDBObject(newBlock, true);
+
+          bt.UpgradeOpen();
+
+          bt.Add(newBlock);
+          tr.AddNewlyCreatedDBObject(newBlock, true);
+
+          ObjectId newBlockId = newBlock.ObjectId;
+
+          ObjectIdCollection ids = new ObjectIdCollection();
+          ObjectId[] idList = selectionSet.GetObjectIds();
+          foreach (ObjectId id in idList)
+          {
+            ids.Add(id);
+          }
+          IdMapping mapping = new IdMapping();
+          db.DeepCloneObjects(ids, newBlockId, mapping, false);
+
+          tr.Commit();
+        }
+      }
     }
 
     [CommandMethod("PlaceControls")]
