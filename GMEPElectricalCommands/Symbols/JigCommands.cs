@@ -200,50 +200,60 @@ namespace ElectricalCommands
       return SamplerStatus.OK;
     }
   }
-  public class PolyLineJig : DrawJig {
+
+  public class PolyLineJig : DrawJig
+  {
     private Polyline polyline;
     public Point3d CurrentPoint;
     private List<Point3d> vertices;
 
-
-    public PolyLineJig(Point3d startPoint) {
+    public PolyLineJig(Point3d startPoint)
+    {
       polyline = new Polyline();
       vertices = new List<Point3d> { startPoint };
       polyline.AddVertexAt(0, new Point2d(startPoint.X, startPoint.Y), 0, 0, 0);
       CurrentPoint = startPoint;
-
     }
 
-    protected override bool WorldDraw(WorldDraw draw) {
-      if (polyline != null) {
+    protected override bool WorldDraw(WorldDraw draw)
+    {
+      if (polyline != null)
+      {
         draw.Geometry.Draw(polyline);
       }
       return true;
     }
 
-    protected override SamplerStatus Sampler(JigPrompts prompts) {
+    protected override SamplerStatus Sampler(JigPrompts prompts)
+    {
       JigPromptPointOptions options = new JigPromptPointOptions("\nSelect next point or [Close]:");
-      options.UserInputControls = UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
+      options.UserInputControls =
+        UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted;
       options.Keywords.Add("Close");
       PromptPointResult result = prompts.AcquirePoint(options);
 
-      if (result.Status == PromptStatus.Keyword && result.StringResult == "Close") {
-        if (vertices.Count > 2) {
+      if (result.Status == PromptStatus.Keyword && result.StringResult == "Close")
+      {
+        if (vertices.Count > 2)
+        {
           polyline.Closed = true;
           return SamplerStatus.Cancel;
         }
-        else {
-          Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage("\nA polyline must have at least 3 vertices to be closed.");
+        else
+        {
+          Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage(
+            "\nA polyline must have at least 3 vertices to be closed."
+          );
           return SamplerStatus.NoChange;
         }
       }
-      if (result.Status == PromptStatus.Cancel || result.Status == PromptStatus.Error) {
+      if (result.Status == PromptStatus.Cancel || result.Status == PromptStatus.Error)
+      {
         return SamplerStatus.Cancel;
       }
       options.BasePoint = CurrentPoint;
       options.UseBasePoint = true;
       options.Cursor = CursorType.RubberBand;
-
 
       if (result.Status != PromptStatus.OK)
         return SamplerStatus.Cancel;
@@ -251,18 +261,21 @@ namespace ElectricalCommands
       if (CurrentPoint.DistanceTo(result.Value) < Tolerance.Global.EqualPoint)
         return SamplerStatus.NoChange;
 
-     CurrentPoint = result.Value;
+      CurrentPoint = result.Value;
 
       return SamplerStatus.OK;
     }
-    public void AddVertex(Point3d point) {
+
+    public void AddVertex(Point3d point)
+    {
       vertices.Add(point);
       polyline.AddVertexAt(vertices.Count - 1, new Point2d(point.X, point.Y), 0, 0, 0);
     }
-    public Polyline GetPolyline() {
+
+    public Polyline GetPolyline()
+    {
       return polyline;
     }
-
   }
 
   public class SpoonJig : DrawJig
@@ -471,10 +484,12 @@ namespace ElectricalCommands
     private ObjectId _blockId = ObjectId.Null;
 
     private string _name = string.Empty;
+    private double _scale = 1;
 
-    public BlockJig(string _name = "block")
+    public BlockJig(string _name = "block", double _scale = 1)
     {
       this._name = _name;
+      this._scale = _scale;
     }
 
     public PromptResult DragMe(ObjectId i_blockId, out Point3d o_pnt)
@@ -518,6 +533,7 @@ namespace ElectricalCommands
     protected override bool WorldDraw(Autodesk.AutoCAD.GraphicsInterface.WorldDraw draw)
     {
       BlockReference inMemoryBlockInsert = new BlockReference(_point, _blockId);
+      inMemoryBlockInsert.ScaleFactors = new Scale3d(_scale, _scale, 1);
 
       draw.Geometry.Draw(inMemoryBlockInsert);
 

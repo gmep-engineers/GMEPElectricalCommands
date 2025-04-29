@@ -953,10 +953,137 @@ namespace ElectricalCommands.Lighting
                   }
                   tr.Commit();
                 }
+                if (i == 0)
+                {
+                  using (Transaction tr = db.TransactionManager.StartTransaction())
+                  {
+                    BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+                    BlockTableRecord block = (BlockTableRecord)
+                      tr.GetObject(bt["4CFM"], OpenMode.ForRead);
+                    double scaleUp = 12 / CADObjectCommands.Scale;
+                    BlockJig blockJig = new BlockJig("block", scaleUp);
+
+                    PromptResult res = blockJig.DragMe(block.ObjectId, out point);
+
+                    if (res.Status == PromptStatus.OK)
+                    {
+                      Console.WriteLine("OK");
+                      BlockTableRecord curSpace = (BlockTableRecord)
+                        tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+                      BlockReference br = new BlockReference(point, block.ObjectId);
+                      br.ScaleFactors = new Scale3d(scaleUp, scaleUp, 1);
+
+                      curSpace.AppendEntity(br);
+
+                      blockId = br.Id;
+
+                      TextStyleTable textStyleTable = (TextStyleTable)
+                        tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+                      ObjectId gmepTextStyleId;
+                      if (textStyleTable.Has("gmep"))
+                      {
+                        gmepTextStyleId = textStyleTable["gmep"];
+                      }
+                      else
+                      {
+                        ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+                        gmepTextStyleId = doc.Database.Textstyle;
+                      }
+                      AttributeDefinition attrDef = new AttributeDefinition();
+                      attrDef.Position = new Point3d(
+                        br.Position.X + (0.27 * scaleUp),
+                        br.Position.Y + (0.12 * scaleUp),
+                        0
+                      );
+                      attrDef.LockPositionInBlock = false;
+                      attrDef.Tag = "tag";
+                      attrDef.IsMTextAttributeDefinition = false;
+                      attrDef.TextString = fixture.Name;
+                      attrDef.Justify = AttachmentPoint.MiddleCenter;
+                      attrDef.Visible = true;
+                      attrDef.Invisible = false;
+                      attrDef.Constant = false;
+                      attrDef.Height = 0.0938 * scaleUp;
+                      attrDef.WidthFactor = 0.85;
+                      attrDef.TextStyleId = gmepTextStyleId;
+                      attrDef.Layer = "0";
+
+                      AttributeReference attrRef = new AttributeReference();
+                      attrRef.SetAttributeFromBlock(
+                        attrDef,
+                        Matrix3d.Displacement(
+                          new Vector3d(attrDef.Position.X, attrDef.Position.Y, 0)
+                        )
+                      );
+                      br.AttributeCollection.AppendAttribute(attrRef);
+
+                      AttributeDefinition attrDef2 = new AttributeDefinition();
+                      attrDef2.Position = new Point3d(
+                        br.Position.X + (0.27 * scaleUp),
+                        br.Position.Y - (0.12 * scaleUp),
+                        0
+                      );
+
+                      attrDef2.LockPositionInBlock = false;
+                      attrDef2.Tag = "wattage";
+                      attrDef2.IsMTextAttributeDefinition = false;
+                      attrDef2.TextString = fixture.Wattage.ToString();
+                      attrDef2.Justify = AttachmentPoint.MiddleCenter;
+                      attrDef2.Visible = true;
+                      attrDef2.Invisible = false;
+                      attrDef2.Constant = false;
+                      attrDef2.Height = 0.0938 * scaleUp;
+                      attrDef2.WidthFactor = 0.85;
+                      attrDef2.TextStyleId = gmepTextStyleId;
+                      attrDef2.Layer = "0";
+
+                      AttributeReference attrRef2 = new AttributeReference();
+                      attrRef2.SetAttributeFromBlock(
+                        attrDef2,
+                        Matrix3d.Displacement(
+                          new Vector3d(attrDef2.Position.X, attrDef2.Position.Y, 0)
+                        )
+                      );
+
+                      br.AttributeCollection.AppendAttribute(attrRef2);
+                      br.Layer = "E-TXT1";
+                      tr.AddNewlyCreatedDBObject(br, true);
+                      if (fixture.Qty > 1)
+                      {
+                        GeneralCommands.CreateAndPositionText(
+                          tr,
+                          $"TYP. OF {fixture.Qty}",
+                          "gmep",
+                          0.0938 * scaleUp,
+                          0.85,
+                          2,
+                          "E-TXT1",
+                          new Point3d(
+                            br.Position.X + (0.27 * scaleUp),
+                            br.Position.Y - (0.32 * scaleUp),
+                            0
+                          ),
+                          TextHorizontalMode.TextLeft,
+                          TextVerticalMode.TextBase,
+                          AttachmentPoint.MiddleCenter
+                        );
+                      }
+                    }
+                    else
+                    {
+                      return;
+                    }
+
+                    tr.Commit();
+                  }
+                }
               }
               catch (System.Exception ex)
               {
                 ed.WriteMessage(ex.ToString());
+                Console.WriteLine(ex.ToString());
               }
             }
           }

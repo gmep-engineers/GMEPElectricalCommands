@@ -685,8 +685,8 @@ namespace ElectricalCommands.ElectricalEntity
     {
       this.Id = Id;
       this.ParentId = ParentId;
-      this.ParentName = ParentName;
-      this.Name = Name;
+      this.ParentName = ParentName.ToUpper();
+      this.Name = Name.ToUpper();
       this.BlockName = BlockName;
       this.Voltage = Voltage;
       this.Wattage = Wattage;
