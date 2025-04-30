@@ -16,6 +16,7 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using Autodesk.AutoCAD.Runtime;
 using DocumentFormat.OpenXml.Drawing.Charts;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Dreambuild.AutoCAD;
 using ElectricalCommands.ElectricalEntity;
@@ -521,10 +522,16 @@ namespace ElectricalCommands.Lighting
             string em = "";
             DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
             BlockReference block = tr.GetObject(id, OpenMode.ForWrite) as BlockReference;
+            bool toggleOn = true;
+            string lightingId = "";
             foreach (
               DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection
             )
             {
+              if (property.PropertyName == "gmep_lighting_id")
+              {
+                lightingId = property.Value as string;
+              }
               if (property.PropertyName == "gmep_lighting_control")
               {
                 control = property.Value as string;
@@ -538,6 +545,7 @@ namespace ElectricalCommands.Lighting
                 if (property.Value as string == "EM")
                 {
                   property.Value = "Non-EM";
+                  toggleOn = false;
                 }
                 else
                 {
@@ -553,6 +561,70 @@ namespace ElectricalCommands.Lighting
               if (attRef.Tag == "LIGHTING_CIRCUIT")
               {
                 attRef.TextString = circuit + control + em;
+              }
+            }
+            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+            if (toggleOn && block.IsDynamicBlock)
+            {
+              // stack em block
+              BlockTableRecord btr = (BlockTableRecord)
+                tr.GetObject(block.DynamicBlockTableRecord, OpenMode.ForRead);
+              ObjectId emMarker = bt[btr.Name + " EM"];
+              if (emMarker != null)
+              {
+                using (BlockReference acBlkRef = new BlockReference(block.Position, emMarker))
+                {
+                  BlockTableRecord acCurSpaceBlkTblRec;
+                  acCurSpaceBlkTblRec =
+                    tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                  acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                  tr.AddNewlyCreatedDBObject(acBlkRef, true);
+
+                  foreach (
+                    DynamicBlockReferenceProperty property in acBlkRef.DynamicBlockReferencePropertyCollection
+                  )
+                  {
+                    if (property.PropertyName == "gmep_em_lighting_id")
+                    {
+                      property.Value = lightingId;
+                    }
+                  }
+                }
+              }
+            }
+            else
+            {
+              // remove em block
+              var modelSpace = (BlockTableRecord)
+                tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+              foreach (ObjectId id2 in modelSpace)
+              {
+                try
+                {
+                  BlockReference br = (BlockReference)tr.GetObject(id2, OpenMode.ForRead);
+                  if (
+                    br != null
+                    && br.IsDynamicBlock
+                    && br.DynamicBlockReferencePropertyCollection.Count > 0
+                  )
+                  {
+                    foreach (
+                      DynamicBlockReferenceProperty property in br.DynamicBlockReferencePropertyCollection
+                    )
+                    {
+                      if (
+                        property.PropertyName == "gmep_em_lighting_id"
+                        && property.Value as string == lightingId
+                      )
+                      {
+                        BlockReference eraseBlock = (BlockReference)
+                          tr.GetObject(id2, OpenMode.ForWrite);
+                        eraseBlock.Erase();
+                      }
+                    }
+                  }
+                }
+                catch { }
               }
             }
           }
