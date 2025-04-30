@@ -802,7 +802,9 @@ namespace ElectricalCommands
       {
         phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 1.732, 0).ToString();
         descriptionArr[startIndex] = equip.Name + " " + equip.Description;
-        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(
+          equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+        );
         breakerArr[startIndex + 2] = "";
         breakerArr[startIndex + 4] = "3";
         firstPhaseArr[startIndex] = phaseLoad;
@@ -813,7 +815,9 @@ namespace ElectricalCommands
       {
         phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 2, 0).ToString();
         descriptionArr[startIndex] = equip.Name + " " + equip.Description;
-        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(
+          equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+        );
         breakerArr[startIndex + 2] = "2";
         firstPhaseArr[startIndex] = phaseLoad;
         secondPhaseArr[startIndex + 2] = phaseLoad;
@@ -822,7 +826,9 @@ namespace ElectricalCommands
       {
         phaseLoad = equip.Va.ToString();
         descriptionArr[startIndex] = equip.Name + " " + equip.Description;
-        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(
+          equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+        );
         firstPhaseArr[startIndex] = phaseLoad;
       }
     }
@@ -896,7 +902,9 @@ namespace ElectricalCommands
       {
         phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 2, 0).ToString();
         descriptionArr[startIndex] = equip.Name + " " + equip.Description;
-        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(
+          equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+        );
         breakerArr[startIndex + 2] = "2";
         firstPhaseArr[startIndex] = phaseLoad;
         secondPhaseArr[startIndex + 2] = phaseLoad;
@@ -905,7 +913,9 @@ namespace ElectricalCommands
       {
         phaseLoad = equip.Va.ToString();
         descriptionArr[startIndex] = equip.Name + " " + equip.Description;
-        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(equip.Mca);
+        breakerArr[startIndex] = PanelUserControl.GetBreakerSize(
+          equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+        );
         firstPhaseArr[startIndex] = phaseLoad;
       }
     }
