@@ -176,7 +176,7 @@ namespace ElectricalCommands.ElectricalEntity
               BlockTableRecord currentSpace =
                 tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
               br.ScaleFactors = new Scale3d(0.25 / scaleFactor);
-              br.Layer = IsExisting() ? "E-SYM-EXISTING" : "E-SYM1";
+              br.Layer = "E-SYM1";
             }
 
             if (Rotate)
