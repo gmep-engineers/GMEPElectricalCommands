@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -1979,6 +1980,47 @@ namespace ElectricalCommands
           tr.Commit();
         }
         offset += 5;
+      }
+    }
+    [CommandMethod("LTI")]
+    public async void LTI() {
+      string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+      string relativePath = System.IO.Path.Combine(
+          "Documents",
+          "Scripts",
+          "GMEPTitle24",
+          "bin",
+          "Debug",
+          "net8.0-windows7.0",
+          "GMEPTitle24.exe"
+      );
+      string filePath = System.IO.Path.Combine(userProfile, relativePath);
+      string arguments = CADObjectCommands.GetProjectNoFromFileName().ToString();
+      if (File.Exists(filePath)) 
+      {
+        await LaunchProcess(filePath, arguments);
+      }
+      async System.Threading.Tasks.Task LaunchProcess(string executablePath, string commandLineArguments) {
+        try {
+          ProcessStartInfo startInfo = new ProcessStartInfo {
+            FileName = executablePath,
+            Arguments = commandLineArguments,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = false,
+          };
+
+          Process process = new Process {
+            StartInfo = startInfo,
+            EnableRaisingEvents = true,
+          };
+
+          await System.Threading.Tasks.Task.Run(() => process.Start());
+        }
+        catch (System.Exception ex) {
+          Console.WriteLine($"Error launching process: {ex.Message}");
+        }
       }
     }
 
