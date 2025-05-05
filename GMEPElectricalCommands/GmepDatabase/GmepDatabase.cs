@@ -1310,6 +1310,21 @@ namespace GMEPElectricalCommands.GmepDatabase
       command.ExecuteNonQuery();
       CloseConnection();
     }
+    public void updateLightingLocation(string lightingId, string locationId) {
+      string query =
+        @"
+          UPDATE electrical_lighting
+          SET
+          location_id = @locationId
+          WHERE id = @id
+          ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@locationId", locationId);
+      command.Parameters.AddWithValue("@id", lightingId);
+      command.ExecuteNonQuery();
+      CloseConnection();
+    }
 
     public void UpdatePanelAic(string id, double aicRating)
     {

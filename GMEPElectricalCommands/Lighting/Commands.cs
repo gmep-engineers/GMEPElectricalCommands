@@ -1269,6 +1269,8 @@ namespace ElectricalCommands.Lighting
       string locationId
     )
     {
+      GmepDatabase gmepDb = new GmepDatabase();
+
       SelectionFilter filter = new SelectionFilter(
         new TypedValue[] { new TypedValue((int)DxfCode.Start, "INSERT") }
       );
@@ -1297,6 +1299,8 @@ namespace ElectricalCommands.Lighting
           DBObject obj = tr.GetObject(id, OpenMode.ForWrite);
           if (obj is BlockReference block)
           {
+            string fixtureId = "";
+
             foreach (
               DynamicBlockReferenceProperty property in block.DynamicBlockReferencePropertyCollection
             )
@@ -1305,6 +1309,12 @@ namespace ElectricalCommands.Lighting
               {
                 property.Value = locationId;
               }
+              if (property.PropertyName == "gmep_lighting_fixture_id") {
+                fixtureId = property.Value as string;
+              }
+            }
+            if (!string.IsNullOrEmpty(fixtureId)) {
+              gmepDb.updateLightingLocation(fixtureId, locationId);
             }
           }
         }
