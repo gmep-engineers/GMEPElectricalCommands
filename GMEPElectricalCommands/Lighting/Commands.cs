@@ -574,6 +574,7 @@ namespace ElectricalCommands.Lighting
               {
                 using (BlockReference acBlkRef = new BlockReference(block.Position, emMarker))
                 {
+                  acBlkRef.Rotation = block.Rotation;
                   BlockTableRecord acCurSpaceBlkTblRec;
                   acCurSpaceBlkTblRec =
                     tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
