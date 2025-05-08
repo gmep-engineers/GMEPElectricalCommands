@@ -53,6 +53,65 @@ namespace ElectricalCommands
       return Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
     }
 
+    public static List<ObjectId> GetObjectIdsFromBlockName(
+      Transaction tr,
+      List<ObjectId> objectList,
+      string name
+    )
+    {
+      List<ObjectId> idList = new List<ObjectId>();
+
+      foreach (ObjectId id in objectList)
+      {
+        try
+        {
+          BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
+          if (br.IsDynamicBlock)
+          {
+            BlockTableRecord btrDynamic = (BlockTableRecord)
+              tr.GetObject(br.DynamicBlockTableRecord, OpenMode.ForRead);
+            if (btrDynamic.Name == name)
+            {
+              idList.Add(id);
+            }
+          }
+          else
+          {
+            BlockTableRecord btrStandard = (BlockTableRecord)
+              tr.GetObject(br.BlockTableRecord, OpenMode.ForRead);
+            if (btrStandard.Name == name)
+            {
+              idList.Add(id);
+            }
+          }
+        }
+        catch { }
+      }
+
+      return idList;
+    }
+
+    public static Point3d GetObjectPosition(ObjectId id)
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        try
+        {
+          BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
+          return br.Position;
+        }
+        catch { }
+      }
+      return new Point3d(-1, -1, 0);
+    }
+
     public static bool IsInModel()
     {
       if (Application.DocumentManager.MdiActiveDocument.Database.TileMode)
