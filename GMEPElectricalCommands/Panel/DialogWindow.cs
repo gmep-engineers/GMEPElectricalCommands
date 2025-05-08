@@ -946,7 +946,8 @@ namespace ElectricalCommands
           jsonPanel.read_only = true;
           jsonPanel.main = panel.MainAmpRating.ToString();
           jsonPanel.panel = "'" + panel.Name + "'";
-          jsonPanel.location = "";
+          jsonPanel.location = panel.DesignLocation;
+          Console.WriteLine("locc" + jsonPanel.location);
           jsonPanel.voltage1 = panel.Voltage.Substring(0, 3);
           jsonPanel.voltage2 = panel.LineVoltage.ToString();
           jsonPanel.phase = panel.Phase.ToString();
@@ -1153,7 +1154,7 @@ namespace ElectricalCommands
           jsonPanel.read_only = true;
           jsonPanel.main = panel.MainAmpRating.ToString();
           jsonPanel.panel = "'" + panel.Name + "'";
-          jsonPanel.location = "";
+          jsonPanel.location = panel.DesignLocation;
           jsonPanel.voltage1 = panel.Voltage.Substring(0, 3);
           jsonPanel.voltage2 = panel.LineVoltage.ToString();
           jsonPanel.phase = panel.Phase.ToString();

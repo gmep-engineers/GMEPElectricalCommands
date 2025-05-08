@@ -1009,6 +1009,7 @@ namespace ElectricalCommands.ElectricalEntity
     public List<PanelBreaker> Breakers;
     public int Circuit;
     public int Pole;
+    public string DesignLocation;
 
     public Panel(
       string Id,
@@ -1030,7 +1031,8 @@ namespace ElectricalCommands.ElectricalEntity
       string Status,
       System.Drawing.Point NodePosition,
       int NumBreakers,
-      int Circuit
+      int Circuit,
+      string DesignLocation
     )
     {
       this.Id = Id;
@@ -1040,6 +1042,7 @@ namespace ElectricalCommands.ElectricalEntity
       Location = new Point3d(LocationX, LocationY, 0);
       this.BusAmpRating = BusAmpRating;
       this.MainAmpRating = MainAmpRating;
+      this.DesignLocation = DesignLocation.ToUpper();
       AmpRating =
         IsMlo ? BusAmpRating
         : MainAmpRating < BusAmpRating ? MainAmpRating

@@ -384,6 +384,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_panels.is_recessed,
         electrical_panels.load_amperage,
         electrical_panels.kva,
+        electrical_panels.location,
         bus_amp_ratings.amp_rating as bus_amp_rating,
         main_amp_ratings.amp_rating as main_amp_rating,
         electrical_service_voltages.voltage,
@@ -433,7 +434,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeString(reader, "status"),
             new System.Drawing.Point(GetSafeInt(reader, "node_x"), GetSafeInt(reader, "node_y")),
             GetSafeInt(reader, "num_breakers"),
-            GetSafeInt(reader, "circuit_no")
+            GetSafeInt(reader, "circuit_no"),
+            GetSafeString(reader, "location")
           )
         );
       }
@@ -1310,7 +1312,9 @@ namespace GMEPElectricalCommands.GmepDatabase
       command.ExecuteNonQuery();
       CloseConnection();
     }
-    public void updateLightingLocation(string lightingId, string locationId) {
+
+    public void updateLightingLocation(string lightingId, string locationId)
+    {
       string query =
         @"
           UPDATE electrical_lighting
