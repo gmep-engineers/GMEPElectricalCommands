@@ -70,7 +70,7 @@ namespace ElectricalCommands
           {
             BlockTableRecord btrDynamic = (BlockTableRecord)
               tr.GetObject(br.DynamicBlockTableRecord, OpenMode.ForRead);
-            if (btrDynamic.Name == name)
+            if (btrDynamic.Name.StartsWith(name))
             {
               idList.Add(id);
             }
@@ -79,7 +79,7 @@ namespace ElectricalCommands
           {
             BlockTableRecord btrStandard = (BlockTableRecord)
               tr.GetObject(br.BlockTableRecord, OpenMode.ForRead);
-            if (btrStandard.Name == name)
+            if (btrStandard.Name.StartsWith(name))
             {
               idList.Add(id);
             }
