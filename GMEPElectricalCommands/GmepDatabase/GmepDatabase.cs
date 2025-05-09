@@ -45,6 +45,11 @@ namespace GMEPElectricalCommands.GmepDatabase
       }
     }
 
+    public MySqlConnection GetConnection()
+    {
+      return Connection;
+    }
+
     string GetSafeString(MySqlDataReader reader, string fieldName)
     {
       int index = reader.GetOrdinal(fieldName);

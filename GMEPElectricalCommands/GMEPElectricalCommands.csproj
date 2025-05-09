@@ -259,6 +259,14 @@
     <Compile Include="Notes\TableForm.Designer.cs">
       <DependentUpon>TableForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="PlanCheck\PlanCheck.cs" />
+    <Compile Include="PlanCheck\PlanCheckCommands.cs" />
+    <Compile Include="PlanCheck\PlanCheckDialogWindow.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="PlanCheck\PlanCheckDialogWindow.Designer.cs">
+      <DependentUpon>PlanCheckDialogWindow.cs</DependentUpon>
+    </Compile>
     <Compile Include="SingleLine\SingleLine.cs" />
     <Compile Include="GmepDatabase\GmepDatabase.cs" />
     <Compile Include="Equipment\EquipmentCommands.cs" />
@@ -374,6 +382,9 @@
     <EmbeddedResource Include="Panel\PanelUserControl.resx">
       <DependentUpon>PanelUserControl.cs</DependentUpon>
       <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="PlanCheck\PlanCheckDialogWindow.resx">
+      <DependentUpon>PlanCheckDialogWindow.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="SingleLine\SingleLineDialogWindow.resx">
       <DependentUpon>SingleLineDialogWindow.cs</DependentUpon>
