@@ -111,7 +111,7 @@ namespace ElectricalCommands.PlanCheck
       PlanCheckListView.Columns.Add("Status", -2, HorizontalAlignment.Left);
       PlanCheckList = new List<PlanCheck>();
 
-      AddPlanCheckToListView(new CheckCaliforniaStamp(ProjectId));
+      //AddPlanCheckToListView(new CheckCaliforniaStamp(ProjectId));
       AddPlanCheckToListView(new CheckKitchenNotes(ProjectId));
     }
 
