@@ -135,7 +135,10 @@ namespace ElectricalCommands.Equipment
       equipmentListView.FullRowSelect = true;
       foreach (ElectricalEntity.Equipment equipment in equipmentList)
       {
-        if (!String.IsNullOrEmpty(filterPanel) && equipment.ParentName.ToUpper().Replace("PANEL", "").Trim() != filterPanel)
+        if (
+          !String.IsNullOrEmpty(filterPanel)
+          && equipment.ParentName.ToUpper().Replace("PANEL", "").Trim() != filterPanel
+        )
         {
           continue;
         }
@@ -201,8 +204,7 @@ namespace ElectricalCommands.Equipment
         item.SubItems.Add(equipment.IsHidden.ToString());
         item.SubItems.Add(equipment.Id);
         item.SubItems.Add(equipment.ParentId);
-        
-        
+
         equipmentListView.Items.Add(item);
       }
       if (!updateOnly)
@@ -639,10 +641,12 @@ namespace ElectricalCommands.Equipment
       Editor ed = doc.Editor;
 
       //editing the connectionSymbol string
-      if (connectionSymbol.Contains(" W/ ")) {
+      if (connectionSymbol.Contains(" W/ "))
+      {
         string[] parts = connectionSymbol.Split(new string[] { " W/ " }, StringSplitOptions.None);
 
-        if (parts.Length == 2) {
+        if (parts.Length == 2)
+        {
           string beforeW = parts[0];
           string afterW = parts[1];
           connectionSymbol = beforeW + afterW;
@@ -721,19 +725,48 @@ namespace ElectricalCommands.Equipment
           break;
         // TODO check for remaining connection types
       }
-      using (Transaction acTrans = db.TransactionManager.StartTransaction()) {
+      using (Transaction acTrans = db.TransactionManager.StartTransaction())
+      {
         BlockTable acBlkTbl = acTrans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord acBlkTblRec =
           acTrans.GetObject(acBlkTbl[blockName], OpenMode.ForRead) as BlockTableRecord;
 
-        using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId)) {
+        using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId))
+        {
           RotateJig blockJig = new RotateJig(acBlkRef);
           PromptResult blockPromptResult = ed.Drag(blockJig);
           double scaleFactor = 0.25;
-          if (equipType != EquipmentType.Panel && equipType != EquipmentType.Transformer) {
+          if (equipType != EquipmentType.Panel && equipType != EquipmentType.Transformer)
+          {
             scaleFactor = scale;
           }
-          if (promptResult.Status == PromptStatus.OK) {
+          if (blockPromptResult.Status == PromptStatus.OK)
+          {
+            if (acBlkRef.IsDynamicBlock)
+            {
+              DynamicBlockReferencePropertyCollection pc =
+                acBlkRef.DynamicBlockReferencePropertyCollection;
+              foreach (DynamicBlockReferenceProperty prop in pc)
+              {
+                if (prop.PropertyName == "gmep_equip_id")
+                {
+                  prop.Value = equipId;
+                }
+                if (prop.PropertyName == "gmep_equip_parent_id")
+                {
+                  prop.Value = parentId;
+                }
+                if (prop.PropertyName == "gmep_equip_no")
+                {
+                  prop.Value = equipNo;
+                }
+                if (prop.PropertyName == "gmep_equip_locator")
+                {
+                  prop.Value = "true";
+                }
+              }
+            }
+
             BlockTableRecord currentSpace =
               acTrans.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
             currentSpace.AppendEntity(acBlkRef);
@@ -743,14 +776,19 @@ namespace ElectricalCommands.Equipment
             rotation = acBlkRef.Rotation;
 
             //Setting attributes if blockname is j-box or j-boxswitch
-            if (blockName == "GMEP J-BOX" || blockName == "GMEP J-BOXSWITCH") {
-              foreach (ObjectId objId in acBlkTblRec) {
+            if (blockName == "GMEP J-BOX" || blockName == "GMEP J-BOXSWITCH")
+            {
+              foreach (ObjectId objId in acBlkTblRec)
+              {
                 DBObject obj = acTrans.GetObject(objId, OpenMode.ForRead);
                 AttributeDefinition attDef = obj as AttributeDefinition;
-                if (attDef != null && !attDef.Constant) {
-                  using (AttributeReference attRef = new AttributeReference()) {
+                if (attDef != null && !attDef.Constant)
+                {
+                  using (AttributeReference attRef = new AttributeReference())
+                  {
                     attRef.SetAttributeFromBlock(attDef, acBlkRef.BlockTransform);
-                    if (attRef.Tag == "J") {
+                    if (attRef.Tag == "J")
+                    {
                       attRef.TextString = "J";
                       attRef.Rotation = attRef.Rotation - rotation;
                     }
@@ -765,16 +803,22 @@ namespace ElectricalCommands.Equipment
         acTrans.Commit();
       }
       //Placing down a switch for a j-box switch
-      using (Transaction acTrans = db.TransactionManager.StartTransaction()) {
+      using (Transaction acTrans = db.TransactionManager.StartTransaction())
+      {
         BlockTable acBlkTbl = acTrans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord switchRec = acTrans.GetObject(acBlkTbl["GMEP J-BOXSWITCHOBJ"], OpenMode.ForRead) as BlockTableRecord;
-        if (blockName == "GMEP J-BOXSWITCH") {
-          PromptPointOptions promptOptions2 = new PromptPointOptions("\nSelect point for J-Box switch: ");
+        BlockTableRecord switchRec =
+          acTrans.GetObject(acBlkTbl["GMEP J-BOXSWITCHOBJ"], OpenMode.ForRead) as BlockTableRecord;
+        if (blockName == "GMEP J-BOXSWITCH")
+        {
+          PromptPointOptions promptOptions2 = new PromptPointOptions(
+            "\nSelect point for J-Box switch: "
+          );
           PromptPointResult promptResult2 = ed.GetPoint(promptOptions2);
           if (promptResult.Status != PromptStatus.OK)
             return null;
           Point3d firstClickPoint2 = promptResult2.Value;
-          using (BlockReference switchRef = new BlockReference(Point3d.Origin, switchRec.ObjectId)) {
+          using (BlockReference switchRef = new BlockReference(Point3d.Origin, switchRec.ObjectId))
+          {
             RotateJig blockJig = new RotateJig(switchRef);
             PromptResult blockPromptResult = ed.Drag(blockJig);
             BlockTableRecord currentSpace =
@@ -871,171 +915,270 @@ namespace ElectricalCommands.Equipment
           tr.Commit();
         }
       }
-
-      LabelJig jig = new LabelJig(firstClickPoint);
-      PromptResult res = ed.Drag(jig);
-      if (res.Status != PromptStatus.OK)
-        return null;
-
-      Vector3d direction = jig.endPoint - firstClickPoint;
-      double angle = direction.GetAngleTo(Vector3d.XAxis, Vector3d.ZAxis);
-
-      Point3d secondClickPoint = jig.endPoint;
-      Point3d thirdClickPoint = Point3d.Origin;
-      bool thirdClickOccurred = false;
-      using (Transaction tr = doc.Database.TransactionManager.StartTransaction())
+      // HERE only run this block if not a convenience rec
       {
-        BlockTableRecord btr = (BlockTableRecord)
-          tr.GetObject(doc.Database.CurrentSpaceId, OpenMode.ForWrite);
-        btr.AppendEntity(jig.line);
-        tr.AddNewlyCreatedDBObject(jig.line, true);
+        LabelJig jig = new LabelJig(firstClickPoint);
+        PromptResult res = ed.Drag(jig);
+        if (res.Status != PromptStatus.OK)
+          return null;
 
-        tr.Commit();
-      }
-      if (angle != 0 && angle != Math.PI)
-      {
-        DynamicLineJig lineJig = new DynamicLineJig(jig.endPoint, scale);
-        res = ed.Drag(lineJig);
-        if (res.Status == PromptStatus.OK)
+        Vector3d direction = jig.endPoint - firstClickPoint;
+        double angle = direction.GetAngleTo(Vector3d.XAxis, Vector3d.ZAxis);
+
+        Point3d secondClickPoint = jig.endPoint;
+        Point3d thirdClickPoint = Point3d.Origin;
+        bool thirdClickOccurred = false;
+        using (Transaction tr = doc.Database.TransactionManager.StartTransaction())
         {
-          using (Transaction tr = doc.Database.TransactionManager.StartTransaction())
+          BlockTableRecord btr = (BlockTableRecord)
+            tr.GetObject(doc.Database.CurrentSpaceId, OpenMode.ForWrite);
+          btr.AppendEntity(jig.line);
+          tr.AddNewlyCreatedDBObject(jig.line, true);
+
+          tr.Commit();
+        }
+        if (angle != 0 && angle != Math.PI)
+        {
+          DynamicLineJig lineJig = new DynamicLineJig(jig.endPoint, scale);
+          res = ed.Drag(lineJig);
+          if (res.Status == PromptStatus.OK)
           {
-            BlockTableRecord btr = (BlockTableRecord)
-              tr.GetObject(doc.Database.CurrentSpaceId, OpenMode.ForWrite);
-            btr.AppendEntity(lineJig.line);
-            tr.AddNewlyCreatedDBObject(lineJig.line, true);
+            using (Transaction tr = doc.Database.TransactionManager.StartTransaction())
+            {
+              BlockTableRecord btr = (BlockTableRecord)
+                tr.GetObject(doc.Database.CurrentSpaceId, OpenMode.ForWrite);
+              btr.AppendEntity(lineJig.line);
+              tr.AddNewlyCreatedDBObject(lineJig.line, true);
 
-            thirdClickPoint = lineJig.line.EndPoint;
-            thirdClickOccurred = true;
+              thirdClickPoint = lineJig.line.EndPoint;
+              thirdClickOccurred = true;
 
+              tr.Commit();
+            }
+          }
+        }
+        Point3d textAlignmentReferencePoint = thirdClickOccurred
+          ? thirdClickPoint
+          : secondClickPoint;
+        Point3d comparisonPoint = thirdClickOccurred ? secondClickPoint : firstClickPoint;
+        Point3d labelInsertionPoint;
+        if (textAlignmentReferencePoint.X > comparisonPoint.X)
+        {
+          labelInsertionPoint = new Point3d(
+            textAlignmentReferencePoint.X + 14.1197 * 0.25 / scale,
+            textAlignmentReferencePoint.Y,
+            0
+          );
+        }
+        else
+        {
+          labelInsertionPoint = new Point3d(
+            textAlignmentReferencePoint.X - 14.1197 * 0.25 / scale,
+            textAlignmentReferencePoint.Y,
+            0
+          );
+        }
+
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          try
+          {
+            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+            ObjectId blockId = bt["EQUIP_MARKER"];
+            using (BlockReference acBlkRef = new BlockReference(labelInsertionPoint, blockId))
+            {
+              BlockTableRecord acCurSpaceBlkTblRec;
+              acCurSpaceBlkTblRec =
+                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+              acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+              DynamicBlockReferencePropertyCollection pc =
+                acBlkRef.DynamicBlockReferencePropertyCollection;
+              foreach (DynamicBlockReferenceProperty prop in pc)
+              {
+                if (prop.PropertyName == "gmep_equip_id")
+                {
+                  prop.Value = equipId;
+                }
+                if (prop.PropertyName == "gmep_equip_parent_id")
+                {
+                  prop.Value = parentId;
+                }
+              }
+              TextStyleTable textStyleTable = (TextStyleTable)
+                tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+              ObjectId gmepTextStyleId;
+              if (textStyleTable.Has("gmep"))
+              {
+                gmepTextStyleId = textStyleTable["gmep"];
+              }
+              else
+              {
+                ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+                gmepTextStyleId = doc.Database.Textstyle;
+              }
+              AttributeDefinition attrDef = new AttributeDefinition();
+              attrDef.Position = labelInsertionPoint;
+              attrDef.LockPositionInBlock = true;
+              attrDef.Tag = equipNo;
+              attrDef.IsMTextAttributeDefinition = false;
+              attrDef.TextString = equipNo;
+              attrDef.Justify = AttachmentPoint.MiddleCenter;
+              attrDef.Visible = true;
+              attrDef.Invisible = false;
+              attrDef.Constant = false;
+              attrDef.Height = 4.5 * 0.25 / scale;
+              attrDef.WidthFactor = 0.85;
+              attrDef.TextStyleId = gmepTextStyleId;
+              attrDef.Layer = "0";
+
+              AttributeReference attrRef = new AttributeReference();
+              attrRef.SetAttributeFromBlock(attrDef, acBlkRef.BlockTransform);
+              acBlkRef.AttributeCollection.AppendAttribute(attrRef);
+              acBlkRef.Layer = "E-TXT1";
+              acBlkRef.ScaleFactors = new Scale3d(0.25 / scale);
+              tr.AddNewlyCreatedDBObject(acBlkRef, true);
+            }
+            tr.Commit();
+          }
+          catch (Autodesk.AutoCAD.Runtime.Exception ex)
+          {
             tr.Commit();
           }
         }
       }
-      Point3d textAlignmentReferencePoint = thirdClickOccurred ? thirdClickPoint : secondClickPoint;
-      Point3d comparisonPoint = thirdClickOccurred ? secondClickPoint : firstClickPoint;
-      Point3d labelInsertionPoint;
-      if (textAlignmentReferencePoint.X > comparisonPoint.X)
+      // disconnect sizing
+      if (connectionSymbol.Contains("DISCONNECT"))
       {
-        labelInsertionPoint = new Point3d(
-          textAlignmentReferencePoint.X + 14.1197 * 0.25 / scale,
-          textAlignmentReferencePoint.Y,
-          0
-        );
-      }
-      else
-      {
-        labelInsertionPoint = new Point3d(
-          textAlignmentReferencePoint.X - 14.1197 * 0.25 / scale,
-          textAlignmentReferencePoint.Y,
-          0
-        );
-      }
-      using (Transaction tr = db.TransactionManager.StartTransaction())
-      {
-        try
-        {
-          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-          ObjectId blockId = bt["EQUIPMENT LOCATOR"];
-          using (BlockReference acBlkRef = new BlockReference(firstClickPoint, blockId))
-          {
-            BlockTableRecord acCurSpaceBlkTblRec;
-            acCurSpaceBlkTblRec =
-              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-            acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-            DynamicBlockReferencePropertyCollection pc =
-              acBlkRef.DynamicBlockReferencePropertyCollection;
-            foreach (DynamicBlockReferenceProperty prop in pc)
-            {
-              if (prop.PropertyName == "gmep_equip_id")
-              {
-                prop.Value = equipId;
-              }
-              if (prop.PropertyName == "gmep_equip_parent_id")
-              {
-                prop.Value = parentId;
-              }
-              if (prop.PropertyName == "gmep_equip_no")
-              {
-                prop.Value = equipNo;
-              }
-            }
-            acBlkRef.Layer = "E-TXT1";
-            tr.AddNewlyCreatedDBObject(acBlkRef, true);
-          }
-          tr.Commit();
-        }
-        catch (Autodesk.AutoCAD.Runtime.Exception ex)
-        {
-          tr.Commit();
-        }
-      }
-      using (Transaction tr = db.TransactionManager.StartTransaction())
-      {
-        try
-        {
-          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-          ObjectId blockId = bt["EQUIP_MARKER"];
-          using (BlockReference acBlkRef = new BlockReference(labelInsertionPoint, blockId))
-          {
-            BlockTableRecord acCurSpaceBlkTblRec;
-            acCurSpaceBlkTblRec =
-              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-            acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-            DynamicBlockReferencePropertyCollection pc =
-              acBlkRef.DynamicBlockReferencePropertyCollection;
-            foreach (DynamicBlockReferenceProperty prop in pc)
-            {
-              if (prop.PropertyName == "gmep_equip_id")
-              {
-                prop.Value = equipId;
-              }
-              if (prop.PropertyName == "gmep_equip_parent_id")
-              {
-                prop.Value = parentId;
-              }
-            }
-            TextStyleTable textStyleTable = (TextStyleTable)
-              tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
-            ObjectId gmepTextStyleId;
-            if (textStyleTable.Has("gmep"))
-            {
-              gmepTextStyleId = textStyleTable["gmep"];
-            }
-            else
-            {
-              ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
-              gmepTextStyleId = doc.Database.Textstyle;
-            }
-            AttributeDefinition attrDef = new AttributeDefinition();
-            attrDef.Position = labelInsertionPoint;
-            attrDef.LockPositionInBlock = true;
-            attrDef.Tag = equipNo;
-            attrDef.IsMTextAttributeDefinition = false;
-            attrDef.TextString = equipNo;
-            attrDef.Justify = AttachmentPoint.MiddleCenter;
-            attrDef.Visible = true;
-            attrDef.Invisible = false;
-            attrDef.Constant = false;
-            attrDef.Height = 4.5 * 0.25 / scale;
-            attrDef.WidthFactor = 0.85;
-            attrDef.TextStyleId = gmepTextStyleId;
-            attrDef.Layer = "0";
+        LabelJig jig = new LabelJig(firstClickPoint);
+        PromptResult res = ed.Drag(jig);
+        if (res.Status != PromptStatus.OK)
+          return null;
 
-            AttributeReference attrRef = new AttributeReference();
-            attrRef.SetAttributeFromBlock(attrDef, acBlkRef.BlockTransform);
-            acBlkRef.AttributeCollection.AppendAttribute(attrRef);
-            acBlkRef.Layer = "E-TXT1";
-            acBlkRef.ScaleFactors = new Scale3d(0.25 / scale);
-            tr.AddNewlyCreatedDBObject(acBlkRef, true);
-          }
+        Vector3d direction = jig.endPoint - firstClickPoint;
+        double angle = direction.GetAngleTo(Vector3d.XAxis, Vector3d.ZAxis);
+
+        Point3d secondClickPoint = jig.endPoint;
+        Point3d thirdClickPoint = Point3d.Origin;
+        bool thirdClickOccurred = false;
+        using (Transaction tr = doc.Database.TransactionManager.StartTransaction())
+        {
+          BlockTableRecord btr = (BlockTableRecord)
+            tr.GetObject(doc.Database.CurrentSpaceId, OpenMode.ForWrite);
+          btr.AppendEntity(jig.line);
+          tr.AddNewlyCreatedDBObject(jig.line, true);
+
           tr.Commit();
         }
-        catch (Autodesk.AutoCAD.Runtime.Exception ex)
+        if (angle != 0 && angle != Math.PI)
         {
-          tr.Commit();
+          DynamicLineJig lineJig = new DynamicLineJig(jig.endPoint, scale);
+          res = ed.Drag(lineJig);
+          if (res.Status == PromptStatus.OK)
+          {
+            using (Transaction tr = doc.Database.TransactionManager.StartTransaction())
+            {
+              BlockTableRecord btr = (BlockTableRecord)
+                tr.GetObject(doc.Database.CurrentSpaceId, OpenMode.ForWrite);
+              btr.AppendEntity(lineJig.line);
+              tr.AddNewlyCreatedDBObject(lineJig.line, true);
+
+              thirdClickPoint = lineJig.line.EndPoint;
+              thirdClickOccurred = true;
+
+              tr.Commit();
+            }
+          }
+        }
+        Point3d textAlignmentReferencePoint = thirdClickOccurred
+          ? thirdClickPoint
+          : secondClickPoint;
+        Point3d comparisonPoint = thirdClickOccurred ? secondClickPoint : firstClickPoint;
+        Point3d labelInsertionPoint;
+        if (textAlignmentReferencePoint.X > comparisonPoint.X)
+        {
+          labelInsertionPoint = new Point3d(
+            textAlignmentReferencePoint.X + 14.1197 * 0.25 / scale,
+            textAlignmentReferencePoint.Y,
+            0
+          );
+        }
+        else
+        {
+          labelInsertionPoint = new Point3d(
+            textAlignmentReferencePoint.X - 14.1197 * 0.25 / scale,
+            textAlignmentReferencePoint.Y,
+            0
+          );
+        }
+
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          try
+          {
+            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+            ObjectId blockId = bt["EQUIP_MARKER"];
+            using (BlockReference acBlkRef = new BlockReference(labelInsertionPoint, blockId))
+            {
+              BlockTableRecord acCurSpaceBlkTblRec;
+              acCurSpaceBlkTblRec =
+                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+              acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+              DynamicBlockReferencePropertyCollection pc =
+                acBlkRef.DynamicBlockReferencePropertyCollection;
+              foreach (DynamicBlockReferenceProperty prop in pc)
+              {
+                if (prop.PropertyName == "gmep_equip_id")
+                {
+                  prop.Value = equipId;
+                }
+                if (prop.PropertyName == "gmep_equip_parent_id")
+                {
+                  prop.Value = parentId;
+                }
+              }
+              TextStyleTable textStyleTable = (TextStyleTable)
+                tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+              ObjectId gmepTextStyleId;
+              if (textStyleTable.Has("gmep"))
+              {
+                gmepTextStyleId = textStyleTable["gmep"];
+              }
+              else
+              {
+                ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+                gmepTextStyleId = doc.Database.Textstyle;
+              }
+              AttributeDefinition attrDef = new AttributeDefinition();
+              attrDef.Position = labelInsertionPoint;
+              attrDef.LockPositionInBlock = true;
+              attrDef.Tag = equipNo;
+              attrDef.IsMTextAttributeDefinition = false;
+              attrDef.TextString = equipNo;
+              attrDef.Justify = AttachmentPoint.MiddleCenter;
+              attrDef.Visible = true;
+              attrDef.Invisible = false;
+              attrDef.Constant = false;
+              attrDef.Height = 4.5 * 0.25 / scale;
+              attrDef.WidthFactor = 0.85;
+              attrDef.TextStyleId = gmepTextStyleId;
+              attrDef.Layer = "0";
+
+              AttributeReference attrRef = new AttributeReference();
+              attrRef.SetAttributeFromBlock(attrDef, acBlkRef.BlockTransform);
+              acBlkRef.AttributeCollection.AppendAttribute(attrRef);
+              acBlkRef.Layer = "E-TXT1";
+              acBlkRef.ScaleFactors = new Scale3d(0.25 / scale);
+              tr.AddNewlyCreatedDBObject(acBlkRef, true);
+            }
+            tr.Commit();
+          }
+          catch (Autodesk.AutoCAD.Runtime.Exception ex)
+          {
+            tr.Commit();
+          }
         }
       }
+      // HERE replicate the entire LabelJig flow for the disconnect sizing
       return firstClickPoint;
     }
 
@@ -1237,7 +1380,6 @@ namespace ElectricalCommands.Equipment
           EquipmentType.Duplex, // TODO set this based on connection
           circuitNo,
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 4].Text
-
         );
         if (p == null)
         {
