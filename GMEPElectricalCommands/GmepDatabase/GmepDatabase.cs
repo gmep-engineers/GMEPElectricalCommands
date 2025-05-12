@@ -675,6 +675,54 @@ namespace GMEPElectricalCommands.GmepDatabase
       return groupNodes;
     }
 
+    public int GetNumDuplex(string equipId)
+    {
+      int numDuplex = 0;
+      string query =
+        @"
+      SELECT num_conv_duplex FROM electrical_equipment WHERE id = @equipId
+      ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("equipId", equipId);
+      MySqlDataReader reader = command.ExecuteReader();
+      if (reader.Read())
+      {
+        numDuplex = GetSafeInt(reader, "num_conv_duplex");
+      }
+      CloseConnection();
+      reader.Close();
+      return numDuplex;
+    }
+
+    public (double, int, bool) GetEquipmentPowerSpecs(string equipId)
+    {
+      double fla = 0;
+      int voltage = 0;
+      bool is3Phase = false;
+      string query =
+        @"
+        SELECT fla, voltage, is_three_phase
+        FROM electrical_equipment
+        LEFT JOIN electrical_equipment_voltages 
+        ON electrical_equipment_voltages.id = electrical_equipment.voltage_id
+        WHERE electrical_equipment.id = @equipId
+      ";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("equipId", equipId);
+      MySqlDataReader reader = command.ExecuteReader();
+      if (reader.Read())
+      {
+        fla = GetSafeFloat(reader, "fla");
+        voltage = GetSafeInt(reader, "voltage");
+        is3Phase = GetSafeBoolean(reader, "is_three_phase");
+      }
+      CloseConnection();
+      reader.Close();
+      return (fla, voltage, is3Phase);
+    }
+
     public List<Equipment> GetEquipment(string projectId, bool singleLineOnly = false)
     {
       List<Equipment> equip = new List<Equipment>();

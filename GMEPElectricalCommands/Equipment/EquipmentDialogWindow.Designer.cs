@@ -235,7 +235,6 @@
             this.panelListView.Size = new System.Drawing.Size(408, 207);
             this.panelListView.TabIndex = 0;
             this.panelListView.UseCompatibleStateImageBehavior = false;
-            this.panelListView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.PanelListView_MouseDoubleClick);
             // 
             // placeSelectedButton
             // 
@@ -289,7 +288,6 @@
             this.transformerListView.Size = new System.Drawing.Size(420, 207);
             this.transformerListView.TabIndex = 0;
             this.transformerListView.UseCompatibleStateImageBehavior = false;
-            this.transformerListView.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.TransformerListView_MouseDoubleClick);
             // 
             // createEquipmentScheduleButton
             // 

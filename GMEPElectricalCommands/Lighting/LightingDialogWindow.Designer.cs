@@ -115,6 +115,7 @@
       // 
       // PlaceSelectedFixturesButton
       // 
+      this.PlaceSelectedFixturesButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
       this.PlaceSelectedFixturesButton.Location = new System.Drawing.Point(19, 425);
       this.PlaceSelectedFixturesButton.Name = "PlaceSelectedFixturesButton";
       this.PlaceSelectedFixturesButton.Size = new System.Drawing.Size(149, 23);
@@ -125,6 +126,7 @@
       // 
       // RefreshButton
       // 
+      this.RefreshButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
       this.RefreshButton.Location = new System.Drawing.Point(602, 426);
       this.RefreshButton.Name = "RefreshButton";
       this.RefreshButton.Size = new System.Drawing.Size(75, 23);
@@ -135,6 +137,7 @@
       // 
       // PlaceSelectedControlsButton
       // 
+      this.PlaceSelectedControlsButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
       this.PlaceSelectedControlsButton.Location = new System.Drawing.Point(183, 425);
       this.PlaceSelectedControlsButton.Name = "PlaceSelectedControlsButton";
       this.PlaceSelectedControlsButton.Size = new System.Drawing.Size(152, 23);

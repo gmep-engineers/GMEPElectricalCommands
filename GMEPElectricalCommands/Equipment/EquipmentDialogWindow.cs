@@ -10,6 +10,7 @@ using Autodesk.AutoCAD.Geometry;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using ElectricalCommands.ElectricalEntity;
+using ElectricalCommands.Lighting;
 using Emgu.CV.ML;
 using GMEPElectricalCommands.GmepDatabase;
 using Table = Autodesk.AutoCAD.DatabaseServices.Table;
@@ -200,6 +201,7 @@ namespace ElectricalCommands.Equipment
               + Math.Round(equipment.Location.Y / 12, 1).ToString()
           );
         }
+        item.SubItems.Add(equipment.Category);
         item.SubItems.Add(equipment.ConnectionSymbol);
         item.SubItems.Add(equipment.IsHidden.ToString());
         item.SubItems.Add(equipment.Id);
@@ -218,6 +220,7 @@ namespace ElectricalCommands.Equipment
         equipmentListView.Columns.Add("Voltage", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Phase", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
+        equipmentListView.Columns.Add("Category", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Connection Symbol", -2, HorizontalAlignment.Left);
         ContextMenu contextMenu = new ContextMenu();
         contextMenu.MenuItems.Add(
@@ -622,23 +625,183 @@ namespace ElectricalCommands.Equipment
       }
     }
 
+    private void PlaceConvenienceReceptacles(
+      string equipId,
+      string parentId,
+      string equipNo,
+      string circuitNo,
+      string connectionSymbol
+    )
+    {
+      int duplexCount = gmepDb.GetNumDuplex(equipId);
+      if (duplexCount == 0)
+      {
+        return;
+      }
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Core
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Editor ed = doc.Editor;
+      Database db = doc.Database;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        LayerTable acLyrTbl;
+        acLyrTbl = tr.GetObject(db.LayerTableId, OpenMode.ForRead) as LayerTable;
+
+        string sLayerName = "E-SYM1";
+
+        if (acLyrTbl.Has(sLayerName) == true)
+        {
+          db.Clayer = acLyrTbl[sLayerName];
+          tr.Commit();
+        }
+      }
+      Dictionary<string, int> duplexDict = LightingDialogWindow.GetNumObjectsOnPlan(
+        "gmep_equip_id"
+      );
+
+      int currentNumDuplexes = 0;
+
+      if (duplexDict.ContainsKey(equipId))
+      {
+        currentNumDuplexes = duplexDict[equipId];
+      }
+      for (int i = currentNumDuplexes; i < duplexCount; i++)
+      {
+        ed.WriteMessage(
+          "\nPlace " + (i + 1).ToString() + "/" + duplexCount + " for '" + equipNo + "'"
+        );
+        ObjectId blockId;
+        try
+        {
+          Point3d point;
+          double rotation = 0;
+          using (Transaction tr = db.TransactionManager.StartTransaction())
+          {
+            BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+            BlockTableRecord block = (BlockTableRecord)
+              tr.GetObject(bt[connectionSymbol], OpenMode.ForRead);
+            BlockJig blockJig = new BlockJig();
+
+            PromptResult res = blockJig.DragMe(block.ObjectId, out point);
+
+            if (res.Status == PromptStatus.OK)
+            {
+              BlockTableRecord curSpace = (BlockTableRecord)
+                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+
+              BlockReference br = new BlockReference(point, block.ObjectId);
+              RotateJig rotateJig = new RotateJig(br);
+              PromptResult rotatePromptResult = ed.Drag(rotateJig);
+
+              if (rotatePromptResult.Status != PromptStatus.OK)
+              {
+                return;
+              }
+              rotation = br.Rotation;
+
+              curSpace.AppendEntity(br);
+
+              tr.AddNewlyCreatedDBObject(br, true);
+              blockId = br.Id;
+              double circuitOffsetX = 0;
+              double circuitOffsetY = 0;
+              switch (rotation)
+              {
+                case var _ when rotation > 5.49:
+                  circuitOffsetY = -4.5;
+                  circuitOffsetX = 4.5;
+                  break;
+                case var _ when rotation > 4.71:
+                  circuitOffsetY = -4.5;
+                  break;
+                case var _ when rotation > 2.35:
+                  circuitOffsetY = 4.5;
+                  circuitOffsetX = -4.5;
+                  break;
+                case var _ when rotation > 1.57:
+                  circuitOffsetX = 4.5;
+                  circuitOffsetY = -4.5;
+                  break;
+                default:
+                  circuitOffsetY = -4.5;
+                  circuitOffsetX = 4.5;
+                  break;
+              }
+              circuitOffsetY = circuitOffsetY * 0.25 / CADObjectCommands.Scale;
+              circuitOffsetX = circuitOffsetX * 0.25 / CADObjectCommands.Scale;
+              GeneralCommands.CreateAndPositionText(
+                tr,
+                circuitNo,
+                "gmep",
+                0.0938 * 12.0 / CADObjectCommands.Scale,
+                0.85,
+                2,
+                "E-TXT1",
+                new Point3d(point.X - (circuitOffsetX), point.Y - (circuitOffsetY), 0)
+              );
+              DynamicBlockReferencePropertyCollection pc =
+                br.DynamicBlockReferencePropertyCollection;
+
+              foreach (DynamicBlockReferenceProperty prop in pc)
+              {
+                if (prop.PropertyName == "gmep_equip_id" && prop.Value as string == "0")
+                {
+                  prop.Value = equipId;
+                }
+                if (prop.PropertyName == "gmep_equip_parent_id")
+                {
+                  prop.Value = parentId;
+                }
+                if (prop.PropertyName == "gmep_equip_no")
+                {
+                  prop.Value = equipNo;
+                }
+                if (prop.PropertyName == "gmep_equip_locator")
+                {
+                  prop.Value = "true";
+                }
+              }
+              tr.Commit();
+            }
+          }
+        }
+        catch (Exception ex)
+        {
+          Console.WriteLine(ex.ToString());
+        }
+      }
+    }
+
     private Point3d? PlaceEquipment(
       string equipId,
       string parentId,
       string equipNo,
       EquipmentType equipType,
-      string circuitNo = "",
-      string connectionSymbol = ""
+      string category,
+      string circuitNo,
+      string connectionSymbol
     )
     {
-      Document doc = Autodesk
-        .AutoCAD
-        .ApplicationServices
-        .Application
-        .DocumentManager
-        .MdiActiveDocument;
-      Database db = doc.Database;
-      Editor ed = doc.Editor;
+      double scale = 12;
+
+      if (
+        CADObjectCommands.Scale <= 0
+        && (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
+      )
+      {
+        CADObjectCommands.SetScale();
+        if (CADObjectCommands.Scale <= 0)
+          return null;
+      }
+      if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
+      {
+        scale = CADObjectCommands.Scale;
+      }
 
       //editing the connectionSymbol string
       if (connectionSymbol.Contains(" W/ "))
@@ -653,6 +816,20 @@ namespace ElectricalCommands.Equipment
         }
       }
       connectionSymbol = "GMEP " + connectionSymbol.ToUpper();
+
+      if (category.ToLower().StartsWith("convenience"))
+      {
+        PlaceConvenienceReceptacles(equipId, parentId, equipNo, circuitNo, connectionSymbol);
+        return new Point3d();
+      }
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
 
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
@@ -690,214 +867,156 @@ namespace ElectricalCommands.Equipment
         }
         tr.Commit();
       }
-      double scale = 12;
+      Point3d firstClickPoint;
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        Point3d point;
+        double rotation = 0;
 
-      if (
-        CADObjectCommands.Scale <= 0
-        && (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
-      )
-      {
-        CADObjectCommands.SetScale();
-        if (CADObjectCommands.Scale <= 0)
-          return null;
-      }
-      if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
-      {
-        scale = CADObjectCommands.Scale;
-      }
-      PromptPointOptions promptOptions = new PromptPointOptions(
-        "\nSelect point for " + equipNo + ": "
-      );
-      PromptPointResult promptResult = ed.GetPoint(promptOptions);
-      if (promptResult.Status != PromptStatus.OK)
-        return null;
-      Point3d firstClickPoint = promptResult.Value;
-      // insert block here
-      string blockName = $"A$C3D4728D6";
-      double rotation = 0;
-      switch (equipType)
-      {
-        case EquipmentType.Duplex:
-          blockName = connectionSymbol;
-          break;
-        case EquipmentType.Panel:
-          blockName = $"A$C26441056";
-          break;
-        // TODO check for remaining connection types
-      }
-      using (Transaction acTrans = db.TransactionManager.StartTransaction())
-      {
-        BlockTable acBlkTbl = acTrans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord acBlkTblRec =
-          acTrans.GetObject(acBlkTbl[blockName], OpenMode.ForRead) as BlockTableRecord;
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord block =
+          tr.GetObject(bt[connectionSymbol], OpenMode.ForRead) as BlockTableRecord;
 
-        using (BlockReference acBlkRef = new BlockReference(Point3d.Origin, acBlkTblRec.ObjectId))
+        BlockJig blockJig = new BlockJig();
+
+        PromptResult res = blockJig.DragMe(block.ObjectId, out point);
+        firstClickPoint = point;
+        if (res.Status == PromptStatus.OK)
         {
-          RotateJig blockJig = new RotateJig(acBlkRef);
-          PromptResult blockPromptResult = ed.Drag(blockJig);
-          double scaleFactor = 0.25;
-          if (equipType != EquipmentType.Panel && equipType != EquipmentType.Transformer)
+          BlockTableRecord curSpace = (BlockTableRecord)
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForRead);
+        }
+
+        BlockReference br = new BlockReference(Point3d.Origin, block.ObjectId);
+        RotateJig rotateJig = new RotateJig(br);
+        PromptResult blockPromptResult = ed.Drag(rotateJig);
+        double scaleFactor = 0.25;
+        if (equipType != EquipmentType.Panel && equipType != EquipmentType.Transformer)
+        {
+          scaleFactor = scale;
+        }
+        if (blockPromptResult.Status == PromptStatus.OK)
+        {
+          if (br.IsDynamicBlock)
           {
-            scaleFactor = scale;
-          }
-          if (blockPromptResult.Status == PromptStatus.OK)
-          {
-            if (acBlkRef.IsDynamicBlock)
+            DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
+            foreach (DynamicBlockReferenceProperty prop in pc)
             {
-              DynamicBlockReferencePropertyCollection pc =
-                acBlkRef.DynamicBlockReferencePropertyCollection;
-              foreach (DynamicBlockReferenceProperty prop in pc)
+              if (prop.PropertyName == "gmep_equip_id")
               {
-                if (prop.PropertyName == "gmep_equip_id")
-                {
-                  prop.Value = equipId;
-                }
-                if (prop.PropertyName == "gmep_equip_parent_id")
-                {
-                  prop.Value = parentId;
-                }
-                if (prop.PropertyName == "gmep_equip_no")
-                {
-                  prop.Value = equipNo;
-                }
-                if (prop.PropertyName == "gmep_equip_locator")
-                {
-                  prop.Value = "true";
-                }
+                prop.Value = equipId;
+              }
+              if (prop.PropertyName == "gmep_equip_parent_id")
+              {
+                prop.Value = parentId;
+              }
+              if (prop.PropertyName == "gmep_equip_no")
+              {
+                prop.Value = equipNo;
+              }
+              if (prop.PropertyName == "gmep_equip_locator")
+              {
+                prop.Value = "true";
               }
             }
+          }
 
-            BlockTableRecord currentSpace =
-              acTrans.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-            currentSpace.AppendEntity(acBlkRef);
-            acTrans.AddNewlyCreatedDBObject(acBlkRef, true);
-            acBlkRef.ScaleFactors = new Scale3d(0.25 / scaleFactor);
-            acBlkRef.Layer = "E-SYM1";
-            rotation = acBlkRef.Rotation;
+          BlockTableRecord currentSpace =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          currentSpace.AppendEntity(br);
+          tr.AddNewlyCreatedDBObject(br, true);
+          br.ScaleFactors = new Scale3d(0.25 / scaleFactor);
+          br.Layer = "E-SYM1";
+          rotation = br.Rotation;
 
-            //Setting attributes if blockname is j-box or j-boxswitch
-            if (blockName == "GMEP J-BOX" || blockName == "GMEP J-BOXSWITCH")
+          //Setting attributes if blockname is j-box or j-boxswitch
+          if (connectionSymbol == "GMEP J-BOX" || connectionSymbol == "GMEP J-BOXSWITCH")
+          {
+            foreach (ObjectId objId in block)
             {
-              foreach (ObjectId objId in acBlkTblRec)
+              DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
+              AttributeDefinition attDef = obj as AttributeDefinition;
+              if (attDef != null && !attDef.Constant)
               {
-                DBObject obj = acTrans.GetObject(objId, OpenMode.ForRead);
-                AttributeDefinition attDef = obj as AttributeDefinition;
-                if (attDef != null && !attDef.Constant)
+                using (AttributeReference attRef = new AttributeReference())
                 {
-                  using (AttributeReference attRef = new AttributeReference())
+                  attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
+                  if (attRef.Tag == "J")
                   {
-                    attRef.SetAttributeFromBlock(attDef, acBlkRef.BlockTransform);
-                    if (attRef.Tag == "J")
-                    {
-                      attRef.TextString = "J";
-                      attRef.Rotation = attRef.Rotation - rotation;
-                    }
-                    acBlkRef.AttributeCollection.AppendAttribute(attRef);
-                    acTrans.AddNewlyCreatedDBObject(attRef, true);
+                    attRef.TextString = "J";
+                    attRef.Rotation = attRef.Rotation - rotation;
                   }
+                  br.AttributeCollection.AppendAttribute(attRef);
+                  tr.AddNewlyCreatedDBObject(attRef, true);
                 }
               }
             }
           }
         }
-        acTrans.Commit();
-      }
-      //Placing down a switch for a j-box switch
-      using (Transaction acTrans = db.TransactionManager.StartTransaction())
-      {
-        BlockTable acBlkTbl = acTrans.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord switchRec =
-          acTrans.GetObject(acBlkTbl["GMEP J-BOXSWITCHOBJ"], OpenMode.ForRead) as BlockTableRecord;
-        if (blockName == "GMEP J-BOXSWITCH")
+        double labelOffsetX = 0;
+        double labelOffsetY = 0;
+        switch (equipType)
         {
-          PromptPointOptions promptOptions2 = new PromptPointOptions(
-            "\nSelect point for J-Box switch: "
-          );
-          PromptPointResult promptResult2 = ed.GetPoint(promptOptions2);
-          if (promptResult.Status != PromptStatus.OK)
-            return null;
-          Point3d firstClickPoint2 = promptResult2.Value;
-          using (BlockReference switchRef = new BlockReference(Point3d.Origin, switchRec.ObjectId))
-          {
-            RotateJig blockJig = new RotateJig(switchRef);
-            PromptResult blockPromptResult = ed.Drag(blockJig);
-            BlockTableRecord currentSpace =
-              acTrans.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-            currentSpace.AppendEntity(switchRef);
-            acTrans.AddNewlyCreatedDBObject(switchRef, true);
-            switchRef.ScaleFactors = new Scale3d(0.25 / scale);
-            switchRef.Layer = "E-SYM1";
-          }
+          case EquipmentType.Duplex:
+            switch (rotation)
+            {
+              case var _ when rotation > 5.49:
+                labelOffsetY = -4.5;
+                break;
+              case var _ when rotation > 4.71:
+                labelOffsetX = -4.5;
+                break;
+              case var _ when rotation > 2.35:
+                labelOffsetY = 4.5;
+                break;
+              case var _ when rotation > 1.57:
+                labelOffsetX = 4.5;
+                break;
+              default:
+                labelOffsetY = -4.5;
+                break;
+            }
+            break;
+          case EquipmentType.Panel:
+            break;
+          // TODO check for remaining connection types
         }
-        acTrans.Commit();
-      }
+        labelOffsetY = labelOffsetY * 0.25 / scale;
+        labelOffsetX = labelOffsetX * 0.25 / scale;
+        firstClickPoint = new Point3d(
+          firstClickPoint.X + labelOffsetX,
+          firstClickPoint.Y + labelOffsetY,
+          0
+        );
 
-      double labelOffsetX = 0;
-      double labelOffsetY = 0;
-      switch (equipType)
-      {
-        case EquipmentType.Duplex:
+        if (equipType != EquipmentType.Panel && equipType != EquipmentType.Transformer)
+        {
+          double circuitOffsetX = 0;
+          double circuitOffsetY = 0;
           switch (rotation)
           {
             case var _ when rotation > 5.49:
-              labelOffsetY = -4.5;
+              circuitOffsetY = 4.5;
+              circuitOffsetX = 4.5;
               break;
             case var _ when rotation > 4.71:
-              labelOffsetX = -4.5;
+              circuitOffsetY = -4.5;
               break;
             case var _ when rotation > 2.35:
-              labelOffsetY = 4.5;
+              circuitOffsetY = 4.5;
+              circuitOffsetX = -4.5;
               break;
             case var _ when rotation > 1.57:
-              labelOffsetX = 4.5;
+              circuitOffsetX = 4.5;
+              circuitOffsetY = -4.5;
               break;
             default:
-              labelOffsetY = -4.5;
+              circuitOffsetY = -4.5;
+              circuitOffsetX = 4.5;
               break;
           }
-          break;
-        case EquipmentType.Panel:
-          break;
-        // TODO check for remaining connection types
-      }
-      labelOffsetY = labelOffsetY * 0.25 / scale;
-      labelOffsetX = labelOffsetX * 0.25 / scale;
-      firstClickPoint = new Point3d(
-        firstClickPoint.X + labelOffsetX,
-        firstClickPoint.Y + labelOffsetY,
-        0
-      );
-
-      if (equipType != EquipmentType.Panel && equipType != EquipmentType.Transformer)
-      {
-        double circuitOffsetX = 0;
-        double circuitOffsetY = 0;
-        switch (rotation)
-        {
-          case var _ when rotation > 5.49:
-            circuitOffsetY = -9;
-            circuitOffsetX = 4.5;
-            break;
-          case var _ when rotation > 4.71:
-            circuitOffsetY = -4.5;
-            break;
-          case var _ when rotation > 2.35:
-            circuitOffsetY = 4.5;
-            circuitOffsetX = -4.5;
-            break;
-          case var _ when rotation > 1.57:
-            circuitOffsetX = 9;
-            circuitOffsetY = -4.5;
-            break;
-          default:
-            circuitOffsetY = -9;
-            circuitOffsetX = 4.5;
-            break;
-        }
-        circuitOffsetY = circuitOffsetY * 0.25 / scale;
-        circuitOffsetX = circuitOffsetX * 0.25 / scale;
-        using (Transaction tr = db.TransactionManager.StartTransaction())
-        {
+          circuitOffsetY = circuitOffsetY * 0.25 / scale;
+          circuitOffsetX = circuitOffsetX * 0.25 / scale;
           GeneralCommands.CreateAndPositionText(
             tr,
             circuitNo,
@@ -912,10 +1031,46 @@ namespace ElectricalCommands.Equipment
               0
             )
           );
+        }
+        tr.Commit();
+      }
+      // Placing down a switch for a j-box switch
+      if (connectionSymbol.ToLower().Contains("switch"))
+      {
+        using (Transaction tr = db.TransactionManager.StartTransaction())
+        {
+          Point3d point;
+          BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+          BlockTableRecord block =
+            tr.GetObject(bt["GMEP J-BOXSWITCHOBJ"], OpenMode.ForRead) as BlockTableRecord;
+
+          BlockJig blockJig = new BlockJig();
+
+          PromptResult res = blockJig.DragMe(block.ObjectId, out point);
+
+          if (res.Status == PromptStatus.OK)
+          {
+            BlockTableRecord curSpace = (BlockTableRecord)
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
+            BlockReference br = new BlockReference(point, block.ObjectId);
+
+            RotateJig rotateJig = new RotateJig(br);
+            PromptResult rotatePromptResult = ed.Drag(rotateJig);
+
+            if (rotatePromptResult.Status != PromptStatus.OK)
+            {
+              return null;
+            }
+
+            curSpace.AppendEntity(br);
+
+            tr.AddNewlyCreatedDBObject(br, true);
+          }
+
           tr.Commit();
         }
       }
-      // HERE only run this block if not a convenience rec
+
       {
         LabelJig jig = new LabelJig(firstClickPoint);
         PromptResult res = ed.Drag(jig);
@@ -1046,7 +1201,6 @@ namespace ElectricalCommands.Equipment
           }
         }
       }
-      // disconnect sizing
       if (connectionSymbol.Contains("DISCONNECT"))
       {
         LabelJig jig = new LabelJig(firstClickPoint);
@@ -1093,92 +1247,73 @@ namespace ElectricalCommands.Equipment
           ? thirdClickPoint
           : secondClickPoint;
         Point3d comparisonPoint = thirdClickOccurred ? secondClickPoint : firstClickPoint;
-        Point3d labelInsertionPoint;
-        if (textAlignmentReferencePoint.X > comparisonPoint.X)
-        {
-          labelInsertionPoint = new Point3d(
-            textAlignmentReferencePoint.X + 14.1197 * 0.25 / scale,
-            textAlignmentReferencePoint.Y,
-            0
-          );
-        }
-        else
-        {
-          labelInsertionPoint = new Point3d(
-            textAlignmentReferencePoint.X - 14.1197 * 0.25 / scale,
-            textAlignmentReferencePoint.Y,
-            0
-          );
-        }
 
-        using (Transaction tr = db.TransactionManager.StartTransaction())
+        using (Transaction tr = doc.Database.TransactionManager.StartTransaction())
         {
-          try
+          BlockTableRecord btr = (BlockTableRecord)
+            tr.GetObject(doc.Database.CurrentSpaceId, OpenMode.ForWrite);
+
+          // Create MText object with dynamic text height based on scale
+          double textHeight = 1.125 / scale;
+          MText mText = new MText();
+          mText.SetDatabaseDefaults();
+          mText.TextHeight = textHeight;
+
+          // Retrieve the "rpm" text style
+          using (Transaction tr2 = doc.Database.TransactionManager.StartTransaction())
           {
-            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-            ObjectId blockId = bt["EQUIP_MARKER"];
-            using (BlockReference acBlkRef = new BlockReference(labelInsertionPoint, blockId))
+            TextStyleTable textStyleTable = (TextStyleTable)
+              tr2.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+            if (textStyleTable.Has("rpm"))
             {
-              BlockTableRecord acCurSpaceBlkTblRec;
-              acCurSpaceBlkTblRec =
-                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-              acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-              DynamicBlockReferencePropertyCollection pc =
-                acBlkRef.DynamicBlockReferencePropertyCollection;
-              foreach (DynamicBlockReferenceProperty prop in pc)
-              {
-                if (prop.PropertyName == "gmep_equip_id")
-                {
-                  prop.Value = equipId;
-                }
-                if (prop.PropertyName == "gmep_equip_parent_id")
-                {
-                  prop.Value = parentId;
-                }
-              }
-              TextStyleTable textStyleTable = (TextStyleTable)
-                tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
-              ObjectId gmepTextStyleId;
-              if (textStyleTable.Has("gmep"))
-              {
-                gmepTextStyleId = textStyleTable["gmep"];
-              }
-              else
-              {
-                ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
-                gmepTextStyleId = doc.Database.Textstyle;
-              }
-              AttributeDefinition attrDef = new AttributeDefinition();
-              attrDef.Position = labelInsertionPoint;
-              attrDef.LockPositionInBlock = true;
-              attrDef.Tag = equipNo;
-              attrDef.IsMTextAttributeDefinition = false;
-              attrDef.TextString = equipNo;
-              attrDef.Justify = AttachmentPoint.MiddleCenter;
-              attrDef.Visible = true;
-              attrDef.Invisible = false;
-              attrDef.Constant = false;
-              attrDef.Height = 4.5 * 0.25 / scale;
-              attrDef.WidthFactor = 0.85;
-              attrDef.TextStyleId = gmepTextStyleId;
-              attrDef.Layer = "0";
-
-              AttributeReference attrRef = new AttributeReference();
-              attrRef.SetAttributeFromBlock(attrDef, acBlkRef.BlockTransform);
-              acBlkRef.AttributeCollection.AppendAttribute(attrRef);
-              acBlkRef.Layer = "E-TXT1";
-              acBlkRef.ScaleFactors = new Scale3d(0.25 / scale);
-              tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              mText.TextStyleId = textStyleTable["rpm"];
             }
-            tr.Commit();
+            else
+            {
+              ed.WriteMessage("\nText style 'rpm' not found. Using default text style.");
+              mText.TextStyleId = doc.Database.Textstyle;
+            }
+            tr2.Commit();
           }
-          catch (Autodesk.AutoCAD.Runtime.Exception ex)
+
+          mText.Width = 0;
+          mText.Layer = "E-TXT1";
+
+          // Determine justification and position
+          if (textAlignmentReferencePoint.X > comparisonPoint.X)
           {
-            tr.Commit();
+            mText.Attachment = AttachmentPoint.TopLeft;
+            mText.Location = new Point3d(
+              textAlignmentReferencePoint.X + 0.25 / scale,
+              textAlignmentReferencePoint.Y + textHeight / 2,
+              textAlignmentReferencePoint.Z
+            );
           }
+          else
+          {
+            mText.Attachment = AttachmentPoint.TopRight;
+            mText.Location = new Point3d(
+              textAlignmentReferencePoint.X - 0.25 / scale,
+              textAlignmentReferencePoint.Y + textHeight / 2,
+              textAlignmentReferencePoint.Z
+            );
+          }
+          (double fla, int voltage, bool is3Phase) = gmepDb.GetEquipmentPowerSpecs(equipId);
+          string disconnectSize = CADObjectCommands.GetConnectionTypeFromFlaVoltage(
+            fla,
+            voltage,
+            false,
+            is3Phase
+          );
+          mText.Contents = disconnectSize.Contains("AS")
+            ? disconnectSize + "\nDISCONNECT"
+            : disconnectSize;
+          btr.AppendEntity(mText);
+          tr.AddNewlyCreatedDBObject(mText, true);
+
+          tr.Commit();
         }
       }
-      // HERE replicate the entire LabelJig flow for the disconnect sizing
       return firstClickPoint;
     }
 
@@ -1378,6 +1513,7 @@ namespace ElectricalCommands.Equipment
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
           equipmentListView.SelectedItems[0].Text,
           EquipmentType.Duplex, // TODO set this based on connection
+          equipmentListView.SelectedItems[0].SubItems[numSubItems - 5].Text,
           circuitNo,
           equipmentListView.SelectedItems[0].SubItems[numSubItems - 4].Text
         );
@@ -1400,74 +1536,6 @@ namespace ElectricalCommands.Equipment
       CalculateDistances();
     }
 
-    private void PanelListView_MouseDoubleClick(object sender, MouseEventArgs e)
-    {
-      int numSubItems = panelListView.SelectedItems[0].SubItems.Count;
-      if (panelListView.SelectedItems[0].SubItems[numSubItems - 3].Text == "True")
-      {
-        return;
-      }
-      using (
-        DocumentLock docLock =
-          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
-      )
-      {
-        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
-          .AutoCAD
-          .Windows
-          .Window
-          .State
-          .Maximized;
-        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
-        Point3d? p = PlaceEquipment(
-          panelListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
-          panelListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
-          panelListView.SelectedItems[0].Text,
-          EquipmentType.Panel
-        );
-        if (p == null)
-        {
-          return;
-        }
-      }
-      CreatePanelListView(true);
-      CalculateDistances();
-    }
-
-    private void TransformerListView_MouseDoubleClick(object sender, MouseEventArgs e)
-    {
-      int numSubItems = transformerListView.SelectedItems[0].SubItems.Count;
-      if (transformerListView.SelectedItems[0].SubItems[numSubItems - 3].Text == "True")
-      {
-        return;
-      }
-      using (
-        DocumentLock docLock =
-          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
-      )
-      {
-        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
-          .AutoCAD
-          .Windows
-          .Window
-          .State
-          .Maximized;
-        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
-        Point3d? p = PlaceEquipment(
-          transformerListView.SelectedItems[0].SubItems[numSubItems - 2].Text,
-          transformerListView.SelectedItems[0].SubItems[numSubItems - 1].Text,
-          transformerListView.SelectedItems[0].Text,
-          EquipmentType.Transformer
-        );
-        if (p == null)
-        {
-          return;
-        }
-      }
-      CreateTransformerListView(true);
-      CalculateDistances();
-    }
-
     private void PlaceSelectedButton_Click(object sender, EventArgs e)
     {
       using (
@@ -1483,82 +1551,27 @@ namespace ElectricalCommands.Equipment
           .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
         int numSubItems = 0;
-        if (panelListView.SelectedItems.Count > 0)
+
+        if (equipmentListView.SelectedItems.Count > 0)
         {
-          numSubItems = panelListView.SelectedItems[0].SubItems.Count;
-        }
-        Dictionary<string, Point3d> panelLocs = new Dictionary<string, Point3d>();
-        bool brk = false;
-        foreach (ListViewItem item in panelListView.SelectedItems)
-        {
-          if (item.SubItems[numSubItems - 3].Text != "True")
+          numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
+          foreach (ListViewItem item in equipmentListView.SelectedItems)
           {
-            Point3d? p = PlaceEquipment(
-              item.SubItems[numSubItems - 2].Text,
-              item.SubItems[numSubItems - 1].Text,
-              item.Text,
-              EquipmentType.Panel
-            );
-            if (p == null)
+            if (item.SubItems[numSubItems - 3].Text != "True")
             {
-              brk = true;
-              break;
-            }
-            panelLocs[item.SubItems[numSubItems - 2].Text] = (Point3d)p;
-          }
-        }
-        if (
-          !brk
-          && (
-            transformerListView.SelectedItems.Count > 0 || equipmentListView.SelectedItems.Count > 0
-          )
-        )
-        {
-          if (transformerListView.SelectedItems.Count > 0)
-          {
-            numSubItems = transformerListView.SelectedItems[0].SubItems.Count;
-            foreach (ListViewItem item in transformerListView.SelectedItems)
-            {
-              if (item.SubItems[numSubItems - 3].Text != "True")
+              string circuitNo = GetCircuitNo(item);
+              Point3d? p = PlaceEquipment(
+                item.SubItems[numSubItems - 2].Text,
+                item.SubItems[numSubItems - 1].Text,
+                item.Text,
+                EquipmentType.Duplex,
+                item.SubItems[numSubItems - 5].Text,
+                circuitNo,
+                item.SubItems[numSubItems - 4].Text
+              );
+              if (p == null)
               {
-                Point3d? p = PlaceEquipment(
-                  item.SubItems[numSubItems - 2].Text,
-                  item.SubItems[numSubItems - 1].Text,
-                  item.Text,
-                  EquipmentType.Transformer
-                );
-                if (p == null)
-                {
-                  return;
-                }
-                if (p == null)
-                {
-                  brk = true;
-                  break;
-                }
-              }
-            }
-          }
-          if (!brk && equipmentListView.SelectedItems.Count > 0)
-          {
-            numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
-            foreach (ListViewItem item in equipmentListView.SelectedItems)
-            {
-              if (item.SubItems[numSubItems - 3].Text != "True")
-              {
-                string circuitNo = GetCircuitNo(item);
-                Point3d? p = PlaceEquipment(
-                  item.SubItems[numSubItems - 2].Text,
-                  item.SubItems[numSubItems - 1].Text,
-                  item.Text,
-                  EquipmentType.Duplex,
-                  circuitNo,
-                  item.SubItems[numSubItems - 4].Text
-                );
-                if (p == null)
-                {
-                  break;
-                }
+                break;
               }
             }
           }
@@ -1582,71 +1595,27 @@ namespace ElectricalCommands.Equipment
           .Maximized;
         Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
         int numSubItems = 0;
-        if (panelListView.Items.Count > 0)
+
+        if (equipmentListView.Items.Count > 0)
         {
-          numSubItems = panelListView.Items[0].SubItems.Count;
-        }
-        bool brk = false;
-        foreach (ListViewItem item in panelListView.Items)
-        {
-          if (item.SubItems[numSubItems - 3].Text != "True")
+          numSubItems = equipmentListView.Items[0].SubItems.Count;
+          foreach (ListViewItem item in equipmentListView.Items)
           {
-            Point3d? p = PlaceEquipment(
-              item.SubItems[numSubItems - 2].Text,
-              item.SubItems[numSubItems - 1].Text,
-              item.Text,
-              EquipmentType.Panel
-            );
-            if (p == null)
+            if (item.SubItems[numSubItems - 3].Text != "True")
             {
-              brk = true;
-              break;
-            }
-          }
-        }
-        if (!brk && (transformerListView.Items.Count > 0 || equipmentListView.Items.Count > 0))
-        {
-          if (transformerListView.Items.Count > 0)
-          {
-            numSubItems = transformerListView.Items[0].SubItems.Count;
-            foreach (ListViewItem item in transformerListView.Items)
-            {
-              if (item.SubItems[numSubItems - 3].Text != "True")
+              string circuitNo = GetCircuitNo(item);
+              Point3d? p = PlaceEquipment(
+                item.SubItems[numSubItems - 2].Text,
+                item.SubItems[numSubItems - 1].Text,
+                item.Text,
+                EquipmentType.Duplex,
+                item.SubItems[numSubItems - 5].Text,
+                circuitNo,
+                item.SubItems[numSubItems - 4].Text
+              );
+              if (p == null)
               {
-                Point3d? p = PlaceEquipment(
-                  item.SubItems[numSubItems - 2].Text,
-                  item.SubItems[numSubItems - 1].Text,
-                  item.Text,
-                  EquipmentType.Transformer
-                );
-                if (p == null)
-                {
-                  brk = true;
-                  break;
-                }
-              }
-            }
-          }
-          if (!brk && equipmentListView.Items.Count > 0)
-          {
-            numSubItems = equipmentListView.Items[0].SubItems.Count;
-            foreach (ListViewItem item in equipmentListView.Items)
-            {
-              if (item.SubItems[numSubItems - 3].Text != "True")
-              {
-                string circuitNo = GetCircuitNo(item);
-                Point3d? p = PlaceEquipment(
-                  item.SubItems[numSubItems - 2].Text,
-                  item.SubItems[numSubItems - 1].Text,
-                  item.Text,
-                  EquipmentType.Duplex,
-                  circuitNo,
-                  item.SubItems[numSubItems - 4].Text
-                );
-                if (p == null)
-                {
-                  break;
-                }
+                break;
               }
             }
           }

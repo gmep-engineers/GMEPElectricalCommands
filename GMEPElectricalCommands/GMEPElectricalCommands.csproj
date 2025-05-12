@@ -237,7 +237,6 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="test.ps1" />
     <Compile Include="ElectricalEntity\ElectricalEntity.cs" />
     <Compile Include="ElectricalEntity\Placeable.cs" />
     <Compile Include="Lighting\LightingControlDiagram.cs" />

@@ -39,7 +39,7 @@ namespace ElectricalCommands.PlanCheck
     }
 
     public override string Check(List<ObjectId> blockList, MySqlConnection connection)
-    { // HERE set a directory in the database for the project anc test this
+    {
       MySqlCommand command = new MySqlCommand(Query, connection);
       command.Parameters.AddWithValue("projectId", ProjectId);
       MySqlDataReader reader = command.ExecuteReader();
