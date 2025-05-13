@@ -904,7 +904,7 @@ namespace ElectricalCommands.ElectricalEntity
       int ParentDistance,
       double LocationX,
       double LocationY,
-      float Mca,
+      double Mca,
       string Hp,
       int Va,
       int MountingHeight,

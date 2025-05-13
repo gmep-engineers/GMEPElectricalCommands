@@ -152,7 +152,6 @@ namespace ElectricalCommands.Equipment
                   DynamicBlockReferencePropertyCollection cpc =
                     cbr.DynamicBlockReferencePropertyCollection;
 
-                  Console.WriteLine(cpc.Count);
                   foreach (DynamicBlockReferenceProperty prop in cpc)
                   {
                     if (prop.PropertyName == "gmep_equip_id")

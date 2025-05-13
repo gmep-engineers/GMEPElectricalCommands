@@ -8,6 +8,7 @@ using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.GraphicsInterface;
+using ElectricalCommands.ElectricalEntity;
 using GMEPElectricalCommands.GmepDatabase;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -232,6 +233,19 @@ namespace ElectricalCommands
         userControl.LinkSubpanels();
         userControl.UpdatePerCellValueChange();
         userControl.SetWarnings();
+      }
+      foreach (Dictionary<string, object> panel in sortedPanels)
+      {
+        // Need to loop through the panels again to retrieve values not yet
+        // loaded from the previous iteration to ensure all panels link.
+        string panelName = panel["panel"].ToString();
+        PanelUserControl userControl = (PanelUserControl)FindUserControl(panelName);
+        if (userControl == null)
+        {
+          continue;
+        }
+        userControl.LinkSubpanels();
+        userControl.UpdatePerCellValueChange();
       }
     }
 
@@ -929,6 +943,7 @@ namespace ElectricalCommands
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
       List<ElectricalEntity.Panel> panels = gmepDb.GetPanels(projectId);
       List<ElectricalEntity.Equipment> equipment = gmepDb.GetEquipment(projectId);
+      List<ElectricalEntity.Transformer> transformers = gmepDb.GetTransformers(projectId);
       List<JsonPanel3P> jsonPanels3P = new List<JsonPanel3P>();
       List<JsonPanel2P> jsonPanels2P = new List<JsonPanel2P>();
       List<string> serializedPanels = new List<string>();
@@ -947,7 +962,6 @@ namespace ElectricalCommands
           jsonPanel.main = panel.MainAmpRating.ToString();
           jsonPanel.panel = "'" + panel.Name + "'";
           jsonPanel.location = panel.DesignLocation;
-          Console.WriteLine("locc" + jsonPanel.location);
           jsonPanel.voltage1 = panel.Voltage.Substring(0, 3);
           jsonPanel.voltage2 = panel.LineVoltage.ToString();
           jsonPanel.phase = panel.Phase.ToString();
@@ -1143,6 +1157,169 @@ namespace ElectricalCommands
               }
             }
           }
+          foreach (ElectricalEntity.Panel p in panels)
+          {
+            if (p.ParentId == panel.Id)
+            {
+              ElectricalEntity.Equipment panelLoad = new ElectricalEntity.Equipment(
+                p.Id,
+                p.NodeId,
+                p.ParentId,
+                p.ParentName,
+                "PANEL",
+                p.Name,
+                "",
+                Convert.ToInt32(p.LineVoltage),
+                p.LoadAmperage,
+                p.Phase == 3,
+                p.ParentDistance,
+                p.Location.X,
+                p.Location.Y,
+                p.BusAmpRating,
+                "",
+                Convert.ToInt32(p.Kva * 1000),
+                48,
+                p.Circuit,
+                false,
+                false,
+                p.Status,
+                ""
+              );
+              if (p.Circuit % 2 == 0)
+              {
+                // right 3-phase
+                if (p.Circuit % 3 == 2)
+                {
+                  // phase a right
+                  AddLoadToCircuit3P(jsonPanel, "a", "right", panelLoad);
+                }
+                else if (p.Circuit % 3 == 1)
+                {
+                  // phase b right
+                  AddLoadToCircuit3P(jsonPanel, "b", "right", panelLoad);
+                }
+                else
+                {
+                  // phase c right
+                  AddLoadToCircuit3P(jsonPanel, "c", "right", panelLoad);
+                }
+              }
+              else
+              {
+                // left 3-phase
+                if (p.Circuit % 3 == 1)
+                {
+                  // phase a left
+                  AddLoadToCircuit3P(jsonPanel, "a", "left", panelLoad);
+                }
+                else if (p.Circuit % 3 == 2)
+                {
+                  // phase c left
+                  AddLoadToCircuit3P(jsonPanel, "c", "left", panelLoad);
+                }
+                else
+                {
+                  // phase b left
+                  AddLoadToCircuit3P(jsonPanel, "b", "left", panelLoad);
+                }
+              }
+            }
+          }
+          foreach (ElectricalEntity.Transformer t in transformers)
+          {
+            if (t.ParentId == panel.Id)
+            {
+              int va = 0;
+              double fla = 0;
+              string name = String.Empty;
+              bool isPanel = false;
+              foreach (ElectricalEntity.Panel p in panels)
+              {
+                if (p.ParentId == t.Id)
+                {
+                  va = Convert.ToInt32(p.Kva * 1000);
+                  fla = p.LoadAmperage;
+                  name = p.Name;
+                  isPanel = true;
+                }
+              }
+              if (va == 0)
+              {
+                foreach (ElectricalEntity.Equipment eq in equipment)
+                {
+                  if (eq.ParentId == t.Id)
+                  {
+                    va = Convert.ToInt32(eq.LineVoltage * eq.Fla);
+                    fla = eq.LoadAmperage;
+                    name = eq.Name;
+                  }
+                }
+              }
+              ElectricalEntity.Equipment xfmrLoad = new ElectricalEntity.Equipment(
+                t.Id,
+                t.NodeId,
+                t.ParentId,
+                t.ParentName,
+                isPanel ? "PANEL " : "XFMR " + t.Name + " for ",
+                name,
+                "",
+                Convert.ToInt32(t.LineVoltage),
+                fla,
+                t.Phase == 3,
+                t.ParentDistance,
+                t.Location.X,
+                t.Location.Y,
+                t.Kva / t.LineVoltage,
+                "",
+                va,
+                0,
+                t.Circuit,
+                false,
+                false,
+                t.Status,
+                ""
+              );
+              if (t.Circuit % 2 == 0)
+              {
+                // right 3-phase
+                if (t.Circuit % 3 == 2)
+                {
+                  // phase a right
+                  AddLoadToCircuit3P(jsonPanel, "a", "right", xfmrLoad);
+                }
+                else if (t.Circuit % 3 == 1)
+                {
+                  // phase b right
+                  AddLoadToCircuit3P(jsonPanel, "b", "right", xfmrLoad);
+                }
+                else
+                {
+                  // phase c right
+                  AddLoadToCircuit3P(jsonPanel, "c", "right", xfmrLoad);
+                }
+              }
+              else
+              {
+                // left 3-phase
+                if (t.Circuit % 3 == 1)
+                {
+                  // phase a left
+                  AddLoadToCircuit3P(jsonPanel, "a", "left", xfmrLoad);
+                }
+                else if (t.Circuit % 3 == 2)
+                {
+                  // phase c left
+                  AddLoadToCircuit3P(jsonPanel, "c", "left", xfmrLoad);
+                }
+                else
+                {
+                  // phase b left
+                  AddLoadToCircuit3P(jsonPanel, "b", "left", xfmrLoad);
+                }
+              }
+            }
+          }
+
           string serializedPanel = JsonConvert.SerializeObject(jsonPanel, Formatting.Indented);
           serializedPanels.Add(serializedPanel);
         }
@@ -1318,6 +1495,149 @@ namespace ElectricalCommands
                 {
                   // phase b left
                   AddLoadToCircuit2P(jsonPanel, "b", "left", equip);
+                }
+              }
+            }
+          }
+          foreach (ElectricalEntity.Panel p in panels)
+          {
+            if (p.ParentId == panel.Id)
+            {
+              ElectricalEntity.Equipment panelLoad = new ElectricalEntity.Equipment(
+                p.Id,
+                p.NodeId,
+                p.ParentId,
+                p.ParentName,
+                "PANEL",
+                p.Name,
+                "",
+                Convert.ToInt32(p.LineVoltage),
+                p.LoadAmperage,
+                p.Phase == 3,
+                p.ParentDistance,
+                p.Location.X,
+                p.Location.Y,
+                p.BusAmpRating,
+                "",
+                Convert.ToInt32(p.Kva * 1000),
+                48,
+                p.Circuit,
+                false,
+                false,
+                p.Status,
+                ""
+              );
+              if (panelLoad.Circuit % 2 == 0)
+              {
+                // right 1-phase
+                if (panelLoad.Circuit % 4 == 2)
+                {
+                  // phase a
+                  AddLoadToCircuit2P(jsonPanel, "a", "right", panelLoad);
+                }
+                else
+                {
+                  // phase b
+                  AddLoadToCircuit2P(jsonPanel, "b", "right", panelLoad);
+                }
+              }
+              else
+              {
+                // left 1-phase
+                if ((panelLoad.Circuit + 1) % 4 == 2)
+                {
+                  // phase a left
+                  AddLoadToCircuit2P(jsonPanel, "a", "left", panelLoad);
+                }
+                else
+                {
+                  // phase b left
+                  AddLoadToCircuit2P(jsonPanel, "b", "left", panelLoad);
+                }
+              }
+            }
+          }
+          foreach (ElectricalEntity.Transformer t in transformers)
+          {
+            // HERE add vars
+            if (t.ParentId == panel.Id)
+            {
+              int va = 0;
+              double fla = 0;
+              string name = String.Empty;
+              bool isPanel = false;
+              foreach (ElectricalEntity.Panel p in panels)
+              {
+                if (p.ParentId == t.Id)
+                {
+                  va = Convert.ToInt32(p.Kva * 1000);
+                  fla = p.LoadAmperage;
+                  isPanel = true;
+                  name = p.Name;
+                }
+              }
+              if (va == 0)
+              {
+                foreach (ElectricalEntity.Equipment eq in equipment)
+                {
+                  if (eq.ParentId == t.Id)
+                  {
+                    va = Convert.ToInt32(eq.LineVoltage * eq.Fla);
+                    fla = eq.LoadAmperage;
+                    name = eq.Name;
+                  }
+                }
+              }
+              ElectricalEntity.Equipment xfmrLoad = new ElectricalEntity.Equipment(
+                t.Id,
+                t.NodeId,
+                t.ParentId,
+                t.ParentName,
+                isPanel ? "PANEL " : "XFMR " + t.Name + " for ",
+                name,
+                "",
+                Convert.ToInt32(t.LineVoltage),
+                fla,
+                t.Phase == 3,
+                t.ParentDistance,
+                t.Location.X,
+                t.Location.Y,
+                t.Kva / t.LineVoltage,
+                "",
+                va,
+                0,
+                t.Circuit,
+                false,
+                false,
+                t.Status,
+                ""
+              );
+              if (xfmrLoad.Circuit % 2 == 0)
+              {
+                // right 1-phase
+                if (xfmrLoad.Circuit % 4 == 2)
+                {
+                  // phase a
+                  AddLoadToCircuit2P(jsonPanel, "a", "right", xfmrLoad);
+                }
+                else
+                {
+                  // phase b
+                  AddLoadToCircuit2P(jsonPanel, "b", "right", xfmrLoad);
+                }
+              }
+              else
+              {
+                // left 1-phase
+                if ((xfmrLoad.Circuit + 1) % 4 == 2)
+                {
+                  // phase a left
+                  AddLoadToCircuit2P(jsonPanel, "a", "left", xfmrLoad);
+                }
+                else
+                {
+                  // phase b left
+                  AddLoadToCircuit2P(jsonPanel, "b", "left", xfmrLoad);
                 }
               }
             }

@@ -45,7 +45,7 @@ namespace ElectricalCommands.Lighting
       isLoading = false;
     }
 
-    private Dictionary<string, int> GetNumObjectsOnPlan(string propName)
+    public static Dictionary<string, int> GetNumObjectsOnPlan(string propName)
     {
       Dictionary<string, int> objDict = new Dictionary<string, int>();
       Document doc = Autodesk
@@ -968,7 +968,6 @@ namespace ElectricalCommands.Lighting
 
                     if (res.Status == PromptStatus.OK)
                     {
-                      Console.WriteLine("OK");
                       BlockTableRecord curSpace = (BlockTableRecord)
                         tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
