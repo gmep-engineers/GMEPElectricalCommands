@@ -1559,7 +1559,6 @@ namespace ElectricalCommands
           }
           foreach (ElectricalEntity.Transformer t in transformers)
           {
-            // HERE add vars
             if (t.ParentId == panel.Id)
             {
               int va = 0;

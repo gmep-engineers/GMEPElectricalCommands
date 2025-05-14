@@ -186,263 +186,283 @@ namespace ElectricalCommands.Lighting
         (db.TileMode == true)
           ? SymbolUtilityServices.GetBlockModelSpaceId(db)
           : SymbolUtilityServices.GetBlockPaperSpaceId(db);
-      using (var tr = db.TransactionManager.StartTransaction())
+      List<LightingLocation> lightingLocations = gmepDb.GetLightingLocations(projectId);
+      if (lightingLocations == null || lightingLocations.Count == 0)
       {
-        var btr = (BlockTableRecord)tr.GetObject(spaceId, OpenMode.ForWrite);
-        Table tb = new Table();
-        tb.TableStyle = db.Tablestyle;
-        tb.Position = startPoint;
-        int tableRows = lightingFixtureList.Count + 3;
-        int tableCols = 11;
-        tb.SetSize(tableRows, tableCols);
-        tb.SetRowHeight(0.8911);
-        tb.Cells[0, 0].TextString = "LIGHTING FIXTURE SCHEDULE";
-        tb.Rows[0].Height = 0.6117;
-        tb.Rows[1].Height = 0.5357;
-        tb.Rows[tableRows - 1].Height = 0.7023;
-        var textStyleId = PanelCommands.GetTextStyleId("gmep");
-        var titleStyleId = PanelCommands.GetTextStyleId("section title");
-        CellRange range = CellRange.Create(tb, tableRows - 1, 0, tableRows - 1, tableCols - 1);
-        tb.MergeCells(range);
-        tb.Layer = "E-TXT1";
-        tb.Cells[1, 0].TextString = "MARK";
-        tb.Cells[1, 1].TextString = "LEGEND";
-        tb.Cells[1, 2].TextString = "VOLT";
-        tb.Cells[1, 3].TextString = "COUNT";
-        tb.Cells[1, 4].TextString = "MOUNT";
-        tb.Cells[1, 5].TextString = "DESCRIPTION";
-        tb.Cells[1, 6].TextString = "MANUFACTURER";
-        tb.Cells[1, 7].TextString = "MODEL NUMBER";
-        tb.Cells[1, 8].TextString = "LAMPS";
-        tb.Cells[1, 9].TextString = "INPUT WATTS";
-        tb.Cells[1, 10].TextString = "NOTES";
-        tb.Columns[0].Width = 0.8395;
-        tb.Columns[1].Width = 0.7481;
-        tb.Columns[2].Width = 0.7157;
-        tb.Columns[3].Width = 0.6763;
-        tb.Columns[4].Width = 1.0107;
-        tb.Columns[5].Width = 3.0413;
-        tb.Columns[6].Width = 1.4384;
-        tb.Columns[7].Width = 1.5674;
-        tb.Columns[8].Width = 0.7886;
-        tb.Columns[9].Width = 0.7757;
-        tb.Columns[10].Width = 1.3997;
-        for (int i = 0; i < tableRows; i++)
+        lightingLocations = new List<LightingLocation>();
+        lightingLocations.Add(new LightingLocation("", "", false, ""));
+      }
+      foreach (LightingLocation lightingLocation in lightingLocations)
+      {
+        using (var tr = db.TransactionManager.StartTransaction())
         {
-          for (int j = 0; j < tableCols; j++)
+          var btr = (BlockTableRecord)tr.GetObject(spaceId, OpenMode.ForWrite);
+          Table tb = new Table();
+          tb.TableStyle = db.Tablestyle;
+          tb.Position = startPoint;
+          List<LightingFixture> fixtures = lightingFixtureList.FindAll(f =>
+            f.LocationId == lightingLocation.Id
+          );
+
+          int tableRows = fixtures.Count + 3;
+          int tableCols = 11;
+          tb.SetSize(tableRows, tableCols);
+          tb.SetRowHeight(0.8911);
+          tb.Cells[0, 0].TextString =
+            "LIGHTING FIXTURE SCHEDULE"
+            + (
+              !String.IsNullOrEmpty(lightingLocation.LocationName)
+                ? " - " + lightingLocation.LocationName.ToUpper()
+                : ""
+            );
+          tb.Rows[0].Height = 0.6117;
+          tb.Rows[1].Height = 0.5357;
+          tb.Rows[tableRows - 1].Height = 0.7023;
+          var textStyleId = PanelCommands.GetTextStyleId("gmep");
+          var titleStyleId = PanelCommands.GetTextStyleId("section title");
+          CellRange range = CellRange.Create(tb, tableRows - 1, 0, tableRows - 1, tableCols - 1);
+          tb.MergeCells(range);
+          tb.Layer = "E-TXT1";
+          tb.Cells[1, 0].TextString = "MARK";
+          tb.Cells[1, 1].TextString = "LEGEND";
+          tb.Cells[1, 2].TextString = "VOLT";
+          tb.Cells[1, 3].TextString = "COUNT";
+          tb.Cells[1, 4].TextString = "MOUNT";
+          tb.Cells[1, 5].TextString = "DESCRIPTION";
+          tb.Cells[1, 6].TextString = "MANUFACTURER";
+          tb.Cells[1, 7].TextString = "MODEL NUMBER";
+          tb.Cells[1, 8].TextString = "LAMPS";
+          tb.Cells[1, 9].TextString = "INPUT WATTS";
+          tb.Cells[1, 10].TextString = "NOTES";
+          tb.Columns[0].Width = 0.8395;
+          tb.Columns[1].Width = 0.7481;
+          tb.Columns[2].Width = 0.7157;
+          tb.Columns[3].Width = 0.6763;
+          tb.Columns[4].Width = 1.0107;
+          tb.Columns[5].Width = 3.0413;
+          tb.Columns[6].Width = 1.4384;
+          tb.Columns[7].Width = 1.5674;
+          tb.Columns[8].Width = 0.7886;
+          tb.Columns[9].Width = 0.7757;
+          tb.Columns[10].Width = 1.3997;
+          for (int i = 0; i < tableRows; i++)
           {
-            if (i <= 1)
+            for (int j = 0; j < tableCols; j++)
             {
-              tb.Cells[i, j].TextStyleId = titleStyleId;
-              if (i == 0)
+              if (i <= 1)
               {
-                tb.Cells[i, j].TextHeight = (0.25);
+                tb.Cells[i, j].TextStyleId = titleStyleId;
+                if (i == 0)
+                {
+                  tb.Cells[i, j].TextHeight = (0.25);
+                }
+                else
+                {
+                  tb.Cells[i, j].TextHeight = (0.125);
+                }
               }
               else
               {
-                tb.Cells[i, j].TextHeight = (0.125);
+                if (j == 5 || j == 7 || j == 10)
+                {
+                  tb.Cells[i, j].Alignment = CellAlignment.MiddleLeft;
+                }
+                else
+                {
+                  tb.Cells[i, j].Alignment = CellAlignment.MiddleCenter;
+                }
+                tb.Cells[i, j].TextStyleId = textStyleId;
+                tb.Cells[i, j].TextHeight = (0.0938);
               }
-            }
-            else
-            {
-              if (j == 5 || j == 7 || j == 10)
+              if (i == tableRows - 1)
               {
-                tb.Cells[i, j].Alignment = CellAlignment.MiddleLeft;
+                tb.Cells[i, j].Alignment = CellAlignment.TopLeft;
               }
-              else
-              {
-                tb.Cells[i, j].Alignment = CellAlignment.MiddleCenter;
-              }
-              tb.Cells[i, j].TextStyleId = textStyleId;
-              tb.Cells[i, j].TextHeight = (0.0938);
-            }
-            if (i == tableRows - 1)
-            {
-              tb.Cells[i, j].Alignment = CellAlignment.TopLeft;
             }
           }
-        }
-        for (int i = 0; i < lightingFixtureList.Count; i++)
-        {
-          int row = i + 2;
-          tb.Cells[row, 2].TextString = lightingFixtureList[i].Voltage.ToString();
-          tb.Cells[row, 3].TextString = lightingFixtureList[i].Qty.ToString();
-          tb.Cells[row, 4].TextString = lightingFixtureList[i].Mounting.ToUpper();
-          tb.Cells[row, 5].TextString = lightingFixtureList[i].Description.ToUpper();
-          tb.Cells[row, 6].TextString = lightingFixtureList[i].Manufacturer.ToUpper();
-          tb.Cells[row, 7].TextString = lightingFixtureList[i].ModelNo.ToUpper();
-          tb.Cells[row, 8].TextString = "LED";
-          tb.Cells[row, 9].TextString = lightingFixtureList[i].Wattage.ToString();
-          tb.Cells[row, 10].TextString = lightingFixtureList[i].Notes.ToUpper();
-        }
-        tb.Cells[tableRows - 1, 0].TextString =
-          "NOTES:\n  1) VERIFY WITH OWNER OR ARCHITECT BEFORE PURCHASING THE LIGHTING FIXTURES.\n 2) LIGHTING ABOVE FOOD OR UTENSILS SHALL BE SHATTERPROOF.";
-        BlockTable bt = (BlockTable)tr.GetObject(doc.Database.BlockTableId, OpenMode.ForRead);
-        btr.AppendEntity(tb);
-        tr.AddNewlyCreatedDBObject(tb, true);
-        int r = 0;
-        foreach (LightingFixture fixture in lightingFixtureList)
-        {
-          try
+          for (int i = 0; i < fixtures.Count; i++)
           {
-            ObjectId blockId = bt[fixture.BlockName];
-            if (fixture.EmCapable)
+            int row = i + 2;
+            tb.Cells[row, 2].TextString = fixtures[i].Voltage.ToString();
+            tb.Cells[row, 3].TextString = fixtures[i].Qty.ToString();
+            tb.Cells[row, 4].TextString = fixtures[i].Mounting.ToUpper();
+            tb.Cells[row, 5].TextString = fixtures[i].Description.ToUpper();
+            tb.Cells[row, 6].TextString = fixtures[i].Manufacturer.ToUpper();
+            tb.Cells[row, 7].TextString = fixtures[i].ModelNo.ToUpper();
+            tb.Cells[row, 8].TextString = "LED";
+            tb.Cells[row, 9].TextString = fixtures[i].Wattage.ToString();
+            tb.Cells[row, 10].TextString = fixtures[i].Notes.ToUpper();
+          }
+          tb.Cells[tableRows - 1, 0].TextString =
+            "NOTES:\n  1) VERIFY WITH OWNER OR ARCHITECT BEFORE PURCHASING THE LIGHTING FIXTURES.\n 2) LIGHTING ABOVE FOOD OR UTENSILS SHALL BE SHATTERPROOF.";
+          BlockTable bt = (BlockTable)tr.GetObject(doc.Database.BlockTableId, OpenMode.ForRead);
+          btr.AppendEntity(tb);
+          tr.AddNewlyCreatedDBObject(tb, true);
+          int r = 0;
+          foreach (LightingFixture fixture in fixtures)
+          {
+            try
             {
-              using (
-                BlockReference acBlkRef = new BlockReference(
-                  new Point3d(startPoint.X + 1.0342, startPoint.Y - (1.58 + (0.8911 * r)), 0),
-                  blockId
+              ObjectId blockId = bt[fixture.BlockName];
+              if (fixture.EmCapable)
+              {
+                using (
+                  BlockReference acBlkRef = new BlockReference(
+                    new Point3d(startPoint.X + 1.0342, startPoint.Y - (1.58 + (0.8911 * r)), 0),
+                    blockId
+                  )
                 )
-              )
-              {
-                BlockTableRecord acCurSpaceBlkTblRec;
-                acCurSpaceBlkTblRec =
-                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                {
+                  BlockTableRecord acCurSpaceBlkTblRec;
+                  acCurSpaceBlkTblRec =
+                    tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                  acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
 
-                acBlkRef.Layer = "E-SYM1";
-                acBlkRef.ScaleFactors = new Scale3d(fixture.PaperSpaceScale);
-                tr.AddNewlyCreatedDBObject(acBlkRef, true);
-              }
-              using (
-                BlockReference acBlkRef = new BlockReference(
-                  new Point3d(startPoint.X + 1.3892, startPoint.Y - (1.58 + (0.8911 * r)), 0),
-                  blockId
+                  acBlkRef.Layer = "E-SYM1";
+                  acBlkRef.ScaleFactors = new Scale3d(fixture.PaperSpaceScale);
+                  tr.AddNewlyCreatedDBObject(acBlkRef, true);
+                }
+                using (
+                  BlockReference acBlkRef = new BlockReference(
+                    new Point3d(startPoint.X + 1.3892, startPoint.Y - (1.58 + (0.8911 * r)), 0),
+                    blockId
+                  )
                 )
-              )
-              {
-                BlockTableRecord acCurSpaceBlkTblRec;
-                acCurSpaceBlkTblRec =
-                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                {
+                  BlockTableRecord acCurSpaceBlkTblRec;
+                  acCurSpaceBlkTblRec =
+                    tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                  acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
 
-                acBlkRef.Layer = "E-SYM1";
-                acBlkRef.ScaleFactors = new Scale3d(fixture.PaperSpaceScale);
-                tr.AddNewlyCreatedDBObject(acBlkRef, true);
-              }
-              ObjectId emBlockId = bt[fixture.BlockName + " EM"];
-              using (
-                BlockReference acBlkRef = new BlockReference(
-                  new Point3d(startPoint.X + 1.3892, startPoint.Y - (1.58 + (0.8911 * r)), 0),
-                  emBlockId
+                  acBlkRef.Layer = "E-SYM1";
+                  acBlkRef.ScaleFactors = new Scale3d(fixture.PaperSpaceScale);
+                  tr.AddNewlyCreatedDBObject(acBlkRef, true);
+                }
+                ObjectId emBlockId = bt[fixture.BlockName + " EM"];
+                using (
+                  BlockReference acBlkRef = new BlockReference(
+                    new Point3d(startPoint.X + 1.3892, startPoint.Y - (1.58 + (0.8911 * r)), 0),
+                    emBlockId
+                  )
                 )
-              )
-              {
-                BlockTableRecord acCurSpaceBlkTblRec;
-                acCurSpaceBlkTblRec =
-                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+                {
+                  BlockTableRecord acCurSpaceBlkTblRec;
+                  acCurSpaceBlkTblRec =
+                    tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                  acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
 
-                acBlkRef.Layer = "E-SYM1";
-                acBlkRef.ScaleFactors = new Scale3d(fixture.PaperSpaceScale);
-                tr.AddNewlyCreatedDBObject(acBlkRef, true);
-              }
-            }
-            else
-            {
-              using (
-                BlockReference acBlkRef = new BlockReference(
-                  new Point3d(startPoint.X + 1.2117, startPoint.Y - (1.58 + (0.8911 * r)), 0),
-                  blockId
-                )
-              )
-              {
-                BlockTableRecord acCurSpaceBlkTblRec;
-                acCurSpaceBlkTblRec =
-                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-
-                acBlkRef.Layer = "E-SYM1";
-                acBlkRef.ScaleFactors = new Scale3d(fixture.PaperSpaceScale);
-                tr.AddNewlyCreatedDBObject(acBlkRef, true);
-              }
-            }
-            ObjectId tagBlockId = bt["4CFM"];
-            using (
-              BlockReference acBlkRef = new BlockReference(
-                new Point3d(startPoint.X + 0.1415, startPoint.Y - (1.58 + (0.8911 * r)), 0),
-                tagBlockId
-              )
-            )
-            {
-              BlockTableRecord acCurSpaceBlkTblRec;
-              acCurSpaceBlkTblRec =
-                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-              acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
-
-              acBlkRef.Layer = "E-TXT1";
-              tr.AddNewlyCreatedDBObject(acBlkRef, true);
-              TextStyleTable textStyleTable = (TextStyleTable)
-                tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
-              ObjectId gmepTextStyleId;
-              if (textStyleTable.Has("gmep"))
-              {
-                gmepTextStyleId = textStyleTable["gmep"];
+                  acBlkRef.Layer = "E-SYM1";
+                  acBlkRef.ScaleFactors = new Scale3d(fixture.PaperSpaceScale);
+                  tr.AddNewlyCreatedDBObject(acBlkRef, true);
+                }
               }
               else
               {
-                ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
-                gmepTextStyleId = doc.Database.Textstyle;
+                using (
+                  BlockReference acBlkRef = new BlockReference(
+                    new Point3d(startPoint.X + 1.2117, startPoint.Y - (1.58 + (0.8911 * r)), 0),
+                    blockId
+                  )
+                )
+                {
+                  BlockTableRecord acCurSpaceBlkTblRec;
+                  acCurSpaceBlkTblRec =
+                    tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                  acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+
+                  acBlkRef.Layer = "E-SYM1";
+                  acBlkRef.ScaleFactors = new Scale3d(fixture.PaperSpaceScale);
+                  tr.AddNewlyCreatedDBObject(acBlkRef, true);
+                }
               }
-              AttributeDefinition attrDef = new AttributeDefinition();
-              attrDef.Position = new Point3d(
-                startPoint.X + 0.4025,
-                startPoint.Y - (1.47 + (0.8911 * r)),
-                0
-              );
-              attrDef.LockPositionInBlock = false;
-              attrDef.Tag = "tag";
-              attrDef.IsMTextAttributeDefinition = false;
-              attrDef.TextString = fixture.Name;
-              attrDef.Justify = AttachmentPoint.MiddleCenter;
-              attrDef.Visible = true;
-              attrDef.Invisible = false;
-              attrDef.Constant = false;
-              attrDef.Height = 0.0938;
-              attrDef.WidthFactor = 0.85;
-              attrDef.TextStyleId = gmepTextStyleId;
-              attrDef.Layer = "0";
+              ObjectId tagBlockId = bt["4CFM"];
+              using (
+                BlockReference acBlkRef = new BlockReference(
+                  new Point3d(startPoint.X + 0.1415, startPoint.Y - (1.58 + (0.8911 * r)), 0),
+                  tagBlockId
+                )
+              )
+              {
+                BlockTableRecord acCurSpaceBlkTblRec;
+                acCurSpaceBlkTblRec =
+                  tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+                acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
 
-              AttributeReference attrRef = new AttributeReference();
-              attrRef.SetAttributeFromBlock(
-                attrDef,
-                Matrix3d.Displacement(new Vector3d(attrDef.Position.X, attrDef.Position.Y, 0))
-              );
-              acBlkRef.AttributeCollection.AppendAttribute(attrRef);
+                acBlkRef.Layer = "E-TXT1";
+                tr.AddNewlyCreatedDBObject(acBlkRef, true);
+                TextStyleTable textStyleTable = (TextStyleTable)
+                  tr.GetObject(doc.Database.TextStyleTableId, OpenMode.ForRead);
+                ObjectId gmepTextStyleId;
+                if (textStyleTable.Has("gmep"))
+                {
+                  gmepTextStyleId = textStyleTable["gmep"];
+                }
+                else
+                {
+                  ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
+                  gmepTextStyleId = doc.Database.Textstyle;
+                }
+                AttributeDefinition attrDef = new AttributeDefinition();
+                attrDef.Position = new Point3d(
+                  startPoint.X + 0.4025,
+                  startPoint.Y - (1.47 + (0.8911 * r)),
+                  0
+                );
+                attrDef.LockPositionInBlock = false;
+                attrDef.Tag = "tag";
+                attrDef.IsMTextAttributeDefinition = false;
+                attrDef.TextString = fixture.Name;
+                attrDef.Justify = AttachmentPoint.MiddleCenter;
+                attrDef.Visible = true;
+                attrDef.Invisible = false;
+                attrDef.Constant = false;
+                attrDef.Height = 0.0938;
+                attrDef.WidthFactor = 0.85;
+                attrDef.TextStyleId = gmepTextStyleId;
+                attrDef.Layer = "0";
 
-              AttributeDefinition attrDef2 = new AttributeDefinition();
-              attrDef2.Position = new Point3d(
-                startPoint.X + 0.4025,
-                startPoint.Y - (1.70 + (0.8911 * r)),
-                0
-              );
-              attrDef2.LockPositionInBlock = false;
-              attrDef2.Tag = "wattage";
-              attrDef2.IsMTextAttributeDefinition = false;
-              attrDef2.TextString = fixture.Wattage.ToString();
-              attrDef2.Justify = AttachmentPoint.MiddleCenter;
-              attrDef2.Visible = true;
-              attrDef2.Invisible = false;
-              attrDef2.Constant = false;
-              attrDef2.Height = 0.0938;
-              attrDef2.WidthFactor = 0.85;
-              attrDef2.TextStyleId = gmepTextStyleId;
-              attrDef2.Layer = "0";
+                AttributeReference attrRef = new AttributeReference();
+                attrRef.SetAttributeFromBlock(
+                  attrDef,
+                  Matrix3d.Displacement(new Vector3d(attrDef.Position.X, attrDef.Position.Y, 0))
+                );
+                acBlkRef.AttributeCollection.AppendAttribute(attrRef);
 
-              AttributeReference attrRef2 = new AttributeReference();
-              attrRef2.SetAttributeFromBlock(
-                attrDef2,
-                Matrix3d.Displacement(new Vector3d(attrDef2.Position.X, attrDef2.Position.Y, 0))
-              );
-              acBlkRef.AttributeCollection.AppendAttribute(attrRef2);
-              acBlkRef.Layer = "E-TXT1";
-              tr.AddNewlyCreatedDBObject(acBlkRef, true);
+                AttributeDefinition attrDef2 = new AttributeDefinition();
+                attrDef2.Position = new Point3d(
+                  startPoint.X + 0.4025,
+                  startPoint.Y - (1.70 + (0.8911 * r)),
+                  0
+                );
+                attrDef2.LockPositionInBlock = false;
+                attrDef2.Tag = "wattage";
+                attrDef2.IsMTextAttributeDefinition = false;
+                attrDef2.TextString = fixture.Wattage.ToString();
+                attrDef2.Justify = AttachmentPoint.MiddleCenter;
+                attrDef2.Visible = true;
+                attrDef2.Invisible = false;
+                attrDef2.Constant = false;
+                attrDef2.Height = 0.0938;
+                attrDef2.WidthFactor = 0.85;
+                attrDef2.TextStyleId = gmepTextStyleId;
+                attrDef2.Layer = "0";
+
+                AttributeReference attrRef2 = new AttributeReference();
+                attrRef2.SetAttributeFromBlock(
+                  attrDef2,
+                  Matrix3d.Displacement(new Vector3d(attrDef2.Position.X, attrDef2.Position.Y, 0))
+                );
+                acBlkRef.AttributeCollection.AppendAttribute(attrRef2);
+                acBlkRef.Layer = "E-TXT1";
+                tr.AddNewlyCreatedDBObject(acBlkRef, true);
+              }
             }
+            catch (Autodesk.AutoCAD.Runtime.Exception ex) { }
+            r++;
           }
-          catch (Autodesk.AutoCAD.Runtime.Exception ex) { }
-          r++;
+          tr.Commit();
         }
-        tr.Commit();
+        startPoint = new Point3d(startPoint.X + 13.1, startPoint.Y, 0);
       }
     }
 

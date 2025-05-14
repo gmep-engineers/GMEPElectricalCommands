@@ -1500,7 +1500,7 @@ namespace ElectricalCommands.SingleLine
         {
           ElectricalEntity.ElectricalEntity nextChildEntity = (ElectricalEntity.ElectricalEntity)
             childNode.Nodes[0].Tag;
-          currentPoint = SingleLine.MakeConduitFromDisconnect(
+          currentPoint = SingleLine.MakeConduitFromTransformer(
             currentPoint,
             nextChildEntity.IsExisting()
           );

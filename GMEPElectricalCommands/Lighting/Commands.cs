@@ -924,46 +924,37 @@ namespace ElectricalCommands.Lighting
       List<Panel> panelList = gmepDb.GetPanels(projectId);
       List<string> existingLocationIds = new List<string>();
 
-      using (Transaction tr = db.TransactionManager.StartTransaction())
-      {
-        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord btr =
-          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
+      //using (Transaction tr = db.TransactionManager.StartTransaction()) {
+      //  BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+      //  BlockTableRecord btr =
+      //    tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite) as BlockTableRecord;
 
-        BlockTableRecord locationBlock = (BlockTableRecord)
-          tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
-        //Searching for existing locations
-        foreach (ObjectId id in locationBlock.GetAnonymousBlockIds())
-        {
-          if (id.IsValid)
-          {
-            using (
-              BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord
-            )
-            {
-              if (anonymousBtr != null)
-              {
-                foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false))
-                {
-                  var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
-                  if (entity != null)
-                  {
-                    foreach (
-                      DynamicBlockReferenceProperty prop in entity.DynamicBlockReferencePropertyCollection
-                    )
-                    {
-                      if (prop.PropertyName == "lighting_location_id")
-                      {
-                        existingLocationIds.Add(prop.Value as string);
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+      //  BlockTableRecord locationBlock = (BlockTableRecord)
+      //    tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
+      //  //Searching for existing locations
+      //  foreach (ObjectId id in locationBlock.GetAnonymousBlockIds()) {
+      //    if (id.IsValid) {
+      //      using (
+      //        BlockTableRecord anonymousBtr = tr.GetObject(id, OpenMode.ForRead) as BlockTableRecord
+      //      ) {
+      //        if (anonymousBtr != null) {
+      //          foreach (ObjectId objId in anonymousBtr.GetBlockReferenceIds(true, false)) {
+      //            var entity = tr.GetObject(objId, OpenMode.ForRead) as BlockReference;
+      //            if (entity != null) {
+      //              foreach (
+      //                DynamicBlockReferenceProperty prop in entity.DynamicBlockReferencePropertyCollection
+      //              ) {
+      //                if (prop.PropertyName == "lighting_location_id") {
+      //                  existingLocationIds.Add(prop.Value as string);
+      //                }
+      //              }
+      //            }
+      //          }
+      //        }
+      //      }
+      //    }
+      //  }
+      //}
 
       PromptKeywordOptions pko = new PromptKeywordOptions("");
       PromptKeywordOptions pko2 = new PromptKeywordOptions("");
@@ -973,16 +964,16 @@ namespace ElectricalCommands.Lighting
       {
         if (!existingLocationIds.Contains(location.Id))
         {
-          pko.Keywords.Add(location.LocationName.ToUpper() + ":" + location.Id);
+          pko.Keywords.Add(location.LocationName.Replace(" ", "_").ToUpper() + ":" + location.Id);
         }
       }
       foreach (LightingTimeClock clock in timeClockList)
       {
-        pko2.Keywords.Add(clock.Name.ToUpper() + ":" + clock.Id);
+        pko2.Keywords.Add(clock.Name.Replace(" ", "_").ToUpper() + ":" + clock.Id);
       }
       foreach (Panel panel in panelList)
       {
-        pko3.Keywords.Add(panel.Name.ToUpper() + ":" + panel.Id);
+        pko3.Keywords.Add(panel.Name.Replace(" ", "_").ToUpper() + ":" + panel.Id);
       }
 
       PromptPointOptions ppo = new PromptPointOptions("\nSpecify start point: ");
@@ -1001,7 +992,7 @@ namespace ElectricalCommands.Lighting
         {
           jig.AddVertex(jig.CurrentPoint);
         }
-        else if (res.Status == PromptStatus.Cancel)
+        if (res.Status == PromptStatus.Cancel || res.StringResult == "Close")
         {
           break;
         }
@@ -1310,11 +1301,13 @@ namespace ElectricalCommands.Lighting
               {
                 property.Value = locationId;
               }
-              if (property.PropertyName == "gmep_lighting_fixture_id") {
+              if (property.PropertyName == "gmep_lighting_fixture_id")
+              {
                 fixtureId = property.Value as string;
               }
             }
-            if (!string.IsNullOrEmpty(fixtureId)) {
+            if (!string.IsNullOrEmpty(fixtureId))
+            {
               gmepDb.updateLightingLocation(fixtureId, locationId);
             }
           }
