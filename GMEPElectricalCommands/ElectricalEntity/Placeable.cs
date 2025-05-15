@@ -884,7 +884,8 @@ namespace ElectricalCommands.ElectricalEntity
     public int MountingHeight,
       Circuit,
       Pole,
-      Va;
+      Va,
+      CircuitHalf;
     public double Fla,
       Mca;
     public bool Is3Phase,
@@ -912,7 +913,8 @@ namespace ElectricalCommands.ElectricalEntity
       bool HasPlug,
       bool Hidden,
       string Status,
-      string ConnectionSymbol
+      string ConnectionSymbol,
+      int CircuitHalf
     )
     {
       this.Id = Id;
@@ -939,6 +941,7 @@ namespace ElectricalCommands.ElectricalEntity
       TableName = "electrical_equipment";
       Pole = SetPole(Is3Phase, Voltage);
       this.ConnectionSymbol = ConnectionSymbol;
+      this.CircuitHalf = CircuitHalf;
     }
 
     private int SetPole(bool is3Phase, int voltage)

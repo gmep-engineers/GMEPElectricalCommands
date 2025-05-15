@@ -728,6 +728,90 @@ namespace ElectricalCommands
       }
     }
 
+    private void HandleMiniBreaker(
+      string[] firstPhaseArr,
+      string[] secondPhaseArr,
+      string[] descriptionArr,
+      string[] breakerArr,
+      int startIndex,
+      ElectricalEntity.Equipment equip
+    )
+    {
+      string phaseLoad = equip.Va.ToString();
+      if (equip.CircuitHalf == 1)
+      {
+        if (equip.LineVoltage > 120)
+        {
+          // this-a to next-b
+          phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 2, 0).ToString();
+          descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+          breakerArr[startIndex] = PanelUserControl.GetBreakerSize(
+            equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+          );
+          if (String.IsNullOrEmpty(breakerArr[startIndex + 1]))
+          {
+            breakerArr[startIndex + 1] = "0";
+          }
+          if (String.IsNullOrEmpty(breakerArr[startIndex + 2]))
+          {
+            breakerArr[startIndex + 2] = "0";
+          }
+          breakerArr[startIndex + 3] = "2";
+          firstPhaseArr[startIndex] = phaseLoad;
+          secondPhaseArr[startIndex + 3] = phaseLoad;
+        }
+        else
+        {
+          // this-a
+          descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+          breakerArr[startIndex] = PanelUserControl.GetBreakerSize(
+            equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+          );
+          if (String.IsNullOrEmpty(breakerArr[startIndex + 1]))
+          {
+            breakerArr[startIndex + 1] = "0";
+          }
+          firstPhaseArr[startIndex] = phaseLoad;
+        }
+      }
+      if (equip.CircuitHalf == 2)
+      {
+        if (equip.LineVoltage > 120)
+        {
+          // this-b to next-a
+          phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 2, 0).ToString();
+          descriptionArr[startIndex + 1] = equip.Name + " " + equip.Description;
+          breakerArr[startIndex + 1] = PanelUserControl.GetBreakerSize(
+            equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+          );
+          if (String.IsNullOrEmpty(breakerArr[startIndex]))
+          {
+            breakerArr[startIndex] = "0";
+          }
+          if (String.IsNullOrEmpty(breakerArr[startIndex + 3]))
+          {
+            breakerArr[startIndex + 3] = "0";
+          }
+          breakerArr[startIndex + 2] = "2";
+          firstPhaseArr[startIndex + 1] = phaseLoad;
+          secondPhaseArr[startIndex + 2] = phaseLoad;
+        }
+        else
+        {
+          // this-b
+          descriptionArr[startIndex + 1] = equip.Name + " " + equip.Description;
+          breakerArr[startIndex + 1] = PanelUserControl.GetBreakerSize(
+            equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+          );
+          if (String.IsNullOrEmpty(breakerArr[startIndex]))
+          {
+            breakerArr[startIndex] = "0";
+          }
+          firstPhaseArr[startIndex + 1] = phaseLoad;
+        }
+      }
+    }
+
     private void AddLoadToCircuit3P(
       JsonPanel3P jsonPanel,
       string startPhase,
@@ -810,6 +894,18 @@ namespace ElectricalCommands
           secondPhaseArr = jsonPanel.phase_a_right;
           thirdPhaseArr = jsonPanel.phase_b_right;
         }
+      }
+      if (equip.CircuitHalf > 0)
+      {
+        HandleMiniBreaker(
+          firstPhaseArr,
+          secondPhaseArr,
+          descriptionArr,
+          breakerArr,
+          startIndex,
+          equip
+        );
+        return;
       }
       string phaseLoad = string.Empty;
       if (equip.Pole == 3)
@@ -910,7 +1006,18 @@ namespace ElectricalCommands
           secondPhaseArr = jsonPanel.phase_a_right;
         }
       }
-
+      if (equip.CircuitHalf > 0)
+      {
+        HandleMiniBreaker(
+          firstPhaseArr,
+          secondPhaseArr,
+          descriptionArr,
+          breakerArr,
+          startIndex,
+          equip
+        );
+        return;
+      }
       string phaseLoad = string.Empty;
       if (equip.Pole == 2)
       {
@@ -1183,7 +1290,8 @@ namespace ElectricalCommands
                 false,
                 false,
                 p.Status,
-                ""
+                "",
+                0
               );
               if (p.Circuit % 2 == 0)
               {
@@ -1277,7 +1385,8 @@ namespace ElectricalCommands
                 false,
                 false,
                 t.Status,
-                ""
+                "",
+                0
               );
               if (t.Circuit % 2 == 0)
               {
@@ -1525,7 +1634,8 @@ namespace ElectricalCommands
                 false,
                 false,
                 p.Status,
-                ""
+                "",
+                0
               );
               if (panelLoad.Circuit % 2 == 0)
               {
@@ -1610,7 +1720,8 @@ namespace ElectricalCommands
                 false,
                 false,
                 t.Status,
-                ""
+                "",
+                0
               );
               if (xfmrLoad.Circuit % 2 == 0)
               {
