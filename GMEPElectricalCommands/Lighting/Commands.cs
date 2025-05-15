@@ -1276,13 +1276,14 @@ namespace ElectricalCommands.Lighting
         new TypedValue[] { new TypedValue((int)DxfCode.Start, "INSERT") }
       );
 
-      Extents3d extents = polyline.GeometricExtents;
+      Point3dCollection pts = new Point3dCollection();
+      for (int i = 0; i < polyline.NumberOfVertices; i++) {
+        pts.Add(polyline.GetPoint3dAt(i));
+      }
 
-      PromptSelectionResult psr = ed.SelectCrossingWindow(
-        extents.MinPoint,
-        extents.MaxPoint,
-        filter
-      );
+      // Use SelectWindowPolygon to select only objects fully inside the polyline
+      PromptSelectionResult psr = ed.SelectWindowPolygon(pts, filter);
+
       SelectionSet ss = psr.Value;
       if (psr.Status == PromptStatus.OK)
       {
