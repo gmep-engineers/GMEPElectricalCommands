@@ -1342,7 +1342,7 @@ namespace ElectricalCommands.Lighting
         BlockTableRecord locationBlock = (BlockTableRecord)
           tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
 
-        List<string> lightingBlockNames = new List<string> { "GMEP LTG 1X1", "GMEP LTG 1X4", "GMEP LTG 2X4", "GMEP LTG 1X2", "GMEP LTG 2X2", "GMEP LTG LDN4", "GMEP LTG LDN6", "GMEP LTG LDN8", };
+        List<string> lightingBlockNames = new List<string> { "GMEP LTG 1X1", "GMEP LTG 1X4", "GMEP LTG 2X4", "GMEP LTG 1X2", "GMEP LTG 2X2", "GMEP LTG LDN4", "GMEP LTG LDN6", "GMEP LTG LDN8", "GMEP LTG EM", "GMEP LTG EXIT", "GMEP LTG EXIT COMBO" };
 
 
         //Timeclocks
