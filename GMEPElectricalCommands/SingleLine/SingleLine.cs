@@ -343,6 +343,24 @@ namespace ElectricalCommands.SingleLine
           acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
           tr.AddNewlyCreatedDBObject(acBlkRef, true);
         }
+        if (mainBreaker.AmpRating >= 1000 && mainBreaker.LineVoltage > 277)
+        {
+          ObjectId gfpSymbol = bt["GFP (AUTO SINGLE LINE)"];
+          using (
+            BlockReference acBlkRef = new BlockReference(
+              new Point3d(currentPoint.X, currentPoint.Y - 0.4346, 0),
+              gfpSymbol
+            )
+          )
+          {
+            acBlkRef.Layer = mainBreaker.IsExisting() ? "E-SYM-EXISTING" : "E-SYM1";
+            BlockTableRecord acCurSpaceBlkTblRec;
+            acCurSpaceBlkTblRec =
+              tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+            acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
+            tr.AddNewlyCreatedDBObject(acBlkRef, true);
+          }
+        }
         GeneralCommands.CreateAndPositionText(
           tr,
           (mainBreaker.GetStatusAbbr()),
