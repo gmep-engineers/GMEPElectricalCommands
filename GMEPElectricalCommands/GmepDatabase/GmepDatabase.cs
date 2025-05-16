@@ -750,6 +750,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_equipment.has_plug,
         electrical_equipment.node_id,
         electrical_equipment.is_hidden_on_plan,
+        electrical_equipment.circuit_half,
         statuses.status
         FROM electrical_equipment
         LEFT JOIN electrical_panels
@@ -801,7 +802,8 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeBoolean(reader, "has_plug"),
             GetSafeBoolean(reader, "is_hidden_on_plan"),
             GetSafeString(reader, "status"),
-            GetSafeString(reader, "connection_name")
+            GetSafeString(reader, "connection_name"),
+            GetSafeInt(reader, "circuit_half")
           )
         );
       }
