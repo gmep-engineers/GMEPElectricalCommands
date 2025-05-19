@@ -835,16 +835,21 @@ namespace ElectricalCommands
         breakerArr = jsonPanel.breaker_right;
       }
       int startIndex = 0;
+      bool found = false;
       foreach (string circuit in circuitArr)
       {
         if (circuit == equip.Circuit.ToString())
         {
+          found = true;
           break;
         }
         else
         {
           startIndex++;
         }
+      }
+      if (!found || startIndex >= circuitArr.Length) {
+        return; 
       }
       string[] firstPhaseArr;
       string[] secondPhaseArr;
