@@ -1084,7 +1084,7 @@ namespace ElectricalCommands
           jsonPanel.panel = "'" + panel.Name + "'";
           jsonPanel.location = panel.DesignLocation;
           jsonPanel.voltage1 = panel.Voltage.Substring(0, 3);
-          jsonPanel.voltage2 = panel.LineVoltage.ToString();
+          jsonPanel.voltage2 = panel.Voltage.Substring(4, 3);
           jsonPanel.phase = panel.Phase.ToString();
           jsonPanel.wire = panel.Phase == 3 ? "4" : "3";
           jsonPanel.mounting = panel.IsRecessed ? "RECESSED" : "SURFACE";
@@ -1456,7 +1456,7 @@ namespace ElectricalCommands
           jsonPanel.panel = "'" + panel.Name + "'";
           jsonPanel.location = panel.DesignLocation;
           jsonPanel.voltage1 = panel.Voltage.Substring(0, 3);
-          jsonPanel.voltage2 = panel.LineVoltage.ToString();
+          jsonPanel.voltage2 = panel.Voltage.Substring(4, 3);
           jsonPanel.phase = panel.Phase.ToString();
           jsonPanel.wire = panel.Phase == 3 ? "4" : "3";
           jsonPanel.mounting = panel.IsRecessed ? "RECESSED" : "SURFACE";
