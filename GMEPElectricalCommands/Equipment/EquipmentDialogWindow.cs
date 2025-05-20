@@ -897,6 +897,14 @@ namespace ElectricalCommands.Equipment
         }
         if (blockPromptResult.Status == PromptStatus.OK)
         {
+          BlockTableRecord currentSpace =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          currentSpace.AppendEntity(br);
+          tr.AddNewlyCreatedDBObject(br, true);
+          br.ScaleFactors = new Scale3d(0.25 / scaleFactor);
+          br.Layer = "E-SYM1";
+          rotation = br.Rotation;
+
           if (br.IsDynamicBlock)
           {
             DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
@@ -920,14 +928,6 @@ namespace ElectricalCommands.Equipment
               }
             }
           }
-
-          BlockTableRecord currentSpace =
-            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-          currentSpace.AppendEntity(br);
-          tr.AddNewlyCreatedDBObject(br, true);
-          br.ScaleFactors = new Scale3d(0.25 / scaleFactor);
-          br.Layer = "E-SYM1";
-          rotation = br.Rotation;
 
           //Setting attributes if blockname is j-box or j-boxswitch
           if (connectionSymbol == "GMEP J-BOX" || connectionSymbol == "GMEP J-BOXSWITCH")
