@@ -991,7 +991,7 @@ namespace ElectricalCommands.SingleLine
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText("-------------------Equipment--------------------");
           InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"MCA:      {equipment.Mca}A");
+          InfoTextBox.AppendText($"MOCP:      {equipment.Mocp}A");
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"FLA:      {equipment.Fla}A");
           InfoTextBox.AppendText(Environment.NewLine);

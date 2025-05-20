@@ -746,7 +746,7 @@ namespace ElectricalCommands
           phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 2, 0).ToString();
           descriptionArr[startIndex] = equip.Name + " " + equip.Description;
           breakerArr[startIndex] = PanelUserControl.GetBreakerSize(
-            equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+            equip.Mocp > 0 ? equip.Mocp : equip.Fla * 1.25
           );
           if (String.IsNullOrEmpty(breakerArr[startIndex + 1]))
           {
@@ -765,7 +765,7 @@ namespace ElectricalCommands
           // this-a
           descriptionArr[startIndex] = equip.Name + " " + equip.Description;
           breakerArr[startIndex] = PanelUserControl.GetBreakerSize(
-            equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+            equip.Mocp > 0 ? equip.Mocp : equip.Fla * 1.25
           );
           if (String.IsNullOrEmpty(breakerArr[startIndex + 1]))
           {
@@ -782,7 +782,7 @@ namespace ElectricalCommands
           phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 2, 0).ToString();
           descriptionArr[startIndex + 1] = equip.Name + " " + equip.Description;
           breakerArr[startIndex + 1] = PanelUserControl.GetBreakerSize(
-            equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+            equip.Mocp > 1 ? equip.Mocp : equip.Fla * 1.25
           );
           if (String.IsNullOrEmpty(breakerArr[startIndex]))
           {
@@ -801,7 +801,7 @@ namespace ElectricalCommands
           // this-b
           descriptionArr[startIndex + 1] = equip.Name + " " + equip.Description;
           breakerArr[startIndex + 1] = PanelUserControl.GetBreakerSize(
-            equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+            equip.Mocp > 1 ? equip.Mocp : equip.Fla * 1.25
           );
           if (String.IsNullOrEmpty(breakerArr[startIndex]))
           {
@@ -920,7 +920,7 @@ namespace ElectricalCommands
         phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 1.732, 0).ToString();
         descriptionArr[startIndex] = equip.Name + " " + equip.Description;
         breakerArr[startIndex] = PanelUserControl.GetBreakerSize(
-          equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+          equip.Mocp > 1 ? equip.Mocp : equip.Fla * 1.25
         );
         breakerArr[startIndex + 2] = "";
         breakerArr[startIndex + 4] = "3";
@@ -933,7 +933,7 @@ namespace ElectricalCommands
         phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 2, 0).ToString();
         descriptionArr[startIndex] = equip.Name + " " + equip.Description;
         breakerArr[startIndex] = PanelUserControl.GetBreakerSize(
-          equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+          equip.Mocp > 1 ? equip.Mocp : equip.Fla * 1.25
         );
         breakerArr[startIndex + 2] = "2";
         firstPhaseArr[startIndex] = phaseLoad;
@@ -944,7 +944,7 @@ namespace ElectricalCommands
         phaseLoad = equip.Va.ToString();
         descriptionArr[startIndex] = equip.Name + " " + equip.Description;
         breakerArr[startIndex] = PanelUserControl.GetBreakerSize(
-          equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+          equip.Mocp > 1 ? equip.Mocp : equip.Fla * 1.25
         );
         firstPhaseArr[startIndex] = phaseLoad;
       }
@@ -1038,7 +1038,7 @@ namespace ElectricalCommands
         phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 2, 0).ToString();
         descriptionArr[startIndex] = equip.Name + " " + equip.Description;
         breakerArr[startIndex] = PanelUserControl.GetBreakerSize(
-          equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+          equip.Mocp > 1 ? equip.Mocp : equip.Fla * 1.25
         );
         breakerArr[startIndex + 2] = "2";
         firstPhaseArr[startIndex] = phaseLoad;
@@ -1049,7 +1049,7 @@ namespace ElectricalCommands
         phaseLoad = equip.Va.ToString();
         descriptionArr[startIndex] = equip.Name + " " + equip.Description;
         breakerArr[startIndex] = PanelUserControl.GetBreakerSize(
-          equip.Mca > 1 ? equip.Mca : equip.Fla * 1.25
+          equip.Mocp > 1 ? equip.Mocp : equip.Fla * 1.25
         );
         firstPhaseArr[startIndex] = phaseLoad;
       }
@@ -1391,7 +1391,7 @@ namespace ElectricalCommands
                 t.ParentDistance,
                 t.Location.X,
                 t.Location.Y,
-                t.Kva / t.LineVoltage,
+                CADObjectCommands.GetMcaFromFla(t.Kva / t.LineVoltage),
                 "",
                 va,
                 0,
@@ -1725,7 +1725,7 @@ namespace ElectricalCommands
                 t.ParentDistance,
                 t.Location.X,
                 t.Location.Y,
-                t.Kva / t.LineVoltage,
+                CADObjectCommands.GetMcaFromFla(t.Kva / t.LineVoltage),
                 "",
                 va,
                 0,
