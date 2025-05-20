@@ -176,7 +176,6 @@ namespace ElectricalCommands.Equipment
         }
         ListViewItem item = new ListViewItem(equipment.Name, 0);
         item.SubItems.Add(equipment.Description);
-        item.SubItems.Add(equipment.Category);
         item.SubItems.Add(equipment.ParentName.ToUpper().Replace("PANEL", "").Trim());
         item.SubItems.Add(equipment.Circuit.ToString());
         if (equipment.ParentDistance == -1)
@@ -213,7 +212,6 @@ namespace ElectricalCommands.Equipment
       {
         equipmentListView.Columns.Add("Equip #", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Description", -2, HorizontalAlignment.Left);
-        equipmentListView.Columns.Add("Category", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Panel", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Circuit", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Panel Distance", -2, HorizontalAlignment.Left);

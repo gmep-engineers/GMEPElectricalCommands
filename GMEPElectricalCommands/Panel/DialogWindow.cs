@@ -846,6 +846,13 @@ namespace ElectricalCommands
           startIndex++;
         }
       }
+      if (startIndex >= circuitArr.Length)
+      {
+        MessageBox.Show(
+          $"{equip.Name} - {equip.Description} could not be added since it is not within the range of the circuit numbers."
+        );
+        return;
+      }
       string[] firstPhaseArr;
       string[] secondPhaseArr;
       string[] thirdPhaseArr;
@@ -976,6 +983,13 @@ namespace ElectricalCommands
         {
           startIndex++;
         }
+      }
+      if (startIndex >= circuitArr.Length)
+      {
+        MessageBox.Show(
+          $"{equip.Name} - {equip.Description} could not be added since it is not within the range of the circuit numbers."
+        );
+        return;
       }
       string[] firstPhaseArr;
       string[] secondPhaseArr;
