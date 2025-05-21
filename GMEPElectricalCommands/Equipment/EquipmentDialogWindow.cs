@@ -176,7 +176,6 @@ namespace ElectricalCommands.Equipment
         }
         ListViewItem item = new ListViewItem(equipment.Name, 0);
         item.SubItems.Add(equipment.Description);
-        item.SubItems.Add(equipment.Category);
         item.SubItems.Add(equipment.ParentName.ToUpper().Replace("PANEL", "").Trim());
         item.SubItems.Add(equipment.Circuit.ToString());
         if (equipment.ParentDistance == -1)
@@ -213,7 +212,6 @@ namespace ElectricalCommands.Equipment
       {
         equipmentListView.Columns.Add("Equip #", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Description", -2, HorizontalAlignment.Left);
-        equipmentListView.Columns.Add("Category", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Panel", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Circuit", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Panel Distance", -2, HorizontalAlignment.Left);
@@ -897,6 +895,14 @@ namespace ElectricalCommands.Equipment
         }
         if (blockPromptResult.Status == PromptStatus.OK)
         {
+          BlockTableRecord currentSpace =
+            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
+          currentSpace.AppendEntity(br);
+          tr.AddNewlyCreatedDBObject(br, true);
+          br.ScaleFactors = new Scale3d(0.25 / scaleFactor);
+          br.Layer = "E-SYM1";
+          rotation = br.Rotation;
+
           if (br.IsDynamicBlock)
           {
             DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
@@ -920,14 +926,6 @@ namespace ElectricalCommands.Equipment
               }
             }
           }
-
-          BlockTableRecord currentSpace =
-            tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
-          currentSpace.AppendEntity(br);
-          tr.AddNewlyCreatedDBObject(br, true);
-          br.ScaleFactors = new Scale3d(0.25 / scaleFactor);
-          br.Layer = "E-SYM1";
-          rotation = br.Rotation;
 
           //Setting attributes if blockname is j-box or j-boxswitch
           if (connectionSymbol == "GMEP J-BOX" || connectionSymbol == "GMEP J-BOXSWITCH")
@@ -1721,7 +1719,7 @@ namespace ElectricalCommands.Equipment
         tb.Cells[2, 2].TextString = "VOLT.";
         tb.Cells[2, 3].TextString = "FLA";
         tb.Cells[2, 4].TextString = "HP";
-        tb.Cells[2, 5].TextString = "MCA";
+        tb.Cells[2, 5].TextString = "MOCP";
         tb.Cells[2, 6].TextString = "PH.";
         tb.Columns[0].Width = 0.75;
         tb.Columns[1].Width = 2.25;
@@ -1759,12 +1757,12 @@ namespace ElectricalCommands.Equipment
           tb.Cells[row, 3].TextString =
             equipmentList[i].Fla > 0 ? Math.Round(equipmentList[i].Fla, 1).ToString() : "-";
           tb.Cells[row, 4].TextString = equipmentList[i].Hp == "0" ? "-" : equipmentList[i].Hp;
-          double mca = (equipmentList[i].Mca);
-          if (mca <= 0)
+          double mocp = (equipmentList[i].Mocp);
+          if (mocp <= 0)
           {
-            mca = CADObjectCommands.GetMcaFromFla(equipmentList[i].Fla);
+            mocp = CADObjectCommands.GetMcaFromFla(equipmentList[i].Fla);
           }
-          if (mca <= 0)
+          if (mocp <= 0)
           {
             tb.Cells[row, 9].TextString = "V.I.F.";
             tb.Cells[row, 10].TextString = "V.I.F.";
@@ -1774,13 +1772,13 @@ namespace ElectricalCommands.Equipment
             (string firstLine, string secondLine, string _, string _, string _, string _) =
               CADObjectCommands.GetWireAndConduitSizeText(
                 equipmentList[i].Fla,
-                mca,
+                mocp,
                 equipmentList[i].ParentDistance + 10,
                 voltage,
                 3,
                 equipmentList[i].Is3Phase ? 3 : 1
               );
-            tb.Cells[row, 5].TextString = mca.ToString();
+            tb.Cells[row, 5].TextString = mocp.ToString();
             tb.Cells[row, 7].TextString = CADObjectCommands.GetConnectionTypeFromFlaVoltage(
               equipmentList[i].Fla,
               voltage,

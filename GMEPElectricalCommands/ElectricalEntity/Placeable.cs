@@ -885,9 +885,9 @@ namespace ElectricalCommands.ElectricalEntity
       Circuit,
       Pole,
       Va,
-      CircuitHalf;
-    public double Fla,
-      Mca;
+      CircuitHalf,
+      Mocp;
+    public double Fla;
     public bool Is3Phase,
       HasPlug;
 
@@ -905,7 +905,7 @@ namespace ElectricalCommands.ElectricalEntity
       int ParentDistance,
       double LocationX,
       double LocationY,
-      double Mca,
+      int Mocp,
       string Hp,
       int Va,
       int MountingHeight,
@@ -929,7 +929,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.Is3Phase = Is3Phase;
       this.Location = new Point3d(LocationX, LocationY, 0);
       this.ParentDistance = ParentDistance;
-      this.Mca = Mca;
+      this.Mocp = Mocp;
       this.Hp = Hp;
       this.MountingHeight = MountingHeight;
       this.Circuit = Circuit;

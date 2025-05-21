@@ -582,6 +582,7 @@ namespace ElectricalCommands.SingleLine
         .DocumentManager
         .MdiActiveDocument;
       Database db = doc.Database;
+      double keyedNoteXOffset = 0;
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -670,7 +671,10 @@ namespace ElectricalCommands.SingleLine
           }
           GeneralCommands.CreateAndPositionText(
             tr,
-            "(N)" + panel.MainAmpRating + "A/" + (panel.Voltage.Contains("3") ? "3P" : "2P"),
+            panel.GetStatusAbbr()
+              + panel.MainAmpRating
+              + "A/"
+              + (panel.Voltage.Contains("3") ? "3P" : "2P"),
             "gmep",
             0.0938,
             0.85,
@@ -681,6 +685,7 @@ namespace ElectricalCommands.SingleLine
             TextVerticalMode.TextBase,
             AttachmentPoint.BaseRight
           );
+          keyedNoteXOffset = -0.17;
         }
         if (panel.Kva == 0 && panel.LoadAmperage == 0 && panel.IsExisting())
         {
@@ -733,7 +738,10 @@ namespace ElectricalCommands.SingleLine
       }
       if (panel.IsExisting())
       {
-        InsertKeyedNoteMarker(1, new Point3d(currentPoint.X, currentPoint.Y - 0.1541, 0));
+        InsertKeyedNoteMarker(
+          1,
+          new Point3d(currentPoint.X + keyedNoteXOffset, currentPoint.Y - 0.1541, 0)
+        );
       }
     }
 

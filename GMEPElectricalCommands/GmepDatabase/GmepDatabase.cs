@@ -742,7 +742,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_equipment.parent_distance,
         electrical_equipment.loc_x,
         electrical_equipment.loc_y,
-        electrical_equipment.mca,
+        electrical_disconnect_af_sizes.af_size as mocp,
         electrical_equipment.hp,
         electrical_equipment.va,
         electrical_equipment.mounting_height,
@@ -761,6 +761,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         ON electrical_equipment_voltages.id = electrical_equipment.voltage_id
         LEFT JOIN statuses ON statuses.id = electrical_equipment.status_id
         LEFT JOIN electrical_equipment_connection_symbols ON electrical_equipment_connection_symbols.id = electrical_equipment.connection_symbol_id
+        LEFT JOIN electrical_disconnect_af_sizes on electrical_disconnect_af_sizes.id = electrical_equipment.mocp_id
         WHERE electrical_equipment.project_id = @projectId";
       if (singleLineOnly)
       {
@@ -794,7 +795,7 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeInt(reader, "parent_distance"),
             GetSafeFloat(reader, "loc_x"),
             GetSafeFloat(reader, "loc_y"),
-            GetSafeFloat(reader, "mca"),
+            GetSafeInt(reader, "mocp"),
             GetSafeString(reader, "hp"),
             GetSafeInt(reader, "va"),
             GetSafeInt(reader, "mounting_height"),
