@@ -1035,18 +1035,22 @@ namespace ElectricalCommands.Equipment
         {
           Point3d point;
           BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-          BlockTableRecord block =
-            tr.GetObject(bt["GMEP J-BOXSWITCHOBJ"], OpenMode.ForRead) as BlockTableRecord;
 
-          BlockJig blockJig = new BlockJig();
+          BlockTableRecord block;
 
-          PromptResult res = blockJig.DragMe(block.ObjectId, out point);
 
-          if (res.Status == PromptStatus.OK)
+          BlockReference br = CADObjectCommands.CreateBlockReference(
+            tr,
+            bt,
+            "GMEP J-BOXSWITCHOBJ",
+            out block,
+            out point
+          );
+
+          if (br != null)
           {
             BlockTableRecord curSpace = (BlockTableRecord)
               tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-            BlockReference br = new BlockReference(point, block.ObjectId);
 
             RotateJig rotateJig = new RotateJig(br);
             PromptResult rotatePromptResult = ed.Drag(rotateJig);
