@@ -32,6 +32,7 @@ using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 using Color = System.Drawing.Color;
 using Group = Autodesk.AutoCAD.DatabaseServices.Group;
 using Panel = ElectricalCommands.ElectricalEntity.Panel;
+using ElectricalCommands;
 
 namespace ElectricalCommands.Lighting
 {
@@ -836,18 +837,20 @@ namespace ElectricalCommands.Lighting
       {
         BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
-        BlockTableRecord block = (BlockTableRecord)
-          tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
-        BlockJig blockJig = new BlockJig();
+        BlockTableRecord block;
+        BlockReference br = CADObjectCommands.CreateBlockReference(
+          tr,
+          bt,
+          "LTG LOCATION",
+          out block,
+          out point
+        );
 
-        PromptResult res = blockJig.DragMe(block.ObjectId, out point);
-
-        if (res.Status == PromptStatus.OK)
+        if (br != null)
         {
           BlockTableRecord curSpace = (BlockTableRecord)
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
-          BlockReference br = new BlockReference(point, block.ObjectId);
           br.ScaleFactors = new Scale3d(0.25 / scale);
 
           curSpace.AppendEntity(br);
@@ -951,19 +954,23 @@ namespace ElectricalCommands.Lighting
           }
         }
 
-        BlockTableRecord block = (BlockTableRecord)
-          tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
+        BlockTableRecord block;
         if (blockId2 == ObjectId.Null)
         {
-          BlockJig blockJig = new BlockJig();
-          PromptResult res = blockJig.DragMe(block.ObjectId, out point2);
 
-          if (res.Status == PromptStatus.OK)
+          BlockReference br = CADObjectCommands.CreateBlockReference(
+            tr,
+            bt,
+            "LTG TIMECLOCK",
+            out block,
+            out point2
+          );
+
+          if (br != null)
           {
             BlockTableRecord curSpace = (BlockTableRecord)
               tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
-            BlockReference br = new BlockReference(point2, block.ObjectId);
             br.ScaleFactors = new Scale3d(0.25 / scale);
 
             curSpace.AppendEntity(br);
