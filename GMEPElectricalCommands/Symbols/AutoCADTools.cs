@@ -150,6 +150,25 @@ namespace ElectricalCommands
     {
       return IsInLayout() && !IsInLayoutPaper();
     }
+    public static BlockReference CreateBlockReference(Transaction tr, BlockTable bt, string blockName) {
+      Point3d point;
+      if (!bt.Has(blockName)) {
+        Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
+          $"Block '{blockName}' not found in the BlockTable."
+        );
+        return null;
+      }
+      BlockTableRecord block = (BlockTableRecord)
+              tr.GetObject(bt[blockName], OpenMode.ForRead);
+
+      BlockJig blockJig = new BlockJig();
+      PromptResult res = blockJig.DragMe(block.ObjectId, out point);
+      if (res.Status != PromptStatus.OK) {
+        return null;
+      }
+      BlockReference br = new BlockReference(point, block.ObjectId);
+      return br;
+    }
 
     [CommandMethod("StoreBlockData")]
     public void StoreBlockData()
