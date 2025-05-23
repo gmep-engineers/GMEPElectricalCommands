@@ -1463,9 +1463,9 @@ namespace ElectricalCommands.Equipment
 
     private string GetCircuitNo(ListViewItem item)
     {
-      string circuitNo = item.SubItems[4].Text;
-      string voltage = item.SubItems[6].Text;
-      string phase = item.SubItems[7].Text;
+      string circuitNo = item.SubItems[3].Text;
+      string voltage = item.SubItems[5].Text;
+      string phase = item.SubItems[6].Text;
       if (phase == "3")
       {
         int c = Int32.Parse(circuitNo);
