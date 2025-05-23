@@ -159,13 +159,12 @@ namespace ElectricalCommands
         );
         return null;
       }
-
       BlockTableRecord block = (BlockTableRecord)
               tr.GetObject(bt[blockName], OpenMode.ForRead);
 
       BlockJig blockJig = new BlockJig();
       PromptResult res = blockJig.DragMe(block.ObjectId, out point);
-      if (res.Status == PromptStatus.OK) {
+      if (res.Status != PromptStatus.OK) {
         return null;
       }
       BlockReference br = new BlockReference(point, block.ObjectId);

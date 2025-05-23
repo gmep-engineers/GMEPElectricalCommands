@@ -307,7 +307,7 @@ namespace ElectricalCommands.Lighting
       lightingDialogWindow.Show();
     }
 
-    [CommandMethod("PlaceControls")]
+   /* [CommandMethod("PlaceControls")]
     public static void PlaceControls()
     {
       double scale = 12;
@@ -357,7 +357,7 @@ namespace ElectricalCommands.Lighting
             + control.Name
             + "'"
         );
-        string blockName = "GMEP LTG CTRL DIMMER";
+        string blockName = "GMEP LTG CTRL DIMMERs";
         bool dimmerOccupancy = false;
         if (control.ControlType == "SWITCH")
         {
@@ -495,7 +495,7 @@ namespace ElectricalCommands.Lighting
           tr.Commit();
         }
       }
-    }
+    }*/
 
     [CommandMethod("ToggleEMLighting")]
     public static void ToggleEMLighting()
@@ -1026,26 +1026,30 @@ namespace ElectricalCommands.Lighting
       {
         BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
-        BlockTableRecord block = (BlockTableRecord)
+        BlockReference br = CADObjectCommands.CreateBlockReference(tr, bt, "LTG LOCATION");
+
+        /*BlockTableRecord block = (BlockTableRecord)
           tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
         BlockJig blockJig = new BlockJig();
 
-        PromptResult res = blockJig.DragMe(block.ObjectId, out point);
+        PromptResult res = blockJig.DragMe(block.ObjectId, out point);*/
 
-        if (res.Status == PromptStatus.OK)
+        if (br != null)
         {
           BlockTableRecord curSpace = (BlockTableRecord)
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
-          BlockReference br = new BlockReference(point, block.ObjectId);
           br.ScaleFactors = new Scale3d(0.25 / scale);
 
           curSpace.AppendEntity(br);
           tr.AddNewlyCreatedDBObject(br, true);
           blockId = br.Id;
+          point = br.Position;
 
+          ObjectId btrId = br.BlockTableRecord;
+          BlockTableRecord btr = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
           //Setting Attributes
-          foreach (ObjectId objId in block)
+          foreach (ObjectId objId in btr)
           {
             DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
             AttributeDefinition attDef = obj as AttributeDefinition;
@@ -1141,27 +1145,28 @@ namespace ElectricalCommands.Lighting
           }
         }
 
-        BlockTableRecord block = (BlockTableRecord)
-          tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
+        /*BlockTableRecord block = (BlockTableRecord)
+          tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);*/
         if (blockId2 == ObjectId.Null)
         {
-          BlockJig blockJig = new BlockJig();
-          PromptResult res = blockJig.DragMe(block.ObjectId, out point2);
+          BlockReference br = CADObjectCommands.CreateBlockReference(tr, bt, "LTG TIMECLOCK");
 
-          if (res.Status == PromptStatus.OK)
+          if (br != null)
           {
             BlockTableRecord curSpace = (BlockTableRecord)
               tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
-            BlockReference br = new BlockReference(point2, block.ObjectId);
             br.ScaleFactors = new Scale3d(0.25 / scale);
 
             curSpace.AppendEntity(br);
             tr.AddNewlyCreatedDBObject(br, true);
             blockId2 = br.Id;
+            point2 = br.Position;
 
+            ObjectId btrId = br.BlockTableRecord;
+            BlockTableRecord btr2 = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
             //Setting Attributes
-            foreach (ObjectId objId in block)
+            foreach (ObjectId objId in btr2)
             {
               DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
               AttributeDefinition attDef = obj as AttributeDefinition;
