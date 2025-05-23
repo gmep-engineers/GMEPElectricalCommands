@@ -32,6 +32,7 @@ using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 using Color = System.Drawing.Color;
 using Group = Autodesk.AutoCAD.DatabaseServices.Group;
 using Panel = ElectricalCommands.ElectricalEntity.Panel;
+using ElectricalCommands;
 
 namespace ElectricalCommands.Lighting
 {
@@ -306,198 +307,7 @@ namespace ElectricalCommands.Lighting
       lightingDialogWindow.Show();
     }
 
-    [CommandMethod("PlaceControls")]
-    public static void PlaceControls()
-    {
-      double scale = 12;
-
-      if (
-        CADObjectCommands.Scale <= 0
-        && (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
-      )
-      {
-        CADObjectCommands.SetScale();
-        if (CADObjectCommands.Scale <= 0)
-          return;
-      }
-      if (CADObjectCommands.IsInModel() || CADObjectCommands.IsInLayoutViewport())
-      {
-        scale = CADObjectCommands.Scale;
-      }
-      Document doc = Application.DocumentManager.MdiActiveDocument;
-      Editor ed = doc.Editor;
-      Database db = doc.Database;
-      GmepDatabase gmepDb = new GmepDatabase();
-      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
-
-      List<ElectricalEntity.LightingControl> lightingList = gmepDb.GetLightingControls(projectId);
-      using (Transaction tr = db.TransactionManager.StartTransaction())
-      {
-        LayerTable acLyrTbl;
-        acLyrTbl = tr.GetObject(db.LayerTableId, OpenMode.ForRead) as LayerTable;
-
-        string sLayerName = "E-LITE-CTRL";
-
-        if (acLyrTbl.Has(sLayerName) == true)
-        {
-          db.Clayer = acLyrTbl[sLayerName];
-          tr.Commit();
-        }
-      }
-      int i = 0;
-      foreach (ElectricalEntity.LightingControl control in lightingList)
-      {
-        ed.WriteMessage(
-          "\nPlace "
-            + (i + 1).ToString()
-            + "/"
-            + lightingList.Count.ToString()
-            + " for '"
-            + control.Name
-            + "'"
-        );
-        string blockName = "GMEP LTG CTRL DIMMER";
-        bool dimmerOccupancy = false;
-        if (control.ControlType == "SWITCH")
-        {
-          blockName = "GMEP LTG CTRL SWITCH";
-          if (control.HasOccupancy)
-          {
-            blockName = "GMEP LTG CTRL OCCUPANCY";
-          }
-        }
-        else if (control.HasOccupancy)
-        {
-          dimmerOccupancy = true;
-        }
-
-        ObjectId blockId;
-        Point3d point;
-        double rotation = 0;
-        try
-        {
-          using (Transaction tr = db.TransactionManager.StartTransaction())
-          {
-            BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-
-            BlockTableRecord block = (BlockTableRecord)
-              tr.GetObject(bt[blockName], OpenMode.ForRead);
-            BlockJig blockJig = new BlockJig();
-
-            PromptResult res = blockJig.DragMe(block.ObjectId, out point);
-
-            if (res.Status == PromptStatus.OK)
-            {
-              BlockTableRecord curSpace = (BlockTableRecord)
-                tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-
-              BlockReference br = new BlockReference(point, block.ObjectId);
-
-              RotateJig rotateJig = new RotateJig(br);
-              PromptResult rotatePromptResult = ed.Drag(rotateJig);
-
-              if (rotatePromptResult.Status != PromptStatus.OK)
-              {
-                return;
-              }
-              rotation = br.Rotation;
-              br.ScaleFactors = new Scale3d(0.25 / scale);
-              curSpace.AppendEntity(br);
-
-              tr.AddNewlyCreatedDBObject(br, true);
-              blockId = br.Id;
-
-              foreach (ObjectId objId in block)
-              {
-                DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
-                AttributeDefinition attDef = obj as AttributeDefinition;
-                if (attDef != null && !attDef.Constant)
-                {
-                  using (AttributeReference attRef = new AttributeReference())
-                  {
-                    attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
-                    if (attRef.Tag == "CONTROL_NAME")
-                    {
-                      attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
-                      attRef.TextString = control.Name;
-                      attRef.Height = 0.0938 / scale * 6;
-                      attRef.WidthFactor = 0.85;
-                      attRef.HorizontalMode = TextHorizontalMode.TextLeft;
-                      attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
-                      attRef.Justify = AttachmentPoint.BaseLeft;
-                      attRef.Rotation = attRef.Rotation - rotation;
-                    }
-                    if (attRef.Tag == "D")
-                    {
-                      attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
-                      attRef.Height = 0.0938 / scale * 6;
-                      attRef.WidthFactor = 0.85;
-                      attRef.TextString = attRef.Tag;
-                      attRef.HorizontalMode = TextHorizontalMode.TextLeft;
-                      attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
-                      attRef.Justify = AttachmentPoint.BaseLeft;
-
-                      Matrix3d rotationMatrix = Matrix3d.Rotation(
-                        -rotation,
-                        Vector3d.ZAxis,
-                        br.Position
-                      );
-                      attRef.TransformBy(rotationMatrix);
-                    }
-                    br.AttributeCollection.AppendAttribute(attRef);
-                    tr.AddNewlyCreatedDBObject(attRef, true);
-                  }
-                }
-              }
-            }
-            else
-            {
-              return;
-            }
-
-            tr.Commit();
-          }
-          using (Transaction tr = db.TransactionManager.StartTransaction())
-          {
-            BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForWrite) as BlockTable;
-            var modelSpace = (BlockTableRecord)
-              tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-            BlockReference br = (BlockReference)tr.GetObject(blockId, OpenMode.ForWrite);
-            DynamicBlockReferencePropertyCollection pc = br.DynamicBlockReferencePropertyCollection;
-            foreach (DynamicBlockReferenceProperty prop in pc)
-            {
-              if (prop.PropertyName == "gmep_lighting_control_id" && prop.Value as string == "0")
-              {
-                prop.Value = control.Id;
-              }
-              if (prop.PropertyName == "gmep_lighting_control_tag" && prop.Value as string == "0")
-              {
-                prop.Value = control.Name;
-              }
-            }
-            tr.Commit();
-          }
-        }
-        catch (System.Exception ex)
-        {
-          ed.WriteMessage(ex.ToString());
-        }
-      }
-      using (Transaction tr = db.TransactionManager.StartTransaction())
-      {
-        LayerTable acLyrTbl;
-        acLyrTbl = tr.GetObject(db.LayerTableId, OpenMode.ForRead) as LayerTable;
-
-        string sLayerName = "E-CND1";
-
-        if (acLyrTbl.Has(sLayerName) == true)
-        {
-          db.Clayer = acLyrTbl[sLayerName];
-          tr.Commit();
-        }
-      }
-    }
-
+    
     [CommandMethod("ToggleEMLighting")]
     public static void ToggleEMLighting()
     {
@@ -1027,18 +837,20 @@ namespace ElectricalCommands.Lighting
       {
         BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
-        BlockTableRecord block = (BlockTableRecord)
-          tr.GetObject(bt["LTG LOCATION"], OpenMode.ForRead);
-        BlockJig blockJig = new BlockJig();
+        BlockTableRecord block;
+        BlockReference br = CADObjectCommands.CreateBlockReference(
+          tr,
+          bt,
+          "LTG LOCATION",
+          out block,
+          out point
+        );
 
-        PromptResult res = blockJig.DragMe(block.ObjectId, out point);
-
-        if (res.Status == PromptStatus.OK)
+        if (br != null)
         {
           BlockTableRecord curSpace = (BlockTableRecord)
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
-          BlockReference br = new BlockReference(point, block.ObjectId);
           br.ScaleFactors = new Scale3d(0.25 / scale);
 
           curSpace.AppendEntity(br);
@@ -1142,19 +954,23 @@ namespace ElectricalCommands.Lighting
           }
         }
 
-        BlockTableRecord block = (BlockTableRecord)
-          tr.GetObject(bt["LTG TIMECLOCK"], OpenMode.ForRead);
+        BlockTableRecord block;
         if (blockId2 == ObjectId.Null)
         {
-          BlockJig blockJig = new BlockJig();
-          PromptResult res = blockJig.DragMe(block.ObjectId, out point2);
 
-          if (res.Status == PromptStatus.OK)
+          BlockReference br = CADObjectCommands.CreateBlockReference(
+            tr,
+            bt,
+            "LTG TIMECLOCK",
+            out block,
+            out point2
+          );
+
+          if (br != null)
           {
             BlockTableRecord curSpace = (BlockTableRecord)
               tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
-            BlockReference br = new BlockReference(point2, block.ObjectId);
             br.ScaleFactors = new Scale3d(0.25 / scale);
 
             curSpace.AppendEntity(br);

@@ -14,6 +14,7 @@ using ElectricalCommands.Lighting;
 using Emgu.CV.ML;
 using GMEPElectricalCommands.GmepDatabase;
 using Table = Autodesk.AutoCAD.DatabaseServices.Table;
+using ElectricalCommands;
 
 namespace ElectricalCommands.Equipment
 {
@@ -872,20 +873,15 @@ namespace ElectricalCommands.Equipment
         double rotation = 0;
 
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord block =
-          tr.GetObject(bt[connectionSymbol], OpenMode.ForRead) as BlockTableRecord;
-
-        BlockJig blockJig = new BlockJig();
-
-        PromptResult res = blockJig.DragMe(block.ObjectId, out point);
+        BlockTableRecord block;
+        BlockReference br = CADObjectCommands.CreateBlockReference(tr, bt, connectionSymbol, out block, out point);
         firstClickPoint = point;
-        if (res.Status == PromptStatus.OK)
+        if (br != null)
         {
           BlockTableRecord curSpace = (BlockTableRecord)
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForRead);
         }
 
-        BlockReference br = new BlockReference(Point3d.Origin, block.ObjectId);
         RotateJig rotateJig = new RotateJig(br);
         PromptResult blockPromptResult = ed.Drag(rotateJig);
         double scaleFactor = 0.25;
@@ -1039,18 +1035,22 @@ namespace ElectricalCommands.Equipment
         {
           Point3d point;
           BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-          BlockTableRecord block =
-            tr.GetObject(bt["GMEP J-BOXSWITCHOBJ"], OpenMode.ForRead) as BlockTableRecord;
 
-          BlockJig blockJig = new BlockJig();
+          BlockTableRecord block;
 
-          PromptResult res = blockJig.DragMe(block.ObjectId, out point);
 
-          if (res.Status == PromptStatus.OK)
+          BlockReference br = CADObjectCommands.CreateBlockReference(
+            tr,
+            bt,
+            "GMEP J-BOXSWITCHOBJ",
+            out block,
+            out point
+          );
+
+          if (br != null)
           {
             BlockTableRecord curSpace = (BlockTableRecord)
               tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-            BlockReference br = new BlockReference(point, block.ObjectId);
 
             RotateJig rotateJig = new RotateJig(br);
             PromptResult rotatePromptResult = ed.Drag(rotateJig);
@@ -1463,9 +1463,9 @@ namespace ElectricalCommands.Equipment
 
     private string GetCircuitNo(ListViewItem item)
     {
-      string circuitNo = item.SubItems[4].Text;
-      string voltage = item.SubItems[6].Text;
-      string phase = item.SubItems[7].Text;
+      string circuitNo = item.SubItems[3].Text;
+      string voltage = item.SubItems[5].Text;
+      string phase = item.SubItems[6].Text;
       if (phase == "3")
       {
         int c = Int32.Parse(circuitNo);
