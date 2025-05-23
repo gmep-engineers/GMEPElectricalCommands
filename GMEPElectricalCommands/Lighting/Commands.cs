@@ -1254,6 +1254,11 @@ namespace ElectricalCommands.Lighting
           {
             continue;
           }
+          else {
+              Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
+                $"Block '{blockName}' not found in the BlockTable."
+              );
+          }
 
           BlockTableRecord lightingBlock = (BlockTableRecord)
             tr.GetObject(bt[blockName], OpenMode.ForRead);
