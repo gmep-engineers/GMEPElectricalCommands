@@ -591,18 +591,15 @@ namespace ElectricalCommands.Lighting
               using (Transaction tr = db.TransactionManager.StartTransaction())
               {
                 BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-                BlockTableRecord btr = (BlockTableRecord)
-                  tr.GetObject(bt[blockName], OpenMode.ForRead);
-                BlockJig blockJig = new BlockJig();
+                BlockTableRecord btr;
+                BlockReference br = CADObjectCommands.CreateBlockReference(tr, bt, blockName, out btr, out point);
 
-                PromptResult res = blockJig.DragMe(btr.ObjectId, out point);
 
-                if (res.Status == PromptStatus.OK)
+                if (br != null)
                 {
                   BlockTableRecord curSpace = (BlockTableRecord)
                     tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
-                  BlockReference br = new BlockReference(point, btr.ObjectId);
 
                   RotateJig rotateJig = new RotateJig(br);
                   PromptResult rotatePromptResult = ed.Drag(rotateJig);
@@ -802,18 +799,21 @@ namespace ElectricalCommands.Lighting
                 {
                   BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
-                  BlockTableRecord block = (BlockTableRecord)
-                    tr.GetObject(bt[fixture.BlockName], OpenMode.ForRead);
-                  BlockJig blockJig = new BlockJig();
+                  BlockTableRecord block;
 
-                  PromptResult res = blockJig.DragMe(block.ObjectId, out point);
+                  BlockReference br = CADObjectCommands.CreateBlockReference(
+                    tr,
+                    bt,
+                    fixture.BlockName,
+                    out block,
+                    out point
+                  );
+  
 
-                  if (res.Status == PromptStatus.OK)
+                  if (br != null)
                   {
                     BlockTableRecord curSpace = (BlockTableRecord)
                       tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-
-                    BlockReference br = new BlockReference(point, block.ObjectId);
 
                     if (fixture.Rotate)
                     {
