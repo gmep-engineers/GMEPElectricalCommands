@@ -32,6 +32,7 @@ using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 using Color = System.Drawing.Color;
 using Group = Autodesk.AutoCAD.DatabaseServices.Group;
 using Panel = ElectricalCommands.ElectricalEntity.Panel;
+using ElectricalCommands;
 
 namespace ElectricalCommands.Lighting
 {
@@ -380,18 +381,12 @@ namespace ElectricalCommands.Lighting
           {
             BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
-            BlockTableRecord block = (BlockTableRecord)
-              tr.GetObject(bt[blockName], OpenMode.ForRead);
-            BlockJig blockJig = new BlockJig();
+            BlockReference br = CADObjectCommands.CreateBlockReference(tr, bt, blockName);
 
-            PromptResult res = blockJig.DragMe(block.ObjectId, out point);
-
-            if (res.Status == PromptStatus.OK)
+            if (br != null)
             {
               BlockTableRecord curSpace = (BlockTableRecord)
                 tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-
-              BlockReference br = new BlockReference(point, block.ObjectId);
 
               RotateJig rotateJig = new RotateJig(br);
               PromptResult rotatePromptResult = ed.Drag(rotateJig);
@@ -403,11 +398,15 @@ namespace ElectricalCommands.Lighting
               rotation = br.Rotation;
               br.ScaleFactors = new Scale3d(0.25 / scale);
               curSpace.AppendEntity(br);
-
               tr.AddNewlyCreatedDBObject(br, true);
-              blockId = br.Id;
 
-              foreach (ObjectId objId in block)
+              blockId = br.Id;
+              point = br.Position;
+
+              ObjectId btrId = br.BlockTableRecord;
+              BlockTableRecord btr = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
+
+              foreach (ObjectId objId in btr)
               {
                 DBObject obj = tr.GetObject(objId, OpenMode.ForRead);
                 AttributeDefinition attDef = obj as AttributeDefinition;
