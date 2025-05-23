@@ -66,15 +66,13 @@ namespace ElectricalCommands.Lighting
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
-        BlockTableRecord baseBlock =
-          tr.GetObject(bt["LTG CTRL BASE"], OpenMode.ForWrite) as BlockTableRecord;
-        BlockJig blockJig = new BlockJig();
-        PromptResult res = blockJig.DragMe(baseBlock.ObjectId, out point);
-        if (res.Status == PromptStatus.OK)
+        BlockTableRecord baseBlock;
+        BlockReference br = CADObjectCommands.CreateBlockReference(tr, bt, "LTG CTRL BASE", out baseBlock, out point);
+
+        if (br != null)
         {
           BlockTableRecord curSpace = (BlockTableRecord)
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-          BlockReference br = new BlockReference(point, baseBlock.ObjectId);
           curSpace.AppendEntity(br);
           tr.AddNewlyCreatedDBObject(br, true);
 
