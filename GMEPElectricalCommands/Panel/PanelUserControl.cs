@@ -2463,6 +2463,15 @@ namespace ElectricalCommands
             cellValues.Add(cellValueC);
           }
 
+          if (cellValueC == null)
+          {
+            rows[1].Cells[$"breaker_{side}"].Value = "2";
+          }
+          else
+          {
+            rows[1].Cells[$"breaker_{side}"].Value = "";
+            rows[2].Cells[$"breaker_{side}"].Value = "3";
+          }
           for (int i = 0; i < phases.Count; i++)
           {
             foreach (DataGridViewRow gridRow in rows)
@@ -2474,18 +2483,6 @@ namespace ElectricalCommands
               )
               {
                 gridRow.Cells[cellName].Value = cellValues[i];
-                if (
-                  i == phases.Count - 1
-                  && gridRow.Cells[$"description_{side}"].Value as string
-                    != "PANEL " + panelName.ToUpper()
-                )
-                {
-                  gridRow.Cells[$"breaker_{side}"].Value = phases.Count.ToString();
-                }
-                else if (phases.Count == 3 && i == 1)
-                {
-                  gridRow.Cells[$"breaker_{side}"].Value = "";
-                }
               }
             }
           }

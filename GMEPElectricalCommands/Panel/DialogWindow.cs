@@ -1287,6 +1287,7 @@ namespace ElectricalCommands
           {
             if (p.ParentId == panel.Id)
             {
+              int voltage = int.Parse(p.Voltage.Substring(4, 3));
               ElectricalEntity.Equipment panelLoad = new ElectricalEntity.Equipment(
                 p.Id,
                 p.NodeId,
@@ -1295,7 +1296,7 @@ namespace ElectricalCommands
                 "PANEL",
                 p.Name,
                 "",
-                Convert.ToInt32(p.LineVoltage),
+                voltage,
                 p.LoadAmperage,
                 p.Phase == 3,
                 p.ParentDistance,
@@ -1631,6 +1632,7 @@ namespace ElectricalCommands
           {
             if (p.ParentId == panel.Id)
             {
+              int voltage = int.Parse(p.Voltage.Substring(4, 3));
               ElectricalEntity.Equipment panelLoad = new ElectricalEntity.Equipment(
                 p.Id,
                 p.NodeId,
@@ -1639,7 +1641,7 @@ namespace ElectricalCommands
                 "PANEL",
                 p.Name,
                 "",
-                Convert.ToInt32(p.LineVoltage),
+                voltage,
                 p.LoadAmperage,
                 p.Phase == 3,
                 p.ParentDistance,
