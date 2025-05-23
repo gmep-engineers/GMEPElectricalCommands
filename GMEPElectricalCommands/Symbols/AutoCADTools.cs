@@ -150,15 +150,16 @@ namespace ElectricalCommands
     {
       return IsInLayout() && !IsInLayoutPaper();
     }
-    public static BlockReference CreateBlockReference(Transaction tr, BlockTable bt, string blockName) {
-      Point3d point;
+    public static BlockReference CreateBlockReference(Transaction tr, BlockTable bt, string blockName, out BlockTableRecord block, out Point3d point) {
       if (!bt.Has(blockName)) {
         Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
           $"Block '{blockName}' not found in the BlockTable."
         );
+        block = null;
+        point = Point3d.Origin;
         return null;
       }
-      BlockTableRecord block = (BlockTableRecord)
+      block = (BlockTableRecord)
               tr.GetObject(bt[blockName], OpenMode.ForRead);
 
       BlockJig blockJig = new BlockJig();
