@@ -148,6 +148,7 @@ namespace ElectricalCommands.Equipment
                   tr.AddNewlyCreatedDBObject(cbr, true);
 
                   cbr.Layer = br.Layer;
+                  cbr.Rotation = br.Rotation;
 
                   DynamicBlockReferencePropertyCollection cpc =
                     cbr.DynamicBlockReferencePropertyCollection;
