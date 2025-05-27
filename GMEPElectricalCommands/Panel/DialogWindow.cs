@@ -925,9 +925,12 @@ namespace ElectricalCommands
             : PanelUserControl.GetBreakerSize(equip.Fla * 1.25);
         breakerArr[startIndex + 2] = "";
         breakerArr[startIndex + 4] = "3";
-        firstPhaseArr[startIndex] = phaseLoad;
-        secondPhaseArr[startIndex + 2] = phaseLoad;
-        thirdPhaseArr[startIndex + 4] = phaseLoad;
+        firstPhaseArr[startIndex] =
+          equip.PhaseAVa > -1 ? Math.Round(equip.PhaseAVa, 0).ToString() : phaseLoad;
+        secondPhaseArr[startIndex + 2] =
+          equip.PhaseBVa > -1 ? Math.Round(equip.PhaseBVa, 0).ToString() : phaseLoad;
+        thirdPhaseArr[startIndex + 4] =
+          equip.PhaseCVa > -1 ? Math.Round(equip.PhaseCVa, 0).ToString() : phaseLoad;
       }
       else if (equip.Pole == 2)
       {
@@ -938,8 +941,11 @@ namespace ElectricalCommands
             ? equip.Mocp.ToString()
             : PanelUserControl.GetBreakerSize(equip.Fla * 1.25);
         breakerArr[startIndex + 2] = "2";
-        firstPhaseArr[startIndex] = phaseLoad;
-        secondPhaseArr[startIndex + 2] = phaseLoad;
+        firstPhaseArr[startIndex] =
+          equip.PhaseAVa > -1 ? Math.Round(equip.PhaseAVa, 0).ToString() : phaseLoad;
+
+        secondPhaseArr[startIndex + 2] =
+          equip.PhaseBVa > -1 ? Math.Round(equip.PhaseAVa, 0).ToString() : phaseLoad;
       }
       else
       {
@@ -1045,8 +1051,10 @@ namespace ElectricalCommands
             ? equip.Mocp.ToString()
             : PanelUserControl.GetBreakerSize(equip.Fla * 1.25);
         breakerArr[startIndex + 2] = "2";
-        firstPhaseArr[startIndex] = phaseLoad;
-        secondPhaseArr[startIndex + 2] = phaseLoad;
+        firstPhaseArr[startIndex] =
+          equip.PhaseAVa > -1 ? Math.Round(equip.PhaseAVa, 0).ToString() : phaseLoad;
+        secondPhaseArr[startIndex + 2] =
+          equip.PhaseBVa > -1 ? Math.Round(equip.PhaseBVa, 0).ToString() : phaseLoad;
       }
       else
       {
@@ -1311,7 +1319,10 @@ namespace ElectricalCommands
                 false,
                 p.Status,
                 "",
-                0
+                0,
+                -1,
+                -1,
+                -1
               );
               if (p.Circuit % 2 == 0)
               {
@@ -1406,7 +1417,10 @@ namespace ElectricalCommands
                 false,
                 t.Status,
                 "",
-                0
+                0,
+                -1,
+                -1,
+                -1
               );
               if (t.Circuit % 2 == 0)
               {
@@ -1656,7 +1670,10 @@ namespace ElectricalCommands
                 false,
                 p.Status,
                 "",
-                0
+                0,
+                -1,
+                -1,
+                -1
               );
               if (panelLoad.Circuit % 2 == 0)
               {
@@ -1741,7 +1758,10 @@ namespace ElectricalCommands
                 false,
                 t.Status,
                 "",
-                0
+                0,
+                -1,
+                -1,
+                -1
               );
               if (xfmrLoad.Circuit % 2 == 0)
               {

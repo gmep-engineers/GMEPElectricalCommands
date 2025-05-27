@@ -890,6 +890,9 @@ namespace ElectricalCommands.ElectricalEntity
     public double Fla;
     public bool Is3Phase,
       HasPlug;
+    public float PhaseAVa,
+      PhaseBVa,
+      PhaseCVa;
 
     public Equipment(
       string Id,
@@ -914,7 +917,10 @@ namespace ElectricalCommands.ElectricalEntity
       bool Hidden,
       string Status,
       string ConnectionSymbol,
-      int CircuitHalf
+      int CircuitHalf,
+      float PhaseAVa,
+      float PhaseBVa,
+      float PhaseCVa
     )
     {
       this.Id = Id;
@@ -942,6 +948,9 @@ namespace ElectricalCommands.ElectricalEntity
       Pole = SetPole(Is3Phase, Voltage);
       this.ConnectionSymbol = ConnectionSymbol;
       this.CircuitHalf = CircuitHalf;
+      this.PhaseAVa = PhaseAVa;
+      this.PhaseBVa = PhaseBVa;
+      this.PhaseCVa = PhaseCVa;
     }
 
     private int SetPole(bool is3Phase, int voltage)

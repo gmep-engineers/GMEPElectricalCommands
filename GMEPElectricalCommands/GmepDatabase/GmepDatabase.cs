@@ -751,6 +751,9 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_equipment.node_id,
         electrical_equipment.is_hidden_on_plan,
         electrical_equipment.circuit_half,
+        electrical_equipment.phase_a_va,
+        electrical_equipment.phase_b_va,
+        electrical_equipment.phase_c_va,
         statuses.status
         FROM electrical_equipment
         LEFT JOIN electrical_panels
@@ -804,7 +807,10 @@ namespace GMEPElectricalCommands.GmepDatabase
             GetSafeBoolean(reader, "is_hidden_on_plan"),
             GetSafeString(reader, "status"),
             GetSafeString(reader, "connection_name"),
-            GetSafeInt(reader, "circuit_half")
+            GetSafeInt(reader, "circuit_half"),
+            GetSafeFloat(reader, "phase_a_va"),
+            GetSafeFloat(reader, "phase_b_va"),
+            GetSafeFloat(reader, "phase_c_va")
           )
         );
       }
