@@ -329,7 +329,7 @@ namespace ElectricalCommands.ElectricalEntity
             //  GetStatusAbbr(),
             //  "gmep",
             //  0.0938 * 12 / scale,
-            //  0.85,
+            //  1,
             //  2,
             //  "E-TXT1",
             //  new Point3d(
@@ -347,7 +347,7 @@ namespace ElectricalCommands.ElectricalEntity
               statusAndAmpString,
               "gmep",
               0.0938 * 12 / scale,
-              0.85,
+              1,
               2,
               "E-TXT1",
               new Point3d(labelInsertionPoint.X, labelInsertionPoint.Y - (1.5 * 1.5 / scale), 0),
@@ -361,7 +361,7 @@ namespace ElectricalCommands.ElectricalEntity
               voltageString,
               "gmep",
               0.0938 * 12 / scale,
-              0.85,
+              1,
               2,
               "E-TXT1",
               new Point3d(labelInsertionPoint.X, labelInsertionPoint.Y - (2.5 * 1.5 / scale), 0),
@@ -375,7 +375,7 @@ namespace ElectricalCommands.ElectricalEntity
               phaseWireString,
               "gmep",
               0.0938 * 12 / scale,
-              0.85,
+              1,
               2,
               "E-TXT1",
               new Point3d(labelInsertionPoint.X, labelInsertionPoint.Y - (3.5 * 1.5 / scale), 0),
@@ -439,6 +439,14 @@ namespace ElectricalCommands.ElectricalEntity
                 ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
                 gmepTextStyleId = doc.Database.Textstyle;
               }
+
+              var textStyle = (TextStyleTableRecord)tr.GetObject(gmepTextStyleId, OpenMode.ForRead);
+              double widthFactor = 1;
+              if (textStyle.FileName.ToLower().Contains("architxt"))
+              {
+                widthFactor = 0.85;
+              }
+
               AttributeDefinition attrDef = new AttributeDefinition();
               attrDef.Position = labelInsertionPoint;
               attrDef.LockPositionInBlock = true;
@@ -450,7 +458,7 @@ namespace ElectricalCommands.ElectricalEntity
               attrDef.Invisible = false;
               attrDef.Constant = false;
               attrDef.Height = 4.5 * 0.25 / scale;
-              attrDef.WidthFactor = 0.85;
+              attrDef.WidthFactor = widthFactor;
               attrDef.TextStyleId = gmepTextStyleId;
               attrDef.Layer = "0";
 
@@ -481,7 +489,7 @@ namespace ElectricalCommands.ElectricalEntity
                 GetStatusAbbr() + Name.ToUpper(),
                 "gmep",
                 0.0938 * 12 / scale,
-                0.85,
+                1,
                 2,
                 "E-TXT1",
                 new Point3d(labelInsertionPoint.X + (0.5 / scale), labelInsertionPoint.Y, 0),
@@ -497,7 +505,7 @@ namespace ElectricalCommands.ElectricalEntity
                 GetStatusAbbr() + Name.ToUpper(),
                 "gmep",
                 0.0938 * 12 / scale,
-                0.85,
+                1,
                 2,
                 "E-TXT1",
                 new Point3d(labelInsertionPoint.X - (0.5 / scale), labelInsertionPoint.Y, 0),

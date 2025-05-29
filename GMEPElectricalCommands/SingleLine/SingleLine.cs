@@ -64,7 +64,7 @@ namespace ElectricalCommands.SingleLine
         "~" + Math.Round(AicRating, 0).ToString() + " AIC",
         "gmep",
         0.0938,
-        0.85,
+        1,
         2,
         "E-TXT1",
         new Point3d(EndingPoint.X + 0.0678, EndingPoint.Y + 0.08, 0)
@@ -366,7 +366,7 @@ namespace ElectricalCommands.SingleLine
           (mainBreaker.GetStatusAbbr()),
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.1775, currentPoint.Y - 0.0578, 0)
@@ -376,7 +376,7 @@ namespace ElectricalCommands.SingleLine
           mainBreaker.AmpRating.ToString() + "A",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.1775, currentPoint.Y - 0.1878, 0)
@@ -386,7 +386,7 @@ namespace ElectricalCommands.SingleLine
           mainBreaker.NumPoles.ToString() + "P",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.1775, currentPoint.Y - 0.3178, 0)
@@ -436,7 +436,7 @@ namespace ElectricalCommands.SingleLine
           (distributionBreaker.GetStatusAbbr()),
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.1775, currentPoint.Y - 0.0578, 0)
@@ -446,7 +446,7 @@ namespace ElectricalCommands.SingleLine
           distributionBreaker.AmpRating.ToString() + "A",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.1775, currentPoint.Y - 0.1878, 0)
@@ -456,7 +456,7 @@ namespace ElectricalCommands.SingleLine
           distributionBreaker.NumPoles.ToString() + "P",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.1775, currentPoint.Y - 0.3178, 0)
@@ -488,7 +488,7 @@ namespace ElectricalCommands.SingleLine
           (meter.GetStatusAbbr()),
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.33, currentPoint.Y + 0.1611, 0)
@@ -540,7 +540,7 @@ namespace ElectricalCommands.SingleLine
           (meter.GetStatusAbbr()),
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.1441, currentPoint.Y + 0.115, 0)
@@ -593,7 +593,7 @@ namespace ElectricalCommands.SingleLine
           (panel.GetStatusAbbr()),
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X, currentPoint.Y - 0.44, 0),
@@ -606,7 +606,7 @@ namespace ElectricalCommands.SingleLine
           "PANEL",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X, currentPoint.Y - 0.57, 0),
@@ -619,7 +619,7 @@ namespace ElectricalCommands.SingleLine
           "'" + panel.Name.ToUpper().Replace("PANEL", "").Trim() + "'",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X, currentPoint.Y - 0.70, 0),
@@ -677,7 +677,7 @@ namespace ElectricalCommands.SingleLine
               + (panel.Voltage.Contains("3") ? "3P" : "2P"),
             "gmep",
             0.0938,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(currentPoint.X - 0.42, currentPoint.Y + 0.165, 0),
@@ -694,7 +694,7 @@ namespace ElectricalCommands.SingleLine
             "NO WORK",
             "gmep",
             0.0938,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(currentPoint.X, currentPoint.Y - 1.1826, 0),
@@ -711,7 +711,7 @@ namespace ElectricalCommands.SingleLine
             Math.Round(panel.Kva, 0).ToString() + " KVA",
             "gmep",
             0.0938,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(currentPoint.X + 0.2874, currentPoint.Y - 1.1826, 0),
@@ -724,7 +724,7 @@ namespace ElectricalCommands.SingleLine
             Math.Round(panel.LoadAmperage, 0).ToString() + " A",
             "gmep",
             0.0938,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(currentPoint.X + 0.0977, currentPoint.Y - 1.3126, 0),
@@ -795,7 +795,7 @@ namespace ElectricalCommands.SingleLine
             + "P",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.42, currentPoint.Y + 0.165, 0),
@@ -862,7 +862,7 @@ namespace ElectricalCommands.SingleLine
             + "P",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X - 0.42, currentPoint.Y + 0.165, 0),
@@ -931,7 +931,7 @@ namespace ElectricalCommands.SingleLine
           text,
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X - 0.25, currentPoint.Y - 0.037, 0),
@@ -944,7 +944,7 @@ namespace ElectricalCommands.SingleLine
           "DISCONNECT",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X - 0.25, currentPoint.Y - 0.18, 0),
@@ -1044,7 +1044,7 @@ namespace ElectricalCommands.SingleLine
           transformer.GetStatusAbbr() + grounding,
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X - 0.25, currentPoint.Y - 0.86, 0),
@@ -1057,7 +1057,7 @@ namespace ElectricalCommands.SingleLine
           "TO BUILDING STEEL",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X - 0.25, currentPoint.Y - 1.0, 0),
@@ -1089,7 +1089,7 @@ namespace ElectricalCommands.SingleLine
           line1,
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X - 0.3333, currentPoint.Y - 0.05, 0),
@@ -1102,7 +1102,7 @@ namespace ElectricalCommands.SingleLine
           line2,
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X - 0.3333, currentPoint.Y - 0.18, 0),
@@ -1115,7 +1115,7 @@ namespace ElectricalCommands.SingleLine
           line3,
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X - 0.3333, currentPoint.Y - 0.31, 0),
@@ -1437,7 +1437,7 @@ namespace ElectricalCommands.SingleLine
           "FROM",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X - 0.25, currentPoint.Y - 2.3, 0)
@@ -1447,7 +1447,7 @@ namespace ElectricalCommands.SingleLine
           "SERVICE",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X - 0.25, currentPoint.Y - 2.43, 0)
@@ -1457,7 +1457,7 @@ namespace ElectricalCommands.SingleLine
           "FEEDER",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X - 0.25, currentPoint.Y - 2.56, 0)
@@ -1468,7 +1468,7 @@ namespace ElectricalCommands.SingleLine
           service.GetStatusAbbr() + service.AmpRating.ToString() + "A",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.4, currentPoint.Y + 0.53, 0)
@@ -1478,7 +1478,7 @@ namespace ElectricalCommands.SingleLine
           "UNDERGROUND",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.4, currentPoint.Y + 0.38, 0)
@@ -1488,7 +1488,7 @@ namespace ElectricalCommands.SingleLine
           "PULL SECTION",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.4, currentPoint.Y + 0.25, 0)
@@ -1670,7 +1670,7 @@ namespace ElectricalCommands.SingleLine
           meter.GetStatusAbbr() + "METER",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 1, currentPoint.Y + 0.53, 0)
@@ -1680,7 +1680,7 @@ namespace ElectricalCommands.SingleLine
           "SECTION",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 1, currentPoint.Y + 0.38, 0)
@@ -1741,7 +1741,7 @@ namespace ElectricalCommands.SingleLine
           mainBreaker.GetStatusAbbr() + "MAIN",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 1, currentPoint.Y + 0.53, 0)
@@ -1751,7 +1751,7 @@ namespace ElectricalCommands.SingleLine
           "BREAKER",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 1, currentPoint.Y + 0.38, 0)
@@ -1761,7 +1761,7 @@ namespace ElectricalCommands.SingleLine
           "SECTION",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 1, currentPoint.Y + 0.25, 0)
@@ -1866,7 +1866,7 @@ namespace ElectricalCommands.SingleLine
           mainBreaker.GetStatusAbbr() + "METER&MAIN",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 1, currentPoint.Y + 0.53, 0)
@@ -1876,7 +1876,7 @@ namespace ElectricalCommands.SingleLine
           "BREAKER",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 1, currentPoint.Y + 0.38, 0)
@@ -1886,7 +1886,7 @@ namespace ElectricalCommands.SingleLine
           "SECTION",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 1, currentPoint.Y + 0.25, 0)
@@ -1935,7 +1935,7 @@ namespace ElectricalCommands.SingleLine
           statusText + "GND BUS",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.25, currentPoint.Y - 1.75, 0)
@@ -1945,27 +1945,27 @@ namespace ElectricalCommands.SingleLine
           statusText + (existing ? "" : "1#3/0 CU."),
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
-          new Point3d(currentPoint.X + 0.85, currentPoint.Y - 2.2, 0)
+          new Point3d(currentPoint.X + 1, currentPoint.Y - 2.2, 0)
         );
         GeneralCommands.CreateAndPositionText(
           tr,
           (existing ? "GROUND BUS" : "TO COLD WATER PIPE"),
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
-          new Point3d(currentPoint.X + 0.85, currentPoint.Y - 2.33, 0)
+          new Point3d(currentPoint.X + 1, currentPoint.Y - 2.33, 0)
         );
         GeneralCommands.CreateAndPositionText(
           tr,
           statusText + (existing ? "" : "1#3/0 CU."),
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.62, currentPoint.Y - 2.6, 0)
@@ -1975,7 +1975,7 @@ namespace ElectricalCommands.SingleLine
           (existing ? "GROUND BUS" : "TO COLD WATER PIPE"),
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.62, currentPoint.Y - 2.73, 0)
@@ -2078,6 +2078,14 @@ namespace ElectricalCommands.SingleLine
             ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
             gmepTextStyleId = doc.Database.Textstyle;
           }
+
+          var textStyle = (TextStyleTableRecord)tr.GetObject(gmepTextStyleId, OpenMode.ForRead);
+          double widthFactor = 1;
+          if (textStyle.FileName.ToLower().Contains("architxt"))
+          {
+            widthFactor = 0.85;
+          }
+
           AttributeDefinition attrDef = new AttributeDefinition();
           attrDef.Position = new Point3d(currentPoint.X, currentPoint.Y - 0.1302, 0);
           attrDef.LockPositionInBlock = false;
@@ -2089,7 +2097,7 @@ namespace ElectricalCommands.SingleLine
           attrDef.Invisible = false;
           attrDef.Constant = false;
           attrDef.Height = 0.0938;
-          attrDef.WidthFactor = 0.85;
+          attrDef.WidthFactor = widthFactor;
           attrDef.TextStyleId = gmepTextStyleId;
           attrDef.Layer = "0";
 
@@ -2111,7 +2119,7 @@ namespace ElectricalCommands.SingleLine
           attrDef2.Invisible = false;
           attrDef2.Constant = false;
           attrDef2.Height = 0.0938;
-          attrDef2.WidthFactor = 0.85;
+          attrDef2.WidthFactor = widthFactor;
           attrDef2.TextStyleId = gmepTextStyleId;
           attrDef2.Layer = "0";
 
@@ -2191,7 +2199,7 @@ namespace ElectricalCommands.SingleLine
             + (!String.IsNullOrEmpty(name) ? $" '{name}'" : ""),
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.6, currentPoint.Y + 0.53, 0)
@@ -2201,7 +2209,7 @@ namespace ElectricalCommands.SingleLine
           distributionBus.AmpRating.ToString() + "A " + voltageText,
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.6, currentPoint.Y + 0.38, 0)
@@ -2213,7 +2221,7 @@ namespace ElectricalCommands.SingleLine
             "65 KAIC OR MATCH FAULT CURRENT ON SITE",
             "gmep",
             0.0938,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(currentPoint.X + 0.6, currentPoint.Y + 0.25, 0)
@@ -2225,7 +2233,7 @@ namespace ElectricalCommands.SingleLine
           distributionBus.GetStatusAbbr() + distributionBus.AmpRating.ToString() + "A BUS",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(busBarPoint.X + 0.05, busBarPoint.Y + 0.05, 0)
@@ -2295,7 +2303,7 @@ namespace ElectricalCommands.SingleLine
           "~" + Math.Round(aicRating, 0).ToString() + " AIC",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X + 0.0678, currentPoint.Y + 0.1197, 0)
@@ -2370,6 +2378,7 @@ namespace ElectricalCommands.SingleLine
         .MdiActiveDocument;
       Database db = doc.Database;
 
+      ObjectId blockRefId;
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -2379,6 +2388,7 @@ namespace ElectricalCommands.SingleLine
         ObjectId keyedNoteBlockId = bt["KEYED NOTE (AUTO SINGLE LINE)"];
         using (BlockReference acBlkRef = new BlockReference(location, keyedNoteBlockId))
         {
+          blockRefId = acBlkRef.Id;
           BlockTableRecord acCurSpaceBlkTblRec;
           acCurSpaceBlkTblRec =
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite) as BlockTableRecord;
@@ -2388,10 +2398,17 @@ namespace ElectricalCommands.SingleLine
           ObjectId gmepTextStyleId;
           gmepTextStyleId = textStyleTable["gmep"];
 
+          var textStyle = (TextStyleTableRecord)tr.GetObject(gmepTextStyleId, OpenMode.ForRead);
+          double widthFactor = 1;
+          if (textStyle.FileName.ToLower().Contains("architxt"))
+          {
+            widthFactor = 0.85;
+          }
+
           AttributeDefinition attrDef = new AttributeDefinition();
           attrDef.Position = location;
           attrDef.LockPositionInBlock = true;
-          attrDef.Tag = index.ToString();
+          attrDef.Tag = "A";
           attrDef.IsMTextAttributeDefinition = false;
           attrDef.TextString = index.ToString();
           attrDef.Justify = AttachmentPoint.MiddleCenter;
@@ -2399,9 +2416,10 @@ namespace ElectricalCommands.SingleLine
           attrDef.Invisible = false;
           attrDef.Constant = false;
           attrDef.Height = 0.0938;
-          attrDef.WidthFactor = 0.85;
+          attrDef.WidthFactor = widthFactor;
           attrDef.TextStyleId = gmepTextStyleId;
           attrDef.Layer = "0";
+          attrDef.Annotative = AnnotativeStates.False;
 
           AttributeReference attrRef = new AttributeReference();
           attrRef.SetAttributeFromBlock(attrDef, acBlkRef.BlockTransform);
@@ -2533,7 +2551,7 @@ namespace ElectricalCommands.SingleLine
           "NO WORK",
           "gmep",
           0.0938,
-          0.85,
+          1,
           2,
           "E-TXT1",
           new Point3d(currentPoint.X, currentPoint.Y, 0),

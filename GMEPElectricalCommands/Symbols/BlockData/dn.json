@@ -27,7 +27,7 @@
         "Y": -1.6602647093141059,
         "Z": 0.0
       },
-      "LineSpaceDistance": 0.85,
+      "LineSpaceDistance": 1,
       "Height": 4.5,
       "Rotation": 0.0,
       "AlignmentPoint": {
@@ -40,7 +40,7 @@
       "IsMirroredInY": false,
       "StyleAttributes": {
         "Height": 4.5,
-        "WidthFactor": 0.85,
+        "WidthFactor": 1,
         "FontName": "rpm"
       },
       "Layer": "E-TXT1"

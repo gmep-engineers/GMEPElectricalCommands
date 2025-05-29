@@ -437,7 +437,7 @@ namespace ElectricalCommands
             "26439 RANCHO PARKWAY S., STE 120",
             "section title",
             0.0876943284922549,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(endPoint.X + 0.616030703269718, endPoint.Y + 4.50630858013255, 0)
@@ -447,7 +447,7 @@ namespace ElectricalCommands
             "LAKE FOREST / CA / 92630",
             "section title",
             0.0876943284922549,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(endPoint.X + 0.830140069102175, endPoint.Y + 4.36949614021856, 0)
@@ -457,7 +457,7 @@ namespace ElectricalCommands
             date,
             "section title",
             0.0876943284922549,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(endPoint.X + 4.42666777063172, endPoint.Y + 4.66189987763855, 0)
@@ -467,7 +467,7 @@ namespace ElectricalCommands
             "949-267-9095",
             "section title",
             0.0876943284922549,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(endPoint.X + 4.71352182336645, endPoint.Y + 4.35886418478551, 0)
@@ -477,7 +477,7 @@ namespace ElectricalCommands
             "GANGYI ZHOU",
             "section title",
             0.0876943284922549,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(endPoint.X + 1.33142902358651, endPoint.Y + 3.01601014439938, 0)
@@ -487,7 +487,7 @@ namespace ElectricalCommands
             "GMEP ENGINEERS",
             "section title",
             0.0876943284922549,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(endPoint.X + 0.668423993870732, endPoint.Y + 2.88028724160062, 0)
@@ -497,7 +497,7 @@ namespace ElectricalCommands
             "26439 RANCHO PARKWAY S., STE 120",
             "section title",
             0.0876943284922549,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(endPoint.X + 0.62227730526692, endPoint.Y + 2.74045851853929, 0)
@@ -507,7 +507,7 @@ namespace ElectricalCommands
             "LAKE FOREST / CA / 92630",
             "section title",
             0.0876943284922549,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(endPoint.X + 0.836386671099376, endPoint.Y + 2.6036460786253, 0)
@@ -517,7 +517,7 @@ namespace ElectricalCommands
             date,
             "section title",
             0.0876943284922549,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(endPoint.X + 4.91476322910475, endPoint.Y + 2.88367464681008, 0)
@@ -527,7 +527,7 @@ namespace ElectricalCommands
             "018959",
             "section title",
             0.0876943284922549,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(endPoint.X + 4.73138762315727, endPoint.Y + 2.73999545901736, 0)
@@ -537,7 +537,7 @@ namespace ElectricalCommands
             "949-267-9095",
             "section title",
             0.0876943284922549,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(endPoint.X + 4.72812369339329, endPoint.Y + 2.60470667575825, 0)
@@ -547,7 +547,7 @@ namespace ElectricalCommands
             CADObjectCommands.Address,
             "section title",
             0.0876943284922549,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(endPoint.X + 1.12034937319065, endPoint.Y + 5.90348576586952, 0)
@@ -557,7 +557,7 @@ namespace ElectricalCommands
             CADObjectCommands.Address,
             "section title",
             0.0876943284922549,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(19.6189747396865, 20.0676917313362 + addressShift, 0)
@@ -1982,27 +1982,35 @@ namespace ElectricalCommands
         offset += 5;
       }
     }
+
     [CommandMethod("LTI")]
-    public async void LTI() {
+    public async void LTI()
+    {
       string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
       string relativePath = System.IO.Path.Combine(
-          "Documents",
-          "Scripts",
-          "GMEPTitle24",
-          "bin",
-          "Debug",
-          "net8.0-windows7.0",
-          "GMEPTitle24.exe"
+        "Documents",
+        "Scripts",
+        "GMEPTitle24",
+        "bin",
+        "Debug",
+        "net8.0-windows7.0",
+        "GMEPTitle24.exe"
       );
       string filePath = System.IO.Path.Combine(userProfile, relativePath);
       string arguments = CADObjectCommands.GetProjectNoFromFileName().ToString() + " a 0";
-      if (File.Exists(filePath)) 
+      if (File.Exists(filePath))
       {
         await LaunchProcess(filePath, arguments);
       }
-      async System.Threading.Tasks.Task LaunchProcess(string executablePath, string commandLineArguments) {
-        try {
-          ProcessStartInfo startInfo = new ProcessStartInfo {
+      async System.Threading.Tasks.Task LaunchProcess(
+        string executablePath,
+        string commandLineArguments
+      )
+      {
+        try
+        {
+          ProcessStartInfo startInfo = new ProcessStartInfo
+          {
             FileName = executablePath,
             Arguments = commandLineArguments,
             UseShellExecute = false,
@@ -2011,39 +2019,45 @@ namespace ElectricalCommands
             CreateNoWindow = false,
           };
 
-          Process process = new Process {
-            StartInfo = startInfo,
-            EnableRaisingEvents = true,
-          };
+          Process process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
 
           await System.Threading.Tasks.Task.Run(() => process.Start());
         }
-        catch (System.Exception ex) {
+        catch (System.Exception ex)
+        {
           Console.WriteLine($"Error launching process: {ex.Message}");
         }
       }
     }
 
     [CommandMethod("LTO")]
-    public async void LTO() {
+    public async void LTO()
+    {
       string userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
       string relativePath = System.IO.Path.Combine(
-          "Documents",
-          "Scripts",
-          "GMEPTitle24",
-          "bin",
-          "Debug",
-          "net8.0-windows7.0",
-          "GMEPTitle24.exe"
+        "Documents",
+        "Scripts",
+        "GMEPTitle24",
+        "bin",
+        "Debug",
+        "net8.0-windows7.0",
+        "GMEPTitle24.exe"
       );
       string filePath = System.IO.Path.Combine(userProfile, relativePath);
       string arguments = CADObjectCommands.GetProjectNoFromFileName().ToString() + " a 1";
-      if (File.Exists(filePath)) {
+      if (File.Exists(filePath))
+      {
         await LaunchProcess(filePath, arguments);
       }
-      async System.Threading.Tasks.Task LaunchProcess(string executablePath, string commandLineArguments) {
-        try {
-          ProcessStartInfo startInfo = new ProcessStartInfo {
+      async System.Threading.Tasks.Task LaunchProcess(
+        string executablePath,
+        string commandLineArguments
+      )
+      {
+        try
+        {
+          ProcessStartInfo startInfo = new ProcessStartInfo
+          {
             FileName = executablePath,
             Arguments = commandLineArguments,
             UseShellExecute = false,
@@ -2052,14 +2066,12 @@ namespace ElectricalCommands
             CreateNoWindow = false,
           };
 
-          Process process = new Process {
-            StartInfo = startInfo,
-            EnableRaisingEvents = true,
-          };
+          Process process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
 
           await System.Threading.Tasks.Task.Run(() => process.Start());
         }
-        catch (System.Exception ex) {
+        catch (System.Exception ex)
+        {
           Console.WriteLine($"Error launching process: {ex.Message}");
         }
       }
@@ -2552,7 +2564,7 @@ namespace ElectricalCommands
         text1,
         "section title",
         0.25,
-        0.85,
+        1,
         2,
         "E-TXT1",
         new Point3d(endPoint.X - 0.0217553592831337, endPoint.Y - 0.295573529244971, 0)
@@ -2693,6 +2705,10 @@ namespace ElectricalCommands
       {
         var textStyleId = GetTextStyleId(style);
         var textStyle = (TextStyleTableRecord)tr.GetObject(textStyleId, OpenMode.ForRead);
+        if (textStyle.FileName.ToLower().Contains("architxt"))
+        {
+          widthFactor = 0.85;
+        }
 
         var text = new DBText
         {

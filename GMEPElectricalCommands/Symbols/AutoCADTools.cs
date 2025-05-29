@@ -150,8 +150,17 @@ namespace ElectricalCommands
     {
       return IsInLayout() && !IsInLayoutPaper();
     }
-    public static BlockReference CreateBlockReference(Transaction tr, BlockTable bt, string blockName, out BlockTableRecord block, out Point3d point) {
-      if (!bt.Has(blockName)) {
+
+    public static BlockReference CreateBlockReference(
+      Transaction tr,
+      BlockTable bt,
+      string blockName,
+      out BlockTableRecord block,
+      out Point3d point
+    )
+    {
+      if (!bt.Has(blockName))
+      {
         Autodesk.AutoCAD.ApplicationServices.Application.ShowAlertDialog(
           $"Block '{blockName}' not found in the BlockTable."
         );
@@ -159,12 +168,12 @@ namespace ElectricalCommands
         point = Point3d.Origin;
         return null;
       }
-      block = (BlockTableRecord)
-              tr.GetObject(bt[blockName], OpenMode.ForRead);
+      block = (BlockTableRecord)tr.GetObject(bt[blockName], OpenMode.ForRead);
 
       BlockJig blockJig = new BlockJig();
       PromptResult res = blockJig.DragMe(block.ObjectId, out point);
-      if (res.Status != PromptStatus.OK) {
+      if (res.Status != PromptStatus.OK)
+      {
         return null;
       }
       BlockReference br = new BlockReference(point, block.ObjectId);
@@ -835,11 +844,18 @@ namespace ElectricalCommands
                 }
                 scaleFactor = 12 / Scale;
               }
+
+              double widthFactor = 1;
+              if (textStyle.FileName.ToLower().Contains("architxt"))
+              {
+                widthFactor = 0.85;
+              }
+
               var kvaText = new DBText
               {
                 Position = new Point3d(ppr.Value.X, ppr.Value.Y - 0.16 * scaleFactor, 0),
                 Height = 0.1 * scaleFactor,
-                WidthFactor = 0.85,
+                WidthFactor = widthFactor,
                 Layer = "E-TXT1",
                 TextStyleId = textStyleId,
                 HorizontalMode = TextHorizontalMode.TextLeft,
@@ -850,7 +866,7 @@ namespace ElectricalCommands
               {
                 Position = new Point3d(ppr.Value.X, ppr.Value.Y - 0.32 * scaleFactor, 0),
                 Height = 0.1 * scaleFactor,
-                WidthFactor = 0.85,
+                WidthFactor = widthFactor,
                 Layer = "E-TXT1",
                 TextStyleId = textStyleId,
                 HorizontalMode = TextHorizontalMode.TextLeft,
@@ -1590,6 +1606,13 @@ namespace ElectricalCommands
           }
           scaleFactor = 12 / Scale;
         }
+
+        double widthFactor = 1;
+        if (textStyle.FileName.ToLower().Contains("architxt"))
+        {
+          widthFactor = 0.85;
+        }
+
         var firstLineText = new DBText
         {
           TextString = firstLine,
@@ -1597,7 +1620,7 @@ namespace ElectricalCommands
             ? new Point3d(ppr.X, ppr.Y + 0.20 * scaleFactor, 0)
             : new Point3d(ppr.X - 0.20 * scaleFactor, ppr.Y, 0),
           Height = 0.1 * scaleFactor,
-          WidthFactor = 0.85,
+          WidthFactor = widthFactor,
           Layer = "E-TEXT",
           TextStyleId = textStyleId,
           HorizontalMode = TextHorizontalMode.TextLeft,
@@ -1613,7 +1636,7 @@ namespace ElectricalCommands
             ? new Point3d(ppr.X, ppr.Y + 0.04 * scaleFactor, 0)
             : new Point3d(ppr.X - 0.04 * scaleFactor, ppr.Y, 0),
           Height = 0.1 * scaleFactor,
-          WidthFactor = 0.85,
+          WidthFactor = widthFactor,
           Layer = "E-TEXT",
           TextStyleId = textStyleId,
           HorizontalMode = TextHorizontalMode.TextLeft,
@@ -1629,7 +1652,7 @@ namespace ElectricalCommands
             ? new Point3d(ppr.X, ppr.Y - 0.13 * scaleFactor, 0)
             : new Point3d(ppr.X + 0.13 * scaleFactor, ppr.Y, 0),
           Height = 0.1 * scaleFactor,
-          WidthFactor = 0.85,
+          WidthFactor = widthFactor,
           Layer = "E-TEXT",
           TextStyleId = textStyleId,
           HorizontalMode = TextHorizontalMode.TextLeft,
@@ -1645,7 +1668,7 @@ namespace ElectricalCommands
             ? new Point3d(ppr.X, ppr.Y - 0.29 * scaleFactor, 0)
             : new Point3d(ppr.X + 0.29 * scaleFactor, ppr.Y, 0),
           Height = 0.1 * scaleFactor,
-          WidthFactor = 0.85,
+          WidthFactor = widthFactor,
           Layer = "DEFPOINTS",
           TextStyleId = textStyleId,
           HorizontalMode = TextHorizontalMode.TextLeft,
@@ -1661,7 +1684,7 @@ namespace ElectricalCommands
             ? new Point3d(ppr.X, ppr.Y - 0.45 * scaleFactor, 0)
             : new Point3d(ppr.X + 0.45 * scaleFactor, ppr.Y, 0),
           Height = 0.1 * scaleFactor,
-          WidthFactor = 0.85,
+          WidthFactor = widthFactor,
           Layer = "DEFPOINTS",
           TextStyleId = textStyleId,
           HorizontalMode = TextHorizontalMode.TextLeft,
@@ -1677,7 +1700,7 @@ namespace ElectricalCommands
             ? new Point3d(ppr.X, ppr.Y - 0.61 * scaleFactor, 0)
             : new Point3d(ppr.X + 0.61 * scaleFactor, ppr.Y, 0),
           Height = 0.1 * scaleFactor,
-          WidthFactor = 0.85,
+          WidthFactor = widthFactor,
           Layer = "DEFPOINTS",
           TextStyleId = textStyleId,
           HorizontalMode = TextHorizontalMode.TextLeft,

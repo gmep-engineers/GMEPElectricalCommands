@@ -408,6 +408,15 @@ namespace ElectricalCommands.Lighting
                   startPoint.Y - (1.47 + (0.8911 * r)),
                   0
                 );
+
+                var textStyle = (TextStyleTableRecord)
+                  tr.GetObject(gmepTextStyleId, OpenMode.ForRead);
+                double widthFactor = 1;
+                if (textStyle.FileName.ToLower().Contains("architxt"))
+                {
+                  widthFactor = 0.85;
+                }
+
                 attrDef.LockPositionInBlock = false;
                 attrDef.Tag = "tag";
                 attrDef.IsMTextAttributeDefinition = false;
@@ -417,7 +426,7 @@ namespace ElectricalCommands.Lighting
                 attrDef.Invisible = false;
                 attrDef.Constant = false;
                 attrDef.Height = 0.0938;
-                attrDef.WidthFactor = 0.85;
+                attrDef.WidthFactor = widthFactor;
                 attrDef.TextStyleId = gmepTextStyleId;
                 attrDef.Layer = "0";
 
@@ -443,7 +452,7 @@ namespace ElectricalCommands.Lighting
                 attrDef2.Invisible = false;
                 attrDef2.Constant = false;
                 attrDef2.Height = 0.0938;
-                attrDef2.WidthFactor = 0.85;
+                attrDef2.WidthFactor = widthFactor;
                 attrDef2.TextStyleId = gmepTextStyleId;
                 attrDef2.Layer = "0";
 
@@ -592,14 +601,18 @@ namespace ElectricalCommands.Lighting
               {
                 BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 BlockTableRecord btr;
-                BlockReference br = CADObjectCommands.CreateBlockReference(tr, bt, blockName, out btr, out point);
-
+                BlockReference br = CADObjectCommands.CreateBlockReference(
+                  tr,
+                  bt,
+                  blockName,
+                  out btr,
+                  out point
+                );
 
                 if (br != null)
                 {
                   BlockTableRecord curSpace = (BlockTableRecord)
                     tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
-
 
                   RotateJig rotateJig = new RotateJig(br);
                   PromptResult rotatePromptResult = ed.Drag(rotateJig);
@@ -630,7 +643,7 @@ namespace ElectricalCommands.Lighting
                           attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
                           attRef.TextString = control.Name;
                           attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;
-                          attRef.WidthFactor = 0.85;
+                          attRef.WidthFactor = 1;
                           attRef.HorizontalMode = TextHorizontalMode.TextLeft;
                           attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
                           attRef.Justify = AttachmentPoint.BaseLeft;
@@ -640,7 +653,7 @@ namespace ElectricalCommands.Lighting
                         {
                           attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
                           attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;
-                          attRef.WidthFactor = 0.85;
+                          attRef.WidthFactor = 1;
                           attRef.TextString = attRef.Tag;
                           attRef.HorizontalMode = TextHorizontalMode.TextLeft;
                           attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
@@ -808,7 +821,6 @@ namespace ElectricalCommands.Lighting
                     out block,
                     out point
                   );
-  
 
                   if (br != null)
                   {
@@ -955,7 +967,7 @@ namespace ElectricalCommands.Lighting
                       attRef.Position = position;
                       attRef.Rotation = attRef.Rotation - rotation;
                       attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;
-                      attRef.WidthFactor = 0.85;
+                      attRef.WidthFactor = 1;
                       attRef.HorizontalMode = TextHorizontalMode.TextLeft;
                       attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
                       attRef.Justify = AttachmentPoint.BaseLeft;
@@ -965,7 +977,7 @@ namespace ElectricalCommands.Lighting
                       attRef.Position = position2;
                       attRef.Rotation = attRef.Rotation - rotation;
                       attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;
-                      attRef.WidthFactor = 0.85;
+                      attRef.WidthFactor = 1;
                       attRef.HorizontalMode = TextHorizontalMode.TextLeft;
                       attRef.VerticalMode = TextVerticalMode.TextVerticalMid;
                       attRef.Justify = AttachmentPoint.BaseLeft;
@@ -1016,6 +1028,15 @@ namespace ElectricalCommands.Lighting
                         br.Position.Y + (0.12 * scaleUp),
                         0
                       );
+
+                      var textStyle = (TextStyleTableRecord)
+                        tr.GetObject(gmepTextStyleId, OpenMode.ForRead);
+                      double widthFactor = 1;
+                      if (textStyle.FileName.ToLower().Contains("architxt"))
+                      {
+                        widthFactor = 0.85;
+                      }
+
                       attrDef.LockPositionInBlock = false;
                       attrDef.Tag = "tag";
                       attrDef.IsMTextAttributeDefinition = false;
@@ -1025,7 +1046,7 @@ namespace ElectricalCommands.Lighting
                       attrDef.Invisible = false;
                       attrDef.Constant = false;
                       attrDef.Height = 0.0938 * scaleUp;
-                      attrDef.WidthFactor = 0.85;
+                      attrDef.WidthFactor = widthFactor;
                       attrDef.TextStyleId = gmepTextStyleId;
                       attrDef.Layer = "0";
 
@@ -1054,7 +1075,7 @@ namespace ElectricalCommands.Lighting
                       attrDef2.Invisible = false;
                       attrDef2.Constant = false;
                       attrDef2.Height = 0.0938 * scaleUp;
-                      attrDef2.WidthFactor = 0.85;
+                      attrDef2.WidthFactor = widthFactor;
                       attrDef2.TextStyleId = gmepTextStyleId;
                       attrDef2.Layer = "0";
 
@@ -1076,7 +1097,7 @@ namespace ElectricalCommands.Lighting
                           $"TYP. OF {fixture.Qty}",
                           "gmep",
                           0.0938 * scaleUp,
-                          0.85,
+                          1,
                           2,
                           "E-TXT1",
                           new Point3d(
