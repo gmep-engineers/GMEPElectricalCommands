@@ -9,12 +9,12 @@ using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Geometry;
 using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Office2010.Excel;
+using ElectricalCommands;
 using ElectricalCommands.ElectricalEntity;
 using ElectricalCommands.Lighting;
 using Emgu.CV.ML;
 using GMEPElectricalCommands.GmepDatabase;
 using Table = Autodesk.AutoCAD.DatabaseServices.Table;
-using ElectricalCommands;
 
 namespace ElectricalCommands.Equipment
 {
@@ -738,7 +738,7 @@ namespace ElectricalCommands.Equipment
                 circuitNo,
                 "gmep",
                 0.0938 * 12.0 / CADObjectCommands.Scale,
-                0.85,
+                1,
                 2,
                 "E-TXT1",
                 new Point3d(point.X - (circuitOffsetX), point.Y - (circuitOffsetY), 0)
@@ -874,7 +874,13 @@ namespace ElectricalCommands.Equipment
 
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord block;
-        BlockReference br = CADObjectCommands.CreateBlockReference(tr, bt, connectionSymbol, out block, out point);
+        BlockReference br = CADObjectCommands.CreateBlockReference(
+          tr,
+          bt,
+          connectionSymbol,
+          out block,
+          out point
+        );
         firstClickPoint = point;
         if (br != null)
         {
@@ -1016,7 +1022,7 @@ namespace ElectricalCommands.Equipment
             circuitNo,
             "gmep",
             0.0938 * 12.0 / CADObjectCommands.Scale,
-            0.85,
+            1,
             2,
             "E-TXT1",
             new Point3d(
@@ -1037,7 +1043,6 @@ namespace ElectricalCommands.Equipment
           BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
 
           BlockTableRecord block;
-
 
           BlockReference br = CADObjectCommands.CreateBlockReference(
             tr,
@@ -1169,6 +1174,14 @@ namespace ElectricalCommands.Equipment
                 ed.WriteMessage("\nText style 'gmep' not found. Using default text style.");
                 gmepTextStyleId = doc.Database.Textstyle;
               }
+
+              var textStyle = (TextStyleTableRecord)tr.GetObject(gmepTextStyleId, OpenMode.ForRead);
+              double widthFactor = 1;
+              if (textStyle.FileName.ToLower().Contains("architxt"))
+              {
+                widthFactor = 0.85;
+              }
+
               AttributeDefinition attrDef = new AttributeDefinition();
               attrDef.Position = labelInsertionPoint;
               attrDef.LockPositionInBlock = true;
@@ -1180,7 +1193,7 @@ namespace ElectricalCommands.Equipment
               attrDef.Invisible = false;
               attrDef.Constant = false;
               attrDef.Height = 4.5 * 0.25 / scale;
-              attrDef.WidthFactor = 0.85;
+              attrDef.WidthFactor = widthFactor;
               attrDef.TextStyleId = gmepTextStyleId;
               attrDef.Layer = "0";
 

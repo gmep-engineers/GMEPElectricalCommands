@@ -3035,6 +3035,11 @@ namespace ElectricalCommands
         var textStyleId = GetTextStyleId(style);
         var textStyle = (TextStyleTableRecord)tr.GetObject(textStyleId, OpenMode.ForRead);
 
+        if (textStyle.FileName.ToLower().Contains("architxt"))
+        {
+          widthFactor = 0.85;
+        }
+
         var text = new DBText
         {
           TextString = content,

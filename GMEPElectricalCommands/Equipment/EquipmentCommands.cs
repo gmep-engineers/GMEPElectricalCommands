@@ -224,6 +224,15 @@ namespace ElectricalCommands.Equipment
                       textString = ar.TextString;
                     }
                   }
+
+                  var textStyle = (TextStyleTableRecord)
+                    tr.GetObject(gmepTextStyleId, OpenMode.ForRead);
+                  double widthFactor = 1;
+                  if (textStyle.FileName.ToLower().Contains("architxt"))
+                  {
+                    widthFactor = 0.85;
+                  }
+
                   AttributeDefinition attrDef = new AttributeDefinition();
                   attrDef.Position = labelPoint;
                   attrDef.LockPositionInBlock = true;
@@ -235,7 +244,7 @@ namespace ElectricalCommands.Equipment
                   attrDef.Invisible = false;
                   attrDef.Constant = false;
                   attrDef.Height = 4.5 * 0.25 / scale;
-                  attrDef.WidthFactor = 0.85;
+                  attrDef.WidthFactor = widthFactor;
                   attrDef.TextStyleId = gmepTextStyleId;
                   attrDef.Layer = "0";
 
@@ -303,7 +312,7 @@ namespace ElectricalCommands.Equipment
                   text.TextString,
                   "gmep",
                   0.0938 * 12 / CADObjectCommands.Scale,
-                  0.85,
+                  1,
                   2,
                   "E-TXT1",
                   new Point3d(
