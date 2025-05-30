@@ -235,12 +235,12 @@ namespace ElectricalCommands
         text.TextString = "1";
         text.Color = Autodesk.AutoCAD.Colors.Color.FromColorIndex(ColorMethod.ByLayer, 2); // Set text color to yellow
 
-        // Check if the text style "ROMANS" exists
+        // Check if the text style "gmep" exists
         TextStyleTable textStyleTable = (TextStyleTable)
           tr.GetObject(db.TextStyleTableId, OpenMode.ForRead);
-        if (textStyleTable.Has("ROMANS"))
+        if (textStyleTable.Has("gmep"))
         {
-          text.TextStyleId = textStyleTable["ROMANS"]; // apply the "ROMANS" text style to the text entity
+          text.TextStyleId = textStyleTable["gmep"]; // apply the "gmep" text style to the text entity
         }
 
         // Check if the layer "E-TEXT" exists
@@ -361,7 +361,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "PANEL",
-        "ROMANC",
+        "gmep",
         0.1872,
         0.75,
         0,
@@ -371,7 +371,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "DESCRIPTION",
-        "Standard",
+        "gmep",
         0.1248,
         0.75,
         256,
@@ -381,7 +381,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "W",
-        "Standard",
+        "gmep",
         0.101088,
         0.75,
         0,
@@ -391,7 +391,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "VOLT AMPS",
-        "Standard",
+        "gmep",
         0.11232,
         0.75,
         256,
@@ -401,7 +401,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "L",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -411,7 +411,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "T",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -421,7 +421,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "G",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -431,7 +431,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "R",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -441,7 +441,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "E",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -451,7 +451,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "C",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -461,7 +461,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "M",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -471,7 +471,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "I",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -481,7 +481,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "S",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -491,7 +491,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "BKR",
-        "Standard",
+        "gmep",
         0.09152,
         0.75,
         256,
@@ -501,7 +501,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "CKT",
-        "Standard",
+        "gmep",
         0.0832,
         0.75,
         256,
@@ -511,7 +511,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         " NO",
-        "Standard",
+        "gmep",
         0.0832,
         0.75,
         256,
@@ -521,7 +521,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "BUS",
-        "Standard",
+        "gmep",
         0.11232,
         0.75,
         256,
@@ -531,7 +531,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "CKT",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -541,7 +541,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         " NO",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -551,7 +551,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "BKR",
-        "Standard",
+        "gmep",
         0.082368,
         0.75,
         256,
@@ -561,7 +561,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "M",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -571,7 +571,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "I",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -581,7 +581,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "S",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -591,7 +591,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "R",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -601,7 +601,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "E",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -611,7 +611,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "C",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -621,7 +621,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "L",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -631,7 +631,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "T",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -641,7 +641,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "G",
-        "Standard",
+        "gmep",
         0.07488,
         0.75,
         256,
@@ -651,7 +651,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "VOLT AMPS",
-        "Standard",
+        "gmep",
         0.11232,
         0.75,
         256,
@@ -661,7 +661,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "DESCRIPTION",
-        "Standard",
+        "gmep",
         0.1248,
         0.75,
         256,
@@ -671,7 +671,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "LOCATION",
-        "Standard",
+        "gmep",
         0.11232,
         0.75,
         0,
@@ -681,7 +681,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "MAIN (AMP)",
-        "Standard",
+        "gmep",
         0.11232,
         0.75,
         0,
@@ -691,7 +691,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "BUS RATING",
-        "Standard",
+        "gmep",
         0.11232,
         0.75,
         0,
@@ -701,7 +701,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "FED FROM",
-        "Standard",
+        "gmep",
         0.11232,
         0.75,
         0,
@@ -711,7 +711,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "MOUNTING:",
-        "Standard",
+        "gmep",
         0.11232,
         0.75,
         0,
@@ -721,7 +721,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "V",
-        "Standard",
+        "gmep",
         0.09984,
         0.75,
         0,
@@ -730,8 +730,8 @@ namespace ElectricalCommands
       );
       CreateAndPositionText(
         tr,
-        "O",
-        "Standard",
+        "\u03A6",
+        "gmep",
         0.101088,
         0.75,
         0,
@@ -743,8 +743,8 @@ namespace ElectricalCommands
       {
         CreateAndPositionText(
           tr,
-          "OA",
-          "Standard",
+          "\u03A6" + "A",
+          "gmep",
           0.1248,
           0.75,
           256,
@@ -753,8 +753,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OB",
-          "Standard",
+          "\u03A6" + "B",
+          "gmep",
           0.1248,
           0.75,
           256,
@@ -763,8 +763,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OA",
-          "Standard",
+          "\u03A6" + "A",
+          "gmep",
           0.1248,
           0.75,
           256,
@@ -773,8 +773,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OB",
-          "Standard",
+          "\u03A6" + "B",
+          "gmep",
           0.1248,
           0.75,
           256,
@@ -783,8 +783,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OA",
-          "Standard",
+          "\u03A6" + "A",
+          "gmep",
           0.1248,
           0.75,
           256,
@@ -793,8 +793,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OB",
-          "Standard",
+          "\u03A6" + "B",
+          "gmep",
           0.1248,
           0.75,
           256,
@@ -806,8 +806,8 @@ namespace ElectricalCommands
       {
         CreateAndPositionText(
           tr,
-          "OA",
-          "Standard",
+          "\u03A6" + "A",
+          "gmep",
           0.11232,
           0.75,
           256,
@@ -816,8 +816,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OB",
-          "Standard",
+          "\u03A6" + "B",
+          "gmep",
           0.11232,
           0.75,
           256,
@@ -826,8 +826,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OC",
-          "Standard",
+          "\u03A6" + "C",
+          "gmep",
           0.11232,
           0.75,
           256,
@@ -836,8 +836,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OA",
-          "Standard",
+          "\u03A6" + "A",
+          "gmep",
           0.11232,
           0.75,
           256,
@@ -846,8 +846,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OB",
-          "Standard",
+          "\u03A6" + "B",
+          "gmep",
           0.11232,
           0.75,
           256,
@@ -856,8 +856,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OC",
-          "Standard",
+          "\u03A6" + "C",
+          "gmep",
           0.11232,
           0.75,
           256,
@@ -866,8 +866,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OA",
-          "Standard",
+          "\u03A6" + "A",
+          "gmep",
           0.11232,
           0.75,
           256,
@@ -876,8 +876,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OB",
-          "Standard",
+          "\u03A6" + "B",
+          "gmep",
           0.11232,
           0.75,
           256,
@@ -886,8 +886,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OC",
-          "Standard",
+          "\u03A6" + "C",
+          "gmep",
           0.11232,
           0.75,
           256,
@@ -907,7 +907,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         (panelData["panel"] as string).Trim(),
-        "ROMANC",
+        "gmep",
         0.1872,
         0.75,
         2,
@@ -917,7 +917,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         panelData["location"] as string,
-        "ROMANS",
+        "gmep",
         0.09375,
         1,
         2,
@@ -927,7 +927,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         panelData["main"] as string,
-        "ROMANS",
+        "gmep",
         0.09375,
         1,
         2,
@@ -937,7 +937,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         panelData["bus_rating"] as string,
-        "ROMANS",
+        "gmep",
         0.09375,
         1,
         2,
@@ -947,7 +947,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         ("'" + (panelData["fed_from"] as string)).Replace("'PANEL ", "PANEL '") + "'",
-        "ROMANS",
+        "gmep",
         0.09375,
         1,
         2,
@@ -957,7 +957,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         panelData["voltage1"] as string + "/" + panelData["voltage2"] as string,
-        "ROMANS",
+        "gmep",
         0.09375,
         1,
         2,
@@ -967,7 +967,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         panelData["mounting"] as string,
-        "ROMANS",
+        "gmep",
         0.09375,
         1,
         2,
@@ -977,7 +977,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         panelData["phase"] as string,
-        "ROMANS",
+        "gmep",
         0.09375,
         1,
         2,
@@ -987,7 +987,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         panelData["wire"] as string,
-        "ROMANS",
+        "gmep",
         0.09375,
         1,
         2,
@@ -1952,7 +1952,7 @@ namespace ElectricalCommands
         }
 
         CreateCircle(btr, tr, mid3, 0.09, 2, false);
-        CreateCircleText(btr, tr, mid3, 0.09, 2, "ROMANS", content);
+        CreateCircleText(btr, tr, mid3, 0.09, 2, "gmep", content);
 
         if (dist > 0.3)
         {
@@ -1992,7 +1992,7 @@ namespace ElectricalCommands
       }
       else
       {
-        text.TextStyleId = tr.GetObject(textStyleTable["Standard"], OpenMode.ForRead).ObjectId;
+        text.TextStyleId = tr.GetObject(textStyleTable["gmep"], OpenMode.ForRead).ObjectId;
       }
 
       text.ColorIndex = colorIndex;
@@ -2049,7 +2049,7 @@ namespace ElectricalCommands
         CreateAndPositionRightText(
           tr,
           Math.Round(kvaValue, 1).ToString("0.0") + " KVA",
-          "ROMANS",
+          "gmep",
           0.09375,
           1,
           2,
@@ -2068,7 +2068,7 @@ namespace ElectricalCommands
         CreateAndPositionRightText(
           tr,
           Math.Round(feederAmpsValue, 1).ToString("0.0") + " A",
-          "ROMANS",
+          "gmep",
           0.09375,
           1,
           2,
@@ -2170,7 +2170,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "TOTAL CONNECTED VA",
-        "Standard",
+        "gmep",
         0.1248,
         0.75,
         256,
@@ -2180,7 +2180,7 @@ namespace ElectricalCommands
       CreateAndPositionRightText(
         tr,
         GetSafeString("total_va"),
-        "ROMANS",
+        "gmep",
         0.09375,
         1,
         2,
@@ -2190,7 +2190,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "=",
-        "Standard",
+        "gmep",
         0.1248,
         0.75,
         256,
@@ -2200,7 +2200,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "LCL @ 125 %          ",
-        "Standard",
+        "gmep",
         0.1248,
         0.75,
         256,
@@ -2210,7 +2210,7 @@ namespace ElectricalCommands
       CreateAndPositionRightText(
         tr,
         GetSafeString("lcl"),
-        "ROMANS",
+        "gmep",
         0.09375,
         1,
         2,
@@ -2220,7 +2220,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "=",
-        "Standard",
+        "gmep",
         0.1248,
         0.75,
         256,
@@ -2230,7 +2230,7 @@ namespace ElectricalCommands
       CreateAndPositionRightText(
         tr,
         GetSafeString("lcl125"),
-        "ROMANS",
+        "gmep",
         0.09375,
         1,
         2,
@@ -2240,7 +2240,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "LML @ 125 %",
-        "Standard",
+        "gmep",
         0.1248,
         0.75,
         256,
@@ -2250,7 +2250,7 @@ namespace ElectricalCommands
       CreateAndPositionRightText(
         tr,
         GetSafeString("lml"),
-        "ROMANS",
+        "gmep",
         0.09375,
         1,
         2,
@@ -2260,7 +2260,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "=",
-        "Standard",
+        "gmep",
         0.1248,
         0.75,
         256,
@@ -2270,7 +2270,7 @@ namespace ElectricalCommands
       CreateAndPositionRightText(
         tr,
         GetSafeString("lml125"),
-        "ROMANS",
+        "gmep",
         0.09375,
         1,
         2,
@@ -2280,7 +2280,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "PANEL LOAD",
-        "Standard",
+        "gmep",
         0.1248,
         0.75,
         256,
@@ -2290,7 +2290,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "=",
-        "Standard",
+        "gmep",
         0.1248,
         0.75,
         256,
@@ -2300,7 +2300,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "FEEDER AMPS",
-        "Standard",
+        "gmep",
         0.1248,
         0.75,
         256,
@@ -2310,7 +2310,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "=",
-        "Standard",
+        "gmep",
         0.1248,
         0.75,
         256,
@@ -2364,7 +2364,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         title,
-        "ROMANC",
+        "gmep",
         0.1498,
         0.75,
         2,
@@ -2374,7 +2374,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         "NOTES:",
-        "Standard",
+        "gmep",
         0.1248,
         0.75,
         256,
@@ -2389,7 +2389,7 @@ namespace ElectricalCommands
           CreateAndPositionText(
             tr,
             "DENOTES EXISTING CIRCUIT BREAKER TO REMAIN; ALL OTHERS ARE NEW",
-            "ROMANS",
+            "gmep",
             0.09375,
             1,
             2,
@@ -2399,7 +2399,7 @@ namespace ElectricalCommands
           CreateAndPositionText(
             tr,
             "TO MATCH EXISTING.",
-            "ROMANS",
+            "gmep",
             0.09375,
             1,
             2,
@@ -2412,7 +2412,7 @@ namespace ElectricalCommands
           CreateAndPositionText(
             tr,
             "65 KAIC SERIES RATED OR MATCH FAULT CURRENT AT SITE.",
-            "ROMANS",
+            "gmep",
             0.09375,
             1,
             2,
@@ -2434,7 +2434,7 @@ namespace ElectricalCommands
         CreateAndPositionCenteredText(
           tr,
           "1",
-          "ROMANS",
+          "gmep",
           0.09375,
           1,
           2,
@@ -2468,7 +2468,7 @@ namespace ElectricalCommands
             CreateAndPositionCenteredText(
               tr,
               number.ToString(), // TODO add check for custom note number i.e. one from the database/design tool
-              "ROMANS",
+              "gmep",
               0.09375,
               1,
               2,
@@ -2487,7 +2487,7 @@ namespace ElectricalCommands
               CreateAndPositionText(
                 tr,
                 noteString,
-                "ROMANS",
+                "gmep",
                 0.09375,
                 1,
                 2,
@@ -2577,26 +2577,27 @@ namespace ElectricalCommands
 
       if (is2Pole)
       {
-        // Create the slashed line
-        CreateLine(
-          tr,
-          btr,
-          endPoint.X - 6.47536463134611,
-          endPoint.Y + 0.0841286798547145,
-          endPoint.X - 6.3618865297326,
-          endPoint.Y + 0.216793591015815,
-          "0"
-        );
-        CreateLine(
-          tr,
-          btr,
-          endPoint.X - 4.541248855498,
-          endPoint.Y + 0.0739331046861764,
-          endPoint.X - 4.42777075388449,
-          endPoint.Y + 0.206598015847277,
-          "0"
-        );
-
+        /*
+          // Create the slashed line
+          CreateLine(
+            tr,
+            btr,
+            endPoint.X - 6.47536463134611,
+            endPoint.Y + 0.0841286798547145,
+            endPoint.X - 6.3618865297326,
+            endPoint.Y + 0.216793591015815,
+            "0"
+          );
+          CreateLine(
+            tr,
+            btr,
+            endPoint.X - 4.541248855498,
+            endPoint.Y + 0.0739331046861764,
+            endPoint.X - 4.42777075388449,
+            endPoint.Y + 0.206598015847277,
+            "0"
+          );
+          */
         // Create the vertical center lines
         CreateLine(
           tr,
@@ -2619,6 +2620,7 @@ namespace ElectricalCommands
       }
       else
       {
+        /*
         // Create the slashed line
         CreateLine(
           tr,
@@ -2647,7 +2649,7 @@ namespace ElectricalCommands
           endPoint.Y + 0.198997151136808,
           "0"
         );
-
+        */
         // Create the vertical center lines
         CreateLine(
           tr,
@@ -2677,6 +2679,7 @@ namespace ElectricalCommands
           "0"
         );
       }
+
       // Create the circle and lines in the center of the panel
       CreateCenterLinePattern(tr, btr, startPoint, endPoint, is2Pole);
     }
@@ -2791,7 +2794,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           "SUB-TOTAL",
-          "Standard",
+          "gmep",
           0.1248,
           0.75,
           256,
@@ -2800,8 +2803,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OA",
-          "Standard",
+          "\u03A6" + "A",
+          "gmep",
           0.1248,
           0.75,
           256,
@@ -2810,8 +2813,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OB",
-          "Standard",
+          "\u03A6" + "B",
+          "gmep",
           0.1248,
           0.75,
           256,
@@ -2821,7 +2824,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           "=",
-          "Standard",
+          "gmep",
           0.1248,
           0.75,
           256,
@@ -2831,7 +2834,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           "=",
-          "Standard",
+          "gmep",
           0.1248,
           0.75,
           256,
@@ -2841,7 +2844,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           panelData["subtotal_a"] as string + "VA",
-          "ROMANS",
+          "gmep",
           0.09375,
           1,
           2,
@@ -2851,7 +2854,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           panelData["subtotal_b"] as string + "VA",
-          "ROMANS",
+          "gmep",
           0.09375,
           1,
           2,
@@ -2864,7 +2867,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           "SUB-TOTAL",
-          "Standard",
+          "gmep",
           0.1248,
           1,
           7,
@@ -2873,8 +2876,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OA",
-          "Standard",
+          "\u03A6" + "A",
+          "gmep",
           0.1248,
           0.75,
           7,
@@ -2883,8 +2886,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OB",
-          "Standard",
+          "\u03A6" + "B",
+          "gmep",
           0.1248,
           0.75,
           7,
@@ -2893,8 +2896,8 @@ namespace ElectricalCommands
         );
         CreateAndPositionText(
           tr,
-          "OC",
-          "Standard",
+          "\u03A6" + "C",
+          "gmep",
           0.1248,
           0.75,
           7,
@@ -2904,7 +2907,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           panelData["subtotal_a"] as string + "VA",
-          "ROMANS",
+          "gmep",
           0.09375,
           1,
           2,
@@ -2914,7 +2917,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           panelData["subtotal_b"] as string + "VA",
-          "ROMANS",
+          "gmep",
           0.09375,
           1,
           2,
@@ -2924,7 +2927,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           panelData["subtotal_c"] as string + "VA",
-          "ROMANS",
+          "gmep",
           0.09375,
           1,
           2,
@@ -2934,7 +2937,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           "=",
-          "Standard",
+          "gmep",
           0.1248,
           0.75,
           256,
@@ -2944,7 +2947,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           "=",
-          "Standard",
+          "gmep",
           0.1248,
           0.75,
           256,
@@ -2954,7 +2957,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           "=",
-          "Standard",
+          "gmep",
           0.1248,
           0.75,
           256,
@@ -3774,7 +3777,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           description,
-          "ROMANS",
+          "gmep",
           textHeight,
           1.0,
           2,
@@ -3785,7 +3788,7 @@ namespace ElectricalCommands
           CreateAndPositionCenteredText(
             tr,
             phase,
-            "ROMANS",
+            "gmep",
             textHeight,
             1.0,
             2,
@@ -3795,7 +3798,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           breaker,
-          "ROMANS",
+          "gmep",
           textHeight,
           1.0,
           2,
@@ -3805,7 +3808,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           circuit,
-          "ROMANS",
+          "gmep",
           textHeight,
           1.0,
           7,
@@ -3874,7 +3877,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           description,
-          "ROMANS",
+          "gmep",
           textHeight,
           1.0,
           2,
@@ -3885,7 +3888,7 @@ namespace ElectricalCommands
           CreateAndPositionCenteredText(
             tr,
             phase,
-            "ROMANS",
+            "gmep",
             textHeight,
             1.0,
             2,
@@ -3895,7 +3898,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           breaker,
-          "ROMANS",
+          "gmep",
           textHeight,
           1.0,
           2,
@@ -3905,7 +3908,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           circuit,
-          "ROMANS",
+          "gmep",
           textHeight,
           1.0,
           7,
@@ -3960,7 +3963,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         description,
-        "ROMANS",
+        "gmep",
         0.09375,
         GetDescriptionWidthFactor(description),
         2,
@@ -3971,7 +3974,7 @@ namespace ElectricalCommands
         CreateAndPositionCenteredText(
           tr,
           phase,
-          "ROMANS",
+          "gmep",
           0.09375,
           1.0,
           2,
@@ -3982,7 +3985,7 @@ namespace ElectricalCommands
         CreateAndPositionFittedText(
           tr,
           breaker,
-          "ROMANS",
+          "gmep",
           0.09375,
           1.0,
           2,
@@ -3993,7 +3996,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         circuit,
-        "ROMANS",
+        "gmep",
         0.09375,
         1.0,
         7,
@@ -4054,7 +4057,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         description,
-        "ROMANS",
+        "gmep",
         0.09375,
         GetDescriptionWidthFactor(description),
         2,
@@ -4065,7 +4068,7 @@ namespace ElectricalCommands
         CreateAndPositionCenteredText(
           tr,
           phase,
-          "ROMANS",
+          "gmep",
           0.09375,
           1.0,
           2,
@@ -4076,7 +4079,7 @@ namespace ElectricalCommands
         CreateAndPositionFittedText(
           tr,
           breaker,
-          "ROMANS",
+          "gmep",
           0.09375,
           1.0,
           2,
@@ -4087,7 +4090,7 @@ namespace ElectricalCommands
       CreateAndPositionText(
         tr,
         circuit,
-        "ROMANS",
+        "gmep",
         0.09375,
         1.0,
         7,
@@ -4158,7 +4161,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           description,
-          "ROMANS",
+          "gmep",
           0.09375,
           GetDescriptionWidthFactor(description),
           2,
@@ -4169,7 +4172,7 @@ namespace ElectricalCommands
           CreateAndPositionCenteredText(
             tr,
             phase,
-            "ROMANS",
+            "gmep",
             0.09375,
             1.0,
             2,
@@ -4180,7 +4183,7 @@ namespace ElectricalCommands
           CreateAndPositionFittedText(
             tr,
             breaker,
-            "ROMANS",
+            "gmep",
             0.09375,
             1.0,
             2,
@@ -4191,7 +4194,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           circuit,
-          "ROMANS",
+          "gmep",
           0.09375,
           1.0,
           7,
@@ -4295,7 +4298,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           description,
-          "ROMANS",
+          "gmep",
           textHeight,
           1,
           2,
@@ -4306,7 +4309,7 @@ namespace ElectricalCommands
           CreateAndPositionCenteredText(
             tr,
             phase,
-            "ROMANS",
+            "gmep",
             textHeight,
             1.0,
             2,
@@ -4318,7 +4321,7 @@ namespace ElectricalCommands
           CreateAndPositionFittedText(
             tr,
             breaker,
-            "ROMANS",
+            "gmep",
             textHeight,
             1.0,
             2,
@@ -4330,7 +4333,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           circuit,
-          "ROMANS",
+          "gmep",
           textHeight,
           1.0,
           7,
@@ -4433,7 +4436,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           description,
-          "ROMANS",
+          "gmep",
           textHeight,
           1,
           2,
@@ -4445,7 +4448,7 @@ namespace ElectricalCommands
           CreateAndPositionCenteredText(
             tr,
             phase,
-            "ROMANS",
+            "gmep",
             textHeight,
             1.0,
             2,
@@ -4458,7 +4461,7 @@ namespace ElectricalCommands
           CreateAndPositionFittedText(
             tr,
             breaker,
-            "ROMANS",
+            "gmep",
             textHeight,
             1.0,
             2,
@@ -4470,7 +4473,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           circuit,
-          "ROMANS",
+          "gmep",
           textHeight,
           1.0,
           7,
@@ -4544,7 +4547,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           description,
-          "ROMANS",
+          "gmep",
           0.09375,
           GetDescriptionWidthFactor(description),
           2,
@@ -4555,7 +4558,7 @@ namespace ElectricalCommands
           CreateAndPositionCenteredText(
             tr,
             phase,
-            "ROMANS",
+            "gmep",
             0.09375,
             1.0,
             2,
@@ -4566,7 +4569,7 @@ namespace ElectricalCommands
           CreateAndPositionFittedText(
             tr,
             breaker,
-            "ROMANS",
+            "gmep",
             0.09375,
             1.0,
             2,
@@ -4577,7 +4580,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           circuit,
-          "ROMANS",
+          "gmep",
           0.09375,
           1.0,
           7,
@@ -4655,7 +4658,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           description,
-          "ROMANS",
+          "gmep",
           0.09375,
           GetDescriptionWidthFactor(description),
           2,
@@ -4666,7 +4669,7 @@ namespace ElectricalCommands
           CreateAndPositionCenteredText(
             tr,
             phase,
-            "ROMANS",
+            "gmep",
             0.09375,
             1.0,
             2,
@@ -4677,7 +4680,7 @@ namespace ElectricalCommands
           CreateAndPositionFittedText(
             tr,
             breaker,
-            "ROMANS",
+            "gmep",
             0.09375,
             1.0,
             2,
@@ -4688,7 +4691,7 @@ namespace ElectricalCommands
         CreateAndPositionText(
           tr,
           circuit,
-          "ROMANS",
+          "gmep",
           0.09375,
           1.0,
           7,
@@ -4945,6 +4948,7 @@ namespace ElectricalCommands
         right1 = 6.7259;
         right2 = 0;
         right3 = 7.3632;
+        /*
         CreateLine(
           tr,
           btr,
@@ -4999,6 +5003,7 @@ namespace ElectricalCommands
           startPoint.Y - 0.595665451113291,
           "0"
         );
+        */
       }
       else
       {
@@ -5008,6 +5013,7 @@ namespace ElectricalCommands
         right1 = 6.5104;
         right2 = 6.9368;
         right3 = 7.3632;
+        /*
         CreateLine(
           tr,
           btr,
@@ -5089,6 +5095,7 @@ namespace ElectricalCommands
           startPoint.Y + -0.730701330926394,
           "0"
         );
+        */
       }
 
       var linesData = new (double[] distances, double startY, double endY, string layer)[]
@@ -5192,8 +5199,8 @@ namespace ElectricalCommands
       }
       else
       {
-        // Return the ObjectId of the "Standard" style
-        return textStyleTable["Standard"];
+        // Return the ObjectId of the "gmep" style
+        return textStyleTable["gmep"];
       }
     }
 
