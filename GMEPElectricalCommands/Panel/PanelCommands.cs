@@ -3780,7 +3780,7 @@ namespace ElectricalCommands
 
         CreateAndPositionText(
           tr,
-          description,
+          description.Trim(),
           "gmep",
           textHeight,
           1.0,
@@ -3880,7 +3880,7 @@ namespace ElectricalCommands
 
         CreateAndPositionText(
           tr,
-          description,
+          description.Trim(),
           "gmep",
           textHeight,
           1.0,
@@ -3966,7 +3966,7 @@ namespace ElectricalCommands
 
       CreateAndPositionText(
         tr,
-        description,
+        description.Trim(),
         "gmep",
         0.09375,
         GetDescriptionWidthFactor(description),
@@ -4060,7 +4060,7 @@ namespace ElectricalCommands
 
       CreateAndPositionText(
         tr,
-        description,
+        description.Trim(),
         "gmep",
         0.09375,
         GetDescriptionWidthFactor(description),
@@ -4164,7 +4164,7 @@ namespace ElectricalCommands
 
         CreateAndPositionText(
           tr,
-          description,
+          description.Trim(),
           "gmep",
           0.09375,
           GetDescriptionWidthFactor(description),
@@ -4301,7 +4301,7 @@ namespace ElectricalCommands
 
         CreateAndPositionText(
           tr,
-          description,
+          description.Trim(),
           "gmep",
           textHeight,
           1,
@@ -4439,7 +4439,7 @@ namespace ElectricalCommands
 
         CreateAndPositionText(
           tr,
-          description,
+          description.Trim(),
           "gmep",
           textHeight,
           1,
@@ -4550,7 +4550,7 @@ namespace ElectricalCommands
 
         CreateAndPositionText(
           tr,
-          description,
+          description.Trim(),
           "gmep",
           0.09375,
           GetDescriptionWidthFactor(description),
@@ -4661,7 +4661,7 @@ namespace ElectricalCommands
 
         CreateAndPositionText(
           tr,
-          description,
+          description.Trim(),
           "gmep",
           0.09375,
           GetDescriptionWidthFactor(description),
@@ -5323,6 +5323,7 @@ namespace ElectricalCommands
 
     private double GetDescriptionWidthFactor(string description)
     {
+      description = description.Trim();
       if (description.Length <= 20)
       {
         return 0.8;
