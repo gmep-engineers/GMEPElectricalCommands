@@ -3040,7 +3040,11 @@ namespace ElectricalCommands
 
         if (textStyle.FileName.ToLower().Contains("architxt"))
         {
-          widthFactor = 0.85;
+          if (widthFactor > 0.85)
+          {
+            widthFactor = 0.85;
+          }
+          content = content.Replace("\u03A6", "\u0081");
         }
 
         var text = new DBText
@@ -5176,13 +5180,13 @@ namespace ElectricalCommands
           startPoint.Y - (0.3744 / 2) - 0.3744,
           layerName
         ),
-        (
-          startPoint.X + 8.28490642235897,
-          startPoint.Y + -0.153581773169606,
-          startPoint.X + 8.37682368466574,
-          startPoint.Y + -0.0461231951291552,
-          "0"
-        ),
+        //(
+        //  startPoint.X + 8.28490642235897,
+        //  startPoint.Y + -0.153581773169606,
+        //  startPoint.X + 8.37682368466574,
+        //  startPoint.Y + -0.0461231951291552,
+        //  "0"
+        //),
       };
 
       CreateLines(tr, btr, linesData2);

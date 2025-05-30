@@ -2707,7 +2707,11 @@ namespace ElectricalCommands
         var textStyle = (TextStyleTableRecord)tr.GetObject(textStyleId, OpenMode.ForRead);
         if (textStyle.FileName.ToLower().Contains("architxt"))
         {
-          widthFactor = 0.85;
+          if (widthFactor > 0.85)
+          {
+            widthFactor = 0.85;
+          }
+          content = content.Replace("\u03A6", "\u0081");
         }
 
         var text = new DBText
