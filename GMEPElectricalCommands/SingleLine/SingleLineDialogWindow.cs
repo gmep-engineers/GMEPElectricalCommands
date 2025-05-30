@@ -244,7 +244,7 @@ namespace ElectricalCommands.SingleLine
                       }
                       if (text.Hyperlinks[0].SubLocation.Contains("gmep_equip_panel_phase_wire"))
                       {
-                        text.TextString = placeable.Phase == 3 ? "3\u0081-4W" : "1\u0081-3W";
+                        text.TextString = placeable.Phase == 3 ? "3\u03A6-4W" : "1\u03A6-3W";
                       }
                       if (text.Hyperlinks[0].SubLocation.Contains("gmep_equip_name"))
                       {
@@ -469,7 +469,7 @@ namespace ElectricalCommands.SingleLine
       {
         TreeNode serviceNode = SingleLineTreeView.Nodes.Add(
           service.Id,
-          service.GetStatusAndName().Replace("\u0081", "\u03A6")
+          service.GetStatusAndName().Replace("\u03A6", "\u03A6")
         );
         serviceNode.Tag = service;
         SetTreeNodeColor(serviceNode, service);
@@ -644,7 +644,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode transformerNode = node.Nodes.Add(
             transformer.Id,
-            transformer.GetStatusAndName().Replace("\u0081", "\u03A6")
+            transformer.GetStatusAndName().Replace("\u03A6", "\u03A6")
           );
           transformerNode.Tag = transformer;
           SetTreeNodeColor(transformerNode, transformer);
@@ -699,7 +699,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode transformerNode = node.Nodes.Add(
             transformer.Id,
-            transformer.GetStatusAndName().Replace("\u0081", "\u03A6")
+            transformer.GetStatusAndName().Replace("\u03A6", "\u03A6")
           );
           transformerNode.Tag = transformer;
           SetTreeNodeColor(transformerNode, transformer);
@@ -741,7 +741,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode transformerNode = node.Nodes.Add(
             transformer.Id,
-            transformer.Name.Replace("\u0081", "\u03A6")
+            transformer.Name.Replace("\u03A6", "\u03A6")
           );
           transformerNode.Tag = transformer;
           SetTreeNodeColor(transformerNode, transformer);
@@ -786,7 +786,7 @@ namespace ElectricalCommands.SingleLine
         {
           TreeNode transformerNode = node.Nodes.Add(
             transformer.Id,
-            transformer.GetStatusAndName().Replace("\u0081", "\u03A6")
+            transformer.GetStatusAndName().Replace("\u03A6", "\u03A6")
           );
           transformerNode.Tag = transformer;
           SetTreeNodeColor(transformerNode, transformer);
@@ -869,7 +869,7 @@ namespace ElectricalCommands.SingleLine
     private void SetInfoBoxText(ElectricalEntity.ElectricalEntity entity)
     {
       InfoTextBox.Clear();
-      InfoGroupBox.Text = entity.Name.Replace("\u0081", "\u03A6");
+      InfoGroupBox.Text = entity.Name.Replace("\u03A6", "\u03A6");
       InfoTextBox.AppendText("--------------------General---------------------");
       InfoTextBox.AppendText(Environment.NewLine);
       InfoTextBox.AppendText($"ID:       {entity.Id}");
@@ -983,7 +983,7 @@ namespace ElectricalCommands.SingleLine
           InfoTextBox.AppendText(Environment.NewLine);
           InfoTextBox.AppendText($"KVA:     {transformer.Kva} KVA");
           InfoTextBox.AppendText(Environment.NewLine);
-          InfoTextBox.AppendText($"Voltage: {transformer.Voltage.Replace("\u0081", "\u03A6")}");
+          InfoTextBox.AppendText($"Voltage: {transformer.Voltage.Replace("\u03A6", "\u03A6")}");
           break;
         case NodeType.Equipment:
           ElectricalEntity.Equipment equipment = (ElectricalEntity.Equipment)entity;

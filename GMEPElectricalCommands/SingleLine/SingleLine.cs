@@ -2173,22 +2173,22 @@ namespace ElectricalCommands.SingleLine
           acCurSpaceBlkTblRec.AppendEntity(acBlkRef);
           tr.AddNewlyCreatedDBObject(acBlkRef, true);
         }
-        string voltageText = "120/240-1\u0081-3W";
+        string voltageText = "120/240-1\u03A6-3W";
         if (distributionBus.LineVoltage == 208 && distributionBus.Phase == 3)
         {
-          voltageText = "120/208V-3\u0081-4W";
+          voltageText = "120/208V-3\u03A6-4W";
         }
         if (distributionBus.LineVoltage == 480 && distributionBus.Phase == 3)
         {
-          voltageText = "277/480V-3\u0081-4W";
+          voltageText = "277/480V-3\u03A6-4W";
         }
         if (distributionBus.LineVoltage == 208 && distributionBus.Phase == 1)
         {
-          voltageText = "120/208V-1\u0081-3W";
+          voltageText = "120/208V-1\u03A6-3W";
         }
         if (distributionBus.LineVoltage == 240 && distributionBus.Phase == 3)
         {
-          voltageText = "120/240V-3\u0081-4W";
+          voltageText = "120/240V-3\u03A6-4W";
         }
 
         GeneralCommands.CreateAndPositionText(

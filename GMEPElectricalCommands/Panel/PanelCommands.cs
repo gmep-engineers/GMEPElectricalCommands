@@ -1234,7 +1234,7 @@ namespace ElectricalCommands
           tb.Cells[totalEntries + 2, 0].TextString = $"TOTAL KVA x{safetyFactor}";
           tb.Cells[totalEntries + 2, 2].TextString = Math.Round(kva * safetyFactor, 1).ToString();
           tb.Cells[totalEntries + 3, 0].TextString =
-            $"TOTAL AMP @{phaseVoltage}/{lineVoltage}V-{phase}\u0081-{wire}W";
+            $"TOTAL AMP @{phaseVoltage}/{lineVoltage}V-{phase}\u03A6-{wire}W";
           tb.Cells[totalEntries + 3, 2].TextString = totalAmperage.ToString();
           if (totalAmperage < busSize)
           {
@@ -1253,7 +1253,7 @@ namespace ElectricalCommands
         {
           totalAmperage = Math.Round(kva * 1000 / lineVoltage / yFactor, 1);
           tb.Cells[totalEntries + 2, 0].TextString =
-            $"TOTAL AMP @{phaseVoltage}/{lineVoltage}V-{phase}\u0081-{wire}W";
+            $"TOTAL AMP @{phaseVoltage}/{lineVoltage}V-{phase}\u03A6-{wire}W";
           tb.Cells[totalEntries + 2, 2].TextString = Math.Round(
               kva * 1000 / lineVoltage / yFactor,
               1

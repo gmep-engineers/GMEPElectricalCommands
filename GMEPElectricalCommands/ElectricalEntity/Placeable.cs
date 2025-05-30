@@ -369,7 +369,7 @@ namespace ElectricalCommands.ElectricalEntity
               TextVerticalMode.TextBase,
               AttachmentPoint.BaseCenter
             );
-            string phaseWireString = Phase == 3 ? "3\u0081-4W" : "1\u0081-3W";
+            string phaseWireString = Phase == 3 ? "3\u03A6-4W" : "1\u03A6-3W";
             ObjectId phaseWireTextId = GeneralCommands.CreateAndPositionText(
               tr,
               phaseWireString,
@@ -853,7 +853,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.NodeId = NodeId;
       Name =
         $"{AmpRating}A {Voltage.Replace(" ", "V-")}"
-        + "\u0081"
+        + "\u03A6"
         + $"-{(Voltage.Contains("3") ? "4W" : "3W")} Service";
       this.Status = Status;
       this.AmpRating = AmpRating;
@@ -1127,7 +1127,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.ParentDistance = ParentDistance;
       Location = new Point3d(LocationX, LocationY, 0);
       this.Kva = Kva;
-      this.Voltage = Voltage + "\u0081" + $"-{(Voltage.Contains("3") ? "4W" : "3W")}";
+      this.Voltage = Voltage + "\u03A6" + $"-{(Voltage.Contains("3") ? "4W" : "3W")}";
       this.Name = $"{Kva}KVA, {this.Voltage} XFMR '{Name.ToUpper()}'";
       this.AicRating = AicRating;
       this.IsHidden = IsHidden;

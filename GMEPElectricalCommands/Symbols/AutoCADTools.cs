@@ -1571,7 +1571,7 @@ namespace ElectricalCommands
       double loadWireSize = distance > 100 ? Math.Round(loadAmperage, 1) : mocp;
       string supplemental1 = $"C. SIZED FOR {mocp}A";
       string supplemental2 = $"W. SIZED FOR {loadWireSize}A";
-      string supplemental3 = $"@{voltage}V-{phase}\u0081-{numWires}W";
+      string supplemental3 = $"@{voltage}V-{phase}\u03A6-{numWires}W";
       return (firstLine, secondLine, thirdLine, supplemental1, supplemental2, supplemental3);
     }
 
