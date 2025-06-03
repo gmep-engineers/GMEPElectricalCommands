@@ -386,7 +386,7 @@ namespace ElectricalCommands
         0.75,
         0,
         layerName,
-        new Point3d(startPoint.X + 8.64365164909793, startPoint.Y - 0.155688865359394, 0)
+        new Point3d(startPoint.X + 8.64365164909793, startPoint.Y - 0.145688865359394, 0)
       );
       CreateAndPositionText(
         tr,
@@ -726,7 +726,7 @@ namespace ElectricalCommands
         0.75,
         0,
         layerName,
-        new Point3d(startPoint.X + 7.80112268015148, startPoint.Y - 0.158231303238949, 0)
+        new Point3d(startPoint.X + 7.60112268015148, startPoint.Y - 0.148231303238949, 0)
       );
       CreateAndPositionText(
         tr,
@@ -736,7 +736,7 @@ namespace ElectricalCommands
         0.75,
         0,
         layerName,
-        new Point3d(startPoint.X + 8.30325740318381, startPoint.Y - 0.151432601608803, 0)
+        new Point3d(startPoint.X + 8.25325740318381, startPoint.Y - 0.151432601608803, 0)
       );
 
       if (is2Pole)
