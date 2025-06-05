@@ -3038,7 +3038,10 @@ namespace ElectricalCommands
         var textStyleId = GetTextStyleId(style);
         var textStyle = (TextStyleTableRecord)tr.GetObject(textStyleId, OpenMode.ForRead);
 
-        if (textStyle.FileName.ToLower().Contains("architxt"))
+        if (
+          textStyle.FileName.ToLower().Contains("architxt")
+          || textStyle.FileName.ToLower().Contains("a2")
+        )
         {
           if (widthFactor > 0.85)
           {

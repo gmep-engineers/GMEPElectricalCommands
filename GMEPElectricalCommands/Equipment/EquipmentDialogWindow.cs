@@ -1177,7 +1177,10 @@ namespace ElectricalCommands.Equipment
 
               var textStyle = (TextStyleTableRecord)tr.GetObject(gmepTextStyleId, OpenMode.ForRead);
               double widthFactor = 1;
-              if (textStyle.FileName.ToLower().Contains("architxt"))
+              if (
+                textStyle.FileName.ToLower().Contains("architxt")
+                || textStyle.FileName.ToLower().Contains("a2")
+              )
               {
                 widthFactor = 0.85;
               }
