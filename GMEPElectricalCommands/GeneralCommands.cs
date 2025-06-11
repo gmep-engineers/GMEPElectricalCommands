@@ -3007,6 +3007,127 @@ namespace ElectricalCommands
         return "";
       }
     }
+
+    public static void ConvertTextToArial(Transaction tr, ObjectId id)
+    {
+      try
+      {
+        DBText text = (DBText)tr.GetObject(id, OpenMode.ForWrite);
+        if (text != null)
+        {
+          var textStyle = (TextStyleTableRecord)tr.GetObject(text.TextStyleId, OpenMode.ForWrite);
+          if (
+            textStyle.FileName.ToLower().Contains("architxt")
+            || textStyle.FileName.ToLower().Contains("a2")
+          )
+          {
+            textStyle.FileName = "arl-t.shx";
+            text.WidthFactor = 1;
+            text.TextString = text.TextString.Replace("\u0081", "\u03A6");
+          }
+        }
+      }
+      catch { }
+      try
+      {
+        MText mText = (MText)tr.GetObject(id, OpenMode.ForWrite);
+        if (mText != null)
+        {
+          mText.Contents = mText.Contents.Replace("\\Farchitxt", "\\Farl-t");
+          mText.Contents = mText.Contents.Replace("\\Fa2", "\\Farl-t");
+          mText.Contents = mText.Contents.Replace("\\W0.85", "\\W1");
+          mText.Contents = mText.Contents.Replace("\\W0.80", "\\W1");
+          mText.Contents = mText.Contents.Replace("\\W0.8", "\\W1");
+          mText.Contents = mText.Contents.Replace("\u0081", "\u03A6");
+        }
+      }
+      catch { }
+      try
+      {
+        TextStyleTableRecord textStyle = (TextStyleTableRecord)tr.GetObject(id, OpenMode.ForWrite);
+
+        if (textStyle != null)
+        {
+          if (
+            textStyle.FileName.ToLower().Contains("architxt")
+            || textStyle.FileName.ToLower().Contains("a2")
+          )
+          {
+            textStyle.FileName = "arl-t.shx";
+          }
+        }
+      }
+      catch { }
+      try
+      {
+        Table table = (Table)tr.GetObject(id, OpenMode.ForWrite);
+        if (table != null)
+        {
+          var textStyleId = PanelCommands.GetTextStyleId("gmep");
+          for (int i = 0; i < table.Rows.Count; i++)
+          {
+            for (int j = 0; j < table.Columns.Count; j++)
+            {
+              table.Cells[i, j].TextStyleId = textStyleId;
+              table.Cells[i, j].TextHeight = (0.0938);
+              table.Cells[i, j].TextString = table
+                .Cells[i, j]
+                .TextString.Replace("\\Farchitxt", "\\Farl-t");
+              table.Cells[i, j].TextString = table
+                .Cells[i, j]
+                .TextString.Replace("\\Fa2", "\\Farl-t");
+            }
+          }
+        }
+      }
+      catch { }
+    }
+
+    [CommandMethod("ConvertAllTextToArial")]
+    public static void ConvertAllTextToArial()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      MessageBox.Show(
+        "This will take a few minutes. AutoCAD will not be responsive until completion."
+      );
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+
+        //remove any previous marker with the same equipId
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+        foreach (ObjectId id in modelSpace)
+        {
+          ConvertTextToArial(tr, id);
+        }
+        BlockTableRecord btRecord = (BlockTableRecord)
+          tr.GetObject(SymbolUtilityServices.GetBlockPaperSpaceId(db), OpenMode.ForRead);
+        foreach (ObjectId pageId in btRecord)
+        {
+          var paperSpace = (BlockTableRecord)
+            tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForRead);
+          foreach (ObjectId id in paperSpace)
+          {
+            ConvertTextToArial(tr, id);
+          }
+        }
+
+        tr.Commit();
+      }
+      MessageBox.Show(
+        "Done. Please follow the instructions at\nZ:\\GMEP Engineers\\Electrical Commercial Template\\Template CAD\\fontmap instructions.docx\n\nNote: You may need to change pages to for the effect to be visible."
+      );
+    }
   }
 
   public class RoomInfo
