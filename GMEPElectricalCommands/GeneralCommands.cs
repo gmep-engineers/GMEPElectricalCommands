@@ -3008,7 +3008,7 @@ namespace ElectricalCommands
       }
     }
 
-    public static void ConvertTextToArial(Transaction tr, ObjectId id)
+    public static void ConvertArchitxtToArialInLayout(Transaction tr, ObjectId id)
     {
       try
       {
@@ -3022,8 +3022,13 @@ namespace ElectricalCommands
           )
           {
             textStyle.FileName = "arl-t.shx";
+            textStyle.XScale = 1;
             text.WidthFactor = 1;
             text.TextString = text.TextString.Replace("\u0081", "\u03A6");
+          }
+          if (textStyle.FileName.ToLower().Contains("arl-t") && text.WidthFactor < 1)
+          {
+            text.WidthFactor = 1;
           }
         }
       }
@@ -3034,10 +3039,11 @@ namespace ElectricalCommands
         if (mText != null)
         {
           mText.Contents = mText.Contents.Replace("\\Farchitxt", "\\Farl-t");
+          mText.Contents = mText.Contents.Replace("\\FARCHITXT", "\\Farl-t");
           mText.Contents = mText.Contents.Replace("\\Fa2", "\\Farl-t");
-          mText.Contents = mText.Contents.Replace("\\W0.85", "\\W1");
-          mText.Contents = mText.Contents.Replace("\\W0.80", "\\W1");
-          mText.Contents = mText.Contents.Replace("\\W0.8", "\\W1");
+          mText.Contents = mText.Contents.Replace("\\FA2", "\\Farl-t");
+          mText.Contents = mText.Contents.Replace("\\W0.85", "\\W1.0");
+          mText.Contents = mText.Contents.Replace("\\W0.8", "\\W1.0");
           mText.Contents = mText.Contents.Replace("\u0081", "\u03A6");
         }
       }
@@ -3063,19 +3069,38 @@ namespace ElectricalCommands
         Table table = (Table)tr.GetObject(id, OpenMode.ForWrite);
         if (table != null)
         {
+          Console.WriteLine("tabey");
           var textStyleId = PanelCommands.GetTextStyleId("gmep");
           for (int i = 0; i < table.Rows.Count; i++)
           {
             for (int j = 0; j < table.Columns.Count; j++)
             {
-              table.Cells[i, j].TextStyleId = textStyleId;
-              table.Cells[i, j].TextHeight = (0.0938);
-              table.Cells[i, j].TextString = table
-                .Cells[i, j]
-                .TextString.Replace("\\Farchitxt", "\\Farl-t");
-              table.Cells[i, j].TextString = table
-                .Cells[i, j]
-                .TextString.Replace("\\Fa2", "\\Farl-t");
+              if (table.Cells[i, j].CellType == TableCellType.TextCell)
+              {
+                table.Cells[i, j].TextStyleId = textStyleId;
+                table.Cells[i, j].TextHeight = (0.0938);
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\Farchitxt", "\\Farl-t");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\FARCHITXT", "\\Farl-t");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\Fa2", "\\Farl-t");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\FA2", "\\Farl-t");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\W0.85", "\\W1.0");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\W0.8", "\\W1.0");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\u0081", "\u03A6");
+              }
             }
           }
         }
@@ -3083,8 +3108,8 @@ namespace ElectricalCommands
       catch { }
     }
 
-    [CommandMethod("ConvertAllTextToArial")]
-    public static void ConvertAllTextToArial()
+    [CommandMethod("ConvertAchitxtToArial")]
+    public static void ConvertArchitxtToArial()
     {
       Document doc = Autodesk
         .AutoCAD
@@ -3106,26 +3131,35 @@ namespace ElectricalCommands
         //remove any previous marker with the same equipId
         var modelSpace = (BlockTableRecord)
           tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+        Console.WriteLine("model space");
         foreach (ObjectId id in modelSpace)
         {
-          ConvertTextToArial(tr, id);
+          ConvertArchitxtToArialInLayout(tr, id);
         }
-        BlockTableRecord btRecord = (BlockTableRecord)
-          tr.GetObject(SymbolUtilityServices.GetBlockPaperSpaceId(db), OpenMode.ForRead);
-        foreach (ObjectId pageId in btRecord)
+
+        DBDictionary layoutDict = (DBDictionary)
+          tr.GetObject(db.LayoutDictionaryId, OpenMode.ForRead);
+
+        foreach (DBDictionaryEntry entry in layoutDict)
         {
+          ObjectId layoutId = entry.Value;
+          Layout layout = (Layout)tr.GetObject(layoutId, OpenMode.ForRead);
+
+          LayoutManager.Current.CurrentLayout = layout.LayoutName;
+
           var paperSpace = (BlockTableRecord)
             tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForRead);
+
           foreach (ObjectId id in paperSpace)
           {
-            ConvertTextToArial(tr, id);
+            ConvertArchitxtToArialInLayout(tr, id);
           }
         }
 
         tr.Commit();
       }
       MessageBox.Show(
-        "Done. Please follow the instructions at\nZ:\\GMEP Engineers\\Electrical Commercial Template\\Template CAD\\fontmap instructions.docx\n\nNote: You may need to change pages to for the effect to be visible."
+        "Done. Please follow the instructions at\nZ:\\GMEP Engineers\\Electrical Commercial Template\\Template CAD\\fontmap instructions.docx"
       );
     }
   }
