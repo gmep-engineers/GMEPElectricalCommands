@@ -3107,7 +3107,7 @@ namespace ElectricalCommands
       catch { }
     }
 
-    [CommandMethod("ConvertAchitxtToArial")]
+    [CommandMethod("ConvertArchitxtToArial")]
     public static void ConvertArchitxtToArial()
     {
       Document doc = Autodesk
