@@ -3069,7 +3069,6 @@ namespace ElectricalCommands
         Table table = (Table)tr.GetObject(id, OpenMode.ForWrite);
         if (table != null)
         {
-          Console.WriteLine("tabey");
           var textStyleId = PanelCommands.GetTextStyleId("gmep");
           for (int i = 0; i < table.Rows.Count; i++)
           {
@@ -3131,7 +3130,6 @@ namespace ElectricalCommands
         //remove any previous marker with the same equipId
         var modelSpace = (BlockTableRecord)
           tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
-        Console.WriteLine("model space");
         foreach (ObjectId id in modelSpace)
         {
           ConvertArchitxtToArialInLayout(tr, id);
