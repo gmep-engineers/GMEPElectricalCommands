@@ -3160,6 +3160,139 @@ namespace ElectricalCommands
         "Done. Please follow the instructions at\nZ:\\GMEP Engineers\\Electrical Commercial Template\\Template CAD\\fontmap instructions.docx"
       );
     }
+
+    public static void ConvertArialToArchitxtInLayout(Transaction tr, ObjectId id)
+    {
+      try
+      {
+        DBText text = (DBText)tr.GetObject(id, OpenMode.ForWrite);
+        if (text != null)
+        {
+          var textStyle = (TextStyleTableRecord)tr.GetObject(text.TextStyleId, OpenMode.ForWrite);
+          if (textStyle.FileName.ToLower().Contains("arl-t"))
+          {
+            textStyle.FileName = "architxt.shx";
+            textStyle.XScale = 0.85;
+            text.WidthFactor = 0.85;
+            text.TextString = text.TextString.Replace("\u03A6", "\u0081");
+          }
+          if (textStyle.FileName.ToLower().Contains("architxt") && text.WidthFactor > 0.85)
+          {
+            text.WidthFactor = 0.85;
+          }
+        }
+      }
+      catch { }
+      try
+      {
+        MText mText = (MText)tr.GetObject(id, OpenMode.ForWrite);
+        if (mText != null)
+        {
+          mText.Contents = mText.Contents.Replace("\\arl-t", "\\Farchitxt");
+          mText.Contents = mText.Contents.Replace("\\W1.0", "\\W0.85");
+          mText.Contents = mText.Contents.Replace("\\W1", "\\W8.05");
+          mText.Contents = mText.Contents.Replace("\u03A6", "\u0081");
+        }
+      }
+      catch { }
+      try
+      {
+        TextStyleTableRecord textStyle = (TextStyleTableRecord)tr.GetObject(id, OpenMode.ForWrite);
+
+        if (textStyle != null)
+        {
+          if (textStyle.FileName.ToLower().Contains("arl-t"))
+          {
+            textStyle.FileName = "architxt.shx";
+          }
+        }
+      }
+      catch { }
+      try
+      {
+        Table table = (Table)tr.GetObject(id, OpenMode.ForWrite);
+        if (table != null)
+        {
+          var textStyleId = PanelCommands.GetTextStyleId("gmep");
+          for (int i = 0; i < table.Rows.Count; i++)
+          {
+            for (int j = 0; j < table.Columns.Count; j++)
+            {
+              if (table.Cells[i, j].CellType == TableCellType.TextCell)
+              {
+                table.Cells[i, j].TextStyleId = textStyleId;
+                table.Cells[i, j].TextHeight = (0.0938);
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\Farl-t", "\\Farchitxt");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\W1.0", "\\W0.85");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\W1", "\\W0.85");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\u03A6", "\u0081");
+              }
+            }
+          }
+        }
+      }
+      catch { }
+    }
+
+    [CommandMethod("ConvertArialToArchitxt")]
+    public static void ConvertArialToArchitxt()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      MessageBox.Show(
+        "This will take a few minutes. AutoCAD will not be responsive until completion."
+      );
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+
+        //remove any previous marker with the same equipId
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+        foreach (ObjectId id in modelSpace)
+        {
+          ConvertArialToArchitxtInLayout(tr, id);
+        }
+
+        DBDictionary layoutDict = (DBDictionary)
+          tr.GetObject(db.LayoutDictionaryId, OpenMode.ForRead);
+
+        foreach (DBDictionaryEntry entry in layoutDict)
+        {
+          ObjectId layoutId = entry.Value;
+          Layout layout = (Layout)tr.GetObject(layoutId, OpenMode.ForRead);
+
+          LayoutManager.Current.CurrentLayout = layout.LayoutName;
+
+          var paperSpace = (BlockTableRecord)
+            tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForRead);
+
+          foreach (ObjectId id in paperSpace)
+          {
+            ConvertArialToArchitxtInLayout(tr, id);
+          }
+        }
+
+        tr.Commit();
+      }
+      MessageBox.Show("Done.");
+    }
   }
 
   public class RoomInfo
