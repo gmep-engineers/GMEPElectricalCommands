@@ -1908,6 +1908,7 @@ namespace ElectricalCommands
       if (selectedPanelData.TryGetValue("id", out object outId))
       {
         id = outId?.ToString() ?? System.Guid.NewGuid().ToString();
+        id = id.ToLower();
       }
 
       List<string> multi_row_datagrid_keys = new List<string>
@@ -2029,30 +2030,28 @@ namespace ElectricalCommands
       List<Dictionary<string, object>> panelData = this.mainForm.RetrieveSavedPanelData();
       for (int i = 0; i < PANEL_GRID.Rows.Count; i++)
       {
-        if (IsUuid(PANEL_GRID.Rows[i].Cells["description_left"].Value as string))
+        string description = (
+          PANEL_GRID.Rows[i].Cells["description_left"].Value as string
+        ).ToLower();
+        if (IsUuid(description) && description != id)
         {
           foreach (Dictionary<string, object> panel in panelData)
           {
             var panelId = panel["id"].ToString().Replace("\'", "").Replace("`", "");
-            if (
-              panelId.ToLower()
-              == (PANEL_GRID.Rows[i].Cells["description_left"].Value as string).ToLower()
-            )
+            if (panelId.ToLower() == description)
             {
               string panelName = panel["panel"].ToString().Replace("\'", "").Replace("`", "");
               PANEL_GRID.Rows[i].Cells["description_left"].Value = "PANEL " + panelName;
             }
           }
         }
-        if (IsUuid(PANEL_GRID.Rows[i].Cells["description_right"].Value as string))
+        description = (PANEL_GRID.Rows[i].Cells["description_right"].Value as string).ToLower();
+        if (IsUuid(description) && description != id)
         {
           foreach (Dictionary<string, object> panel in panelData)
           {
             var panelId = panel["id"].ToString().Replace("\'", "").Replace("`", "");
-            if (
-              panelId.ToLower()
-              == (PANEL_GRID.Rows[i].Cells["description_right"].Value as string).ToLower()
-            )
+            if (panelId.ToLower() == description.ToLower())
             {
               string panelName = panel["panel"].ToString().Replace("\'", "").Replace("`", "");
               PANEL_GRID.Rows[i].Cells["description_right"].Value = "PANEL " + panelName;
