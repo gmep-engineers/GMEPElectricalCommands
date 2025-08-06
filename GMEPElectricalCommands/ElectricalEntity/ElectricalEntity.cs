@@ -34,7 +34,7 @@ namespace ElectricalCommands.ElectricalEntity
 
     public bool IsExisting()
     {
-      return Status[0] == 'E';
+      return !String.IsNullOrEmpty(Status) && Status.Length > 0 && Status[0] == 'E';
     }
   }
 

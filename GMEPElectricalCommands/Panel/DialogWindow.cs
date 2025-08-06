@@ -918,7 +918,8 @@ namespace ElectricalCommands
       if (equip.Pole == 3)
       {
         phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 1.732, 0).ToString();
-        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        descriptionArr[startIndex] =
+          (equip.IsExisting() ? "(E)" : "") + equip.Name + " " + equip.Description;
         breakerArr[startIndex] =
           equip.Mocp > 1
             ? equip.Mocp.ToString()
@@ -935,7 +936,8 @@ namespace ElectricalCommands
       else if (equip.Pole == 2)
       {
         phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 2, 0).ToString();
-        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        descriptionArr[startIndex] =
+          (equip.IsExisting() ? "(E)" : "") + equip.Name + " " + equip.Description;
         breakerArr[startIndex] =
           equip.Mocp > 1
             ? equip.Mocp.ToString()
@@ -950,7 +952,8 @@ namespace ElectricalCommands
       else
       {
         phaseLoad = equip.Va.ToString();
-        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        descriptionArr[startIndex] =
+          (equip.IsExisting() ? "(E)" : "") + equip.Name + " " + equip.Description;
         breakerArr[startIndex] =
           equip.Mocp > 1
             ? equip.Mocp.ToString()
@@ -1045,7 +1048,8 @@ namespace ElectricalCommands
       if (equip.Pole == 2)
       {
         phaseLoad = Math.Round(Convert.ToDouble(equip.Va) / 2, 0).ToString();
-        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        descriptionArr[startIndex] =
+          (equip.IsExisting() ? "(E)" : "") + equip.Name + " " + equip.Description;
         breakerArr[startIndex] =
           equip.Mocp > 1
             ? equip.Mocp.ToString()
@@ -1059,7 +1063,8 @@ namespace ElectricalCommands
       else
       {
         phaseLoad = equip.Va.ToString();
-        descriptionArr[startIndex] = equip.Name + " " + equip.Description;
+        descriptionArr[startIndex] =
+          (equip.IsExisting() ? "(E)" : "") + equip.Name + " " + equip.Description;
         breakerArr[startIndex] =
           equip.Mocp > 1
             ? equip.Mocp.ToString()
