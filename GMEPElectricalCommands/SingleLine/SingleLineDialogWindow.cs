@@ -1225,7 +1225,8 @@ namespace ElectricalCommands.SingleLine
         {
           height += MakeFieldEntity(
             distributionBusChild.Nodes[0],
-            new Point3d(currentPoint.X, currentPoint.Y - 4.1875, 0)
+            new Point3d(currentPoint.X, currentPoint.Y - 4.1875, 0),
+            distributionBreaker.AmpRating
           );
           if (distributionBusChild.Nodes[0].Nodes.Count > 0)
           {
@@ -1247,7 +1248,8 @@ namespace ElectricalCommands.SingleLine
         DistributionBreaker distributionBreaker = (DistributionBreaker)distributionBusChildEntity;
         height += MakeFieldEntity(
           distributionBusChild,
-          new Point3d(currentPoint.X, currentPoint.Y - 4.1875, 0)
+          new Point3d(currentPoint.X, currentPoint.Y - 4.1875, 0),
+          distributionBreaker.AmpRating
         );
         if (distributionBusChild.Nodes.Count > 0)
         {
@@ -1291,7 +1293,11 @@ namespace ElectricalCommands.SingleLine
       return panelBreakers;
     }
 
-    private double MakeFieldEntity(TreeNode parentNode, Point3d currentPoint)
+    private double MakeFieldEntity(
+      TreeNode parentNode,
+      Point3d currentPoint,
+      int primaryDisconnectSize = 0
+    )
     {
       Point3d startingPoint = currentPoint;
       double height = 0;
@@ -1313,7 +1319,8 @@ namespace ElectricalCommands.SingleLine
 
         (string feederWireSize, int feederWireCount) = SingleLine.AddConduitSpec(
           panel,
-          currentPoint
+          currentPoint,
+          primaryDisconnectSize
         );
         double aicRating;
         if (parentEntity.NodeType == NodeType.Transformer)
@@ -1364,7 +1371,7 @@ namespace ElectricalCommands.SingleLine
                 nextChildEntity.IsExisting()
               );
               height = startingPoint.Y - currentPoint.Y;
-              height += MakeFieldEntity(breakerNode, currentPoint);
+              height += MakeFieldEntity(breakerNode, currentPoint, panelBreakers[i].AmpRating);
             }
           }
           if (i == 1)
@@ -1382,7 +1389,7 @@ namespace ElectricalCommands.SingleLine
                 nextChildEntity.IsExisting()
               );
               height = startingPoint.Y - currentPoint.Y;
-              height += MakeFieldEntity(breakerNode, currentPoint);
+              height += MakeFieldEntity(breakerNode, currentPoint, panelBreakers[i].AmpRating);
             }
           }
           if (i == 2)
@@ -1400,7 +1407,7 @@ namespace ElectricalCommands.SingleLine
                 nextChildEntity.IsExisting()
               );
               height = startingPoint.Y - currentPoint.Y;
-              height += MakeFieldEntity(breakerNode, currentPoint);
+              height += MakeFieldEntity(breakerNode, currentPoint, panelBreakers[i].AmpRating);
             }
           }
           if (i == 3)
@@ -1418,7 +1425,7 @@ namespace ElectricalCommands.SingleLine
                 nextChildEntity.IsExisting()
               );
               height = startingPoint.Y - currentPoint.Y;
-              height += MakeFieldEntity(breakerNode, currentPoint);
+              height += MakeFieldEntity(breakerNode, currentPoint, panelBreakers[i].AmpRating);
             }
           }
         }
@@ -1429,7 +1436,8 @@ namespace ElectricalCommands.SingleLine
         SingleLine.MakeDisconnect(disconnect, currentPoint);
         (string feederWireSize, int feederWireCount) = SingleLine.AddConduitSpec(
           disconnect,
-          currentPoint
+          currentPoint,
+          primaryDisconnectSize
         );
         double aicRating;
         if (parentEntity.NodeType == NodeType.Transformer)
@@ -1471,7 +1479,7 @@ namespace ElectricalCommands.SingleLine
             nextChildEntity.IsExisting()
           );
           height = startingPoint.Y - currentPoint.Y;
-          height += MakeFieldEntity(childNode, currentPoint);
+          height += MakeFieldEntity(childNode, currentPoint, disconnect.AmpRating);
         }
       }
       if (childEntity.NodeType == NodeType.Transformer)
@@ -1480,7 +1488,8 @@ namespace ElectricalCommands.SingleLine
         SingleLine.MakeTransformer(transformer, currentPoint);
         (string feederWireSize, int feederWireCount) = SingleLine.AddConduitSpec(
           transformer,
-          currentPoint
+          currentPoint,
+          primaryDisconnectSize
         );
 
         double aicRating = CADObjectCommands.GetAicRating(
@@ -1505,7 +1514,7 @@ namespace ElectricalCommands.SingleLine
             nextChildEntity.IsExisting()
           );
           height = startingPoint.Y - currentPoint.Y;
-          height += MakeFieldEntity(childNode, currentPoint);
+          height += MakeFieldEntity(childNode, currentPoint, transformer.AmpRating);
         }
       }
       if (childEntity.NodeType == NodeType.Equipment)
@@ -1515,7 +1524,8 @@ namespace ElectricalCommands.SingleLine
 
         (string feederWireSize, int feederWireCount) = SingleLine.AddConduitSpec(
           equipment,
-          currentPoint
+          currentPoint,
+          primaryDisconnectSize
         );
         double aicRating = CADObjectCommands.GetAicRating(
           parentEntity.AicRating,

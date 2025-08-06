@@ -2317,7 +2317,8 @@ namespace ElectricalCommands.SingleLine
 
     public static (string, int) AddConduitSpec(
       ElectricalEntity.PlaceableElectricalEntity entity,
-      Point3d currentPoint
+      Point3d currentPoint,
+      int primaryDisconnectSize = 0
     )
     {
       Document doc = Autodesk
@@ -2326,6 +2327,11 @@ namespace ElectricalCommands.SingleLine
         .Application
         .DocumentManager
         .MdiActiveDocument;
+      int ampRating = primaryDisconnectSize;
+      if (ampRating == 0)
+      {
+        ampRating = entity.AmpRating;
+      }
       Database db = doc.Database;
       (
         string firstLine,
@@ -2336,7 +2342,7 @@ namespace ElectricalCommands.SingleLine
         string supplemental3
       ) = CADObjectCommands.GetWireAndConduitSizeText(
         entity.LoadAmperage,
-        entity.AmpRating,
+        ampRating,
         entity.ParentDistance,
         entity.LineVoltage,
         3,
