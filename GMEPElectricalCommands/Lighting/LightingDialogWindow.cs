@@ -851,14 +851,7 @@ namespace ElectricalCommands.Lighting
                       rotation = br.Rotation;
                     }
 
-                    if (fixture.BlockName == "GMEP LTG CUSTOM")
-                    {
-                      br.Layer = "DEFPOINTS";
-                    }
-                    else
-                    {
-                      br.Layer = "E-LITE-EQPM";
-                    }
+                    br.Layer = "E-LITE-EQPM";
 
                     curSpace.AppendEntity(br);
 
