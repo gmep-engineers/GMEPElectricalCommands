@@ -1251,6 +1251,16 @@ namespace ElectricalCommands
                 noteIndex++;
               }
             }
+
+            List<PanelNote> bottomNotes = panelNotes.FindAll(n => n.CircuitNo == 0);
+            foreach (PanelNote bottomNote in bottomNotes)
+            {
+              if (!jsonPanel.notes.Contains(bottomNote.Note))
+              {
+                jsonPanel.notes[noteIndex] = bottomNote.Note;
+                noteIndex++;
+              }
+            }
           }
           foreach (ElectricalEntity.Equipment equip in equipment)
           {
@@ -1609,6 +1619,16 @@ namespace ElectricalCommands
               if (!jsonPanel.notes.Contains(rightNote.Note))
               {
                 jsonPanel.notes[noteIndex] = rightNote.Note;
+                noteIndex++;
+              }
+            }
+
+            List<PanelNote> bottomNotes = panelNotes.FindAll(n => n.CircuitNo == 0);
+            foreach (PanelNote bottomNote in bottomNotes)
+            {
+              if (!jsonPanel.notes.Contains(bottomNote.Note))
+              {
+                jsonPanel.notes[noteIndex] = bottomNote.Note;
                 noteIndex++;
               }
             }
