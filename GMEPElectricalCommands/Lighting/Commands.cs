@@ -19,6 +19,7 @@ using DocumentFormat.OpenXml.Drawing.Charts;
 using DocumentFormat.OpenXml.Office2010.Excel;
 using DocumentFormat.OpenXml.Spreadsheet;
 using Dreambuild.AutoCAD;
+using ElectricalCommands;
 using ElectricalCommands.ElectricalEntity;
 using Emgu.CV;
 using Emgu.CV.CvEnum;
@@ -32,7 +33,6 @@ using Application = Autodesk.AutoCAD.ApplicationServices.Application;
 using Color = System.Drawing.Color;
 using Group = Autodesk.AutoCAD.DatabaseServices.Group;
 using Panel = ElectricalCommands.ElectricalEntity.Panel;
-using ElectricalCommands;
 
 namespace ElectricalCommands.Lighting
 {
@@ -307,7 +307,6 @@ namespace ElectricalCommands.Lighting
       lightingDialogWindow.Show();
     }
 
-    
     [CommandMethod("ToggleEMLighting")]
     public static void ToggleEMLighting()
     {
@@ -579,7 +578,12 @@ namespace ElectricalCommands.Lighting
       }
       foreach (ElectricalEntity.Equipment equipment in equipmentList)
       {
-        if (panelCircuits.ContainsKey(equipment.ParentId) && equipment.Circuit != 0)
+        if (
+          panelCircuits.ContainsKey(equipment.ParentId)
+          && equipment.Circuit != 0
+          && !equipment.Description.ToUpper().Contains("LIGHTING")
+          && !equipment.Description.ToUpper().Contains("LTG")
+        )
         {
           for (int i = 0; i < equipment.Pole; i++)
           {
@@ -957,7 +961,6 @@ namespace ElectricalCommands.Lighting
         BlockTableRecord block;
         if (blockId2 == ObjectId.Null)
         {
-
           BlockReference br = CADObjectCommands.CreateBlockReference(
             tr,
             bt,

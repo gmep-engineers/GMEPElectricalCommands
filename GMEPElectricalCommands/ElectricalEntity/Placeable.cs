@@ -756,7 +756,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.ModelNo = ModelNo;
       this.Notes = Notes;
       this.Rotate = Rotate;
-      this.PaperSpaceScale = PaperSpaceScale;
+      this.PaperSpaceScale = PaperSpaceScale > 0 ? PaperSpaceScale : 0.011;
       this.EmCapable = EmCapable;
       this.LabelTransformHX = LabelTransformHX;
       this.LabelTransformHY = LabelTransformHY;

@@ -817,6 +817,15 @@ namespace ElectricalCommands.Lighting
 
                   BlockTableRecord block;
 
+                  if (String.IsNullOrEmpty(fixture.BlockName))
+                  {
+                    fixture.BlockName = "GMEP LTG CUSTOM";
+                    fixture.LabelTransformVX = -12;
+                    fixture.LabelTransformVY = -18;
+                    fixture.LabelTransformHX = -24;
+                    fixture.LabelTransformHY = -18;
+                  }
+
                   BlockReference br = CADObjectCommands.CreateBlockReference(
                     tr,
                     bt,
@@ -840,6 +849,15 @@ namespace ElectricalCommands.Lighting
                         return;
                       }
                       rotation = br.Rotation;
+                    }
+
+                    if (fixture.BlockName == "GMEP LTG CUSTOM")
+                    {
+                      br.Layer = "DEFPOINTS";
+                    }
+                    else
+                    {
+                      br.Layer = "E-LITE-EQPM";
                     }
 
                     curSpace.AppendEntity(br);
