@@ -1155,9 +1155,12 @@ namespace ElectricalCommands.Lighting
     {
       panelList.Clear();
       lightingFixtureList.Clear();
+      lightingControlList.Clear();
       panelList = gmepDb.GetPanels(projectId);
       lightingFixtureList = gmepDb.GetLightingFixtures(projectId);
+      lightingControlList = gmepDb.GetLightingControls(projectId);
       CreateLightingFixtureListView(true);
+      CreateLightingControlListView(true);
     }
   }
 }
