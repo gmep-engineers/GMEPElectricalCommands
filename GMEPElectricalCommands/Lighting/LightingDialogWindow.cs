@@ -626,6 +626,29 @@ namespace ElectricalCommands.Lighting
                   }
                   rotation = br.Rotation;
 
+                  Console.WriteLine(rotation);
+
+                  double xTransform = 0;
+                  double yTransform = 0;
+
+                  if (rotation > 4.7 && rotation < 4.72)
+                  {
+                    yTransform = -4.5 * 0.25 / CADObjectCommands.Scale;
+                  }
+                  if (rotation > 1.5 && rotation < 1.6)
+                  {
+                    xTransform = -4.5 * 0.25 / CADObjectCommands.Scale;
+                  }
+                  if (rotation > 3 && rotation < 3.2)
+                  {
+                    xTransform = -4.5 * 0.25 / CADObjectCommands.Scale;
+                    yTransform = -4.5 * 0.25 / CADObjectCommands.Scale;
+                  }
+
+                  Console.WriteLine($"Rotation: {rotation}");
+                  Console.WriteLine($"xTransform: {xTransform}");
+                  Console.WriteLine($"yTransform: {yTransform}");
+
                   curSpace.AppendEntity(br);
 
                   tr.AddNewlyCreatedDBObject(br, true);
@@ -643,7 +666,12 @@ namespace ElectricalCommands.Lighting
                         attRef.SetAttributeFromBlock(attDef, br.BlockTransform);
                         if (attRef.Tag == "CONTROL_NAME")
                         {
-                          attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
+                          Point3d p = attDef.Position.TransformBy(br.BlockTransform);
+                          if (rotation > 1.5 && rotation < 1.6)
+                          {
+                            p = new Point3d(p.X + xTransform, p.Y, 0);
+                          }
+                          attRef.Position = p;
                           attRef.TextString = control.Name;
                           attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;
                           attRef.WidthFactor = 1;
@@ -654,7 +682,12 @@ namespace ElectricalCommands.Lighting
                         }
                         if (attRef.Tag == "D")
                         {
-                          attRef.Position = attDef.Position.TransformBy(br.BlockTransform);
+                          Point3d dPoint = attDef.Position.TransformBy(br.BlockTransform);
+                          Console.WriteLine(dPoint.Y);
+                          dPoint = new Point3d(dPoint.X + xTransform, dPoint.Y + yTransform, 0);
+                          Console.WriteLine(dPoint.Y);
+
+                          attRef.Position = dPoint;
                           attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;
                           attRef.WidthFactor = 1;
                           attRef.TextString = attRef.Tag;
@@ -665,7 +698,7 @@ namespace ElectricalCommands.Lighting
                           Matrix3d rotationMatrix = Matrix3d.Rotation(
                             -rotation,
                             Vector3d.ZAxis,
-                            br.Position
+                            dPoint
                           );
                           attRef.TransformBy(rotationMatrix);
                         }
