@@ -705,7 +705,13 @@ namespace ElectricalCommands.ElectricalEntity
       this.Driver = Driver;
       List<string> specialAttributes = new List<string>();
 
-      if (!String.IsNullOrEmpty(Driver) && !Driver.Contains("N/A"))
+      if (
+        !String.IsNullOrEmpty(Driver)
+        && !Driver.Contains("N/A")
+        && BlockName != "GMEP LTG EXIT"
+        && BlockName != "GMEP LTG EM"
+        && BlockName != "GMEP LTG EXIT COMBO"
+      )
       {
         specialAttributes.Add($"{Driver} DIMMING");
       }
@@ -828,7 +834,21 @@ namespace ElectricalCommands.ElectricalEntity
       Name = $"{AmpRating}A Distrib. Bus";
       NodeType = NodeType.DistributionBus;
       this.NodePosition = NodePosition;
-      BlockName = "GMEP DISTRIBUTION SECTION";
+      switch (AmpRating)
+      {
+        case var _ when AmpRating <= 400:
+          BlockName = "GMEP DISTRIBUTION SECTION 400A";
+          break;
+        case var _ when AmpRating <= 600:
+          BlockName = "GMEP DISTRIBUTION SECTION 600A";
+          break;
+        case var _ when AmpRating <= 800:
+          BlockName = "GMEP DISTRIBUTION SECTION 800A";
+          break;
+        default:
+          BlockName = "GMEP DISTRIBUTION SECTION";
+          break;
+      }
       TableName = "electrical_distribution_buses";
       Rotate = true;
       this.Location = Location;
@@ -864,7 +884,21 @@ namespace ElectricalCommands.ElectricalEntity
       this.AicRating = AicRating;
       NodeType = NodeType.Service;
       this.NodePosition = NodePosition;
-      BlockName = "GMEP SERVICE SECTION";
+      switch (AmpRating)
+      {
+        case var _ when AmpRating <= 400:
+          BlockName = "GMEP SERVICE SECTION 400A";
+          break;
+        case var _ when AmpRating <= 600:
+          BlockName = "GMEP SERVICE SECTION 600A";
+          break;
+        case var _ when AmpRating <= 800:
+          BlockName = "GMEP SERVICE SECTION 800A";
+          break;
+        default:
+          BlockName = "GMEP SERVICE SECTION";
+          break;
+      }
       TableName = "electrical_services";
       Rotate = true;
       this.Location = Location;
