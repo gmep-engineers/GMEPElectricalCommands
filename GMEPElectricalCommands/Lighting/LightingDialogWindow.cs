@@ -16,6 +16,8 @@ namespace ElectricalCommands.Lighting
     private List<ListViewItem> lightingFixtureListViewList;
     private List<LightingControl> lightingControlList;
     private List<ListViewItem> lightingControlListViewList;
+    private List<LightingSignage> lightingSignageList;
+    private List<ListViewItem> lightingSignageListViewList;
     private string projectId;
     public GmepDatabase gmepDb = new GmepDatabase();
     private List<ElectricalEntity.Panel> panelList;
@@ -39,8 +41,10 @@ namespace ElectricalCommands.Lighting
       panelList = gmepDb.GetPanels(projectId);
       lightingFixtureList = gmepDb.GetLightingFixtures(projectId);
       lightingControlList = gmepDb.GetLightingControls(projectId);
+      lightingSignageList = gmepDb.GetLightingSignage(projectId);
       CreateLightingFixtureListView();
       CreateLightingControlListView();
+      CreateLightingSignageListView();
 
       isLoading = false;
     }
@@ -95,6 +99,33 @@ namespace ElectricalCommands.Lighting
       return objDict;
     }
 
+    private void CreateLightingSignageListView(bool updateOnly = false) {
+      if (updateOnly) {
+        LightingSignageListView.Items.Clear();
+      }
+      LightingSignageListView.View = View.Details;
+      LightingSignageListView.FullRowSelect = true;
+      Dictionary<string, int> controlDict = GetNumObjectsOnPlan("gmep_lighting_signage_id");
+      foreach (LightingSignage signage in lightingSignageList) {
+        int placed = 0;
+        if (!string.IsNullOrEmpty(signage.Id) && controlDict.ContainsKey(signage.Id)) {
+          placed = controlDict[signage.Id];
+        }
+        ListViewItem item = new ListViewItem(signage.Name, 0);
+        item.SubItems.Add(signage.Tag);
+        item.SubItems.Add(signage.Volt.ToString());
+        item.SubItems.Add(signage.Description);
+        item.SubItems.Add(signage.IndoorOutdoor.ToString());
+        LightingSignageListView.Items.Add(item);
+      }
+      if (!updateOnly) {
+        LightingSignageListView.Columns.Add("Tag", -2, HorizontalAlignment.Left);
+        LightingSignageListView.Columns.Add("Volt", -2, HorizontalAlignment.Left);
+        LightingSignageListView.Columns.Add("Description", -2, HorizontalAlignment.Left);
+        LightingSignageListView.Columns.Add("IndoorOutdoor", -2, HorizontalAlignment.Left);
+      }
+      Console.WriteLine($"projectId Name: {projectId}");
+    }
     private void CreateLightingControlListView(bool updateOnly = false)
     {
       if (updateOnly)
@@ -187,6 +218,7 @@ namespace ElectricalCommands.Lighting
           ? SymbolUtilityServices.GetBlockModelSpaceId(db)
           : SymbolUtilityServices.GetBlockPaperSpaceId(db);
       List<LightingLocation> lightingLocations = gmepDb.GetLightingLocations(projectId);
+      
       if (lightingLocations == null || lightingLocations.Count == 0)
       {
         lightingLocations = new List<LightingLocation>();

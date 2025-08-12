@@ -23,8 +23,8 @@
     /// the contents of this method with the code editor.
     /// </summary>
     private void InitializeComponent() {
-      this.ControlAreasGroupBox = new System.Windows.Forms.GroupBox();
-      this.ControlAreasListView = new System.Windows.Forms.ListView();
+      this.LightingSignageGroupBox = new System.Windows.Forms.GroupBox();
+      this.LightingSignageListView = new System.Windows.Forms.ListView();
       this.ControlsGroupBox = new System.Windows.Forms.GroupBox();
       this.LightingControlsListView = new System.Windows.Forms.ListView();
       this.LightingFixturesGroupBox = new System.Windows.Forms.GroupBox();
@@ -33,29 +33,29 @@
       this.PlaceSelectedFixturesButton = new System.Windows.Forms.Button();
       this.RefreshButton = new System.Windows.Forms.Button();
       this.PlaceSelectedControlsButton = new System.Windows.Forms.Button();
-      this.ControlAreasGroupBox.SuspendLayout();
+      this.LightingSignageGroupBox.SuspendLayout();
       this.ControlsGroupBox.SuspendLayout();
       this.LightingFixturesGroupBox.SuspendLayout();
       this.SuspendLayout();
       // 
-      // ControlAreasGroupBox
+      // SignageGroupBox
       // 
-      this.ControlAreasGroupBox.Controls.Add(this.ControlAreasListView);
-      this.ControlAreasGroupBox.Location = new System.Drawing.Point(12, 12);
-      this.ControlAreasGroupBox.Name = "ControlAreasGroupBox";
-      this.ControlAreasGroupBox.Size = new System.Drawing.Size(508, 225);
-      this.ControlAreasGroupBox.TabIndex = 0;
-      this.ControlAreasGroupBox.TabStop = false;
-      this.ControlAreasGroupBox.Text = "Signage";
+      this.LightingSignageGroupBox.Controls.Add(this.LightingSignageListView);
+      this.LightingSignageGroupBox.Location = new System.Drawing.Point(12, 12);
+      this.LightingSignageGroupBox.Name = "LightingSignageGroupBox";
+      this.LightingSignageGroupBox.Size = new System.Drawing.Size(508, 225);
+      this.LightingSignageGroupBox.TabIndex = 0;
+      this.LightingSignageGroupBox.TabStop = false;
+      this.LightingSignageGroupBox.Text = "Signage";
       // 
-      // ControlAreasListView
+      // SignageListView
       // 
-      this.ControlAreasListView.HideSelection = false;
-      this.ControlAreasListView.Location = new System.Drawing.Point(7, 20);
-      this.ControlAreasListView.Name = "ControlAreasListView";
-      this.ControlAreasListView.Size = new System.Drawing.Size(495, 199);
-      this.ControlAreasListView.TabIndex = 0;
-      this.ControlAreasListView.UseCompatibleStateImageBehavior = false;
+      this.LightingSignageListView.HideSelection = false;
+      this.LightingSignageListView.Location = new System.Drawing.Point(7, 20);
+      this.LightingSignageListView.Name = "LightingSignageListView";
+      this.LightingSignageListView.Size = new System.Drawing.Size(495, 199);
+      this.LightingSignageListView.TabIndex = 0;
+      this.LightingSignageListView.UseCompatibleStateImageBehavior = false;
       // 
       // ControlsGroupBox
       // 
@@ -157,12 +157,12 @@
       this.Controls.Add(this.CreateLightingFixtureScheduleButton);
       this.Controls.Add(this.LightingFixturesGroupBox);
       this.Controls.Add(this.ControlsGroupBox);
-      this.Controls.Add(this.ControlAreasGroupBox);
+      this.Controls.Add(this.LightingSignageGroupBox);
       this.MaximumSize = new System.Drawing.Size(900, 1200);
       this.MinimumSize = new System.Drawing.Size(900, 500);
       this.Name = "LightingDialogWindow";
       this.Text = "Lighting";
-      this.ControlAreasGroupBox.ResumeLayout(false);
+      this.LightingSignageGroupBox.ResumeLayout(false);
       this.ControlsGroupBox.ResumeLayout(false);
       this.LightingFixturesGroupBox.ResumeLayout(false);
       this.ResumeLayout(false);
@@ -171,10 +171,10 @@
 
     #endregion
 
-    private System.Windows.Forms.GroupBox ControlAreasGroupBox;
+    private System.Windows.Forms.GroupBox LightingSignageGroupBox;
     private System.Windows.Forms.GroupBox ControlsGroupBox;
     private System.Windows.Forms.GroupBox LightingFixturesGroupBox;
-    private System.Windows.Forms.ListView ControlAreasListView;
+    private System.Windows.Forms.ListView LightingSignageListView;
     private System.Windows.Forms.ListView LightingControlsListView;
     private System.Windows.Forms.ListView LightingFixturesListView;
     private System.Windows.Forms.Button CreateLightingFixtureScheduleButton;

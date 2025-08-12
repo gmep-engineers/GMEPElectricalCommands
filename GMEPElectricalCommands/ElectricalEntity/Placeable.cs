@@ -628,7 +628,19 @@ namespace ElectricalCommands.ElectricalEntity
       return false;
     }
   }
+  public class LightingSignage : PlaceableElectricalEntity {
+    public string Tag;
+    public int Volt;
+    public string Description;
+    public int IndoorOutdoor;
 
+    public LightingSignage(string Tag, int Volt, string Description, int IndoorOutdoor) {
+      this.Tag = Tag;
+      this.Volt = Volt;
+      this.Description = Description;
+      this.IndoorOutdoor = IndoorOutdoor;
+    }
+  }
   public class LightingControl : PlaceableElectricalEntity
   {
     public string ControlType;
