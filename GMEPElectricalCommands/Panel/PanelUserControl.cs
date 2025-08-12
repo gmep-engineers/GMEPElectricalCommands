@@ -3680,7 +3680,8 @@ namespace ElectricalCommands
       }
       if (!LML_OVERRIDE.Checked)
       {
-        LML.Text = $"{Math.Round(lml * 1.732, 0)}";
+        // LML.Text = $"{Math.Round(lml * 1.732, 0)}"; // uncomment this line when they ask for the lml to be multiplied by 1.732
+        LML.Text = $"{Math.Round(lml, 0)}"; // uncomment this line when they ask for the lml NOT to be multiplied by 1.732
       }
     }
 
