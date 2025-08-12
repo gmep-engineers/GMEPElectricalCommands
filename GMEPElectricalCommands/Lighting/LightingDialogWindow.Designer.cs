@@ -46,7 +46,7 @@
       this.ControlAreasGroupBox.Size = new System.Drawing.Size(508, 225);
       this.ControlAreasGroupBox.TabIndex = 0;
       this.ControlAreasGroupBox.TabStop = false;
-      this.ControlAreasGroupBox.Text = "Control Areas";
+      this.ControlAreasGroupBox.Text = "Signage";
       // 
       // ControlAreasListView
       // 

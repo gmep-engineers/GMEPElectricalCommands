@@ -87,16 +87,16 @@
       <HintPath>..\packages\Accord.Statistics.3.8.0\lib\net462\Accord.Statistics.dll</HintPath>
     </Reference>
     <Reference Include="accoremgd">
-      <HintPath>C:\Program Files\Autodesk\AutoCAD 2024\accoremgd.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\AutoCAD 2017\accoremgd.dll</HintPath>
     </Reference>
     <Reference Include="acdbmgd">
-      <HintPath>C:\Program Files\Autodesk\AutoCAD 2024\acdbmgd.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\AutoCAD 2017\acdbmgd.dll</HintPath>
     </Reference>
     <Reference Include="acmgd">
-      <HintPath>C:\Program Files\Autodesk\AutoCAD 2024\acmgd.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\AutoCAD 2017\acmgd.dll</HintPath>
     </Reference>
     <Reference Include="AcMPolygonMGD">
-      <HintPath>C:\Program Files\Autodesk\AutoCAD 2024\AcMPolygonMGD.dll</HintPath>
+      <HintPath>C:\Program Files\Autodesk\AutoCAD 2017\AcMPolygonMGD.dll</HintPath>
     </Reference>
     <Reference Include="AutoCADCommands">
       <HintPath>3rdPartyDeps\AutoCADCodePack\AutoCADCommands.dll</HintPath>
@@ -834,7 +834,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"C:\Program Files\Autodesk\AutoCAD 2024\acad.exe" /product ACAD /language "en-US"</PostBuildEvent>
+    <PostBuildEvent>"C:\Program Files\Autodesk\AutoCAD 2017\acad.exe" /product ACAD /language "en-US"</PostBuildEvent>
   </PropertyGroup>
   <Import Project="..\packages\Accord.3.8.0\build\Accord.targets" Condition="Exists('..\packages\Accord.3.8.0\build\Accord.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
