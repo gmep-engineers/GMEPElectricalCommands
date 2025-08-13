@@ -958,14 +958,17 @@ namespace GMEPElectricalCommands.GmepDatabase
       this.OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("@projectId", projectId);
-      MySqlDataReader reader = command.ExecuteReader();
+      MySqlDataReader reader = command.ExecuteReader();      
       while (reader.Read()) {
+        string IndoorOutdoor = "";
+        if (GetSafeString(reader, "category").Contains("Outdoor")) { IndoorOutdoor = "Outdoor"; }
+        if (GetSafeString(reader, "category").Contains("Indoor")) { IndoorOutdoor = "Indoor"; }
         signage.Add(
           new LightingSignage(
             GetSafeString(reader, "equip_no"),
             GetSafeInt(reader, "voltage"),
             GetSafeString(reader, "description"),
-            GetSafeString(reader, "category")
+            IndoorOutdoor
           )
         );
       }
