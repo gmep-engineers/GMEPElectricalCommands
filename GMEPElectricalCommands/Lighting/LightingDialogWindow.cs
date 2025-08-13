@@ -111,18 +111,17 @@ namespace ElectricalCommands.Lighting
         if (!string.IsNullOrEmpty(signage.Id) && controlDict.ContainsKey(signage.Id)) {
           placed = controlDict[signage.Id];
         }
-        ListViewItem item = new ListViewItem(signage.Name, 0);
-        item.SubItems.Add(signage.Tag);
+        ListViewItem item = new ListViewItem(signage.Tag, 0);
         item.SubItems.Add(signage.Volt.ToString());
         item.SubItems.Add(signage.Description);
-        item.SubItems.Add(signage.IndoorOutdoor.ToString());
+        item.SubItems.Add(signage.IndoorOutdoor);
         LightingSignageListView.Items.Add(item);
       }
       if (!updateOnly) {
         LightingSignageListView.Columns.Add("Tag", -2, HorizontalAlignment.Left);
         LightingSignageListView.Columns.Add("Volt", -2, HorizontalAlignment.Left);
         LightingSignageListView.Columns.Add("Description", -2, HorizontalAlignment.Left);
-        LightingSignageListView.Columns.Add("IndoorOutdoor", -2, HorizontalAlignment.Left);
+        LightingSignageListView.Columns.Add("Indoor/Outdoor", -2, HorizontalAlignment.Left);
       }
       Console.WriteLine($"projectId Name: {projectId}");
     }

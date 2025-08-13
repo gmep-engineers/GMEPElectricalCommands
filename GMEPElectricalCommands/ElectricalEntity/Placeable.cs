@@ -632,9 +632,9 @@ namespace ElectricalCommands.ElectricalEntity
     public string Tag;
     public int Volt;
     public string Description;
-    public int IndoorOutdoor;
+    public string IndoorOutdoor;
 
-    public LightingSignage(string Tag, int Volt, string Description, int IndoorOutdoor) {
+    public LightingSignage(string Tag, int Volt, string Description, string IndoorOutdoor) {
       this.Tag = Tag;
       this.Volt = Volt;
       this.Description = Description;

@@ -946,23 +946,25 @@ namespace GMEPElectricalCommands.GmepDatabase
       string query =
         @"
         SELECT
-        electrical_equipment.equip_no,
-        electrical_equipment.voltage_id,
-        electrical_equipment.description,
-        electrical_equipment.category_id
+        electrical_equipment.equip_no as equip_no,
+        electrical_equipment_voltages.voltage as voltage,
+        electrical_equipment.description as description,
+        electrical_equipment_categories.category as category
         FROM electrical_equipment
-        WHERE project_id = @projectId";
+        LEFT JOIN electrical_equipment_voltages ON electrical_equipment.voltage_id = electrical_equipment_voltages.id
+        LEFT JOIN electrical_equipment_categories ON electrical_equipment.category_id = electrical_equipment_categories.id
+        WHERE electrical_equipment.project_id = @projectId";
       this.OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("@projectId", projectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read()) {
         signage.Add(
           new LightingSignage(
             GetSafeString(reader, "equip_no"),
-            GetSafeInt(reader, "voltage_id"),
+            GetSafeInt(reader, "voltage"),
             GetSafeString(reader, "description"),
-            GetSafeInt(reader, "category_id")
+            GetSafeString(reader, "category")
           )
         );
       }
