@@ -953,7 +953,8 @@ namespace GMEPElectricalCommands.GmepDatabase
         FROM electrical_equipment
         LEFT JOIN electrical_equipment_voltages ON electrical_equipment.voltage_id = electrical_equipment_voltages.id
         LEFT JOIN electrical_equipment_categories ON electrical_equipment.category_id = electrical_equipment_categories.id
-        WHERE electrical_equipment.project_id = @projectId";
+        WHERE (electrical_equipment.category_id = 6 OR electrical_equipment.category_id = 8)
+        AND electrical_equipment.project_id = @projectId";
       this.OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
       command.Parameters.AddWithValue("@projectId", projectId);
