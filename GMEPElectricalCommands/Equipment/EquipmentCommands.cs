@@ -310,23 +310,49 @@ namespace ElectricalCommands.Equipment
                 && !text.Hyperlinks[0].SubLocation.Contains("cloned")
               )
               {
-                ObjectId clonedTextId = GeneralCommands.CreateAndPositionText(
-                  tr,
-                  text.TextString,
-                  "gmep",
-                  0.0938 * 12 / CADObjectCommands.Scale,
-                  1,
-                  2,
-                  "E-TXT1",
-                  new Point3d(
-                    text.AlignmentPoint.X + clonePoint.X - basePoint.X,
-                    text.AlignmentPoint.Y + clonePoint.Y - basePoint.Y,
-                    0
-                  ),
-                  text.HorizontalMode,
-                  text.VerticalMode,
-                  text.Justify
-                );
+                ObjectId clonedTextId;
+
+                if (text.Justify == AttachmentPoint.BaseLeft)
+                {
+                  clonedTextId = GeneralCommands.CreateAndPositionText(
+                    tr,
+                    text.TextString,
+                    "gmep",
+                    0.0938 * 12 / CADObjectCommands.Scale,
+                    1,
+                    2,
+                    "E-TXT1",
+                    new Point3d(
+                      text.Position.X + clonePoint.X - basePoint.X,
+                      text.Position.Y + clonePoint.Y - basePoint.Y,
+                      0
+                    ),
+                    text.HorizontalMode,
+                    text.VerticalMode,
+                    text.Justify
+                  );
+                }
+                else
+                {
+                  clonedTextId = GeneralCommands.CreateAndPositionText(
+                    tr,
+                    text.TextString,
+                    "gmep",
+                    0.0938 * 12 / CADObjectCommands.Scale,
+                    1,
+                    2,
+                    "E-TXT1",
+                    new Point3d(
+                      text.AlignmentPoint.X + clonePoint.X - basePoint.X,
+                      text.AlignmentPoint.Y + clonePoint.Y - basePoint.Y,
+                      0
+                    ),
+                    text.HorizontalMode,
+                    text.VerticalMode,
+                    text.Justify
+                  );
+                }
+
                 var clonedTextObj = (DBText)tr.GetObject(clonedTextId, OpenMode.ForWrite);
                 HyperLink hyperLink = new HyperLink();
                 hyperLink.SubLocation = text.Hyperlinks[0].SubLocation + "cloned";
