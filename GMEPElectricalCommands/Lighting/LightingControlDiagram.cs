@@ -58,6 +58,7 @@ namespace ElectricalCommands.Lighting
       Editor ed = doc.Editor;
       GmepDatabase gmepDb = new GmepDatabase();
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
+      Console.WriteLine("projectId" + projectId);
       List<ElectricalEntity.Panel> panels = gmepDb.GetPanels(projectId);
       ElectricalEntity.Panel panel = panels.Find(p => p.Id == TimeClock.AdjacentPanelId);
       string panelName = panel.Name;
@@ -68,7 +69,7 @@ namespace ElectricalCommands.Lighting
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord baseBlock;
         BlockReference br = CADObjectCommands.CreateBlockReference(tr, bt, "LTG CTRL BASE", out baseBlock, out point);
-
+        Console.WriteLine($"X: {point.X}, Y: {point.Y}, Z: {point.Z}");
         if (br != null)
         {
           BlockTableRecord curSpace = (BlockTableRecord)
@@ -216,10 +217,10 @@ namespace ElectricalCommands.Lighting
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
-      List<LightingLocation> indoorLocations = Locations
+      List<LightingLocation> outdoorLocations = Locations
         .Where(location => location.Outdoor)
         .ToList();
-
+      Console.WriteLine("outdoorLocations: "+ outdoorLocations.Count);
       using (Transaction tr = db.TransactionManager.StartTransaction())
       {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
@@ -257,8 +258,9 @@ namespace ElectricalCommands.Lighting
         //Graphing Exterior Locations
 
         bool isFirstFlag = true;
-        foreach (LightingLocation location in indoorLocations)
+        foreach (LightingLocation location in outdoorLocations)
         {
+          Console.WriteLine("location: "+ location.LocationName);
           if (!isFirstFlag)
           {
             try
@@ -294,7 +296,7 @@ namespace ElectricalCommands.Lighting
             }
           }
           isFirstFlag = false;
-
+          Console.WriteLine("location2: " + location.LocationName);
           GraphExteriorLocationSection(location);
         }
 
@@ -310,10 +312,10 @@ namespace ElectricalCommands.Lighting
       List<LightingFixture> fixturesAtLocation = Fixtures
         .Where(fixture => fixture.LocationId == location.Id)
         .ToList();
-
+      Console.WriteLine("interiorFixtures: " + Fixtures.Count);
       List<LightingFixture> uniqueFixtures = new List<LightingFixture>();
       var fixtureDict = new Dictionary<(string ParentName, int Circuit), LightingFixture>();
-
+      Console.WriteLine("fixturesAtLocation: ", fixturesAtLocation.Count);
       foreach (var fixture in fixturesAtLocation)
       {
         var combination = (fixture.ParentName, fixture.Circuit);
@@ -417,9 +419,14 @@ namespace ElectricalCommands.Lighting
         Point3d? emStartPosition = null;
 
         double tempSeparator = 0;
-
+        Console.WriteLine("0");
+        Console.WriteLine("interioruniqueFixtures: "+uniqueFixtures.Count);
+        for (int i = 0; i < uniqueFixtures.Count; i++) {
+          LightingFixture fixture = uniqueFixtures[i];
+        }
         foreach (LightingFixture fixture in uniqueFixtures)
         {
+          Console.WriteLine($"{fixture.ParentName}-{fixture.Circuit} (EM: {fixture.EmCapable})");
           //Begin Arrow
           startPoint = arrowPosition;
           endPoint = new Point3d(startPoint.X, startPoint.Y - 1.06, startPoint.Z);
@@ -427,7 +434,7 @@ namespace ElectricalCommands.Lighting
           beginArrow.Layer = "E-CND1";
           curSpace.AppendEntity(beginArrow);
           tr.AddNewlyCreatedDBObject(beginArrow, true);
-
+          Console.WriteLine("1");
           //EM Circle
           if (fixture.EmCapable)
           {
@@ -450,7 +457,7 @@ namespace ElectricalCommands.Lighting
               emStartPosition = emStartPoint;
             }
           }
-
+          Console.WriteLine("2");
           //Panel & Circuit Label
           DBText label = new DBText();
           label.Position = new Point3d(startPoint.X, startPoint.Y, startPoint.Z);
@@ -464,7 +471,7 @@ namespace ElectricalCommands.Lighting
           label.Layer = "E-TEXT";
           curSpace.AppendEntity(label);
           tr.AddNewlyCreatedDBObject(label, true);
-
+          Console.WriteLine("3");
           //Draw Horizontal lines
           Line separator = new Line(
             new Point3d(endPoint.X - .07, endPoint.Y, endPoint.Z),
@@ -484,7 +491,7 @@ namespace ElectricalCommands.Lighting
           separator2.Layer = "E-TEXT";
           curSpace.AppendEntity(separator2);
           tr.AddNewlyCreatedDBObject(separator2, true);
-
+          Console.WriteLine("4");
           //Ending Arrow
           Leader leader = new Leader();
           leader.Layer = "E-CND1";
@@ -497,11 +504,11 @@ namespace ElectricalCommands.Lighting
           tr.AddNewlyCreatedDBObject(leader, true);
 
           arrowPosition = new Point3d(arrowPosition.X + .2, arrowPosition.Y, endPoint.Z);
-
+          Console.WriteLine("5");
           //Adjust Separator
           tempSeparator += .2;
         }
-
+        Console.WriteLine("6");
         // Draw the final EM leader line if applicable
         if (emStartPosition != null)
         {
@@ -536,7 +543,7 @@ namespace ElectricalCommands.Lighting
           EmLabel.TextStyleId = textStyleId;
           curSpace.AppendEntity(EmLabel);
           tr.AddNewlyCreatedDBObject(EmLabel, true);
-
+          Console.WriteLine("7");
           //Adjust Separator
           tempSeparator += 1;
         }
@@ -544,7 +551,7 @@ namespace ElectricalCommands.Lighting
         {
           SectionSeparation = tempSeparator;
         }
-
+        Console.WriteLine("8");
         // Create a rectangle with a dotted line
         Point3d rectStart = new Point3d(InteriorPosition.X + .7, InteriorPosition.Y + .09, 0);
         Point3d rectEnd = new Point3d(arrowPosition.X, rectStart.Y - .57, 0);
@@ -556,7 +563,7 @@ namespace ElectricalCommands.Lighting
         rectangle.AddVertexAt(3, new Point2d(rectStart.X, rectEnd.Y), 0, 0, 0);
         rectangle.Layer = "E-TEXT";
         rectangle.Closed = true;
-
+        Console.WriteLine("9");
         // Set the linetype to dotted
         LinetypeTable linetypeTable =
           tr.GetObject(db.LinetypeTableId, OpenMode.ForRead) as LinetypeTable;
@@ -570,7 +577,7 @@ namespace ElectricalCommands.Lighting
         }
         curSpace.AppendEntity(rectangle);
         tr.AddNewlyCreatedDBObject(rectangle, true);
-
+        Console.WriteLine("10");
         //Append Location Text
         DBText locationLabel = new DBText();
         locationLabel.Position = new Point3d(
@@ -599,13 +606,18 @@ namespace ElectricalCommands.Lighting
 
     private void GraphExteriorLocationSection(LightingLocation location)
     {
+      Console.WriteLine("location3: " + location.LocationName + location.Id);
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
       List<LightingFixture> fixturesAtLocation = Fixtures
         .Where(fixture => fixture.LocationId == location.Id)
         .ToList();
-
+      Console.WriteLine($"Fixture: "+ Fixtures.Count);
+      for (int i = 0; i < Fixtures.Count; i++) {
+        Console.WriteLine($"Fixture {Fixtures[i].LocationId}");
+      }
+      Console.WriteLine($"fixturesAtLocation:" + fixturesAtLocation.Count);
       List<LightingFixture> uniqueFixtures = new List<LightingFixture>();
       var fixtureDict = new Dictionary<(string ParentName, int Circuit), LightingFixture>();
 
@@ -625,9 +637,11 @@ namespace ElectricalCommands.Lighting
           fixtureDict[combination] = fixture;
         }
       }
-
-      // Convert the dictionary values to a list
-      uniqueFixtures = fixtureDict.Values.ToList();
+      Console.WriteLine($"Fixtures dict :"+ fixtureDict.Count);
+      Console.WriteLine($"Fixtures at Location {location.Id}: {fixturesAtLocation.Count}");
+        // Convert the dictionary values to a list
+        uniqueFixtures = fixtureDict.Values.ToList();
+      Console.WriteLine("uniqueFixtures Count: " + uniqueFixtures.Count);
 
       //This method will graph the section for each interior lighting location
       using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -701,7 +715,7 @@ namespace ElectricalCommands.Lighting
         text2.Layer = "E-TEXT";
         curSpace.AppendEntity(text2);
         tr.AddNewlyCreatedDBObject(text2, true);
-
+        Console.WriteLine("0");
         //Graph Circuits
         Point3d arrowPosition = new Point3d(
           ExteriorPosition.X + 1.3,
@@ -709,17 +723,21 @@ namespace ElectricalCommands.Lighting
           endPoint.Z
         );
         Point3d? emStartPosition = null;
-
+        double tempSeparator = 0;
+        Console.WriteLine("1");
         foreach (LightingFixture fixture in uniqueFixtures)
         {
+          Console.WriteLine($"{fixture.ParentName}-{fixture.Circuit} (EM: {fixture.EmCapable})");
           //Begin Arrow
+          Console.WriteLine("test");
           startPoint = arrowPosition;
           endPoint = new Point3d(startPoint.X, startPoint.Y - 1, startPoint.Z);
+          Console.WriteLine(startPoint.Y - 1);
           Line beginArrow = new Line(startPoint, endPoint);
           beginArrow.Layer = "E-CND1";
           curSpace.AppendEntity(beginArrow);
           tr.AddNewlyCreatedDBObject(beginArrow, true);
-
+          Console.WriteLine("2");
           //EM Circle
           if (fixture.EmCapable)
           {
@@ -742,7 +760,7 @@ namespace ElectricalCommands.Lighting
               emStartPosition = emStartPoint;
             }
           }
-
+          Console.WriteLine("3");
           //Panel & Circuit Label
           DBText label = new DBText();
           label.Position = new Point3d(startPoint.X, startPoint.Y, startPoint.Z);
@@ -756,7 +774,7 @@ namespace ElectricalCommands.Lighting
           label.Layer = "E-TEXT";
           curSpace.AppendEntity(label);
           tr.AddNewlyCreatedDBObject(label, true);
-
+          Console.WriteLine("4");
           //Draw Horizontal lines
           Line separator = new Line(
             new Point3d(endPoint.X - .07, endPoint.Y, endPoint.Z),
@@ -776,7 +794,7 @@ namespace ElectricalCommands.Lighting
           separator2.Layer = "E-TEXT";
           curSpace.AppendEntity(separator2);
           tr.AddNewlyCreatedDBObject(separator2, true);
-
+          Console.WriteLine("5");
           //Ending Arrow
           Leader leader = new Leader();
           leader.Layer = "E-CND1";
@@ -790,7 +808,11 @@ namespace ElectricalCommands.Lighting
 
           arrowPosition = new Point3d(arrowPosition.X + .2, arrowPosition.Y, endPoint.Z);
         }
-
+       
+        Console.WriteLine("6");
+        //Adjust Separator
+        tempSeparator += .2;
+        Console.WriteLine("7");
         // Draw the final EM leader line if applicable
         if (emStartPosition != null)
         {
@@ -825,7 +847,13 @@ namespace ElectricalCommands.Lighting
           curSpace.AppendEntity(EmLabel);
           tr.AddNewlyCreatedDBObject(EmLabel, true);
         }
-
+        Console.WriteLine("8");
+        //Adjust Separator
+        tempSeparator += 1;
+        if (tempSeparator > SectionSeparation) {
+          SectionSeparation = tempSeparator;
+        }
+        Console.WriteLine("9");
         // Create a rectangle with a dotted line
         Point3d rectStart = new Point3d(ExteriorPosition.X + .8, ExteriorPosition.Y + .15, 0);
         Point3d rectEnd = new Point3d(arrowPosition.X, rectStart.Y - .50, 0);
@@ -837,7 +865,7 @@ namespace ElectricalCommands.Lighting
         rectangle.AddVertexAt(3, new Point2d(rectStart.X, rectEnd.Y), 0, 0, 0);
         rectangle.Layer = "E-TEXT";
         rectangle.Closed = true;
-
+        Console.WriteLine("10");
         // Set the linetype to dotted
         LinetypeTable linetypeTable =
           tr.GetObject(db.LinetypeTableId, OpenMode.ForRead) as LinetypeTable;
@@ -851,7 +879,7 @@ namespace ElectricalCommands.Lighting
         }
         curSpace.AppendEntity(rectangle);
         tr.AddNewlyCreatedDBObject(rectangle, true);
-
+        Console.WriteLine("11");
         //Append Location Text
         DBText locationLabel = new DBText();
         locationLabel.Position = new Point3d(

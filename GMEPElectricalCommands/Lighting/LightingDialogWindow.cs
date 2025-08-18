@@ -42,6 +42,7 @@ namespace ElectricalCommands.Lighting
       lightingFixtureList = gmepDb.GetLightingFixtures(projectId);
       lightingControlList = gmepDb.GetLightingControls(projectId);
       lightingSignageList = gmepDb.GetLightingSignage(projectId);
+      Console.WriteLine("lightingFixtureList: "+ lightingFixtureList.Count);
       CreateLightingFixtureListView();
       CreateLightingControlListView();
       CreateLightingSignageListView();
@@ -168,6 +169,7 @@ namespace ElectricalCommands.Lighting
       Dictionary<string, int> fixtureDict = GetNumObjectsOnPlan("gmep_lighting_fixture_id");
       foreach (LightingFixture fixture in lightingFixtureList)
       {
+        Console.WriteLine("lightingFixtureList: " + fixture.Name);
         int placed = 0;
         if (fixtureDict.ContainsKey(fixture.Id))
         {

@@ -1169,6 +1169,7 @@ namespace ElectricalCommands.Lighting
           "GMEP LTG EM",
           "GMEP LTG EXIT",
           "GMEP LTG EXIT COMBO",
+          "GMEP LTG CUSTOM"
         };
 
         //Timeclocks
@@ -1247,6 +1248,7 @@ namespace ElectricalCommands.Lighting
         //Lighting
         foreach (string blockName in lightingBlockNames)
         {
+          Console.WriteLine("blockName:" + blockName);
           if (!bt.Has(blockName))
           {
             continue;
@@ -1362,6 +1364,11 @@ namespace ElectricalCommands.Lighting
       List<LightingFixture> newLightings = lightings
         .Where(lighting => newLocations.Any(loc => loc.Id == lighting.LocationId))
         .ToList();
+      Console.WriteLine("lighitng:" + lightings.Count);
+      Console.WriteLine("newlighitng:" + newLightings.Count);
+      Console.WriteLine("newloc:" + newLocations.Count);
+      Console.WriteLine("chosenTimeClock:" + chosenTimeClock);
+
       LightingControlDiagram diagram = new LightingControlDiagram(
         chosenTimeClock,
         newLocations,
