@@ -1316,41 +1316,89 @@ namespace GMEPElectricalCommands.GmepDatabase
       this.OpenConnection();
       foreach (var id in lightings)
       {
-        MySqlCommand command = new MySqlCommand(query, Connection);
-        command.Parameters.AddWithValue("@id", id);
-        MySqlDataReader reader = command.ExecuteReader();
-        while (reader.Read())
+        MySqlCommand commandi = new MySqlCommand(query, Connection);
+        commandi.Parameters.AddWithValue("@id", id);
+        MySqlDataReader readeri = commandi.ExecuteReader();
+        while (readeri.Read())
         {
-          newWattage += GetSafeFloat(reader, "wattage");
+          newWattage += GetSafeFloat(readeri, "wattage");
         }
-        reader.Close();
+        readeri.Close();
       }
 
       query =
-        @"INSERT INTO electrical_equipment (id, project_id, parent_id, description, category_id, voltage_id, 
+        @"
+      SELECT id, fla, voltage_id, category_id FROM electrical_equipment WHERE project_id = @projectId AND circuit_no = @circuitNo AND parent_id = @parentId
+      ";
+
+      MySqlCommand command = new MySqlCommand(query, Connection);
+
+      command.Parameters.AddWithValue("@projectId", projectId);
+      command.Parameters.AddWithValue("@parentId", panelId);
+      command.Parameters.AddWithValue("@circuitNo", circuitNo);
+
+      MySqlDataReader reader = command.ExecuteReader();
+
+      float voltage = 120;
+      if (reader.Read())
+      {
+        // there exists a circuit so just update the fla of it
+        string id = GetSafeString(reader, "id");
+        float fla = GetSafeFloat(reader, "fla");
+        if (GetSafeInt(reader, "voltage_id") == 6)
+        {
+          voltage = 277;
+        }
+        reader.Close();
+        query =
+          @"
+          UPDATE electrical_equipment SET
+          fla = @fla,
+          va = @va
+          WHERE 
+          id = @id
+        ";
+
+        MySqlCommand command2 = new MySqlCommand(query, Connection);
+        command2.Parameters.AddWithValue("@id", id);
+        command2.Parameters.AddWithValue(
+          "@fla",
+          fla + Math.Round(newWattage / voltage, 1, MidpointRounding.AwayFromZero)
+        );
+        command2.Parameters.AddWithValue("@va", fla * voltage + newWattage);
+        command2.ExecuteNonQuery();
+      }
+      else
+      {
+        reader.Close();
+        // new circuit
+        query =
+          @"INSERT INTO electrical_equipment (id, project_id, parent_id, description, category_id, voltage_id, 
         fla, is_three_phase, circuit_no, spec_sheet_from_client, aic_rating, color_code, connection_type_id, va, load_type) VALUES (@id, @projectId, @parentId, @description, @category, 
         @voltage, @fla, @isThreePhase, @circuit, @specFromClient, @aicRating, @colorCode, @connectionId, @va, @loadType)";
 
-      MySqlCommand command2 = new MySqlCommand(query, Connection);
-      command2.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
-      command2.Parameters.AddWithValue("@projectId", projectId);
-      command2.Parameters.AddWithValue("@parentId", panelId);
-      command2.Parameters.AddWithValue("@description", "Lighting");
-      command2.Parameters.AddWithValue("@category", 5);
-      command2.Parameters.AddWithValue("@voltage", 1);
-      command2.Parameters.AddWithValue(
-        "@fla",
-        Math.Round(newWattage / 115, 1, MidpointRounding.AwayFromZero)
-      );
-      command2.Parameters.AddWithValue("@va", newWattage);
-      command2.Parameters.AddWithValue("@isThreePhase", false);
-      command2.Parameters.AddWithValue("@circuit", circuitNo);
-      command2.Parameters.AddWithValue("@specFromClient", false);
-      command2.Parameters.AddWithValue("@aicRating", 0);
-      command2.Parameters.AddWithValue("@colorCode", "#FF00FF");
-      command2.Parameters.AddWithValue("@connectionId", 1);
-      command2.Parameters.AddWithValue("@loadType", 3);
-      command2.ExecuteNonQuery();
+        MySqlCommand command2 = new MySqlCommand(query, Connection);
+        command2.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
+        command2.Parameters.AddWithValue("@projectId", projectId);
+        command2.Parameters.AddWithValue("@parentId", panelId);
+        command2.Parameters.AddWithValue("@description", "Lighting");
+        command2.Parameters.AddWithValue("@category", 5);
+        command2.Parameters.AddWithValue("@voltage", 1);
+        command2.Parameters.AddWithValue(
+          "@fla",
+          Math.Round(newWattage / voltage, 1, MidpointRounding.AwayFromZero)
+        );
+        command2.Parameters.AddWithValue("@va", newWattage);
+        command2.Parameters.AddWithValue("@isThreePhase", false);
+        command2.Parameters.AddWithValue("@circuit", circuitNo);
+        command2.Parameters.AddWithValue("@specFromClient", false);
+        command2.Parameters.AddWithValue("@aicRating", 0);
+        command2.Parameters.AddWithValue("@colorCode", "#FF00FF");
+        command2.Parameters.AddWithValue("@connectionId", 1);
+        command2.Parameters.AddWithValue("@loadType", 3);
+        command2.ExecuteNonQuery();
+      }
+
       CloseConnection();
     }
 
