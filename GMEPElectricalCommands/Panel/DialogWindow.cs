@@ -1098,7 +1098,7 @@ namespace ElectricalCommands
           JsonPanel3P jsonPanel = new JsonPanel3P();
           jsonPanel.id = panel.Id;
           jsonPanel.read_only = true;
-          jsonPanel.main = panel.MainAmpRating.ToString();
+          jsonPanel.main = panel.IsMlo ? "M.L.O." : panel.MainAmpRating.ToString();
           jsonPanel.panel = "'" + panel.Name + "'";
           jsonPanel.location = panel.DesignLocation;
           jsonPanel.voltage1 = panel.Voltage.Substring(0, 3);
@@ -1487,7 +1487,7 @@ namespace ElectricalCommands
           JsonPanel2P jsonPanel = new JsonPanel2P();
           jsonPanel.id = panel.Id;
           jsonPanel.read_only = true;
-          jsonPanel.main = panel.MainAmpRating.ToString();
+          jsonPanel.main = panel.IsMlo ? "M.L.O." : panel.MainAmpRating.ToString();
           jsonPanel.panel = "'" + panel.Name + "'";
           jsonPanel.location = panel.DesignLocation;
           jsonPanel.voltage1 = panel.Voltage.Substring(0, 3);
