@@ -632,15 +632,9 @@ namespace ElectricalCommands.Equipment
       string equipId,
       string parentId,
       string equipNo,
-      string circuitNo,
-      string connectionSymbol
+      string circuitNo
     )
     {
-      int duplexCount = gmepDb.GetNumDuplex(equipId);
-      if (duplexCount == 0)
-      {
-        return;
-      }
       Document doc = Autodesk
         .AutoCAD
         .ApplicationServices
@@ -663,20 +657,20 @@ namespace ElectricalCommands.Equipment
           tr.Commit();
         }
       }
-      Dictionary<string, int> duplexDict = LightingDialogWindow.GetNumObjectsOnPlan(
-        "gmep_equip_id"
-      );
+      Dictionary<string, int> equipDict = LightingDialogWindow.GetNumObjectsOnPlan("gmep_equip_id");
 
       int currentNumDuplexes = 0;
+      int maxDuplexes = 8;
 
-      if (duplexDict.ContainsKey(equipId))
+      if (equipDict.ContainsKey(equipId))
       {
-        currentNumDuplexes = duplexDict[equipId];
+        currentNumDuplexes = equipDict[equipId];
       }
-      for (int i = currentNumDuplexes; i < duplexCount; i++)
+      int objectIdIdx = 0;
+      for (int i = currentNumDuplexes; i < maxDuplexes; i++)
       {
         ed.WriteMessage(
-          "\nPlace " + (i + 1).ToString() + "/" + duplexCount + " for '" + equipNo + "'"
+          "\nPlace " + (i + 1).ToString() + "/" + maxDuplexes + " for '" + equipNo + "'"
         );
         ObjectId blockId;
         try
@@ -686,18 +680,65 @@ namespace ElectricalCommands.Equipment
           using (Transaction tr = db.TransactionManager.StartTransaction())
           {
             BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-            BlockTableRecord block = (BlockTableRecord)
-              tr.GetObject(bt[connectionSymbol], OpenMode.ForRead);
-            BlockJig blockJig = new BlockJig();
+            BlockTableRecord duplex = (BlockTableRecord)
+              tr.GetObject(bt["GMEP DUPLEX"], OpenMode.ForRead);
+            BlockTableRecord duplexData = (BlockTableRecord)
+              tr.GetObject(bt["GMEP DUPLEXDATA"], OpenMode.ForRead);
+            BlockTableRecord floorDuplex = (BlockTableRecord)
+              tr.GetObject(bt["GMEP FLOOR DUPLEX"], OpenMode.ForRead);
+            BlockTableRecord floorDuplexData = (BlockTableRecord)
+              tr.GetObject(bt["GMEP FLOOR DUPLEXDATA"], OpenMode.ForRead);
+            BlockTableRecord quad = (BlockTableRecord)
+              tr.GetObject(bt["GMEP QUAD"], OpenMode.ForRead);
 
-            PromptResult res = blockJig.DragMe(block.ObjectId, out point);
+            ConvenienceRecJig blockJig = new ConvenienceRecJig();
 
-            if (res.Status == PromptStatus.OK)
+            List<ObjectId> objectIdList;
+
+            if (maxDuplexes - i > 2)
+            {
+              objectIdList = new List<ObjectId>()
+              {
+                duplex.ObjectId,
+                duplexData.ObjectId,
+                floorDuplex.ObjectId,
+                floorDuplexData.ObjectId,
+                quad.ObjectId,
+              };
+            }
+            else
+            {
+              objectIdList = new List<ObjectId>()
+              {
+                duplex.ObjectId,
+                duplexData.ObjectId,
+                floorDuplex.ObjectId,
+                floorDuplexData.ObjectId,
+              };
+            }
+
+            if (objectIdIdx >= objectIdList.Count)
+            {
+              objectIdIdx = 0;
+            }
+
+            (PromptResult, ObjectId, int) res = blockJig.DragMe(
+              objectIdList[objectIdIdx],
+              objectIdList,
+              objectIdIdx,
+              out point
+            );
+            objectIdIdx = res.Item3;
+            if (objectIdIdx > 3)
+            {
+              i++;
+            }
+            if (res.Item1.Status == PromptStatus.OK)
             {
               BlockTableRecord curSpace = (BlockTableRecord)
                 tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
-              BlockReference br = new BlockReference(point, block.ObjectId);
+              BlockReference br = new BlockReference(point, res.Item2);
               RotateJig rotateJig = new RotateJig(br);
               PromptResult rotatePromptResult = ed.Drag(rotateJig);
 
@@ -822,7 +863,7 @@ namespace ElectricalCommands.Equipment
 
       if (category.ToLower().StartsWith("convenience"))
       {
-        PlaceConvenienceReceptacles(equipId, parentId, equipNo, circuitNo, connectionSymbol);
+        PlaceConvenienceReceptacles(equipId, parentId, equipNo, circuitNo);
         return new Point3d();
       }
       Document doc = Autodesk

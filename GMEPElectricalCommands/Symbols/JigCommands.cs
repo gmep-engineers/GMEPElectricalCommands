@@ -547,6 +547,101 @@ namespace ElectricalCommands
     }
   }
 
+  public class ConvenienceRecJig : DrawJig
+  {
+    public Point3d _point;
+
+    private ObjectId _blockId = ObjectId.Null;
+
+    private string _name = string.Empty;
+    private double _scale = 1;
+
+    public ConvenienceRecJig(string _name = "block", double _scale = 1)
+    {
+      this._name = _name;
+      this._scale = _scale;
+    }
+
+    public (PromptResult, ObjectId, int) DragMe(
+      ObjectId i_blockId,
+      List<ObjectId> objectIdList,
+      int objectListIdx,
+      out Point3d o_pnt
+    )
+    {
+      _blockId = i_blockId;
+
+      Editor ed = Application.DocumentManager.MdiActiveDocument.Editor;
+
+      PromptResult jigRes = ed.Drag(this);
+
+      Console.WriteLine(jigRes.Status);
+
+      if (jigRes.Status == PromptStatus.Cancel)
+      {
+        o_pnt = _point;
+        return (jigRes, i_blockId, 0);
+      }
+
+      if (jigRes.Status == PromptStatus.None)
+      {
+        if (objectIdList.Count > 0)
+        {
+          objectListIdx++;
+          if (objectListIdx == objectIdList.Count())
+          {
+            return DragMe(objectIdList[0], objectIdList, 0, out o_pnt);
+          }
+          else
+          {
+            return DragMe(objectIdList[objectListIdx], objectIdList, objectListIdx, out o_pnt);
+          }
+        }
+      }
+
+      o_pnt = _point;
+
+      return (jigRes, i_blockId, objectListIdx);
+    }
+
+    protected override SamplerStatus Sampler(JigPrompts prompts)
+    {
+      JigPromptPointOptions jigOpts = new JigPromptPointOptions();
+
+      jigOpts.UserInputControls = (
+        UserInputControls.Accept3dCoordinates | UserInputControls.NullResponseAccepted
+      );
+
+      jigOpts.Message = $"Select a point for {_name}:";
+
+      PromptPointResult jigRes = prompts.AcquirePoint(jigOpts);
+
+      Point3d pt = jigRes.Value;
+
+      if (pt == _point)
+        return SamplerStatus.NoChange;
+
+      _point = pt;
+
+      if (jigRes.Status == PromptStatus.OK)
+        return SamplerStatus.OK;
+
+      return SamplerStatus.Cancel;
+    }
+
+    protected override bool WorldDraw(Autodesk.AutoCAD.GraphicsInterface.WorldDraw draw)
+    {
+      BlockReference inMemoryBlockInsert = new BlockReference(_point, _blockId);
+      inMemoryBlockInsert.ScaleFactors = new Scale3d(_scale, _scale, 1);
+
+      draw.Geometry.Draw(inMemoryBlockInsert);
+
+      inMemoryBlockInsert.Dispose();
+
+      return true;
+    }
+  }
+
   public class RotateJig : EntityJig
   {
     private Point3d _insertionPoint;
