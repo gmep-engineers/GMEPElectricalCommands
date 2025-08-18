@@ -626,8 +626,6 @@ namespace ElectricalCommands.Lighting
                   }
                   rotation = br.Rotation;
 
-                  Console.WriteLine(rotation);
-
                   double xTransform = 0;
                   double yTransform = 0;
 
@@ -644,10 +642,6 @@ namespace ElectricalCommands.Lighting
                     xTransform = -4.5 * 0.25 / CADObjectCommands.Scale;
                     yTransform = -4.5 * 0.25 / CADObjectCommands.Scale;
                   }
-
-                  Console.WriteLine($"Rotation: {rotation}");
-                  Console.WriteLine($"xTransform: {xTransform}");
-                  Console.WriteLine($"yTransform: {yTransform}");
 
                   curSpace.AppendEntity(br);
 
@@ -683,9 +677,7 @@ namespace ElectricalCommands.Lighting
                         if (attRef.Tag == "D")
                         {
                           Point3d dPoint = attDef.Position.TransformBy(br.BlockTransform);
-                          Console.WriteLine(dPoint.Y);
                           dPoint = new Point3d(dPoint.X + xTransform, dPoint.Y + yTransform, 0);
-                          Console.WriteLine(dPoint.Y);
 
                           attRef.Position = dPoint;
                           attRef.Height = 0.0938 / CADObjectCommands.Scale * 12;

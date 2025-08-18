@@ -9,6 +9,7 @@ using Accord.Statistics.Distributions;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.Geometry;
 using DocumentFormat.OpenXml.Office2010.CustomUI;
+using DocumentFormat.OpenXml.Office2010.Excel;
 using ElectricalCommands;
 using ElectricalCommands.ElectricalEntity;
 using ElectricalCommands.Equipment;
@@ -1295,6 +1296,68 @@ namespace GMEPElectricalCommands.GmepDatabase
       command.Parameters.AddWithValue("@parentDistance", equip.ParentDistance);
       command.Parameters.AddWithValue("@equipId", equip.Id);
       command.ExecuteNonQuery();
+      CloseConnection();
+    }
+
+    public float ReadLightingFixtureWattage(string fixtureId)
+    {
+      float wattage = 0;
+      string query =
+        @"
+        SELECT electrical_lighting.wattage
+        FROM electrical_lighting
+        WHERE electrical_lighting.id = @id
+        ";
+      this.OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("@id", fixtureId);
+      MySqlDataReader reader = command.ExecuteReader();
+      if (reader.Read())
+      {
+        wattage = GetSafeFloat(reader, "wattage");
+      }
+      reader.Close();
+
+      return wattage;
+    }
+
+    public void UpdatePanelCircuitLoad(string panelId, string circuit, float va)
+    {
+      this.OpenConnection();
+      string query =
+        @"
+        UPDATE electrical_equipment
+        SET va = @va
+        WHERE
+        parent_id = @parentId
+        AND
+        circuit_no = @circuitNo
+        AND
+        circuit_half = @circuitHalf
+        ";
+      int circuitHalf = 0;
+      if (circuit.Contains("A"))
+      {
+        circuitHalf = 1;
+        circuit = circuit.Replace("A", "");
+      }
+      if (circuit.Contains("B"))
+      {
+        circuitHalf = 2;
+        circuit = circuit.Replace("B", "");
+      }
+
+      int circuitNo = Int32.Parse(circuit);
+
+      MySqlCommand command = new MySqlCommand(query, Connection);
+
+      command.Parameters.AddWithValue("@parentId", panelId);
+      command.Parameters.AddWithValue("@circuitNo", circuitNo);
+      command.Parameters.AddWithValue("@circuitHalf", circuitHalf);
+      command.Parameters.AddWithValue("@va", va);
+
+      command.ExecuteNonQuery();
+
       CloseConnection();
     }
 

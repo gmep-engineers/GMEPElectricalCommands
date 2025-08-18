@@ -535,6 +535,92 @@ namespace ElectricalCommands.Lighting
       }
     }
 
+    [CommandMethod("UpdateLightingCircuitLoads")]
+    public static void UpdateLightingCircuitLoads()
+    {
+      Document doc = Application.DocumentManager.MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      GmepDatabase gmepDb = new GmepDatabase();
+
+      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
+      List<Panel> panelList = gmepDb.GetPanels(projectId);
+      List<ElectricalEntity.Equipment> equipmentList = gmepDb.GetEquipment(projectId);
+
+      Dictionary<string, float> fixtureSpecs = new Dictionary<string, float>();
+
+      Dictionary<string, float> circuitVaDict = new Dictionary<string, float>();
+
+      //
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+
+        foreach (ObjectId id in modelSpace)
+        {
+          try
+          {
+            BlockReference br = (BlockReference)tr.GetObject(id, OpenMode.ForRead);
+            if (
+              br != null
+              && br.IsDynamicBlock
+              && br.DynamicBlockReferencePropertyCollection.Count > 0
+            )
+            {
+              DynamicBlockReferencePropertyCollection pc =
+                br.DynamicBlockReferencePropertyCollection;
+              string circuitVaDictKey = "";
+
+              float fixtureVa = 0;
+              foreach (DynamicBlockReferenceProperty prop in pc)
+              {
+                if (prop.PropertyName == "gmep_lighting_fixture_id" && prop.Value as string != "0")
+                {
+                  string fixtureId = prop.Value as string;
+                  if (!fixtureSpecs.ContainsKey(fixtureId))
+                  {
+                    fixtureSpecs.Add(fixtureId, gmepDb.ReadLightingFixtureWattage(fixtureId));
+                  }
+                  else
+                  {
+                    fixtureVa = fixtureSpecs[prop.Value as string];
+                  }
+                }
+                if (prop.PropertyName == "gmep_lighting_parent_id" && prop.Value as string != "0")
+                {
+                  circuitVaDictKey = prop.Value as string + circuitVaDictKey;
+                }
+                if (prop.PropertyName == "gmep_lighting_circuit" && prop.Value as string != "#")
+                {
+                  circuitVaDictKey += "_" + prop.Value as string;
+                }
+              }
+              if (!string.IsNullOrEmpty(circuitVaDictKey))
+              {
+                if (!circuitVaDict.ContainsKey(circuitVaDictKey))
+                {
+                  circuitVaDict.Add(circuitVaDictKey, 0);
+                }
+                circuitVaDict[circuitVaDictKey] += fixtureVa;
+              }
+            }
+          }
+          catch { }
+        }
+        tr.Commit();
+      }
+      foreach (var circuit in circuitVaDict)
+      {
+        string panelId = circuit.Key.Split('_')[0];
+        string circuitNo = circuit.Key.Split('_')[1];
+        gmepDb.UpdatePanelCircuitLoad(panelId, circuitNo, circuit.Value);
+      }
+    }
+
     [CommandMethod("AssignLightingCircuit")]
     public static void AssignLightingCircuit()
     {
@@ -703,8 +789,10 @@ namespace ElectricalCommands.Lighting
           }
 
           gmepDb.InsertLightingEquipment(lightings, chosenPanel, chosenCircuit, projectId);
+
           tr.Commit();
         }
+        UpdateLightingCircuitLoads();
       }
     }
 
