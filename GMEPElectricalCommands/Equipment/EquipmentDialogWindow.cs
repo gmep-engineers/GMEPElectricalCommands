@@ -887,6 +887,10 @@ namespace ElectricalCommands.Equipment
           BlockTableRecord curSpace = (BlockTableRecord)
             tr.GetObject(db.CurrentSpaceId, OpenMode.ForRead);
         }
+        else
+        {
+          return null;
+        }
 
         RotateJig rotateJig = new RotateJig(br);
         PromptResult blockPromptResult = ed.Drag(rotateJig);
@@ -1389,6 +1393,7 @@ namespace ElectricalCommands.Equipment
           catch { }
         }
       }
+
       for (int i = 0; i < pooledEquipment.Count; i++)
       {
         for (int j = 0; j < pooledEquipment.Count; j++)
