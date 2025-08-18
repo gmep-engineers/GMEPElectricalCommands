@@ -175,6 +175,10 @@ namespace ElectricalCommands.Equipment
         {
           continue;
         }
+        if (equipment.Name.ToUpper() == "SPARE")
+        {
+          continue;
+        }
         ListViewItem item = new ListViewItem(equipment.Name, 0);
         item.SubItems.Add(equipment.Description);
         item.SubItems.Add(equipment.ParentName.ToUpper().Replace("PANEL", "").Trim());
@@ -957,65 +961,51 @@ namespace ElectricalCommands.Equipment
             }
           }
         }
-        double labelOffsetX = 0;
-        double labelOffsetY = 0;
-        switch (equipType)
-        {
-          case EquipmentType.Duplex:
-            switch (rotation)
-            {
-              case var _ when rotation > 5.49:
-                labelOffsetY = -4.5;
-                break;
-              case var _ when rotation > 4.71:
-                labelOffsetX = -4.5;
-                break;
-              case var _ when rotation > 2.35:
-                labelOffsetY = 4.5;
-                break;
-              case var _ when rotation > 1.57:
-                labelOffsetX = 4.5;
-                break;
-              default:
-                labelOffsetY = -4.5;
-                break;
-            }
-            break;
-          case EquipmentType.Panel:
-            break;
-          // TODO check for remaining connection types
-        }
-        labelOffsetY = labelOffsetY * 0.25 / scale;
-        labelOffsetX = labelOffsetX * 0.25 / scale;
-        firstClickPoint = new Point3d(
-          firstClickPoint.X + labelOffsetX,
-          firstClickPoint.Y + labelOffsetY,
-          0
-        );
 
         if (equipType != EquipmentType.Panel && equipType != EquipmentType.Transformer)
         {
           double circuitOffsetX = 0;
           double circuitOffsetY = 0;
+          Console.WriteLine(rotation);
           switch (rotation)
           {
-            case var _ when rotation > 5.49:
-              circuitOffsetY = 4.5;
+            case var _ when rotation == 0:
+              Console.WriteLine(0);
               circuitOffsetX = 4.5;
               break;
+            case var _ when rotation > 5.49:
+              Console.WriteLine(5.49);
+              circuitOffsetX = 6.5;
+              break;
             case var _ when rotation > 4.71:
+              Console.WriteLine(4.71);
+              circuitOffsetY = -9.5;
+              break;
+            case var _ when rotation > 3.92:
+              Console.WriteLine(3.92);
+              circuitOffsetX = 4.5;
+              break;
+            case var _ when rotation > 3.14:
+              Console.WriteLine(3.14);
+              circuitOffsetX = 4.5;
               circuitOffsetY = -4.5;
               break;
             case var _ when rotation > 2.35:
-              circuitOffsetY = 4.5;
-              circuitOffsetX = -4.5;
+              Console.WriteLine(2.35);
+              circuitOffsetX = -9.5;
               break;
             case var _ when rotation > 1.57:
-              circuitOffsetX = 4.5;
-              circuitOffsetY = -4.5;
+              Console.WriteLine(1.57);
+              circuitOffsetX = -9.5;
+              circuitOffsetY = -9.5;
+              break;
+            case var _ when rotation > 0.78:
+              Console.WriteLine(0.78);
+              circuitOffsetY = -6.5;
               break;
             default:
-              circuitOffsetY = -4.5;
+              Console.WriteLine("default");
+              circuitOffsetY = -9.5;
               circuitOffsetX = 4.5;
               break;
           }
@@ -1029,11 +1019,7 @@ namespace ElectricalCommands.Equipment
             1,
             2,
             "E-TXT1",
-            new Point3d(
-              firstClickPoint.X - (circuitOffsetX),
-              firstClickPoint.Y - (circuitOffsetY),
-              0
-            )
+            new Point3d(firstClickPoint.X + circuitOffsetX, firstClickPoint.Y + circuitOffsetY, 0)
           );
         }
         tr.Commit();
@@ -1509,7 +1495,10 @@ namespace ElectricalCommands.Equipment
     private void EquipmentListView_MouseDoubleClick(object sender, MouseEventArgs e)
     {
       int numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
-      if (equipmentListView.SelectedItems[0].SubItems[numSubItems - 3].Text == "True")
+      if (
+        equipmentListView.SelectedItems[0].SubItems[numSubItems - 3].Text == "True"
+        || equipmentListView.SelectedItems[0].Text.ToUpper() == "SPARE"
+      )
       {
         return;
       }
@@ -1576,7 +1565,7 @@ namespace ElectricalCommands.Equipment
           numSubItems = equipmentListView.SelectedItems[0].SubItems.Count;
           foreach (ListViewItem item in equipmentListView.SelectedItems)
           {
-            if (item.SubItems[numSubItems - 3].Text != "True")
+            if (item.SubItems[numSubItems - 3].Text != "True" && item.Text.ToUpper() != "SPARE")
             {
               string circuitNo = GetCircuitNo(item);
               Point3d? p = PlaceEquipment(
@@ -1620,7 +1609,7 @@ namespace ElectricalCommands.Equipment
           numSubItems = equipmentListView.Items[0].SubItems.Count;
           foreach (ListViewItem item in equipmentListView.Items)
           {
-            if (item.SubItems[numSubItems - 3].Text != "True")
+            if (item.SubItems[numSubItems - 3].Text != "True" && item.Text.ToUpper() != "SPARE")
             {
               string circuitNo = GetCircuitNo(item);
               Point3d? p = PlaceEquipment(
