@@ -419,7 +419,6 @@ namespace ElectricalCommands.Lighting
         Point3d? emStartPosition = null;
 
         double tempSeparator = 0;
-        Console.WriteLine("0");
         Console.WriteLine("interioruniqueFixtures: "+uniqueFixtures.Count);
         for (int i = 0; i < uniqueFixtures.Count; i++) {
           LightingFixture fixture = uniqueFixtures[i];
@@ -434,7 +433,6 @@ namespace ElectricalCommands.Lighting
           beginArrow.Layer = "E-CND1";
           curSpace.AppendEntity(beginArrow);
           tr.AddNewlyCreatedDBObject(beginArrow, true);
-          Console.WriteLine("1");
           //EM Circle
           if (fixture.EmCapable)
           {
@@ -457,7 +455,6 @@ namespace ElectricalCommands.Lighting
               emStartPosition = emStartPoint;
             }
           }
-          Console.WriteLine("2");
           //Panel & Circuit Label
           DBText label = new DBText();
           label.Position = new Point3d(startPoint.X, startPoint.Y, startPoint.Z);
@@ -471,7 +468,6 @@ namespace ElectricalCommands.Lighting
           label.Layer = "E-TEXT";
           curSpace.AppendEntity(label);
           tr.AddNewlyCreatedDBObject(label, true);
-          Console.WriteLine("3");
           //Draw Horizontal lines
           Line separator = new Line(
             new Point3d(endPoint.X - .07, endPoint.Y, endPoint.Z),
@@ -491,7 +487,6 @@ namespace ElectricalCommands.Lighting
           separator2.Layer = "E-TEXT";
           curSpace.AppendEntity(separator2);
           tr.AddNewlyCreatedDBObject(separator2, true);
-          Console.WriteLine("4");
           //Ending Arrow
           Leader leader = new Leader();
           leader.Layer = "E-CND1";
@@ -504,11 +499,9 @@ namespace ElectricalCommands.Lighting
           tr.AddNewlyCreatedDBObject(leader, true);
 
           arrowPosition = new Point3d(arrowPosition.X + .2, arrowPosition.Y, endPoint.Z);
-          Console.WriteLine("5");
           //Adjust Separator
           tempSeparator += .2;
         }
-        Console.WriteLine("6");
         // Draw the final EM leader line if applicable
         if (emStartPosition != null)
         {
@@ -543,7 +536,6 @@ namespace ElectricalCommands.Lighting
           EmLabel.TextStyleId = textStyleId;
           curSpace.AppendEntity(EmLabel);
           tr.AddNewlyCreatedDBObject(EmLabel, true);
-          Console.WriteLine("7");
           //Adjust Separator
           tempSeparator += 1;
         }
@@ -551,7 +543,6 @@ namespace ElectricalCommands.Lighting
         {
           SectionSeparation = tempSeparator;
         }
-        Console.WriteLine("8");
         // Create a rectangle with a dotted line
         Point3d rectStart = new Point3d(InteriorPosition.X + .7, InteriorPosition.Y + .09, 0);
         Point3d rectEnd = new Point3d(arrowPosition.X, rectStart.Y - .57, 0);
@@ -563,7 +554,6 @@ namespace ElectricalCommands.Lighting
         rectangle.AddVertexAt(3, new Point2d(rectStart.X, rectEnd.Y), 0, 0, 0);
         rectangle.Layer = "E-TEXT";
         rectangle.Closed = true;
-        Console.WriteLine("9");
         // Set the linetype to dotted
         LinetypeTable linetypeTable =
           tr.GetObject(db.LinetypeTableId, OpenMode.ForRead) as LinetypeTable;
@@ -577,7 +567,6 @@ namespace ElectricalCommands.Lighting
         }
         curSpace.AppendEntity(rectangle);
         tr.AddNewlyCreatedDBObject(rectangle, true);
-        Console.WriteLine("10");
         //Append Location Text
         DBText locationLabel = new DBText();
         locationLabel.Position = new Point3d(
@@ -715,7 +704,6 @@ namespace ElectricalCommands.Lighting
         text2.Layer = "E-TEXT";
         curSpace.AppendEntity(text2);
         tr.AddNewlyCreatedDBObject(text2, true);
-        Console.WriteLine("0");
         //Graph Circuits
         Point3d arrowPosition = new Point3d(
           ExteriorPosition.X + 1.3,
@@ -724,12 +712,10 @@ namespace ElectricalCommands.Lighting
         );
         Point3d? emStartPosition = null;
         double tempSeparator = 0;
-        Console.WriteLine("1");
         foreach (LightingFixture fixture in uniqueFixtures)
         {
           Console.WriteLine($"{fixture.ParentName}-{fixture.Circuit} (EM: {fixture.EmCapable})");
           //Begin Arrow
-          Console.WriteLine("test");
           startPoint = arrowPosition;
           endPoint = new Point3d(startPoint.X, startPoint.Y - 1, startPoint.Z);
           Console.WriteLine(startPoint.Y - 1);
@@ -737,7 +723,6 @@ namespace ElectricalCommands.Lighting
           beginArrow.Layer = "E-CND1";
           curSpace.AppendEntity(beginArrow);
           tr.AddNewlyCreatedDBObject(beginArrow, true);
-          Console.WriteLine("2");
           //EM Circle
           if (fixture.EmCapable)
           {
@@ -760,7 +745,6 @@ namespace ElectricalCommands.Lighting
               emStartPosition = emStartPoint;
             }
           }
-          Console.WriteLine("3");
           //Panel & Circuit Label
           DBText label = new DBText();
           label.Position = new Point3d(startPoint.X, startPoint.Y, startPoint.Z);
@@ -774,7 +758,6 @@ namespace ElectricalCommands.Lighting
           label.Layer = "E-TEXT";
           curSpace.AppendEntity(label);
           tr.AddNewlyCreatedDBObject(label, true);
-          Console.WriteLine("4");
           //Draw Horizontal lines
           Line separator = new Line(
             new Point3d(endPoint.X - .07, endPoint.Y, endPoint.Z),
@@ -794,7 +777,6 @@ namespace ElectricalCommands.Lighting
           separator2.Layer = "E-TEXT";
           curSpace.AppendEntity(separator2);
           tr.AddNewlyCreatedDBObject(separator2, true);
-          Console.WriteLine("5");
           //Ending Arrow
           Leader leader = new Leader();
           leader.Layer = "E-CND1";
@@ -809,10 +791,8 @@ namespace ElectricalCommands.Lighting
           arrowPosition = new Point3d(arrowPosition.X + .2, arrowPosition.Y, endPoint.Z);
         }
        
-        Console.WriteLine("6");
         //Adjust Separator
         tempSeparator += .2;
-        Console.WriteLine("7");
         // Draw the final EM leader line if applicable
         if (emStartPosition != null)
         {
@@ -847,13 +827,11 @@ namespace ElectricalCommands.Lighting
           curSpace.AppendEntity(EmLabel);
           tr.AddNewlyCreatedDBObject(EmLabel, true);
         }
-        Console.WriteLine("8");
         //Adjust Separator
         tempSeparator += 1;
         if (tempSeparator > SectionSeparation) {
           SectionSeparation = tempSeparator;
         }
-        Console.WriteLine("9");
         // Create a rectangle with a dotted line
         Point3d rectStart = new Point3d(ExteriorPosition.X + .8, ExteriorPosition.Y + .15, 0);
         Point3d rectEnd = new Point3d(arrowPosition.X, rectStart.Y - .50, 0);
@@ -865,7 +843,6 @@ namespace ElectricalCommands.Lighting
         rectangle.AddVertexAt(3, new Point2d(rectStart.X, rectEnd.Y), 0, 0, 0);
         rectangle.Layer = "E-TEXT";
         rectangle.Closed = true;
-        Console.WriteLine("10");
         // Set the linetype to dotted
         LinetypeTable linetypeTable =
           tr.GetObject(db.LinetypeTableId, OpenMode.ForRead) as LinetypeTable;
@@ -879,7 +856,6 @@ namespace ElectricalCommands.Lighting
         }
         curSpace.AppendEntity(rectangle);
         tr.AddNewlyCreatedDBObject(rectangle, true);
-        Console.WriteLine("11");
         //Append Location Text
         DBText locationLabel = new DBText();
         locationLabel.Position = new Point3d(
