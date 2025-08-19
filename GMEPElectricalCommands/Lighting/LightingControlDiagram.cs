@@ -429,6 +429,7 @@ namespace ElectricalCommands.Lighting
         }
         foreach (LightingFixture fixture in uniqueFixtures)
         {
+          double offsetX = 0.2;
           Console.WriteLine($"{fixture.ParentName}-{fixture.Circuit} (EM: {fixture.EmCapable})");
           //Begin Arrow
           startPoint = arrowPosition;
@@ -438,7 +439,7 @@ namespace ElectricalCommands.Lighting
           curSpace.AppendEntity(beginArrow);
           tr.AddNewlyCreatedDBObject(beginArrow, true);
 
-          double offsetX = 0.2;
+          
           Point3d v2Start = new Point3d(startPoint.X + offsetX, startPoint.Y, startPoint.Z);
           Point3d v2End = new Point3d(startPoint.X + offsetX, startPoint.Y - 1.06, startPoint.Z);
           Line line2 = new Line(v2Start, v2End);
@@ -770,6 +771,7 @@ namespace ElectricalCommands.Lighting
         );
         Point3d? emStartPosition = null;
         double tempSeparator = 0;
+        double offsetX = 0.2;
         foreach (LightingFixture fixture in uniqueFixtures)
         {
           Console.WriteLine($"{fixture.ParentName}-{fixture.Circuit} (EM: {fixture.EmCapable})");
@@ -781,6 +783,14 @@ namespace ElectricalCommands.Lighting
           beginArrow.Layer = "E-CND1";
           curSpace.AppendEntity(beginArrow);
           tr.AddNewlyCreatedDBObject(beginArrow, true);
+
+          
+          Point3d v2Start = new Point3d(startPoint.X + offsetX, startPoint.Y, startPoint.Z);
+          Point3d v2End = new Point3d(startPoint.X + offsetX, startPoint.Y - 1.06, startPoint.Z);
+          Line line2 = new Line(v2Start, v2End);
+          line2.Layer = "E-CND1";
+          curSpace.AppendEntity(line2);
+          tr.AddNewlyCreatedDBObject(line2, true);
           //EM Circle
           if (fixture.EmCapable)
           {
@@ -816,6 +826,19 @@ namespace ElectricalCommands.Lighting
           label.Layer = "E-TEXT";
           curSpace.AppendEntity(label);
           tr.AddNewlyCreatedDBObject(label, true);
+          //offset label
+          DBText label2 = new DBText();
+          label2.Position = new Point3d(startPoint.X, startPoint.Y, startPoint.Z);
+          label2.Rotation = (Math.PI / 2);
+          label2.Height = radius * .9;
+          label2.TextString = fixture.ParentName + "-" + fixture.Circuit.ToString();
+          label2.HorizontalMode = TextHorizontalMode.TextCenter;
+          label2.VerticalMode = TextVerticalMode.TextVerticalMid;
+          label2.AlignmentPoint = new Point3d(startPoint.X + offsetX, startPoint.Y, startPoint.Z);
+          label2.Justify = AttachmentPoint.BottomRight;
+          label2.Layer = "E-TEXT";
+          curSpace.AppendEntity(label2);
+          tr.AddNewlyCreatedDBObject(label2, true);
           //Draw Horizontal lines
           Line separator = new Line(
             new Point3d(endPoint.X - .07, endPoint.Y, endPoint.Z),
@@ -824,6 +847,14 @@ namespace ElectricalCommands.Lighting
           separator.Layer = "E-TEXT";
           curSpace.AppendEntity(separator);
           tr.AddNewlyCreatedDBObject(separator, true);
+          //offset s1
+          Line separator1Off = new Line(
+            new Point3d(endPoint.X - .07 + offsetX, endPoint.Y, endPoint.Z),
+            new Point3d(endPoint.X + .07 + offsetX, endPoint.Y, endPoint.Z)
+          );
+          separator1Off.Layer = "E-TEXT";
+          curSpace.AppendEntity(separator1Off);
+          tr.AddNewlyCreatedDBObject(separator1Off, true);
 
           startPoint = new Point3d(endPoint.X, endPoint.Y - .05, endPoint.Z);
           endPoint = new Point3d(startPoint.X, startPoint.Y - .4, startPoint.Z);
@@ -835,6 +866,14 @@ namespace ElectricalCommands.Lighting
           separator2.Layer = "E-TEXT";
           curSpace.AppendEntity(separator2);
           tr.AddNewlyCreatedDBObject(separator2, true);
+          //offset s2
+          Line separator2Off = new Line(
+            new Point3d(startPoint.X - .07 + offsetX, startPoint.Y, startPoint.Z),
+            new Point3d(startPoint.X + .07 + offsetX, startPoint.Y, startPoint.Z)
+          );
+          separator2Off.Layer = "E-TEXT";
+          curSpace.AppendEntity(separator2Off);
+          tr.AddNewlyCreatedDBObject(separator2Off, true);
           //Ending Arrow
           Leader leader = new Leader();
           leader.Layer = "E-CND1";
@@ -848,7 +887,15 @@ namespace ElectricalCommands.Lighting
 
           arrowPosition = new Point3d(arrowPosition.X + .2, arrowPosition.Y, endPoint.Z);
         }
-       
+        //offset ending arrow
+        Leader leader2 = new Leader();
+        leader2.Layer = "E-CND1";
+        leader2.HasArrowHead = true;
+        leader2.AppendVertex(new Point3d(endPoint.X + offsetX, endPoint.Y, endPoint.Z));
+        leader2.AppendVertex(new Point3d(startPoint.X + offsetX, startPoint.Y, startPoint.Z));
+        curSpace.AppendEntity(leader2);
+        tr.AddNewlyCreatedDBObject(leader2, true);
+        leader2.Dimasz = 0.11;
         //Adjust Separator
         tempSeparator += .2;
         // Draw the final EM leader line if applicable
@@ -891,8 +938,9 @@ namespace ElectricalCommands.Lighting
           SectionSeparation = tempSeparator;
         }
         // Create a rectangle with a dotted line
+        double offset = 0.2;
         Point3d rectStart = new Point3d(ExteriorPosition.X + .8, ExteriorPosition.Y + .15, 0);
-        Point3d rectEnd = new Point3d(arrowPosition.X, rectStart.Y - .50, 0);
+        Point3d rectEnd = new Point3d(arrowPosition.X + offset, rectStart.Y - .50, 0);
         Autodesk.AutoCAD.DatabaseServices.Polyline rectangle =
           new Autodesk.AutoCAD.DatabaseServices.Polyline();
         rectangle.AddVertexAt(0, new Point2d(rectStart.X, rectStart.Y), 0, 0, 0);
