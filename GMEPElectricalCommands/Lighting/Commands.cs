@@ -1364,6 +1364,7 @@ namespace ElectricalCommands.Lighting
       List<LightingFixture> newLightings = lightings
         .Where(lighting => newLocations.Any(loc => loc.Id == lighting.LocationId))
         .ToList();
+
       Console.WriteLine("lighitng:" + lightings.Count);
       Console.WriteLine("newlighitng:" + newLightings.Count);
       Console.WriteLine("newloc:" + newLocations.Count);
