@@ -313,7 +313,7 @@ namespace ElectricalCommands.Lighting
         .ToList();
       Console.WriteLine("interiorFixtures: " + Fixtures.Count);
       List<ElectricalEntity.Equipment> equipment = Equipments
-        .Where(equipment => equipment.Category != null && equipment.Category.Contains("Outdoor"))
+        .Where(equipment => equipment.Category != null && equipment.Category.Contains("Indoor"))
         .ToList();
 
       List<LightingFixture> uniqueFixtures = new List<LightingFixture>();
@@ -655,7 +655,9 @@ namespace ElectricalCommands.Lighting
         .ToList();
       List<LightingFixture> uniqueFixtures = new List<LightingFixture>();
       var fixtureDict = new Dictionary<(string ParentName, int Circuit), LightingFixture>();
-
+      List<ElectricalEntity.Equipment> equipment = Equipments
+      .Where(equipment => equipment.Category != null && equipment.Category.Contains("Outdoor"))
+      .ToList();
       foreach (var fixture in fixturesAtLocation)
       {
         var combination = (fixture.ParentName, fixture.Circuit);
@@ -814,7 +816,7 @@ namespace ElectricalCommands.Lighting
           label2.Position = new Point3d(startPoint.X, startPoint.Y, startPoint.Z);
           label2.Rotation = (Math.PI / 2);
           label2.Height = radius * .9;
-          label2.TextString = fixture.ParentName + "-" + fixture.Circuit.ToString();
+          label2.TextString = equipment.FirstOrDefault().ParentName + "-" + equipment.FirstOrDefault()?.Circuit.ToString() ?? "N/A";
           label2.HorizontalMode = TextHorizontalMode.TextCenter;
           label2.VerticalMode = TextVerticalMode.TextVerticalMid;
           label2.AlignmentPoint = new Point3d(startPoint.X + offsetX, startPoint.Y, startPoint.Z);
