@@ -229,6 +229,7 @@ namespace ElectricalCommands.Equipment
         contextMenu.MenuItems.Add(
           new MenuItem("Show on plan", new EventHandler(ShowEquipOnPlan_Click))
         );
+        contextMenu.MenuItems.Add(new MenuItem("Refresh", new EventHandler(RefreshButton_Click)));
         equipmentListView.ContextMenu = contextMenu;
       }
     }
@@ -267,6 +268,13 @@ namespace ElectricalCommands.Equipment
           }
         }
       }
+    }
+
+    private void RefreshButton_Click(object sender, EventArgs e)
+    {
+      equipmentList.Clear();
+      equipmentList = gmepDb.GetEquipment(projectId);
+      CreateEquipmentListView(true);
     }
 
     private void CreatePanelListView(bool updateOnly = false)
@@ -666,6 +674,7 @@ namespace ElectricalCommands.Equipment
       {
         currentNumDuplexes = equipDict[equipId];
       }
+      int numPlaced = currentNumDuplexes;
       int objectIdIdx = 0;
       for (int i = currentNumDuplexes; i < maxDuplexes; i++)
       {
@@ -690,6 +699,12 @@ namespace ElectricalCommands.Equipment
               tr.GetObject(bt["GMEP FLOOR DUPLEXDATA"], OpenMode.ForRead);
             BlockTableRecord quad = (BlockTableRecord)
               tr.GetObject(bt["GMEP QUAD"], OpenMode.ForRead);
+            BlockTableRecord quadData = (BlockTableRecord)
+              tr.GetObject(bt["GMEP QUADDATA"], OpenMode.ForRead);
+            BlockTableRecord floorQuad = (BlockTableRecord)
+              tr.GetObject(bt["GMEP FLOOR QUAD"], OpenMode.ForRead);
+            BlockTableRecord floorQuadData = (BlockTableRecord)
+              tr.GetObject(bt["GMEP FLOOR QUADDATA"], OpenMode.ForRead);
 
             ConvenienceRecJig blockJig = new ConvenienceRecJig();
 
@@ -704,6 +719,9 @@ namespace ElectricalCommands.Equipment
                 floorDuplex.ObjectId,
                 floorDuplexData.ObjectId,
                 quad.ObjectId,
+                quadData.ObjectId,
+                floorQuad.ObjectId,
+                floorQuadData.ObjectId,
               };
             }
             else
@@ -728,13 +746,18 @@ namespace ElectricalCommands.Equipment
               objectIdIdx,
               out point
             );
-            objectIdIdx = res.Item3;
-            if (objectIdIdx > 3)
-            {
-              i++;
-            }
             if (res.Item1.Status == PromptStatus.OK)
             {
+              objectIdIdx = res.Item3;
+              if (objectIdIdx > 3)
+              {
+                numPlaced += 2;
+                i++;
+              }
+              else
+              {
+                numPlaced += 1;
+              }
               BlockTableRecord curSpace = (BlockTableRecord)
                 tr.GetObject(db.CurrentSpaceId, OpenMode.ForWrite);
 
@@ -757,23 +780,21 @@ namespace ElectricalCommands.Equipment
               switch (rotation)
               {
                 case var _ when rotation > 5.49:
-                  circuitOffsetY = -4.5;
+                  circuitOffsetY = 8.5;
                   circuitOffsetX = 4.5;
                   break;
                 case var _ when rotation > 4.71:
-                  circuitOffsetY = -4.5;
+                  circuitOffsetY = 4.5;
                   break;
                 case var _ when rotation > 2.35:
-                  circuitOffsetY = 4.5;
+                  circuitOffsetY = 1.5;
                   circuitOffsetX = -4.5;
                   break;
                 case var _ when rotation > 1.57:
-                  circuitOffsetX = 4.5;
                   circuitOffsetY = -4.5;
                   break;
                 default:
-                  circuitOffsetY = -4.5;
-                  circuitOffsetX = 4.5;
+                  circuitOffsetY = -5;
                   break;
               }
               circuitOffsetY = circuitOffsetY * 0.25 / CADObjectCommands.Scale;
@@ -786,7 +807,7 @@ namespace ElectricalCommands.Equipment
                 1,
                 2,
                 "E-TXT1",
-                new Point3d(point.X - (circuitOffsetX), point.Y - (circuitOffsetY), 0)
+                new Point3d(point.X + (circuitOffsetX), point.Y + (circuitOffsetY), 0)
               );
               DynamicBlockReferencePropertyCollection pc =
                 br.DynamicBlockReferencePropertyCollection;
@@ -807,10 +828,15 @@ namespace ElectricalCommands.Equipment
                 }
                 if (prop.PropertyName == "gmep_equip_locator")
                 {
-                  prop.Value = "true";
+                  prop.Value = "false";
                 }
               }
               tr.Commit();
+            }
+            else
+            {
+              gmepDb.UpdatePanelCircuitLoad(parentId, circuitNo, numPlaced * 180);
+              return;
             }
           }
         }
@@ -819,6 +845,7 @@ namespace ElectricalCommands.Equipment
           Console.WriteLine(ex.ToString());
         }
       }
+      gmepDb.UpdatePanelCircuitLoad(parentId, circuitNo, numPlaced * 180);
     }
 
     private Point3d? PlaceEquipment(
@@ -1007,45 +1034,35 @@ namespace ElectricalCommands.Equipment
         {
           double circuitOffsetX = 0;
           double circuitOffsetY = 0;
-          Console.WriteLine(rotation);
           switch (rotation)
           {
             case var _ when rotation == 0:
-              Console.WriteLine(0);
               circuitOffsetX = 4.5;
               break;
             case var _ when rotation > 5.49:
-              Console.WriteLine(5.49);
               circuitOffsetX = 6.5;
               break;
             case var _ when rotation > 4.71:
-              Console.WriteLine(4.71);
               circuitOffsetY = -9.5;
               break;
             case var _ when rotation > 3.92:
-              Console.WriteLine(3.92);
               circuitOffsetX = 4.5;
               break;
             case var _ when rotation > 3.14:
-              Console.WriteLine(3.14);
               circuitOffsetX = 4.5;
               circuitOffsetY = -4.5;
               break;
             case var _ when rotation > 2.35:
-              Console.WriteLine(2.35);
               circuitOffsetX = -9.5;
               break;
             case var _ when rotation > 1.57:
-              Console.WriteLine(1.57);
               circuitOffsetX = -9.5;
               circuitOffsetY = -9.5;
               break;
             case var _ when rotation > 0.78:
-              Console.WriteLine(0.78);
               circuitOffsetY = -6.5;
               break;
             default:
-              Console.WriteLine("default");
               circuitOffsetY = -9.5;
               circuitOffsetX = 4.5;
               break;
