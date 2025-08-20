@@ -29,20 +29,20 @@ namespace ElectricalCommands.Lighting
     Point3d ExteriorPosition;
     List<ElectricalEntity.LightingLocation> Locations;
     List<ElectricalEntity.LightingFixture> Fixtures;
-    //List<ElectricalEntity.Equipment> Equipments;
+    List<ElectricalEntity.Equipment> Equipments;
     double SectionSeparation;
 
     public LightingControlDiagram(
       LightingTimeClock timeClock,
       List<ElectricalEntity.LightingLocation> locations,
-      List<ElectricalEntity.LightingFixture> fixtures
-       //List<ElectricalEntity.Equipment> equipments
+      List<ElectricalEntity.LightingFixture> fixtures,
+      List<ElectricalEntity.Equipment> equipments
     )
     {
       this.TimeClock = timeClock;
       this.Fixtures = fixtures;
       this.Locations = locations;
-      //this.Equipments = equipments;
+      this.Equipments = equipments;
       this.SectionSeparation = 0.4;
       this.CreateDiagram();
     }
@@ -61,7 +61,6 @@ namespace ElectricalCommands.Lighting
       Editor ed = doc.Editor;
       GmepDatabase gmepDb = new GmepDatabase();
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
-      Console.WriteLine("projectId" + projectId);
       List<ElectricalEntity.Panel> panels = gmepDb.GetPanels(projectId);
       ElectricalEntity.Panel panel = panels.Find(p => p.Id == TimeClock.AdjacentPanelId);
       string panelName = panel.Name;
@@ -72,7 +71,6 @@ namespace ElectricalCommands.Lighting
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord baseBlock;
         BlockReference br = CADObjectCommands.CreateBlockReference(tr, bt, "LTG CTRL BASE", out baseBlock, out point);
-        Console.WriteLine($"X: {point.X}, Y: {point.Y}, Z: {point.Z}");
         if (br != null)
         {
           BlockTableRecord curSpace = (BlockTableRecord)
@@ -263,7 +261,6 @@ namespace ElectricalCommands.Lighting
         bool isFirstFlag = true;
         foreach (LightingLocation location in outdoorLocations)
         {
-          Console.WriteLine("location: "+ location.LocationName);
           if (!isFirstFlag)
           {
             try
@@ -299,7 +296,6 @@ namespace ElectricalCommands.Lighting
             }
           }
           isFirstFlag = false;
-          Console.WriteLine("location2: " + location.LocationName);
           GraphExteriorLocationSection(location);
         }
 
@@ -316,10 +312,12 @@ namespace ElectricalCommands.Lighting
         .Where(fixture => fixture.LocationId == location.Id)
         .ToList();
       Console.WriteLine("interiorFixtures: " + Fixtures.Count);
+      List<ElectricalEntity.Equipment> equipment = Equipments
+        .Where(equipment => equipment.Category != null && equipment.Category.Contains("Outdoor"))
+        .ToList();
 
       List<LightingFixture> uniqueFixtures = new List<LightingFixture>();
       var fixtureDict = new Dictionary<(string ParentName, int Circuit), LightingFixture>();
-      Console.WriteLine("fixturesAtLocation: ", fixturesAtLocation.Count);
       foreach (var fixture in fixturesAtLocation)
       {
         var combination = (fixture.ParentName, fixture.Circuit);
@@ -423,14 +421,12 @@ namespace ElectricalCommands.Lighting
         Point3d? emStartPosition = null;
 
         double tempSeparator = 0;
-        Console.WriteLine("interioruniqueFixtures: "+uniqueFixtures.Count);
         for (int i = 0; i < uniqueFixtures.Count; i++) {
           LightingFixture fixture = uniqueFixtures[i];
         }
         foreach (LightingFixture fixture in uniqueFixtures)
         {
           double offsetX = 0.2;
-          Console.WriteLine($"{fixture.ParentName}-{fixture.Circuit} (EM: {fixture.EmCapable})");
           //Begin Arrow
           startPoint = arrowPosition;
           endPoint = new Point3d(startPoint.X, startPoint.Y - 1.06, startPoint.Z);
@@ -486,7 +482,8 @@ namespace ElectricalCommands.Lighting
           label2.Position = new Point3d(startPoint.X, startPoint.Y, startPoint.Z);
           label2.Rotation = (Math.PI / 2);
           label2.Height = radius * .9;
-          label2.TextString = fixture.ParentName + "-" + fixture.Circuit.ToString();
+          label2.TextString = equipment.FirstOrDefault().ParentName + "-" + equipment.FirstOrDefault()?.Circuit.ToString() ?? "N/A";
+          Console.WriteLine("Equipment Circuit: " + label2.TextString);
           label2.HorizontalMode = TextHorizontalMode.TextCenter;
           label2.VerticalMode = TextVerticalMode.TextVerticalMid;
           label2.AlignmentPoint = new Point3d(startPoint.X + offsetX, startPoint.Y, startPoint.Z);
@@ -650,22 +647,12 @@ namespace ElectricalCommands.Lighting
 
     private void GraphExteriorLocationSection(LightingLocation location)
     {
-      Console.WriteLine("location3: " + location.LocationName + location.Id);
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
       List<LightingFixture> fixturesAtLocation = Fixtures
         .Where(fixture => fixture.LocationId == location.Id)
         .ToList();
-      Console.WriteLine($"Fixture: "+ Fixtures.Count);
-      for (int i = 0; i < Fixtures.Count; i++) {
-        Console.WriteLine($"Fixture {Fixtures[i].LocationId}");
-      }
-      Console.WriteLine($"fixturesAtLocation:" + fixturesAtLocation.Count);
-      
-      for (int i = 0; i < Fixtures.Count; i++) {
-        Console.WriteLine($"Fixture {Fixtures[i].LocationId}");
-      }
       List<LightingFixture> uniqueFixtures = new List<LightingFixture>();
       var fixtureDict = new Dictionary<(string ParentName, int Circuit), LightingFixture>();
 
@@ -685,11 +672,8 @@ namespace ElectricalCommands.Lighting
           fixtureDict[combination] = fixture;
         }
       }
-      Console.WriteLine($"Fixtures dict :"+ fixtureDict.Count);
-      Console.WriteLine($"Fixtures at Location {location.Id}: {fixturesAtLocation.Count}");
         // Convert the dictionary values to a list
         uniqueFixtures = fixtureDict.Values.ToList();
-      Console.WriteLine("uniqueFixtures Count: " + uniqueFixtures.Count);
 
       //This method will graph the section for each interior lighting location
       using (Transaction tr = db.TransactionManager.StartTransaction())
@@ -778,7 +762,6 @@ namespace ElectricalCommands.Lighting
           //Begin Arrow
           startPoint = arrowPosition;
           endPoint = new Point3d(startPoint.X, startPoint.Y - 1, startPoint.Z);
-          Console.WriteLine(startPoint.Y - 1);
           Line beginArrow = new Line(startPoint, endPoint);
           beginArrow.Layer = "E-CND1";
           curSpace.AppendEntity(beginArrow);

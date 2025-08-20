@@ -27,6 +27,7 @@ using Emgu.CV.ML;
 using Emgu.CV.Structure;
 using Emgu.CV.Util;
 using GMEPElectricalCommands.GmepDatabase;
+using Google.Protobuf.WellKnownTypes;
 using Newtonsoft.Json;
 using TriangleNet.Meshing.Algorithm;
 using Application = Autodesk.AutoCAD.ApplicationServices.Application;
@@ -1143,7 +1144,10 @@ namespace ElectricalCommands.Lighting
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
       Editor ed = doc.Editor;
-
+      // Add this before the transaction block
+      GmepDatabase gmepDb = new GmepDatabase();
+      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
+      List<ElectricalCommands.ElectricalEntity.Equipment> equipments = gmepDb.GetEquipment(projectId);
       List<LightingTimeClock> timeClocks = new List<LightingTimeClock>();
       List<LightingLocation> locations = new List<LightingLocation>();
       List<LightingFixture> lightings = new List<LightingFixture>();
@@ -1248,7 +1252,6 @@ namespace ElectricalCommands.Lighting
         //Lighting
         foreach (string blockName in lightingBlockNames)
         {
-          Console.WriteLine("blockName:" + blockName);
           if (!bt.Has(blockName))
           {
             continue;
@@ -1364,16 +1367,23 @@ namespace ElectricalCommands.Lighting
       List<LightingFixture> newLightings = lightings
         .Where(lighting => newLocations.Any(loc => loc.Id == lighting.LocationId))
         .ToList();
-
+     // List<ElectricalEntity.Equipment> newEquip = equipments
+     //.Where(e => newLocations.Any(loc => loc.Id == e.LocationId))
+     //.ToList();
       Console.WriteLine("lighitng:" + lightings.Count);
       Console.WriteLine("newlighitng:" + newLightings.Count);
       Console.WriteLine("newloc:" + newLocations.Count);
       Console.WriteLine("chosenTimeClock:" + chosenTimeClock);
+        Console.WriteLine("equipments:" + equipments.Count);
+      foreach(ElectricalEntity.Equipment e in equipments) {
+        Console.WriteLine("Equipment: " + e.Name + ", Category: " + e.Category);
+      }
 
       LightingControlDiagram diagram = new LightingControlDiagram(
         chosenTimeClock,
         newLocations,
-        newLightings
+        newLightings,
+        equipments
       );
     }
 

@@ -936,7 +936,9 @@ namespace ElectricalCommands.ElectricalEntity
     public string Description,
       Hp,
       Category,
+      LocationId,
       ConnectionSymbol;
+
 
     public int MountingHeight,
       Circuit,
@@ -1009,6 +1011,8 @@ namespace ElectricalCommands.ElectricalEntity
       this.PhaseBVa = PhaseBVa;
       this.PhaseCVa = PhaseCVa;
     }
+
+    public object Panel { get; internal set; }
 
     private int SetPole(bool is3Phase, int voltage)
     {
