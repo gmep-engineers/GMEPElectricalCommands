@@ -33,6 +33,7 @@
       this.PlaceSelectedFixturesButton = new System.Windows.Forms.Button();
       this.RefreshButton = new System.Windows.Forms.Button();
       this.PlaceSelectedControlsButton = new System.Windows.Forms.Button();
+      this.PlaceSelectedSignageButton = new System.Windows.Forms.Button();
       this.LightingSignageGroupBox.SuspendLayout();
       this.ControlsGroupBox.SuspendLayout();
       this.LightingFixturesGroupBox.SuspendLayout();
@@ -113,17 +114,6 @@
       this.CreateLightingFixtureScheduleButton.UseVisualStyleBackColor = true;
       this.CreateLightingFixtureScheduleButton.Click += new System.EventHandler(this.CreateLightingFixtureScheduleButton_Click);
       // 
-      // PlaceSelectedFixturesButton
-      // 
-      this.PlaceSelectedFixturesButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
-      this.PlaceSelectedFixturesButton.Location = new System.Drawing.Point(19, 425);
-      this.PlaceSelectedFixturesButton.Name = "PlaceSelectedFixturesButton";
-      this.PlaceSelectedFixturesButton.Size = new System.Drawing.Size(149, 23);
-      this.PlaceSelectedFixturesButton.TabIndex = 4;
-      this.PlaceSelectedFixturesButton.Text = "Place Selected Fixtures";
-      this.PlaceSelectedFixturesButton.UseVisualStyleBackColor = true;
-      this.PlaceSelectedFixturesButton.Click += new System.EventHandler(this.PlaceFixture_Click);
-      // 
       // RefreshButton
       // 
       this.RefreshButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
@@ -134,6 +124,18 @@
       this.RefreshButton.Text = "Refresh";
       this.RefreshButton.UseVisualStyleBackColor = true;
       this.RefreshButton.Click += new System.EventHandler(this.RefreshButton_Click);
+      // 
+      // PlaceSelectedFixturesButton
+      // 
+      this.PlaceSelectedFixturesButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+      this.PlaceSelectedFixturesButton.Location = new System.Drawing.Point(19, 425);
+      this.PlaceSelectedFixturesButton.Name = "PlaceSelectedFixturesButton";
+      this.PlaceSelectedFixturesButton.Size = new System.Drawing.Size(149, 23);
+      this.PlaceSelectedFixturesButton.TabIndex = 4;
+      this.PlaceSelectedFixturesButton.Text = "Place Selected Fixtures";
+      this.PlaceSelectedFixturesButton.UseVisualStyleBackColor = true;
+      this.PlaceSelectedFixturesButton.Click += new System.EventHandler(this.PlaceFixture_Click);
+
       // 
       // PlaceSelectedControlsButton
       // 
@@ -146,6 +148,17 @@
       this.PlaceSelectedControlsButton.UseVisualStyleBackColor = true;
       this.PlaceSelectedControlsButton.Click += new System.EventHandler(this.PlaceControl_Click);
       // 
+      // PlaceSelectedSignageButton
+      // 
+      this.PlaceSelectedSignageButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
+      this.PlaceSelectedSignageButton.Location = new System.Drawing.Point(350, 425);
+      this.PlaceSelectedSignageButton.Name = "PlaceSelectedSignageButton";
+      this.PlaceSelectedSignageButton.Size = new System.Drawing.Size(152, 23);
+      this. PlaceSelectedSignageButton.TabIndex = 7;
+      this.PlaceSelectedSignageButton.Text = "Place Selected Signage";
+      this.PlaceSelectedSignageButton.UseVisualStyleBackColor = true;
+      //this.PlaceSelectedControlsButton.Click += new System.EventHandler(this.PlaceControl_Click);
+      // 
       // LightingDialogWindow
       // 
       this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -154,6 +167,7 @@
       this.Controls.Add(this.PlaceSelectedControlsButton);
       this.Controls.Add(this.RefreshButton);
       this.Controls.Add(this.PlaceSelectedFixturesButton);
+      this.Controls.Add(this.PlaceSelectedSignageButton);
       this.Controls.Add(this.CreateLightingFixtureScheduleButton);
       this.Controls.Add(this.LightingFixturesGroupBox);
       this.Controls.Add(this.ControlsGroupBox);
@@ -181,5 +195,6 @@
     private System.Windows.Forms.Button PlaceSelectedFixturesButton;
     private System.Windows.Forms.Button RefreshButton;
     private System.Windows.Forms.Button PlaceSelectedControlsButton;
+    private System.Windows.Forms.Button PlaceSelectedSignageButton;
   }
 }
