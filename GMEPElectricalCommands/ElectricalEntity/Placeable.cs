@@ -760,7 +760,7 @@ namespace ElectricalCommands.ElectricalEntity
       this.Mounting = Mounting;
       this.Manufacturer = Manufacturer;
       this.ModelNo = ModelNo;
-      this.Notes = Notes;
+      this.Notes = String.IsNullOrEmpty(Notes) ? "OR APPROVED EQUAL" : Notes;
       this.Rotate = Rotate;
       this.PaperSpaceScale = PaperSpaceScale > 0 ? PaperSpaceScale : 0.011;
       this.EmCapable = EmCapable;

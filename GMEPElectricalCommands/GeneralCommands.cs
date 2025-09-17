@@ -3242,6 +3242,159 @@ namespace ElectricalCommands
       catch { }
     }
 
+    public static void ConvertArchquikToArialInLayout(Transaction tr, ObjectId id)
+    {
+      try
+      {
+        DBText text = (DBText)tr.GetObject(id, OpenMode.ForWrite);
+        if (text != null)
+        {
+          var textStyle = (TextStyleTableRecord)tr.GetObject(text.TextStyleId, OpenMode.ForWrite);
+          if (
+            textStyle.FileName.ToLower().Contains("archquik")
+            || textStyle.FileName.ToLower().Contains("archtitl")
+          )
+          {
+            textStyle.FileName = "arl-t.shx";
+            textStyle.XScale = 1;
+            text.WidthFactor = 1;
+            text.TextString = text.TextString.Replace("\u0081", "\u03A6");
+          }
+          if (textStyle.FileName.ToLower().Contains("arl-t") && text.WidthFactor < 1)
+          {
+            text.WidthFactor = 1;
+          }
+        }
+      }
+      catch { }
+      try
+      {
+        MText mText = (MText)tr.GetObject(id, OpenMode.ForWrite);
+        if (mText != null)
+        {
+          mText.Contents = mText.Contents.Replace("\\Farchquik", "\\Farl-t");
+          mText.Contents = mText.Contents.Replace("\\FARCHQUIK", "\\Farl-t");
+          mText.Contents = mText.Contents.Replace("\\Farchtitl", "\\Farl-t");
+          mText.Contents = mText.Contents.Replace("\\FARCHTITL", "\\Farl-t");
+          mText.Contents = mText.Contents.Replace("\\W0.85", "\\W1.0");
+          mText.Contents = mText.Contents.Replace("\\W0.8", "\\W1.0");
+          mText.Contents = mText.Contents.Replace("\u0081", "\u03A6");
+        }
+      }
+      catch { }
+      try
+      {
+        TextStyleTableRecord textStyle = (TextStyleTableRecord)tr.GetObject(id, OpenMode.ForWrite);
+
+        if (textStyle != null)
+        {
+          if (
+            textStyle.FileName.ToLower().Contains("archquik")
+            || textStyle.FileName.ToLower().Contains("archtitl")
+          )
+          {
+            textStyle.FileName = "arl-t.shx";
+          }
+        }
+      }
+      catch { }
+      try
+      {
+        Table table = (Table)tr.GetObject(id, OpenMode.ForWrite);
+        if (table != null)
+        {
+          var textStyleId = PanelCommands.GetTextStyleId("gmep");
+          for (int i = 0; i < table.Rows.Count; i++)
+          {
+            for (int j = 0; j < table.Columns.Count; j++)
+            {
+              if (table.Cells[i, j].CellType == TableCellType.TextCell)
+              {
+                table.Cells[i, j].TextStyleId = textStyleId;
+                table.Cells[i, j].TextHeight = (0.0938);
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\Farchquik", "\\Farl-t");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\FARCHQUIK", "\\Farl-t");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\Farchtitl", "\\Farl-t");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\FARCHTITL", "\\Farl-t");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\W0.85", "\\W1.0");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\\W0.8", "\\W1.0");
+                table.Cells[i, j].TextString = table
+                  .Cells[i, j]
+                  .TextString.Replace("\u0081", "\u03A6");
+              }
+            }
+          }
+        }
+      }
+      catch { }
+    }
+
+    [CommandMethod("ConvertArchquikToArial")]
+    public static void ConvertArchquikToArial()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      Database db = doc.Database;
+      Editor ed = doc.Editor;
+      MessageBox.Show(
+        "This will take a few minutes. AutoCAD will not be responsive until completion."
+      );
+      using (Transaction tr = db.TransactionManager.StartTransaction())
+      {
+        BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
+        BlockTableRecord btr = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+
+        //remove any previous marker with the same equipId
+        var modelSpace = (BlockTableRecord)
+          tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForRead);
+        foreach (ObjectId id in modelSpace)
+        {
+          ConvertArchquikToArialInLayout(tr, id);
+        }
+
+        DBDictionary layoutDict = (DBDictionary)
+          tr.GetObject(db.LayoutDictionaryId, OpenMode.ForRead);
+
+        foreach (DBDictionaryEntry entry in layoutDict)
+        {
+          ObjectId layoutId = entry.Value;
+          Layout layout = (Layout)tr.GetObject(layoutId, OpenMode.ForRead);
+
+          LayoutManager.Current.CurrentLayout = layout.LayoutName;
+
+          var paperSpace = (BlockTableRecord)
+            tr.GetObject(bt[BlockTableRecord.PaperSpace], OpenMode.ForRead);
+
+          foreach (ObjectId id in paperSpace)
+          {
+            ConvertArchquikToArialInLayout(tr, id);
+          }
+        }
+
+        tr.Commit();
+      }
+      MessageBox.Show(
+        "Done. Please follow the instructions at\nZ:\\GMEP Engineers\\Electrical Commercial Template\\Template CAD\\fontmap instructions.docx"
+      );
+    }
+
     [CommandMethod("ConvertArialToArchitxt")]
     public static void ConvertArialToArchitxt()
     {

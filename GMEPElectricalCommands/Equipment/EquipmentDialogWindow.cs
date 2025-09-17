@@ -675,6 +675,13 @@ namespace ElectricalCommands.Equipment
         currentNumDuplexes = equipDict[equipId];
       }
       int numPlaced = currentNumDuplexes;
+      if (currentNumDuplexes == maxDuplexes)
+      {
+        MessageBox.Show(
+          $"A maximum of {maxDuplexes} duplexes have already been placed on circuit {circuitNo}.",
+          "Max Duplex Count Reached"
+        );
+      }
       int objectIdIdx = 0;
       for (int i = currentNumDuplexes; i < maxDuplexes; i++)
       {
