@@ -30,7 +30,10 @@ namespace ElectricalCommands.PlanCheck
     {
       GmepDb = new GmepDatabase();
       string projectNo = CADObjectCommands.GetProjectNoFromFileName();
-      ProjectId = GmepDb.GetProjectId(projectNo);
+      ProjectId = GmepDb.GetElectricalProjectId(
+        projectNo,
+        CADObjectCommands.GetProjectVersionFromFileName()
+      );
       InitializeBlockList();
       InitializePlanCheckList();
     }

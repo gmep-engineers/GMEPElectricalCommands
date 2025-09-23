@@ -540,12 +540,7 @@ namespace ElectricalCommands.Lighting
     {
       Document doc = Application.DocumentManager.MdiActiveDocument;
       Database db = doc.Database;
-      Editor ed = doc.Editor;
       GmepDatabase gmepDb = new GmepDatabase();
-
-      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
-      List<Panel> panelList = gmepDb.GetPanels(projectId);
-      List<ElectricalEntity.Equipment> equipmentList = gmepDb.GetEquipment(projectId);
 
       Dictionary<string, float> fixtureSpecs = new Dictionary<string, float>();
 
@@ -628,11 +623,14 @@ namespace ElectricalCommands.Lighting
       Database db = doc.Database;
       Editor ed = doc.Editor;
       GmepDatabase gmepDb = new GmepDatabase();
-
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
-      List<Panel> panelList = gmepDb.GetPanels(projectId);
-      List<ElectricalEntity.Equipment> equipmentList = gmepDb.GetEquipment(projectId);
-      List<Transformer> transformerList = gmepDb.GetTransformers(projectId);
+      string electricalProjectId = gmepDb.GetElectricalProjectId(
+        CADObjectCommands.GetProjectNoFromFileName(),
+        CADObjectCommands.GetProjectVersionFromFileName()
+      );
+      List<Panel> panelList = gmepDb.GetPanels(electricalProjectId);
+      List<ElectricalEntity.Equipment> equipmentList = gmepDb.GetEquipment(electricalProjectId);
+      List<Transformer> transformerList = gmepDb.GetTransformers(electricalProjectId);
       Dictionary<string, List<string>> panelCircuits = new Dictionary<string, List<string>>();
       List<string> lightings = new List<string>();
 
@@ -788,7 +786,13 @@ namespace ElectricalCommands.Lighting
             }
           }
 
-          gmepDb.InsertLightingEquipment(lightings, chosenPanel, chosenCircuit, projectId);
+          gmepDb.InsertLightingEquipment(
+            lightings,
+            chosenPanel,
+            chosenCircuit,
+            projectId,
+            electricalProjectId
+          );
 
           tr.Commit();
         }
@@ -821,9 +825,13 @@ namespace ElectricalCommands.Lighting
 
       GmepDatabase gmepDb = new GmepDatabase();
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
-      List<LightingLocation> locationList = gmepDb.GetLightingLocations(projectId);
-      List<LightingTimeClock> timeClockList = gmepDb.GetLightingTimeClocks(projectId);
-      List<Panel> panelList = gmepDb.GetPanels(projectId);
+      string electricalProjectId = gmepDb.GetElectricalProjectId(
+        CADObjectCommands.GetProjectNoFromFileName(),
+        CADObjectCommands.GetProjectVersionFromFileName()
+      );
+      List<LightingLocation> locationList = gmepDb.GetLightingLocations(electricalProjectId);
+      List<LightingTimeClock> timeClockList = gmepDb.GetLightingTimeClocks(electricalProjectId);
+      List<Panel> panelList = gmepDb.GetPanels(electricalProjectId);
       List<string> existingLocationIds = new List<string>();
 
       //using (Transaction tr = db.TransactionManager.StartTransaction()) {

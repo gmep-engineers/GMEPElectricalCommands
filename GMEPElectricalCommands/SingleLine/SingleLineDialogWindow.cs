@@ -30,7 +30,7 @@ namespace ElectricalCommands.SingleLine
 
   public partial class SingleLineDialogWindow : Form
   {
-    private string projectId;
+    private string electricalProjectId;
     private List<ElectricalEntity.Service> serviceList;
     private List<ElectricalEntity.Meter> meterList;
     private List<ElectricalEntity.MainBreaker> mainBreakerList;
@@ -58,19 +58,22 @@ namespace ElectricalCommands.SingleLine
     public void InitializeModal()
     {
       gmepDb = new GmepDatabase();
-      projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
-      serviceList = gmepDb.GetServices(projectId);
-      meterList = gmepDb.GetMeters(projectId);
-      mainBreakerList = gmepDb.GetMainBreakers(projectId);
-      distributionBusList = gmepDb.GetDistributionBuses(projectId);
-      distributionBreakerList = gmepDb.GetDistributionBreakers(projectId);
-      panelList = gmepDb.GetPanels(projectId);
-      panelBreakerList = gmepDb.GetPanelBreakers(projectId);
-      disconnectList = gmepDb.GetDisconnects(projectId);
-      transformerList = gmepDb.GetTransformers(projectId);
-      equipmentList = gmepDb.GetEquipment(projectId, true);
-      nodeLinkList = gmepDb.GetNodeLinks(projectId);
-      groupList = gmepDb.GetGroupNodes(projectId);
+      electricalProjectId = gmepDb.GetElectricalProjectId(
+        CADObjectCommands.GetProjectNoFromFileName(),
+        CADObjectCommands.GetProjectVersionFromFileName()
+      );
+      serviceList = gmepDb.GetServices(electricalProjectId);
+      meterList = gmepDb.GetMeters(electricalProjectId);
+      mainBreakerList = gmepDb.GetMainBreakers(electricalProjectId);
+      distributionBusList = gmepDb.GetDistributionBuses(electricalProjectId);
+      distributionBreakerList = gmepDb.GetDistributionBreakers(electricalProjectId);
+      panelList = gmepDb.GetPanels(electricalProjectId);
+      panelBreakerList = gmepDb.GetPanelBreakers(electricalProjectId);
+      disconnectList = gmepDb.GetDisconnects(electricalProjectId);
+      transformerList = gmepDb.GetTransformers(electricalProjectId);
+      equipmentList = gmepDb.GetEquipment(electricalProjectId, true);
+      nodeLinkList = gmepDb.GetNodeLinks(electricalProjectId);
+      groupList = gmepDb.GetGroupNodes(electricalProjectId);
 
       MakeGroupDict();
       if (serviceList.Count > 0)

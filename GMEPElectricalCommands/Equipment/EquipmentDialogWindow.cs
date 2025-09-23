@@ -41,6 +41,7 @@ namespace ElectricalCommands.Equipment
     private List<ListViewItem> transformerListViewList;
     private List<ElectricalEntity.Transformer> transformerList;
     private string projectId;
+    private string electricalProjectId;
     private bool isLoading;
     private List<ElectricalEntity.Service> services;
     public GmepDatabase gmepDb = new GmepDatabase();
@@ -53,6 +54,10 @@ namespace ElectricalCommands.Equipment
     public void InitializeModal()
     {
       projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
+      electricalProjectId = gmepDb.GetElectricalProjectId(
+        CADObjectCommands.GetProjectNoFromFileName(),
+        CADObjectCommands.GetProjectVersionFromFileName()
+      );
       panelList = gmepDb.GetPanels(projectId);
       equipmentList = gmepDb.GetEquipment(projectId);
       transformerList = gmepDb.GetTransformers(projectId);

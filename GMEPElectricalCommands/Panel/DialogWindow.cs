@@ -1079,10 +1079,13 @@ namespace ElectricalCommands
       // get list of equipment
       // generate json based on equipment panel-circuit association + lml/lcl
       GmepDatabase gmepDb = new GmepDatabase();
-      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
-      List<ElectricalEntity.Panel> panels = gmepDb.GetPanels(projectId);
-      List<ElectricalEntity.Equipment> equipment = gmepDb.GetEquipment(projectId);
-      List<ElectricalEntity.Transformer> transformers = gmepDb.GetTransformers(projectId);
+      string electricalProjectId = gmepDb.GetElectricalProjectId(
+        CADObjectCommands.GetProjectNoFromFileName(),
+        CADObjectCommands.GetProjectVersionFromFileName()
+      );
+      List<ElectricalEntity.Panel> panels = gmepDb.GetPanels(electricalProjectId);
+      List<ElectricalEntity.Equipment> equipment = gmepDb.GetEquipment(electricalProjectId);
+      List<ElectricalEntity.Transformer> transformers = gmepDb.GetTransformers(electricalProjectId);
       List<JsonPanel3P> jsonPanels3P = new List<JsonPanel3P>();
       List<JsonPanel2P> jsonPanels2P = new List<JsonPanel2P>();
       List<string> serializedPanels = new List<string>();

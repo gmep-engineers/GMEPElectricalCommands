@@ -3482,6 +3482,258 @@ namespace ElectricalCommands
       return lml * (percentOnly ? 0.25 : 1);
     }
 
+    public Dictionary<string, double> Calculate1PoleVa(string hl)
+    {
+      Dictionary<string, double> loads = new Dictionary<string, double>();
+      loads["a"] = 0;
+      loads["b"] = 0;
+      loads["c"] = 0;
+      string side = "left";
+      for (int j = 0; j < 2; j++)
+      {
+        for (int i = 0; i < PANEL_GRID.Rows.Count; i++)
+        {
+          // current index is not the high leg phase
+          if (
+            String.IsNullOrEmpty(PANEL_GRID.Rows[i].Cells[$"phase_{hl}_{side}"].Value?.ToString())
+          )
+          {
+            // current index is not in a 3 pole
+            if (
+              (
+                i + 2 < PANEL_GRID.Rows.Count
+                && PANEL_GRID.Rows[i + 2].Cells[$"breaker_{side}"].Value as string != "3"
+              )
+              && (
+                i + 1 < PANEL_GRID.Rows.Count
+                && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string != "3"
+              )
+              && (PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string != "3")
+            )
+            {
+              // current index is the start of a 2 pole but not one that touches the high leg phase
+              if (
+                PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string != "2"
+                && i + 1 < PANEL_GRID.Rows.Count
+                && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2"
+                && String.IsNullOrEmpty(
+                  PANEL_GRID.Rows[i].Cells[$"phase_{hl}_{side}"].Value?.ToString()
+                )
+                && String.IsNullOrEmpty(
+                  PANEL_GRID.Rows[i + 1].Cells[$"phase_{hl}_{side}"].Value?.ToString()
+                )
+              )
+              {
+                if (
+                  !String.IsNullOrEmpty(
+                    PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString()
+                  )
+                )
+                {
+                  loads["a"] += SafeConvertToDouble(
+                    PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString()
+                  );
+                  loads["b"] += SafeConvertToDouble(
+                    PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
+                  );
+                }
+                if (
+                  !String.IsNullOrEmpty(
+                    PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
+                  )
+                )
+                {
+                  loads["b"] += SafeConvertToDouble(
+                    PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
+                  );
+                  loads["c"] += SafeConvertToDouble(
+                    PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString()
+                  );
+                }
+                if (
+                  !String.IsNullOrEmpty(
+                    PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString()
+                  )
+                )
+                {
+                  loads["c"] += SafeConvertToDouble(
+                    PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString()
+                  );
+                  loads["a"] += SafeConvertToDouble(
+                    PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString()
+                  );
+                }
+              }
+              // current index is not any other kind of 2-pole
+              else if (
+                (
+                  i + 1 < PANEL_GRID.Rows.Count
+                  && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string != "2"
+                )
+                && PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string != "2"
+              )
+              {
+                if (
+                  !String.IsNullOrEmpty(
+                    PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString()
+                  )
+                )
+                {
+                  loads["a"] += SafeConvertToDouble(
+                    PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString()
+                  );
+                }
+                if (
+                  !String.IsNullOrEmpty(
+                    PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
+                  )
+                )
+                {
+                  loads["b"] += SafeConvertToDouble(
+                    PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
+                  );
+                }
+                if (
+                  !String.IsNullOrEmpty(
+                    PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString()
+                  )
+                )
+                {
+                  loads["c"] += SafeConvertToDouble(
+                    PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString()
+                  );
+                }
+              }
+            }
+          }
+        }
+        side = "right";
+      }
+      return loads;
+    }
+
+    public Dictionary<string, double> Calculate2PoleVa(string hl)
+    {
+      Dictionary<string, double> loads = new Dictionary<string, double>();
+      loads["ab"] = 0;
+      loads["bc"] = 0;
+      loads["ca"] = 0;
+      string side = "left";
+      for (int j = 0; j < 2; j++)
+      {
+        for (int i = 0; i < PANEL_GRID.Rows.Count; i++)
+        {
+          // current index is start of 2 pole starting or ending on high leg phase
+          if (
+            i + 1 < PANEL_GRID.Rows.Count
+            && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "2"
+            && (
+              !String.IsNullOrEmpty(
+                PANEL_GRID.Rows[i].Cells[$"phase_{hl}_{side}"].Value?.ToString()
+              )
+              || !String.IsNullOrEmpty(
+                PANEL_GRID.Rows[i + 1].Cells[$"phase_{hl}_{side}"].Value?.ToString()
+              )
+            )
+          )
+          {
+            if (
+              !String.IsNullOrEmpty(PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString())
+            )
+            {
+              // ab phase
+              loads["ab"] += SafeConvertToDouble(
+                PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString()
+              );
+              loads["ab"] += SafeConvertToDouble(
+                PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
+              );
+            }
+
+            if (
+              !String.IsNullOrEmpty(PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString())
+            )
+            {
+              // bc phase
+              loads["bc"] += SafeConvertToDouble(
+                PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
+              );
+              loads["bc"] += SafeConvertToDouble(
+                PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString()
+              );
+            }
+
+            if (
+              !String.IsNullOrEmpty(PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString())
+            )
+            {
+              // ca phase
+              loads["ca"] += SafeConvertToDouble(
+                PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString()
+              );
+              loads["ca"] += SafeConvertToDouble(
+                PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString()
+              );
+            }
+          }
+        }
+        side = "right";
+      }
+      return loads;
+    }
+
+    public double Calculate3PoleVa()
+    {
+      double loads = 0;
+      string side = "left";
+      for (int j = 0; j < 2; j++)
+      {
+        for (int i = 0; i < PANEL_GRID.Rows.Count; i++)
+        {
+          // current index is in a 3 pole
+          if (
+            (
+              i + 2 < PANEL_GRID.Rows.Count
+              && PANEL_GRID.Rows[i + 2].Cells[$"breaker_{side}"].Value as string != "3"
+            )
+            || (
+              i + 1 < PANEL_GRID.Rows.Count
+              && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string != "3"
+            )
+            || (PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string != "3")
+          )
+          {
+            if (
+              !String.IsNullOrEmpty(PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString())
+            )
+            {
+              loads += SafeConvertToDouble(
+                PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString()
+              );
+            }
+            if (
+              !String.IsNullOrEmpty(PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString())
+            )
+            {
+              loads += SafeConvertToDouble(
+                PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
+              );
+            }
+            if (
+              !String.IsNullOrEmpty(PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString())
+            )
+            {
+              loads += SafeConvertToDouble(
+                PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString()
+              );
+            }
+          }
+        }
+        side = "right";
+      }
+      return loads;
+    }
+
     public void UpdatePerCellValueChange()
     {
       if (isLoading)
@@ -3536,26 +3788,6 @@ namespace ElectricalCommands
 
       if (lineVoltage == 240 && phaseVoltage == 120 && this.is3Ph)
       {
-        double l1 = phB;
-        double l2 = phA;
-        double l3 = phC;
-        if (highLegPhase == 0)
-        {
-          l1 = phA;
-          l2 = phC;
-          l3 = phB;
-        }
-        if (highLegPhase == 2)
-        {
-          l1 = phC;
-          l2 = phB;
-          l3 = phA;
-        }
-        double fA = Math.Abs(l3 - l1);
-        double fB = Math.Abs(l1 - l2);
-        double fC = Math.Abs(l2 - l3);
-        double l3N = l3;
-        double l2N = l2;
         lcl = Math.Max(
           CalculateLclOnPhase("a"),
           Math.Max(CalculateLclOnPhase("b"), CalculateLclOnPhase("c"))
@@ -3564,20 +3796,106 @@ namespace ElectricalCommands
           CalculateLmlOnPhase("a"),
           Math.Max(CalculateLmlOnPhase("b"), CalculateLmlOnPhase("c"))
         );
-        double iFa = (fA + (0.25 * lml)) / 240;
-        double iFb = (fB + (0.25 * lml)) / 240;
-        double iFc = (fC + (0.25 * lml)) / 240;
-        double iL2N = (l2N + (0.25 * lcl) + (0.25 * lml)) / 120;
-        double iL3N = (l3N + (0.25 * lcl) + (0.25 * lml)) / 120;
-        double iL1 = Math.Sqrt(Math.Pow(iFa, 2) + Math.Pow(iFb, 2) + (iFa * iFb));
-        double iL2 = Math.Sqrt(Math.Pow(iFb, 2) + Math.Pow((iL2N + iFc), 2) + (iFb * (iL2N + iFc)));
-        double iL3 = Math.Sqrt(Math.Pow(iFa, 2) + Math.Pow((iL3N + iFc), 2) + (iFa * (iL3N + iFc)));
-        feederAmps = Math.Max(Math.Max(iL3, iL1), iL2);
-        FEEDER_AMP_GRID.Rows[0].Cells[0].Value = Math.Round(feederAmps, 1);
-        totalKva = CalculatePanelLoad(sum) * safetyFactor;
-        PANEL_LOAD_GRID.Rows[0].Cells[0].Value = Math.Round(totalKva, 1);
-        ColorFeederAmpsBox(feederAmps, busRating);
-        SetPanelLoadLispVars(totalKva, feederAmps);
+        if (lcl > 0 || lml > 0)
+        {
+          double l1 = phB;
+          double l2 = phA;
+          double l3 = phC;
+          if (highLegPhase == 0)
+          {
+            l1 = phA;
+            l2 = phC;
+            l3 = phB;
+          }
+          if (highLegPhase == 2)
+          {
+            l1 = phC;
+            l2 = phB;
+            l3 = phA;
+          }
+          double fA = Math.Abs(l3 - l1);
+          double fB = Math.Abs(l1 - l2);
+          double fC = Math.Abs(l2 - l3);
+          double l3N = l3;
+          double l2N = l2;
+          double iFa = (fA + (0.25 * lml)) / 240;
+          double iFb = (fB + (0.25 * lml)) / 240;
+          double iFc = (fC + (0.25 * lml)) / 240;
+          double iL2N = (l2N + (0.25 * lcl) + (0.25 * lml)) / 120;
+          double iL3N = (l3N + (0.25 * lcl) + (0.25 * lml)) / 120;
+          double iL1 = Math.Sqrt(Math.Pow(iFa, 2) + Math.Pow(iFb, 2) + (iFa * iFb));
+          double iL2 = Math.Sqrt(
+            Math.Pow(iFb, 2) + Math.Pow((iL2N + iFc), 2) + (iFb * (iL2N + iFc))
+          );
+          double iL3 = Math.Sqrt(
+            Math.Pow(iFa, 2) + Math.Pow((iL3N + iFc), 2) + (iFa * (iL3N + iFc))
+          );
+          feederAmps = Math.Max(Math.Max(iL3, iL1), iL2);
+          FEEDER_AMP_GRID.Rows[0].Cells[0].Value = Math.Round(feederAmps, 1);
+          totalKva = CalculatePanelLoad(sum) * safetyFactor;
+          PANEL_LOAD_GRID.Rows[0].Cells[0].Value = Math.Round(totalKva, 1);
+          ColorFeederAmpsBox(feederAmps, busRating);
+          SetPanelLoadLispVars(totalKva, feederAmps);
+        }
+        else
+        {
+          string hl = "b";
+          if (highLegPhase == 0)
+          {
+            hl = "a";
+          }
+          if (highLegPhase == 2)
+          {
+            hl = "c";
+          }
+          Dictionary<string, double> onePoleVa = Calculate1PoleVa(hl);
+          Dictionary<string, double> twoPoleVa = Calculate2PoleVa(hl);
+          double threePoleVa = Calculate3PoleVa();
+
+          double Iab1 = twoPoleVa["ab"] / 240;
+          double Ibc1 = twoPoleVa["bc"] / 240;
+          double Ica1 = twoPoleVa["ca"] / 240;
+
+          double Na = onePoleVa["a"] / 120;
+          double Nb = onePoleVa["b"] / 120;
+          double Nc = onePoleVa["c"] / 120;
+
+          double threePoleLoad = threePoleVa / 240 / 3;
+
+          Console.WriteLine("Iab1 " + Iab1);
+          Console.WriteLine("Ibc1 " + Ibc1);
+          Console.WriteLine("Ica1 " + Ica1);
+
+          if (hl == "a")
+          {
+            Ibc1 = Math.Max(Nb, Nc);
+          }
+
+          if (hl == "b")
+          {
+            Ica1 = Math.Max(Na, Nc);
+          }
+
+          if (hl == "c")
+          {
+            Iab1 = Math.Max(Na, Nb);
+          }
+
+          double Iab = Iab1 + threePoleLoad;
+          double Ibc = Ibc1 + threePoleLoad;
+          double Ica = Ica1 + threePoleLoad;
+
+          double Ia = Iab + Ica;
+          double Ib = Ibc + Iab;
+          double Ic = Ica + Ibc;
+
+          feederAmps = Math.Max(Ia, Math.Max(Ib, Ic));
+          FEEDER_AMP_GRID.Rows[0].Cells[0].Value = Math.Round(feederAmps, 1);
+          totalKva = CalculatePanelLoad(sum) * safetyFactor;
+          PANEL_LOAD_GRID.Rows[0].Cells[0].Value = Math.Round(totalKva, 1);
+          ColorFeederAmpsBox(feederAmps, busRating);
+          SetPanelLoadLispVars(totalKva, feederAmps);
+        }
         return;
       }
 

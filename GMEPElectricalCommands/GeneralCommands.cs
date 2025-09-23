@@ -1826,13 +1826,17 @@ namespace ElectricalCommands
           : SymbolUtilityServices.GetBlockPaperSpaceId(db);
       GmepDatabase gmepDb = new GmepDatabase();
       string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
-      List<ElectricalEntity.Service> services = gmepDb.GetServices(projectId);
-      List<ElectricalEntity.DistributionBus> distributionBuses = gmepDb.GetDistributionBuses(
-        projectId
+      string electricalProjectId = gmepDb.GetElectricalProjectId(
+        CADObjectCommands.GetProjectNoFromFileName(),
+        CADObjectCommands.GetProjectVersionFromFileName()
       );
-      List<ElectricalEntity.Panel> panels = gmepDb.GetPanels(projectId);
-      List<ElectricalEntity.Transformer> transformers = gmepDb.GetTransformers(projectId);
-      List<ElectricalEntity.Equipment> equipment = gmepDb.GetEquipment(projectId, true);
+      List<ElectricalEntity.Service> services = gmepDb.GetServices(electricalProjectId);
+      List<ElectricalEntity.DistributionBus> distributionBuses = gmepDb.GetDistributionBuses(
+        electricalProjectId
+      );
+      List<ElectricalEntity.Panel> panels = gmepDb.GetPanels(electricalProjectId);
+      List<ElectricalEntity.Transformer> transformers = gmepDb.GetTransformers(electricalProjectId);
+      List<ElectricalEntity.Equipment> equipment = gmepDb.GetEquipment(electricalProjectId, true);
       double offset = 0;
       foreach (ElectricalEntity.Service service in services)
       {

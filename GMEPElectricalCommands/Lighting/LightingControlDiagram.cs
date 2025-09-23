@@ -57,8 +57,11 @@ namespace ElectricalCommands.Lighting
       Database db = doc.Database;
       Editor ed = doc.Editor;
       GmepDatabase gmepDb = new GmepDatabase();
-      string projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
-      List<ElectricalEntity.Panel> panels = gmepDb.GetPanels(projectId);
+      string electricalProjectId = gmepDb.GetElectricalProjectId(
+        CADObjectCommands.GetProjectNoFromFileName(),
+        CADObjectCommands.GetProjectVersionFromFileName()
+      );
+      List<ElectricalEntity.Panel> panels = gmepDb.GetPanels(electricalProjectId);
       ElectricalEntity.Panel panel = panels.Find(p => p.Id == TimeClock.AdjacentPanelId);
       string panelName = panel.Name;
 
@@ -67,7 +70,13 @@ namespace ElectricalCommands.Lighting
       {
         BlockTable bt = tr.GetObject(db.BlockTableId, OpenMode.ForRead) as BlockTable;
         BlockTableRecord baseBlock;
-        BlockReference br = CADObjectCommands.CreateBlockReference(tr, bt, "LTG CTRL BASE", out baseBlock, out point);
+        BlockReference br = CADObjectCommands.CreateBlockReference(
+          tr,
+          bt,
+          "LTG CTRL BASE",
+          out baseBlock,
+          out point
+        );
 
         if (br != null)
         {

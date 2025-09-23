@@ -53,6 +53,28 @@ namespace ElectricalCommands
       return Regex.Match(fileName, @"[0-9]{2}-[0-9]{3}").Value;
     }
 
+    public static int GetProjectVersionFromFileName()
+    {
+      Document doc = Autodesk
+        .AutoCAD
+        .ApplicationServices
+        .Core
+        .Application
+        .DocumentManager
+        .MdiActiveDocument;
+      string fileName = Path.GetFileName(doc.Name);
+      string versionPattern = Regex.Match(fileName, @".[vV][0-9]+.").Value;
+      if (!String.IsNullOrEmpty(versionPattern))
+      {
+        string versionStr = Regex.Match(versionPattern, @"[0-9]+").Value;
+        if (Int32.TryParse(versionStr, out int version))
+        {
+          return version;
+        }
+      }
+      return 1;
+    }
+
     public static List<ObjectId> GetObjectIdsFromBlockName(
       Transaction tr,
       List<ObjectId> objectList,

@@ -16,7 +16,7 @@ namespace ElectricalCommands.Lighting
     private List<ListViewItem> lightingFixtureListViewList;
     private List<LightingControl> lightingControlList;
     private List<ListViewItem> lightingControlListViewList;
-    private string projectId;
+    private string electricalProjectId;
     public GmepDatabase gmepDb = new GmepDatabase();
     private List<ElectricalEntity.Panel> panelList;
     private bool isLoading;
@@ -35,10 +35,13 @@ namespace ElectricalCommands.Lighting
         .Application
         .DocumentManager
         .MdiActiveDocument;
-      projectId = gmepDb.GetProjectId(CADObjectCommands.GetProjectNoFromFileName());
-      panelList = gmepDb.GetPanels(projectId);
-      lightingFixtureList = gmepDb.GetLightingFixtures(projectId);
-      lightingControlList = gmepDb.GetLightingControls(projectId);
+      string electricalProjectId = gmepDb.GetElectricalProjectId(
+        CADObjectCommands.GetProjectNoFromFileName(),
+        CADObjectCommands.GetProjectVersionFromFileName()
+      );
+      panelList = gmepDb.GetPanels(electricalProjectId);
+      lightingFixtureList = gmepDb.GetLightingFixtures(electricalProjectId);
+      lightingControlList = gmepDb.GetLightingControls(electricalProjectId);
       CreateLightingFixtureListView();
       CreateLightingControlListView();
 
@@ -186,7 +189,7 @@ namespace ElectricalCommands.Lighting
         (db.TileMode == true)
           ? SymbolUtilityServices.GetBlockModelSpaceId(db)
           : SymbolUtilityServices.GetBlockPaperSpaceId(db);
-      List<LightingLocation> lightingLocations = gmepDb.GetLightingLocations(projectId);
+      List<LightingLocation> lightingLocations = gmepDb.GetLightingLocations(electricalProjectId);
       if (lightingLocations == null || lightingLocations.Count == 0)
       {
         lightingLocations = new List<LightingLocation>();
@@ -1192,9 +1195,9 @@ namespace ElectricalCommands.Lighting
       panelList.Clear();
       lightingFixtureList.Clear();
       lightingControlList.Clear();
-      panelList = gmepDb.GetPanels(projectId);
-      lightingFixtureList = gmepDb.GetLightingFixtures(projectId);
-      lightingControlList = gmepDb.GetLightingControls(projectId);
+      panelList = gmepDb.GetPanels(electricalProjectId);
+      lightingFixtureList = gmepDb.GetLightingFixtures(electricalProjectId);
+      lightingControlList = gmepDb.GetLightingControls(electricalProjectId);
       CreateLightingFixtureListView(true);
       CreateLightingControlListView(true);
     }

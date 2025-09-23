@@ -91,7 +91,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return false;
     }
 
-    public List<Service> GetServices(string projectId)
+    public List<Service> GetServices(string electricalProjectId)
     {
       List<Service> services = new List<Service>();
       string query =
@@ -117,10 +117,10 @@ namespace GMEPElectricalCommands.GmepDatabase
           ON statuses.id = electrical_services.status_id
           LEFT JOIN electrical_single_line_nodes 
           ON electrical_single_line_nodes.id = electrical_services.node_id
-          WHERE electrical_services.project_id = @projectId";
+          WHERE electrical_services.electrical_project_id = @electricalProjectId";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("@electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -142,7 +142,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return services;
     }
 
-    public List<Meter> GetMeters(string projectId)
+    public List<Meter> GetMeters(string electricalProjectId)
     {
       List<Meter> meters = new List<Meter>();
       string query =
@@ -159,10 +159,10 @@ namespace GMEPElectricalCommands.GmepDatabase
           LEFT JOIN statuses ON statuses.id = electrical_meters.status_id
           LEFT JOIN electrical_single_line_nodes 
           ON electrical_single_line_nodes.id = electrical_meters.node_id
-          WHERE electrical_meters.project_id = @projectId";
+          WHERE electrical_meters.electrical_project_id = @electricalProjectId";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("@electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -183,7 +183,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return meters;
     }
 
-    public List<MainBreaker> GetMainBreakers(string projectId)
+    public List<MainBreaker> GetMainBreakers(string electricalProjectId)
     {
       List<MainBreaker> mainBreakers = new List<MainBreaker>();
       string query =
@@ -204,11 +204,11 @@ namespace GMEPElectricalCommands.GmepDatabase
         LEFT JOIN electrical_service_amp_ratings ON electrical_service_amp_ratings.id = electrical_main_breakers.amp_rating_id
         LEFT JOIN electrical_single_line_nodes 
         ON electrical_single_line_nodes.id = electrical_main_breakers.node_id
-        WHERE electrical_main_breakers.project_id = @projectId
+        WHERE electrical_main_breakers.electrical_project_id = @electricalProjectId
         ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -231,7 +231,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return mainBreakers;
     }
 
-    public List<DistributionBus> GetDistributionBuses(string projectId)
+    public List<DistributionBus> GetDistributionBuses(string electricalProjectId)
     {
       List<DistributionBus> distributionBuses = new List<DistributionBus>();
       string query =
@@ -253,11 +253,11 @@ namespace GMEPElectricalCommands.GmepDatabase
         ON statuses.id = electrical_distribution_buses.status_id
         LEFT JOIN electrical_single_line_nodes 
         ON electrical_single_line_nodes.id = electrical_distribution_buses.node_id
-        WHERE electrical_distribution_buses.project_id = @projectId
+        WHERE electrical_distribution_buses.electrical_project_id = @electricalProjectId
         ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -279,7 +279,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return distributionBuses;
     }
 
-    public List<DistributionBreaker> GetDistributionBreakers(string projectId)
+    public List<DistributionBreaker> GetDistributionBreakers(string electricalProjectId)
     {
       List<DistributionBreaker> distributionBreakers = new List<DistributionBreaker>();
       string query =
@@ -300,11 +300,11 @@ namespace GMEPElectricalCommands.GmepDatabase
         ON statuses.id = electrical_distribution_breakers.status_id
         LEFT JOIN electrical_single_line_nodes 
         ON electrical_single_line_nodes.id = electrical_distribution_breakers.node_id
-        WHERE electrical_distribution_breakers.project_id = @projectId
+        WHERE electrical_distribution_breakers.electrical_project_id = @electricalProjectId
       ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -371,7 +371,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return panelNotes;
     }
 
-    public List<Panel> GetPanels(string projectId)
+    public List<Panel> GetPanels(string electricalProjectId)
     {
       List<Panel> panels = new List<Panel>();
       string query =
@@ -411,11 +411,11 @@ namespace GMEPElectricalCommands.GmepDatabase
         ON statuses.id = electrical_panels.status_id
         LEFT JOIN electrical_single_line_nodes 
         ON electrical_single_line_nodes.id = electrical_panels.node_id
-        WHERE electrical_panels.project_id = @projectId
+        WHERE electrical_panels.electrical_project_id = @electricalProjectId
         ORDER BY electrical_panels.name ASC";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -450,7 +450,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return panels;
     }
 
-    public List<PanelBreaker> GetPanelBreakers(string projectId)
+    public List<PanelBreaker> GetPanelBreakers(string electricalProjectId)
     {
       List<PanelBreaker> panelBreakers = new List<PanelBreaker>();
       string query =
@@ -469,11 +469,11 @@ namespace GMEPElectricalCommands.GmepDatabase
         LEFT JOIN statuses ON statuses.id = electrical_panel_breakers.status_id
         LEFT JOIN electrical_single_line_nodes ON electrical_single_line_nodes.id = electrical_panel_breakers.node_id
         LEFT JOIN electrical_panel_bus_amp_ratings ON electrical_panel_bus_amp_ratings.id = electrical_panel_breakers.amp_rating_id
-        WHERE electrical_panel_breakers.project_id = @projectId
+        WHERE electrical_panel_breakers.electrical_project_id = @electricalProjectId
         ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -495,7 +495,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return panelBreakers;
     }
 
-    public List<Disconnect> GetDisconnects(string projectId)
+    public List<Disconnect> GetDisconnects(string electricalProjectId)
     {
       List<Disconnect> disconnects = new List<Disconnect>();
       string query =
@@ -519,11 +519,11 @@ namespace GMEPElectricalCommands.GmepDatabase
         LEFT JOIN electrical_disconnect_as_sizes ON electrical_disconnect_as_sizes.id = electrical_disconnects.as_size_id
         LEFT JOIN electrical_disconnect_af_sizes ON electrical_disconnect_af_sizes.id = electrical_disconnects.af_size_id
         LEFT JOIN electrical_single_line_nodes ON electrical_single_line_nodes.id = electrical_disconnects.node_id        
-        WHERE electrical_disconnects.project_id = @projectId
+        WHERE electrical_disconnects.electrical_project_id = @electricalProjectId
         ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -548,7 +548,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return disconnects;
     }
 
-    public List<Transformer> GetTransformers(string projectId)
+    public List<Transformer> GetTransformers(string electricalProjectId)
     {
       List<Transformer> xfmrs = new List<Transformer>();
       string query =
@@ -578,11 +578,11 @@ namespace GMEPElectricalCommands.GmepDatabase
         ON statuses.id = electrical_transformers.status_id
         LEFT JOIN electrical_single_line_nodes
         ON electrical_single_line_nodes.id = electrical_transformers.node_id
-        WHERE electrical_transformers.project_id = @projectId
+        WHERE electrical_transformers.electrical_project_id = @electricalProjectId
         ORDER BY electrical_transformers.name ASC";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -610,16 +610,16 @@ namespace GMEPElectricalCommands.GmepDatabase
       return xfmrs;
     }
 
-    public List<NodeLink> GetNodeLinks(string projectId)
+    public List<NodeLink> GetNodeLinks(string electricalProjectId) // HERE
     {
       List<NodeLink> nodeLinks = new List<NodeLink>();
       string query =
         @"
-        SELECT * FROM electrical_single_line_node_links WHERE project_id = @projectId
+        SELECT * FROM electrical_single_line_node_links WHERE electrical_project_id = @electricalProjectId
         ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -636,7 +636,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return nodeLinks;
     }
 
-    public List<GroupNode> GetGroupNodes(string projectId)
+    public List<GroupNode> GetGroupNodes(string electricalProjectId)
     {
       List<GroupNode> groupNodes = new List<GroupNode>();
       string query =
@@ -651,12 +651,12 @@ namespace GMEPElectricalCommands.GmepDatabase
         statuses.status
         FROM electrical_single_line_groups
         LEFT JOIN statuses ON statuses.id = electrical_single_line_groups.status_id
-        WHERE project_id = @projectId
+        WHERE electrical_project_id = @electricalProjectId
         ORDER BY electrical_single_line_groups.loc_x ASC
         ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -724,7 +724,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return (fla, voltage, is3Phase);
     }
 
-    public List<Equipment> GetEquipment(string projectId, bool singleLineOnly = false)
+    public List<Equipment> GetEquipment(string electricalProjectId, bool singleLineOnly = false)
     {
       List<Equipment> equip = new List<Equipment>();
       string query =
@@ -766,7 +766,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         LEFT JOIN statuses ON statuses.id = electrical_equipment.status_id
         LEFT JOIN electrical_equipment_connection_symbols ON electrical_equipment_connection_symbols.id = electrical_equipment.connection_symbol_id
         LEFT JOIN electrical_disconnect_af_sizes on electrical_disconnect_af_sizes.id = electrical_equipment.mocp_id
-        WHERE electrical_equipment.project_id = @projectId";
+        WHERE electrical_equipment.electrical_project_id = @electricalProjectId";
       if (singleLineOnly)
       {
         query +=
@@ -780,7 +780,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         ";
       this.OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -820,7 +820,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return equip;
     }
 
-    public List<LightingFixture> GetLightingFixtures(string projectId)
+    public List<LightingFixture> GetLightingFixtures(string electricalProjectId)
     {
       List<LightingFixture> ltg = new List<LightingFixture>();
       string query =
@@ -863,11 +863,11 @@ namespace GMEPElectricalCommands.GmepDatabase
         ON electrical_lighting_mounting_types.id = electrical_lighting.mounting_type_id
         LEFT JOIN electrical_lighting_driver_types
         ON electrical_lighting_driver_types.id = electrical_lighting.driver_type_id
-        WHERE electrical_lighting.project_id = @projectId
+        WHERE electrical_lighting.electrical_project_id = @electricalProjectId
         ORDER BY electrical_lighting.tag ASC";
       this.OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -907,7 +907,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return ltg;
     }
 
-    public List<LightingControl> GetLightingControls(string projectId)
+    public List<LightingControl> GetLightingControls(string electricalProjectId)
     {
       List<LightingControl> ltgCtrl = new List<LightingControl>();
       string query =
@@ -920,11 +920,11 @@ namespace GMEPElectricalCommands.GmepDatabase
         FROM electrical_lighting_controls
         LEFT JOIN electrical_lighting_driver_types
         ON electrical_lighting_driver_types.id = electrical_lighting_controls.driver_type_id
-        WHERE project_id = @projectId
+        WHERE electrical_project_id = @electricalProjectId
         ORDER BY name ASC";
       this.OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -942,16 +942,16 @@ namespace GMEPElectricalCommands.GmepDatabase
       return ltgCtrl;
     }
 
-    public List<LightingLocation> GetLightingLocations(string projectId)
+    public List<LightingLocation> GetLightingLocations(string electricalProjectId)
     {
       List<LightingLocation> locations = new List<LightingLocation>();
       string query =
         @"
-        SELECT * FROM electrical_lighting_locations WHERE project_id = @projectId
+        SELECT * FROM electrical_lighting_locations WHERE electrical_project_id = @electricalProjectId
         ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -969,7 +969,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return locations;
     }
 
-    public List<LightingTimeClock> GetLightingTimeClocks(string projectId)
+    public List<LightingTimeClock> GetLightingTimeClocks(string electricalProjectId)
     {
       List<LightingTimeClock> clocks = new List<LightingTimeClock>();
       string query =
@@ -984,10 +984,10 @@ namespace GMEPElectricalCommands.GmepDatabase
         FROM electrical_lighting_timeclocks 
         LEFT JOIN electrical_equipment_voltages 
         ON electrical_equipment_voltages.id = electrical_lighting_timeclocks.voltage_id
-        WHERE project_id = @projectId";
+        WHERE electrical_project_id = @electricalProjectId";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -1041,7 +1041,7 @@ namespace GMEPElectricalCommands.GmepDatabase
     }
 
     public Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> GetKeyedNoteTables(
-      string projectId
+      string electricalProjectId
     )
     {
       List<ElectricalKeyedNote> notes = new List<ElectricalKeyedNote>();
@@ -1056,12 +1056,12 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_keyed_notes.date_created,
         electrical_keyed_notes.note
         FROM electrical_keyed_notes 
-        WHERE project_id = @projectId
+        WHERE electrical_project_id = @electricalProjectId
         order by date_created, table_id
         ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -1084,10 +1084,10 @@ namespace GMEPElectricalCommands.GmepDatabase
         electrical_keyed_note_tables.sheet_id,
         electrical_keyed_note_tables.title
         FROM electrical_keyed_note_tables
-        WHERE project_id = @projectId
+        WHERE electrical_project_id = @electricalProjectId
         ";
       command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -1146,13 +1146,41 @@ namespace GMEPElectricalCommands.GmepDatabase
       return id;
     }
 
-    public List<string> GetObjectIds(string projectId, string tableName)
+    public string GetElectricalProjectId(string projectNo, int version)
     {
-      List<string> objectIds = new List<string>();
-      string query = $"SELECT id FROM {tableName} WHERE project_id = @projectId";
+      string query =
+        @"
+        SELECT
+        electrical_projects.id FROM electrical_projects 
+        LEFT JOIN projects ON projects.id = electrical_projects.project_id
+        WHERE projects.gmep_project_no = @projectNo
+        AND electrical_projects.version = @version
+        ORDER BY projects.version ASC
+        LIMIT 1
+        ";
       OpenConnection();
       MySqlCommand command = new MySqlCommand(query, Connection);
-      command.Parameters.AddWithValue("projectId", projectId);
+      command.Parameters.AddWithValue("@projectNo", projectNo);
+      command.Parameters.AddWithValue("@version", version);
+      MySqlDataReader reader = command.ExecuteReader();
+      string electricalProjectId = "";
+      if (reader.Read())
+      {
+        electricalProjectId = reader.GetString("id");
+      }
+      reader.Close();
+
+      return electricalProjectId;
+    }
+
+    public List<string> GetObjectIds(string electricalProjectId, string tableName)
+    {
+      List<string> objectIds = new List<string>();
+      string query =
+        $"SELECT id FROM {tableName} WHERE electrical_project_id = @electricalProjectId";
+      OpenConnection();
+      MySqlCommand command = new MySqlCommand(query, Connection);
+      command.Parameters.AddWithValue("electricalProjectId", electricalProjectId);
       MySqlDataReader reader = command.ExecuteReader();
       while (reader.Read())
       {
@@ -1165,15 +1193,16 @@ namespace GMEPElectricalCommands.GmepDatabase
 
     public void UpdateKeyNotesTables(
       string projectId,
+      string electricalProjectId,
       Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> tables
     )
     {
-      DeleteObsoleteNotesAndTables(projectId, tables);
+      DeleteObsoleteNotesAndTables(electricalProjectId, tables);
 
       string query =
         @"
-        INSERT INTO electrical_keyed_note_tables (id, project_id, sheet_id, title)
-        VALUES (@id, @projectId, @sheetId, @title)
+        INSERT INTO electrical_keyed_note_tables (id, project_id, electrical_project_id, sheet_id, title)
+        VALUES (@id, @projectId, @electricalProjectId, @sheetId, @title)
         ON DUPLICATE KEY UPDATE
         sheet_id = @sheetId,
         title = @title
@@ -1186,6 +1215,7 @@ namespace GMEPElectricalCommands.GmepDatabase
         foreach (var table in kvp.Value)
         {
           command.Parameters.AddWithValue("@projectId", projectId);
+          command.Parameters.AddWithValue("@electricalProjectId", electricalProjectId);
           command.Parameters.AddWithValue("@id", table.Id);
           command.Parameters.AddWithValue("@sheetId", table.SheetId);
           command.Parameters.AddWithValue("@title", table.Title);
@@ -1195,8 +1225,8 @@ namespace GMEPElectricalCommands.GmepDatabase
       }
       query =
         @"
-        INSERT INTO electrical_keyed_notes (id, project_id, table_id, date_created, note)
-        VALUES (@id, @projectId, @tableId, @dateCreated, @note)
+        INSERT INTO electrical_keyed_notes (id, project_id, electrical_project_id, table_id, date_created, note)
+        VALUES (@id, @projectId, @electricalProjectId, @tableId, @dateCreated, @note)
         ON DUPLICATE KEY UPDATE
         date_created = @dateCreated,
         note = @note
@@ -1210,6 +1240,7 @@ namespace GMEPElectricalCommands.GmepDatabase
           foreach (var note in table.KeyedNotes)
           {
             command.Parameters.AddWithValue("@projectId", projectId);
+            command.Parameters.AddWithValue("@electricalProjectId", electricalProjectId);
             command.Parameters.AddWithValue("@id", note.Id);
             command.Parameters.AddWithValue("@tableId", note.TableId);
             command.Parameters.AddWithValue("@dateCreated", note.DateCreated);
@@ -1223,13 +1254,16 @@ namespace GMEPElectricalCommands.GmepDatabase
     }
 
     public void DeleteObsoleteNotesAndTables(
-      string projectId,
+      string electricalProjectId,
       Dictionary<string, ObservableCollection<ElectricalKeyedNoteTable>> tables
     )
     {
       // Retrieve current note and table IDs from the database
-      List<string> currentNoteIds = GetObjectIds(projectId, "electrical_keyed_notes");
-      List<string> currentTableIds = GetObjectIds(projectId, "electrical_keyed_note_tables");
+      List<string> currentNoteIds = GetObjectIds(electricalProjectId, "electrical_keyed_notes");
+      List<string> currentTableIds = GetObjectIds(
+        electricalProjectId,
+        "electrical_keyed_note_tables"
+      );
 
       // Create sets of new note and table IDs from the dictionary
       HashSet<string> newNoteIds = new HashSet<string>();
@@ -1365,7 +1399,8 @@ namespace GMEPElectricalCommands.GmepDatabase
       List<string> lightings,
       string panelId,
       int circuitNo,
-      string projectId
+      string projectId,
+      string electricalProjectId
     )
     {
       float newWattage = 0;
@@ -1391,12 +1426,12 @@ namespace GMEPElectricalCommands.GmepDatabase
 
       query =
         @"
-      SELECT id, fla, voltage_id, category_id FROM electrical_equipment WHERE project_id = @projectId AND circuit_no = @circuitNo AND parent_id = @parentId
+      SELECT id, fla, voltage_id, category_id FROM electrical_equipment WHERE electrical_project_id = @electricalProjectId AND circuit_no = @circuitNo AND parent_id = @parentId
       ";
 
       MySqlCommand command = new MySqlCommand(query, Connection);
 
-      command.Parameters.AddWithValue("@projectId", projectId);
+      command.Parameters.AddWithValue("@electricalProjectId", electricalProjectId);
       command.Parameters.AddWithValue("@parentId", panelId);
       command.Parameters.AddWithValue("@circuitNo", circuitNo);
 
@@ -1436,29 +1471,30 @@ namespace GMEPElectricalCommands.GmepDatabase
         reader.Close();
         // new circuit
         query =
-          @"INSERT INTO electrical_equipment (id, project_id, parent_id, description, category_id, voltage_id, 
-        fla, is_three_phase, circuit_no, spec_sheet_from_client, aic_rating, color_code, connection_type_id, va, load_type) VALUES (@id, @projectId, @parentId, @description, @category, 
-        @voltage, @fla, @isThreePhase, @circuit, @specFromClient, @aicRating, @colorCode, @connectionId, @va, @loadType)";
+          @"INSERT INTO electrical_equipment
+( id,  project_id,  electrical_project_id,  parent_id,  description,  category_id,  voltage_id,  fla,  is_three_phase,  circuit_no,  spec_sheet_from_client,  aic_rating,  color_code,  connection_type_id,  va,  load_type) VALUES
+(@id, @project_id, @electrical_project_id, @parent_id, @description, @category_id, @voltage_id, @fla, @is_three_phase, @circuit_no, @spec_sheet_from_client, @aic_rating, @color_code, @connection_type_id, @va, @load_type)";
 
         MySqlCommand command2 = new MySqlCommand(query, Connection);
         command2.Parameters.AddWithValue("@id", Guid.NewGuid().ToString());
-        command2.Parameters.AddWithValue("@projectId", projectId);
-        command2.Parameters.AddWithValue("@parentId", panelId);
+        command2.Parameters.AddWithValue("@project_id", projectId);
+        command2.Parameters.AddWithValue("@electrical_project_id", electricalProjectId);
+        command2.Parameters.AddWithValue("@parent_id", panelId);
         command2.Parameters.AddWithValue("@description", "Lighting");
-        command2.Parameters.AddWithValue("@category", 5);
-        command2.Parameters.AddWithValue("@voltage", 1);
+        command2.Parameters.AddWithValue("@category_id", 5);
+        command2.Parameters.AddWithValue("@voltage_id", 1);
         command2.Parameters.AddWithValue(
           "@fla",
           Math.Round(newWattage / voltage, 1, MidpointRounding.AwayFromZero)
         );
         command2.Parameters.AddWithValue("@va", newWattage);
-        command2.Parameters.AddWithValue("@isThreePhase", false);
-        command2.Parameters.AddWithValue("@circuit", circuitNo);
-        command2.Parameters.AddWithValue("@specFromClient", false);
-        command2.Parameters.AddWithValue("@aicRating", 0);
-        command2.Parameters.AddWithValue("@colorCode", "#FF00FF");
-        command2.Parameters.AddWithValue("@connectionId", 1);
-        command2.Parameters.AddWithValue("@loadType", 3);
+        command2.Parameters.AddWithValue("@is_three_phase", false);
+        command2.Parameters.AddWithValue("@circuit_no", circuitNo);
+        command2.Parameters.AddWithValue("@spec_sheet_from_client", false);
+        command2.Parameters.AddWithValue("@aic_rating", 0);
+        command2.Parameters.AddWithValue("@color_code", "#FF00FF");
+        command2.Parameters.AddWithValue("@connection_type_id", 1);
+        command2.Parameters.AddWithValue("@load_type", 3);
         command2.ExecuteNonQuery();
       }
 
