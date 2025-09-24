@@ -3537,7 +3537,7 @@ namespace ElectricalCommands
                     PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
                   );
                 }
-                if (
+                else if (
                   !String.IsNullOrEmpty(
                     PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
                   )
@@ -3550,7 +3550,7 @@ namespace ElectricalCommands
                     PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString()
                   );
                 }
-                if (
+                else if (
                   !String.IsNullOrEmpty(
                     PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString()
                   )
@@ -3583,7 +3583,7 @@ namespace ElectricalCommands
                     PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString()
                   );
                 }
-                if (
+                else if (
                   !String.IsNullOrEmpty(
                     PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
                   )
@@ -3593,7 +3593,7 @@ namespace ElectricalCommands
                     PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
                   );
                 }
-                if (
+                else if (
                   !String.IsNullOrEmpty(
                     PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString()
                   )
@@ -3642,15 +3642,15 @@ namespace ElectricalCommands
             )
             {
               // ab phase
+
               loads["ab"] += SafeConvertToDouble(
                 PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString()
               );
               loads["ab"] += SafeConvertToDouble(
-                PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
+                PANEL_GRID.Rows[i + 1].Cells[$"phase_b_{side}"].Value?.ToString()
               );
             }
-
-            if (
+            else if (
               !String.IsNullOrEmpty(PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString())
             )
             {
@@ -3659,11 +3659,10 @@ namespace ElectricalCommands
                 PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
               );
               loads["bc"] += SafeConvertToDouble(
-                PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString()
+                PANEL_GRID.Rows[i + 1].Cells[$"phase_c_{side}"].Value?.ToString()
               );
             }
-
-            if (
+            else if (
               !String.IsNullOrEmpty(PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString())
             )
             {
@@ -3672,7 +3671,7 @@ namespace ElectricalCommands
                 PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString()
               );
               loads["ca"] += SafeConvertToDouble(
-                PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString()
+                PANEL_GRID.Rows[i + 1].Cells[$"phase_a_{side}"].Value?.ToString()
               );
             }
           }
@@ -3694,13 +3693,13 @@ namespace ElectricalCommands
           if (
             (
               i + 2 < PANEL_GRID.Rows.Count
-              && PANEL_GRID.Rows[i + 2].Cells[$"breaker_{side}"].Value as string != "3"
+              && PANEL_GRID.Rows[i + 2].Cells[$"breaker_{side}"].Value as string == "3"
             )
             || (
               i + 1 < PANEL_GRID.Rows.Count
-              && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string != "3"
+              && PANEL_GRID.Rows[i + 1].Cells[$"breaker_{side}"].Value as string == "3"
             )
-            || (PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string != "3")
+            || (PANEL_GRID.Rows[i].Cells[$"breaker_{side}"].Value as string == "3")
           )
           {
             if (
@@ -3711,7 +3710,7 @@ namespace ElectricalCommands
                 PANEL_GRID.Rows[i].Cells[$"phase_a_{side}"].Value?.ToString()
               );
             }
-            if (
+            else if (
               !String.IsNullOrEmpty(PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString())
             )
             {
@@ -3719,7 +3718,7 @@ namespace ElectricalCommands
                 PANEL_GRID.Rows[i].Cells[$"phase_b_{side}"].Value?.ToString()
               );
             }
-            if (
+            else if (
               !String.IsNullOrEmpty(PANEL_GRID.Rows[i].Cells[$"phase_c_{side}"].Value?.ToString())
             )
             {
@@ -3848,7 +3847,9 @@ namespace ElectricalCommands
           {
             hl = "c";
           }
+
           Dictionary<string, double> onePoleVa = Calculate1PoleVa(hl);
+
           Dictionary<string, double> twoPoleVa = Calculate2PoleVa(hl);
           double threePoleVa = Calculate3PoleVa();
 
@@ -3861,10 +3862,6 @@ namespace ElectricalCommands
           double Nc = onePoleVa["c"] / 120;
 
           double threePoleLoad = threePoleVa / 240 / 3;
-
-          Console.WriteLine("Iab1 " + Iab1);
-          Console.WriteLine("Ibc1 " + Ibc1);
-          Console.WriteLine("Ica1 " + Ica1);
 
           if (hl == "a")
           {
