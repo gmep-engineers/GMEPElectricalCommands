@@ -610,7 +610,7 @@ namespace GMEPElectricalCommands.GmepDatabase
       return xfmrs;
     }
 
-    public List<NodeLink> GetNodeLinks(string electricalProjectId) // HERE
+    public List<NodeLink> GetNodeLinks(string electricalProjectId)
     {
       List<NodeLink> nodeLinks = new List<NodeLink>();
       string query =

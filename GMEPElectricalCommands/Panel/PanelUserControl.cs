@@ -2479,6 +2479,7 @@ namespace ElectricalCommands
               if (
                 gridRow.Cells[cellName].Style.BackColor == Color.LightGray
                 || gridRow.Cells[cellName].Style.BackColor == Color.LightGreen
+                || gridRow.Cells[cellName].Style.BackColor == Color.LightBlue
               )
               {
                 gridRow.Cells[cellName].Value = cellValues[i];
