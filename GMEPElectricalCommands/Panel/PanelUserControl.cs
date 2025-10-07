@@ -3883,9 +3883,28 @@ namespace ElectricalCommands
           double Ibc = Ibc1 + threePoleLoad;
           double Ica = Ica1 + threePoleLoad;
 
-          double Ia = Iab + Ica;
-          double Ib = Ibc + Iab;
-          double Ic = Ica + Ibc;
+          double Ia = 0;
+          double Ib = 0;
+          double Ic = 0;
+
+          if (hl == "a")
+          {
+            Ic = Math.Sqrt(Math.Pow(Ica, 2) + Math.Pow(Ibc, 2) + (Ica * Ibc));
+            Ia = Math.Sqrt(Math.Pow(Ica, 2) + Math.Pow(Iab, 2) + (Ica * Iab));
+            Ib = Math.Sqrt(Math.Pow(Iab, 2) + Math.Pow(Ibc, 2));
+          }
+          if (hl == "b")
+          {
+            Ia = Math.Sqrt(Math.Pow(Iab, 2) + Math.Pow(Ica, 2) + (Iab * Ica));
+            Ib = Math.Sqrt(Math.Pow(Iab, 2) + Math.Pow(Ibc, 2) + (Iab * Ibc));
+            Ic = Math.Sqrt(Math.Pow(Ibc, 2) + Math.Pow(Ica, 2));
+          }
+          if (hl == "c")
+          {
+            Ib = Math.Sqrt(Math.Pow(Ibc, 2) + Math.Pow(Iab, 2) + (Ibc * Iab));
+            Ic = Math.Sqrt(Math.Pow(Ibc, 2) + Math.Pow(Ica, 2) + (Ibc * Ica));
+            Ia = Math.Sqrt(Math.Pow(Ica, 2) + Math.Pow(Iab, 2));
+          }
 
           feederAmps = Math.Max(Ia, Math.Max(Ib, Ic));
           FEEDER_AMP_GRID.Rows[0].Cells[0].Value = Math.Round(feederAmps, 1);
