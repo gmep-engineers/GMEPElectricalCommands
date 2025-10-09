@@ -230,12 +230,16 @@ namespace ElectricalCommands.Equipment
         equipmentListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Category", -2, HorizontalAlignment.Left);
         equipmentListView.Columns.Add("Connection Symbol", -2, HorizontalAlignment.Left);
-        ContextMenu contextMenu = new ContextMenu();
-        contextMenu.MenuItems.Add(
-          new MenuItem("Show on plan", new EventHandler(ShowEquipOnPlan_Click))
-        );
-        contextMenu.MenuItems.Add(new MenuItem("Refresh", new EventHandler(RefreshButton_Click)));
-        equipmentListView.ContextMenu = contextMenu;
+        ContextMenuStrip ContextMenuStrip = new ContextMenuStrip();
+        ToolStripMenuItem showOnPlan = new ToolStripMenuItem();
+        showOnPlan.Text = "Show on plan";
+        showOnPlan.Click += ShowEquipOnPlan_Click;
+        ContextMenuStrip.Items.Add(showOnPlan);
+        ToolStripMenuItem refresh = new ToolStripMenuItem();
+        refresh.Text = "Refresh";
+        refresh.Click += RefreshButton_Click;
+        ContextMenuStrip.Items.Add(refresh);
+        equipmentListView.ContextMenuStrip = ContextMenuStrip;
       }
     }
 
@@ -329,11 +333,12 @@ namespace ElectricalCommands.Equipment
         panelListView.Columns.Add("Parent", -2, HorizontalAlignment.Left);
         panelListView.Columns.Add("Parent Distance", -2, HorizontalAlignment.Left);
         panelListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
-        ContextMenu contextMenu = new ContextMenu();
-        contextMenu.MenuItems.Add(
-          new MenuItem("Show on plan", new EventHandler(ShowPanelOnPlan_Click))
-        );
-        panelListView.ContextMenu = contextMenu;
+        ContextMenuStrip ContextMenuStrip = new ContextMenuStrip();
+        ToolStripMenuItem showOnPlan = new ToolStripMenuItem();
+        showOnPlan.Text = "Show on plan";
+        showOnPlan.Click += ShowEquipOnPlan_Click;
+        ContextMenuStrip.Items.Add(showOnPlan);
+        panelListView.ContextMenuStrip = ContextMenuStrip;
       }
     }
 
@@ -420,11 +425,12 @@ namespace ElectricalCommands.Equipment
         transformerListView.Columns.Add("Parent", -2, HorizontalAlignment.Left);
         transformerListView.Columns.Add("Parent Distance", -2, HorizontalAlignment.Left);
         transformerListView.Columns.Add("Location", -2, HorizontalAlignment.Left);
-        ContextMenu contextMenu = new ContextMenu();
-        contextMenu.MenuItems.Add(
-          new MenuItem("Show on plan", new EventHandler(ShowTransformerOnPlan_Click))
-        );
-        transformerListView.ContextMenu = contextMenu;
+        ContextMenuStrip ContextMenuStrip = new ContextMenuStrip();
+        ToolStripMenuItem showOnPlan = new ToolStripMenuItem();
+        showOnPlan.Text = "Show on plan";
+        showOnPlan.Click += ShowEquipOnPlan_Click;
+        ContextMenuStrip.Items.Add(showOnPlan);
+        transformerListView.ContextMenuStrip = ContextMenuStrip;
       }
     }
 
