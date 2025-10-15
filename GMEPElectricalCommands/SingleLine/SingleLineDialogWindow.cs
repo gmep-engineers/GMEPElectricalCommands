@@ -2090,59 +2090,7 @@ namespace ElectricalCommands.SingleLine
       }
     }
 
-    public void TreeViewPlaceSelected_Click(object sender, EventArgs e)
-    {
-      if (SingleLineTreeView.SelectedNode == null)
-      {
-        return;
-      }
-      using (
-        DocumentLock docLock =
-          Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.LockDocument()
-      )
-      {
-        Autodesk.AutoCAD.ApplicationServices.Application.MainWindow.WindowState = Autodesk
-          .AutoCAD
-          .Windows
-          .Window
-          .State
-          .Maximized;
-        Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Window.Focus();
-        ElectricalEntity.PlaceableElectricalEntity placeable =
-          (ElectricalEntity.PlaceableElectricalEntity)SingleLineTreeView.SelectedNode.Tag;
-        Point3d? p = placeable.Place();
-        if (p == null)
-        {
-          placeable.Location = new Point3d(0, 0, 0);
-        }
-      }
-      SetDynamicBlockIds();
-      CalculateDistances();
-
-      SingleLineTreeView.BeginUpdate();
-      SingleLineTreeView.Nodes.Clear();
-      PopulateTreeView();
-      SingleLineTreeView.ExpandAll();
-      SingleLineTreeView.EndUpdate();
-      if (serviceList.Count > 0)
-      {
-        SetInfoBoxText(serviceList[0]);
-      }
-      placeables.ForEach(gmepDb.UpdatePlaceable);
-      foreach (TreeNode node in SingleLineTreeView.Nodes)
-      {
-        if (node != null)
-        {
-          ContextMenuStrip docMenu = new ContextMenuStrip();
-          ToolStripMenuItem placeLabel = new ToolStripMenuItem();
-          placeLabel.Text = "Place";
-          placeLabel.Click += TreeViewPlaceSelected_Click;
-          docMenu.Items.Add(placeLabel);
-          node.ContextMenuStrip = docMenu;
-          SetTreeContextMenu(node);
-        }
-      }
-    }
+    public void TreeViewPlaceSelected_Click(object sender, EventArgs e) { }
 
     public void RefreshButton_Click(object sender, EventArgs e)
     {
