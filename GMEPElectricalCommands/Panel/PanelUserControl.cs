@@ -2156,52 +2156,63 @@ namespace ElectricalCommands
 
       if (isPanelReal)
       {
-        UserControl panelControl = mainForm.FindUserControl(panel_name);
+        PanelUserControl panelControl = (PanelUserControl)mainForm.FindUserControl(panel_name);
 
         if (panelControl != null)
         {
-          DataGridView panelControl_phaseSumGrid =
-            panelControl.Controls.Find("PHASE_SUM_GRID", true).FirstOrDefault() as DataGridView;
           DataGridView this_panelGrid =
             this.Controls.Find("PANEL_GRID", true).FirstOrDefault() as DataGridView;
           this_panelGrid.Rows[row.Index].Cells[col.Index].Tag = cellValue;
-          ListenForPhaseChanges(panelControl_phaseSumGrid, phase, row, col, this_panelGrid);
+          ListenForPhaseChanges(panelControl, phase, row, col, this_panelGrid);
         }
       }
     }
 
     private void ListenForPhaseChanges(
-      DataGridView panelControl_phaseSumGrid,
+      PanelUserControl panelControl,
+      // HERE pass in LCL data
       string phase,
       DataGridViewRow row,
       DataGridViewColumn col,
       DataGridView panelGrid
     )
     {
+      DataGridView panelControl_phaseSumGrid =
+        panelControl.Controls.Find("PHASE_SUM_GRID", true).FirstOrDefault() as DataGridView;
       var phaseSumGrid_row = 0;
       var phaseSumGrid_col = 0;
 
       DataGridViewCellEventHandler eventHandler = null;
       DataGridViewCellEventHandler panelGrid_eventHandler = null;
+      double newCellLclValue = 0;
+      double newCellLmlValue = 0;
 
       if (phase == "A")
       {
         phaseSumGrid_col = 0;
+        newCellLclValue = panelControl.CalculateLclOnPhase("a", true);
+        newCellLmlValue = panelControl.CalculateLmlOnPhase("a", true);
       }
       else if (phase == "B")
       {
         phaseSumGrid_col = 1;
+        newCellLclValue = panelControl.CalculateLclOnPhase("b", true);
+        newCellLmlValue = panelControl.CalculateLmlOnPhase("b", true);
       }
       else if (phase == "C")
       {
         phaseSumGrid_col = 2;
+        newCellLclValue = panelControl.CalculateLclOnPhase("c", true);
+        newCellLmlValue = panelControl.CalculateLmlOnPhase("c", true);
       }
 
       var newCellValue = panelControl_phaseSumGrid
         .Rows[phaseSumGrid_row]
         .Cells[phaseSumGrid_col]
         .Value.ToString();
+
       panelGrid.Rows[row.Index].Cells[col.Index].Value = newCellValue;
+      panelGrid.Rows[row.Index].Cells[col.Index].Tag = newCellLclValue + newCellLmlValue;
       panelGrid.Rows[row.Index].Cells[col.Index].Style.BackColor = Color.LightGreen;
 
       eventHandler = (sender, e) =>
@@ -3431,7 +3442,7 @@ namespace ElectricalCommands
       doc.SetLispSymbol($"panel_{id.Replace("-", "")}_a", feederAmps.ToString() + " A");
     }
 
-    private double CalculateLclOnPhase(string phase, bool percentOnly = false)
+    public double CalculateLclOnPhase(string phase, bool percentOnly = false)
     {
       double lcl = 0;
       string side = "left";
@@ -3455,7 +3466,7 @@ namespace ElectricalCommands
       return lcl * (percentOnly ? 0.25 : 1);
     }
 
-    private double CalculateLmlOnPhase(string phase, bool percentOnly = false)
+    public double CalculateLmlOnPhase(string phase, bool percentOnly = false)
     {
       double lml = 0;
       string side = "left";
@@ -3776,7 +3787,7 @@ namespace ElectricalCommands
       sum = phA + phB;
       if (PHASE_SUM_GRID.ColumnCount > 2)
       {
-        phC = Convert.ToDouble(PHASE_SUM_GRID.Rows[0].Cells[2].Value ?? 0);
+        phC += Convert.ToDouble(PHASE_SUM_GRID.Rows[0].Cells[2].Value ?? 0);
         sum += phC;
       }
       mainForm.UpdateLclLml();
@@ -3927,6 +3938,10 @@ namespace ElectricalCommands
       {
         sum += Math.Round(Convert.ToDouble(LML.Text) * 0.25, 0);
       }
+
+      // Handle subpanel LCL
+
+
       totalKva = CalculatePanelLoad(sum) * safetyFactor;
       if (phaseVoltageObj != null)
       {
@@ -3968,6 +3983,37 @@ namespace ElectricalCommands
               lmlC = CalculateLmlOnPhase("c", true);
             }
 
+            string side = "left";
+            for (int i = 0; i < 2; i++)
+            {
+              foreach (DataGridViewRow row in PANEL_GRID.Rows)
+              {
+                string tagStr = "tag " + row.Cells[$"phase_a_{side}"].Tag as string;
+                tagStr = tagStr.Replace("tag ", "");
+                if (Double.TryParse(tagStr, out double valueA))
+                {
+                  lclA += valueA;
+                }
+                tagStr = "tag " + row.Cells[$"phase_b_{side}"].Tag as string;
+                tagStr = tagStr.Replace("tag ", "");
+                if (Double.TryParse(tagStr, out double valueB))
+                {
+                  lclB += valueB;
+                }
+
+                if (is3Ph)
+                {
+                  tagStr = "tag " + row.Cells[$"phase_c_{side}"].Tag as string;
+                  tagStr = tagStr.Replace("tag ", "");
+                  if (Double.TryParse(tagStr, out double valueC))
+                  {
+                    lclC += valueC;
+                  }
+                }
+              }
+              side = "right";
+            }
+
             double totalA = phA + lclA + lmlA;
             double totalB = phB + lclB + lmlB;
             double totalC = phC + lclC + lmlC;
@@ -3986,6 +4032,7 @@ namespace ElectricalCommands
             feederAmps = Math.Round(feederAmps, 1);
             FEEDER_AMP_GRID.Rows[0].Cells[0].Value = feederAmps;
             sum = totalA + totalB + totalC;
+
             TOTAL_VA_GRID.Rows[0].Cells[0].Value = Math.Round(phA + phB + phC);
             PANEL_LOAD_GRID.Rows[0].Cells[0].Value = Math.Round(sum / 1000, 1);
           }
